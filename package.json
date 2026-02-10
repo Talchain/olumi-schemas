@@ -1,5 +1,5 @@
 {
-  "name": "@olumi/schemas",
+  "name": "@talchain/schemas",
   "version": "0.1.0",
   "description": "Shared TypeScript schemas and runtime validation for Olumi services",
   "main": "dist/index.js",

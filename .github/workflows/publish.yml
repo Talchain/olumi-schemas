@@ -40,7 +40,7 @@ jobs:
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           echo "version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
 
-          if npm view @olumi/schemas@$PACKAGE_VERSION version 2>/dev/null; then
+          if npm view @talchain/schemas@$PACKAGE_VERSION version 2>/dev/null; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "Version $PACKAGE_VERSION already exists in registry"
           else

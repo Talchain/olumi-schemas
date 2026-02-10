@@ -28,7 +28,7 @@ jobs:
           registry-url: https://npm.pkg.github.com
 
       - name: Update schema version
-        run: npm install @olumi/schemas@${{ github.event.client_payload.version }} --save-exact
+        run: npm install @talchain/schemas@${{ github.event.client_payload.version }} --save-exact
         env:
           NODE_AUTH_TOKEN: ${{ secrets.OLUMI_SCHEMAS_PAT }}
 
@@ -36,11 +36,11 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.OLUMI_SCHEMAS_PAT }}
-          commit-message: "chore: bump @olumi/schemas to ${{ github.event.client_payload.version }}"
+          commit-message: "chore: bump @talchain/schemas to ${{ github.event.client_payload.version }}"
           branch: "chore/schemas-${{ github.event.client_payload.version }}"
-          title: "chore: bump @olumi/schemas to ${{ github.event.client_payload.version }}"
+          title: "chore: bump @talchain/schemas to ${{ github.event.client_payload.version }}"
           body: |
-            Bumps `@olumi/schemas` to `${{ github.event.client_payload.version }}`.
+            Bumps `@talchain/schemas` to `${{ github.event.client_payload.version }}`.
 
             See [release notes](https://github.com/Talchain/olumi-schemas/releases/tag/v${{ github.event.client_payload.version }}).
           labels: dependencies,schemas

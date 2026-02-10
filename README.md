@@ -1,4 +1,4 @@
-# @olumi/schemas
+# @talchain/schemas
 
 Shared TypeScript schemas and runtime validation for Olumi's boundary contracts. Single source of truth for wire-format types consumed by UI, CEE, PLoT, and ISL.
 
@@ -7,14 +7,14 @@ Shared TypeScript schemas and runtime validation for Olumi's boundary contracts.
 Configure your `.npmrc` for GitHub Packages:
 
 ```
-@olumi:registry=https://npm.pkg.github.com
+@talchain:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
 Then install:
 
 ```bash
-npm install @olumi/schemas
+npm install @talchain/schemas
 ```
 
 ## Usage
@@ -28,7 +28,7 @@ import {
   validateGraphLimits,
   CIL_WARNING_CODES,
   STRENGTH_DEFAULT_SIGNATURE,
-} from '@olumi/schemas';
+} from '@talchain/schemas';
 
 // Validate a graph
 const graph = GraphV3Schema.parse(rawData);
@@ -43,7 +43,7 @@ if (violations.length > 0) {
 All Zod schemas export inferred TypeScript types:
 
 ```typescript
-import type { NodeV3, EdgeV3, GraphV3, ValidationWarning } from '@olumi/schemas';
+import type { NodeV3, EdgeV3, GraphV3, ValidationWarning } from '@talchain/schemas';
 ```
 
 ## Package contents
