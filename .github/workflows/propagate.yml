@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         repo:
-          - olumi-app
+          - DecisionGuideAI
           - olumi-assistants-service
           - plot-lite-service
 
@@ -18,7 +18,7 @@ jobs:
       - name: Checkout consumer repo
         uses: actions/checkout@v4
         with:
-          repository: olumi/${{ matrix.repo }}
+          repository: Talchain/${{ matrix.repo }}
           token: ${{ secrets.OLUMI_SCHEMAS_PAT }}
 
       - name: Setup Node.js
@@ -42,5 +42,5 @@ jobs:
           body: |
             Bumps `@olumi/schemas` to `${{ github.event.client_payload.version }}`.
 
-            See [release notes](https://github.com/olumi/olumi-schemas/releases/tag/v${{ github.event.client_payload.version }}).
+            See [release notes](https://github.com/Talchain/olumi-schemas/releases/tag/v${{ github.event.client_payload.version }}).
           labels: dependencies,schemas
