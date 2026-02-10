@@ -1,0 +1,88 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": "goal:revenue",
+        "kind": "goal",
+        "label": "Revenue",
+        "type": "numeric",
+        "observed_state": { "value": 50 }
+      },
+      {
+        "id": "factor:price",
+        "kind": "factor",
+        "label": "Price",
+        "type": "numeric",
+        "category": "controllable",
+        "observed_state": { "value": 100 }
+      },
+      {
+        "id": "factor:demand",
+        "kind": "factor",
+        "label": "Demand",
+        "type": "numeric",
+        "category": "observable",
+        "observed_state": { "value": 80 }
+      }
+    ],
+    "edges": {
+      "valid": [
+        {
+          "from": "factor:price",
+          "to": "goal:revenue",
+          "strength": { "mean": 0.7, "std": 0.1 },
+          "exists_probability": 0.95
+        },
+        {
+          "from": "factor:demand",
+          "to": "goal:revenue",
+          "strength": { "mean": 0.5, "std": 0.15 },
+          "exists_probability": 0.85
+        }
+      ],
+      "invalid": [
+        {
+          "_comment": "strength.mean out of range (>1.0)",
+          "from": "factor:price",
+          "to": "factor:demand",
+          "strength": { "mean": 1.5, "std": 0.1 },
+          "exists_probability": 0.9
+        },
+        {
+          "_comment": "strength.std is zero (must be positive)",
+          "from": "factor:demand",
+          "to": "goal:revenue",
+          "strength": { "mean": 0.3, "std": 0 },
+          "exists_probability": 0.8
+        },
+        {
+          "_comment": "exists_probability out of range",
+          "from": "factor:price",
+          "to": "goal:revenue",
+          "strength": { "mean": 0.4, "std": 0.1 },
+          "exists_probability": 1.5
+        },
+        {
+          "_comment": "missing required strength field",
+          "from": "factor:price",
+          "to": "factor:demand",
+          "exists_probability": 0.9
+        },
+        {
+          "_comment": "edge with boundary values (valid)",
+          "from": "factor:price",
+          "to": "goal:revenue",
+          "strength": { "mean": -1.0, "std": 0.001 },
+          "exists_probability": 0.0
+        },
+        {
+          "_comment": "edge with boundary values (valid)",
+          "from": "factor:demand",
+          "to": "goal:revenue",
+          "strength": { "mean": 1.0, "std": 0.001 },
+          "exists_probability": 1.0
+        }
+      ]
+    }
+  }
+}

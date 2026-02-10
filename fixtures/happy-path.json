@@ -1,0 +1,183 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "id": "goal:revenue",
+        "kind": "goal",
+        "label": "Revenue",
+        "body": "Total quarterly revenue target",
+        "type": "numeric",
+        "observed_state": {
+          "value": 59,
+          "unit": "£k",
+          "source": "Q3 Analytics Report"
+        },
+        "state_space": {
+          "range": { "min": 0, "max": 200 }
+        },
+        "goal_threshold": 100
+      },
+      {
+        "id": "factor:marketing-budget",
+        "kind": "factor",
+        "label": "Marketing Budget",
+        "type": "numeric",
+        "category": "controllable",
+        "observed_state": {
+          "value": 25,
+          "unit": "£k"
+        },
+        "state_space": {
+          "range": { "min": 0, "max": 100 }
+        }
+      },
+      {
+        "id": "factor:brand-awareness",
+        "kind": "factor",
+        "label": "Brand Awareness",
+        "type": "numeric",
+        "category": "observable",
+        "observed_state": {
+          "value": 45,
+          "unit": "%"
+        },
+        "state_space": {
+          "range": { "min": 0, "max": 100 }
+        }
+      },
+      {
+        "id": "factor:competitor-activity",
+        "kind": "factor",
+        "label": "Competitor Activity",
+        "type": "ordinal",
+        "category": "external",
+        "categories": ["low", "medium", "high"],
+        "observed_state": {
+          "value": 2,
+          "unit": "level"
+        }
+      },
+      {
+        "id": "outcome:customer-acquisition",
+        "kind": "outcome",
+        "label": "Customer Acquisition",
+        "type": "numeric",
+        "observed_state": {
+          "value": 120,
+          "unit": "customers"
+        }
+      },
+      {
+        "id": "risk:market-saturation",
+        "kind": "risk",
+        "label": "Market Saturation Risk",
+        "type": "boolean",
+        "observed_state": {
+          "value": 0
+        }
+      },
+      {
+        "id": "action:launch-campaign",
+        "kind": "action",
+        "label": "Launch Marketing Campaign"
+      },
+      {
+        "id": "decision:pricing-strategy",
+        "kind": "decision",
+        "label": "Pricing Strategy"
+      },
+      {
+        "id": "option:high-price",
+        "kind": "option",
+        "label": "High Price"
+      },
+      {
+        "id": "option:low-price",
+        "kind": "option",
+        "label": "Low Price"
+      },
+      {
+        "id": "constraint:budget-cap",
+        "kind": "constraint",
+        "label": "Budget Cap £50k"
+      }
+    ],
+    "edges": [
+      {
+        "from": "factor:marketing-budget",
+        "to": "factor:brand-awareness",
+        "strength": { "mean": 0.6, "std": 0.12 },
+        "exists_probability": 0.95,
+        "label": "Marketing spend increases awareness"
+      },
+      {
+        "from": "factor:brand-awareness",
+        "to": "outcome:customer-acquisition",
+        "strength": { "mean": 0.7, "std": 0.1 },
+        "exists_probability": 0.9
+      },
+      {
+        "from": "outcome:customer-acquisition",
+        "to": "goal:revenue",
+        "strength": { "mean": 0.8, "std": 0.08 },
+        "exists_probability": 0.98
+      },
+      {
+        "from": "factor:competitor-activity",
+        "to": "outcome:customer-acquisition",
+        "strength": { "mean": -0.4, "std": 0.2 },
+        "exists_probability": 0.75,
+        "effect_direction": "negative"
+      },
+      {
+        "from": "risk:market-saturation",
+        "to": "goal:revenue",
+        "strength": { "mean": -0.3, "std": 0.15 },
+        "exists_probability": 0.6
+      }
+    ]
+  },
+  "analysis_ready": {
+    "status": "ready",
+    "options": [
+      {
+        "id": "option:high-price",
+        "label": "High Price Strategy",
+        "description": "Set premium pricing",
+        "status": "ready",
+        "interventions": {
+          "factor:marketing-budget": 40,
+          "factor:brand-awareness": 60
+        }
+      },
+      {
+        "id": "option:low-price",
+        "label": "Low Price Strategy",
+        "description": "Set competitive pricing",
+        "status": "ready",
+        "interventions": {
+          "factor:marketing-budget": 30,
+          "factor:brand-awareness": 50
+        }
+      }
+    ],
+    "goal_node_id": "goal:revenue"
+  },
+  "response_meta": {
+    "seed_used": "42",
+    "seed_source": "client_generated",
+    "request_id": "req-abc-123",
+    "request_id_chain": {
+      "analysis_chain": {
+        "ui_sent": "req-abc-123",
+        "plot_received": "req-abc-123",
+        "forwarded_to_isl": "req-abc-123",
+        "isl_echoed": "req-abc-123",
+        "all_match": true
+      }
+    },
+    "response_hash": "sha256:abcdef1234567890",
+    "computed_at": "2026-02-10T10:00:00Z",
+    "processing_time_ms": 1250
+  }
+}
