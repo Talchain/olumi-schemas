@@ -1,7 +1,45 @@
+// Individual constant exports (used by adapters that import specific values)
+export const MAX_NODES = 50;
+export const MAX_EDGES = 100;
+export const MAX_OPTIONS = 10;
+export const MAX_CONSTRAINTS = 20;
+
+/** Minimum standard deviation to avoid ISL validation errors. */
+export const STD_FLOOR = 0.001;
+
+/** Maximum standard deviation as a ratio of value. */
+export const STD_CEILING_RATIO = 0.5;
+
+/** Absolute maximum standard deviation for extreme values. */
+export const STD_CEILING_ABS = 10000;
+
+/** Default standard deviation when not provided. */
+export const DEFAULT_STD = 0.1;
+
+/** Canonical default for missing exists_probability — matches PLoT repair code. */
+export const DEFAULT_EXISTS_PROBABILITY = 0.8;
+
+/** Edge strength bounds (CEE-valid range). */
+export const STRENGTH_BOUNDS = {
+  min: -1.0,
+  max: 1.0,
+} as const;
+
+/** Default seed value for reproducibility. */
+export const DEFAULT_SEED = '42';
+
 export const LIMITS = {
-  MAX_NODES: 50,
-  MAX_EDGES: 100,
-  MAX_OPTIONS: 10,
+  MAX_NODES,
+  MAX_EDGES,
+  MAX_OPTIONS,
+  MAX_CONSTRAINTS,
+  STD_FLOOR,
+  STD_CEILING_RATIO,
+  STD_CEILING_ABS,
+  DEFAULT_STD,
+  DEFAULT_EXISTS_PROBABILITY,
+  STRENGTH_BOUNDS,
+  DEFAULT_SEED,
 } as const;
 
 export interface LimitViolation {

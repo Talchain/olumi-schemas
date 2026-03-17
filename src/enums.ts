@@ -1,3 +1,3 @@
-export { NodeKind, FactorCategory } from './graph';
-export { ProductReadiness, SeedSource, DetailLevel } from './analysis';
-export { RepairLayer } from './repairs';
+export { NodeKind, FactorCategory } from './graph.js';
+export { ProductReadiness, SeedSource, DetailLevel } from './analysis.js';
+export { RepairLayer } from './repairs.js';

@@ -17,6 +17,16 @@ export const ObservedStateSchema = z.object({
   source: z.string().optional(),
 }).passthrough();
 
+export type ObservedStateType = z.infer<typeof ObservedStateSchema>;
+
+export const PriorSchema = z.object({
+  distribution: z.string(),
+  range_min: z.number(),
+  range_max: z.number(),
+}).passthrough();
+
+export type PriorType = z.infer<typeof PriorSchema>;
+
 export const StateSpaceSchema = z.object({
   range: z.object({
     min: z.number(),
@@ -42,12 +52,15 @@ export const StrengthSchema = z.object({
   std: z.number().positive(),
 });
 
+export const EffectDirection = z.enum(['positive', 'negative', 'unknown']);
+export type EffectDirectionType = z.infer<typeof EffectDirection>;
+
 export const EdgeV3Schema = z.object({
   from: z.string().min(1).max(100),
   to: z.string().min(1).max(100),
   strength: StrengthSchema,
   exists_probability: z.number().min(0).max(1),
-  effect_direction: z.enum(['positive', 'negative', 'unknown']).optional(),
+  effect_direction: EffectDirection.optional(),
   label: z.string().optional(),
 }).passthrough();
 

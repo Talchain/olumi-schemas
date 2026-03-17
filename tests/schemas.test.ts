@@ -48,7 +48,40 @@ import {
   RepairEntrySchema,
   // Limits
   LIMITS,
+  MAX_NODES,
+  MAX_EDGES,
+  MAX_OPTIONS,
+  MAX_CONSTRAINTS,
+  STD_FLOOR,
+  STD_CEILING_RATIO,
+  STD_CEILING_ABS,
+  DEFAULT_STD,
+  DEFAULT_EXISTS_PROBABILITY,
+  STRENGTH_BOUNDS,
+  DEFAULT_SEED,
   validateGraphLimits,
+  // New v0.2.0 exports
+  ConfidenceLevel,
+  EffectDirection,
+  CIL_THRESHOLDS,
+  SensitivityDirection,
+  FactorSensitivitySchema,
+  FragileEdgeSchema,
+  isFactorSensitivity,
+  isFragileEdge,
+  isFullyReady,
+} from '../src';
+import type {
+  ValidationBlocker,
+  ValidationResult,
+  PlotRequestIdChain,
+  ObservedStateType,
+  PriorType,
+  EffectDirectionType,
+  ConfidenceLevelType,
+  SensitivityDirectionType,
+  FactorSensitivity,
+  FragileEdge,
 } from '../src';
 
 // Fixtures
@@ -1056,5 +1089,208 @@ describe('Fixture: partial.json', () => {
     for (const node of partial.graph.nodes) {
       expect(() => NodeV3Schema.parse(node)).not.toThrow();
     }
+  });
+});
+
+// ──────────────────────────────────────────────────
+// v0.2.0 — New Exports
+// ──────────────────────────────────────────────────
+
+describe('New constants (v0.2.0)', () => {
+  it('individual limit constants match LIMITS object', () => {
+    expect(MAX_NODES).toBe(LIMITS.MAX_NODES);
+    expect(MAX_EDGES).toBe(LIMITS.MAX_EDGES);
+    expect(MAX_OPTIONS).toBe(LIMITS.MAX_OPTIONS);
+    expect(MAX_CONSTRAINTS).toBe(LIMITS.MAX_CONSTRAINTS);
+    expect(STD_FLOOR).toBe(LIMITS.STD_FLOOR);
+    expect(STD_CEILING_RATIO).toBe(LIMITS.STD_CEILING_RATIO);
+    expect(STD_CEILING_ABS).toBe(LIMITS.STD_CEILING_ABS);
+    expect(DEFAULT_STD).toBe(LIMITS.DEFAULT_STD);
+    expect(DEFAULT_EXISTS_PROBABILITY).toBe(LIMITS.DEFAULT_EXISTS_PROBABILITY);
+    expect(STRENGTH_BOUNDS).toBe(LIMITS.STRENGTH_BOUNDS);
+    expect(DEFAULT_SEED).toBe(LIMITS.DEFAULT_SEED);
+  });
+
+  it('MAX_CONSTRAINTS is 20', () => {
+    expect(MAX_CONSTRAINTS).toBe(20);
+  });
+
+  it('STD_FLOOR is 0.001', () => {
+    expect(STD_FLOOR).toBe(0.001);
+  });
+
+  it('DEFAULT_EXISTS_PROBABILITY is 0.8', () => {
+    expect(DEFAULT_EXISTS_PROBABILITY).toBe(0.8);
+  });
+
+  it('DEFAULT_SEED is "42"', () => {
+    expect(DEFAULT_SEED).toBe('42');
+  });
+
+  it('STRENGTH_BOUNDS has min=-1 max=1', () => {
+    expect(STRENGTH_BOUNDS.min).toBe(-1.0);
+    expect(STRENGTH_BOUNDS.max).toBe(1.0);
+  });
+
+  it('CIL_THRESHOLDS has correct values', () => {
+    expect(CIL_THRESHOLDS.STRENGTH_DEFAULT_MEAN).toBe(0.5);
+    expect(CIL_THRESHOLDS.STRENGTH_DEFAULT_STD).toBe(0.125);
+    expect(CIL_THRESHOLDS.STRENGTH_DEFAULT_TOLERANCE).toBe(0.001);
+    expect(CIL_THRESHOLDS.DEFAULTED_PERCENTAGE_WARN).toBe(50);
+    expect(CIL_THRESHOLDS.REPAIR_WARN_THRESHOLD).toBe(5);
+  });
+});
+
+describe('EffectDirection', () => {
+  it('accepts positive, negative, unknown', () => {
+    expect(EffectDirection.parse('positive')).toBe('positive');
+    expect(EffectDirection.parse('negative')).toBe('negative');
+    expect(EffectDirection.parse('unknown')).toBe('unknown');
+  });
+
+  it('rejects invalid values', () => {
+    expect(() => EffectDirection.parse('up')).toThrow();
+  });
+});
+
+describe('ConfidenceLevel', () => {
+  it('accepts high, medium, low', () => {
+    expect(ConfidenceLevel.parse('high')).toBe('high');
+    expect(ConfidenceLevel.parse('medium')).toBe('medium');
+    expect(ConfidenceLevel.parse('low')).toBe('low');
+  });
+
+  it('rejects invalid values', () => {
+    expect(() => ConfidenceLevel.parse('very_high')).toThrow();
+  });
+});
+
+describe('FactorSensitivitySchema', () => {
+  const valid: FactorSensitivity = {
+    node_id: 'factor:price',
+    label: 'Price',
+    importance_score: 0.85,
+    sensitivity_score: 0.7,
+    elasticity: 1.2,
+    direction: 'positive',
+    importance_rank: 1,
+    confidence: 0.9,
+  };
+
+  it('parses a valid factor sensitivity', () => {
+    expect(FactorSensitivitySchema.parse(valid)).toMatchObject(valid);
+  });
+
+  it('isFactorSensitivity returns true for valid', () => {
+    expect(isFactorSensitivity(valid)).toBe(true);
+  });
+
+  it('isFactorSensitivity returns false for invalid', () => {
+    expect(isFactorSensitivity({ node_id: 'x' })).toBe(false);
+  });
+});
+
+describe('FragileEdgeSchema', () => {
+  const valid: FragileEdge = {
+    edge_id: 'price->revenue',
+    from_id: 'factor:price',
+    to_id: 'goal:revenue',
+    current_strength: 0.3,
+    threshold: 0.5,
+    impact_on_outcome: 0.15,
+  };
+
+  it('parses a valid fragile edge', () => {
+    expect(FragileEdgeSchema.parse(valid)).toMatchObject(valid);
+  });
+
+  it('isFragileEdge returns true for valid', () => {
+    expect(isFragileEdge(valid)).toBe(true);
+  });
+
+  it('isFragileEdge returns false for invalid', () => {
+    expect(isFragileEdge({ edge_id: 'x' })).toBe(false);
+  });
+});
+
+describe('isFullyReady', () => {
+  it('returns true when status is ready and options exist', () => {
+    const ar = AnalysisReadyV3Schema.parse({
+      status: 'ready',
+      options: [{ id: 'opt1', label: 'A', status: 'ready', interventions: { x: 1 } }],
+    });
+    expect(isFullyReady(ar)).toBe(true);
+  });
+
+  it('returns false when status is needs_encoding', () => {
+    const ar = AnalysisReadyV3Schema.parse({
+      status: 'needs_encoding',
+      options: [{ id: 'opt1', label: 'A', status: 'ready', interventions: { x: 1 } }],
+    });
+    expect(isFullyReady(ar)).toBe(false);
+  });
+
+  it('returns false when options are empty', () => {
+    const ar = AnalysisReadyV3Schema.parse({
+      status: 'ready',
+      options: [],
+    });
+    expect(isFullyReady(ar)).toBe(false);
+  });
+});
+
+describe('Type exports compile correctly', () => {
+  it('ValidationBlocker type is usable', () => {
+    const blocker: ValidationBlocker = {
+      code: 'MISSING_GOAL',
+      message: 'No goal node',
+    };
+    expect(blocker.code).toBe('MISSING_GOAL');
+  });
+
+  it('ValidationResult type is usable', () => {
+    const result: ValidationResult = {
+      canRun: false,
+      blockers: [{ code: 'X', message: 'Y' }],
+      warnings: [],
+    };
+    expect(result.canRun).toBe(false);
+  });
+
+  it('PlotRequestIdChain type is usable', () => {
+    const chain: PlotRequestIdChain = {
+      ui: 'abc',
+      plot: 'def',
+      isl: 'ghi',
+      isl_echoed: 'ghi',
+      all_match: true,
+      chain_complete: true,
+    };
+    expect(chain.all_match).toBe(true);
+  });
+
+  it('ObservedStateType is inferrable from schema', () => {
+    const os: ObservedStateType = ObservedStateSchema.parse({ value: 42 });
+    expect(os.value).toBe(42);
+  });
+
+  it('PriorType is inferrable from schema', () => {
+    const p: PriorType = { distribution: 'normal', range_min: 0, range_max: 100 };
+    expect(p.distribution).toBe('normal');
+  });
+
+  it('EffectDirectionType works', () => {
+    const d: EffectDirectionType = 'positive';
+    expect(d).toBe('positive');
+  });
+
+  it('ConfidenceLevelType works', () => {
+    const c: ConfidenceLevelType = 'high';
+    expect(c).toBe('high');
+  });
+
+  it('SensitivityDirectionType works', () => {
+    const s: SensitivityDirectionType = 'positive';
+    expect(s).toBe('positive');
   });
 });

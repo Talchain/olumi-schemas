@@ -31,6 +31,20 @@ export const STRENGTH_DEFAULT_MIN_EDGES = 3;           // Minimum causal edges f
 export const EDGE_STRENGTH_LOW_THRESHOLD = 0.05;       // |mean| < 0.05
 export const EDGE_STRENGTH_NEGLIGIBLE_THRESHOLD = 0.1; // 0.05 ≤ |mean| < 0.1
 
+// Detection thresholds for CIL auditing
+export const CIL_THRESHOLDS = {
+  /** Default strength mean applied by UI display layer */
+  STRENGTH_DEFAULT_MEAN: 0.5,
+  /** Default strength std computed for display default */
+  STRENGTH_DEFAULT_STD: 0.125,
+  /** Tolerance for float comparison when detecting defaults */
+  STRENGTH_DEFAULT_TOLERANCE: 0.001,
+  /** Percentage of defaulted edges that triggers a warning */
+  DEFAULTED_PERCENTAGE_WARN: 50,
+  /** Number of repair warnings that triggers section fail */
+  REPAIR_WARN_THRESHOLD: 5,
+} as const;
+
 // Typed detail schemas for core warnings — prevents "details is a bag of unknown"
 export const StrengthDefaultAppliedDetailsSchema = z.object({
   total_edges: z.number(),

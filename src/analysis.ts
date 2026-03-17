@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const ProductReadiness = z.enum(['ready', 'needs_encoding', 'needs_user_mapping']);
 export const SeedSource = z.enum(['client_generated', 'server_generated']);
 export const DetailLevel = z.enum(['quick', 'standard', 'deep']);
+export const ConfidenceLevel = z.enum(['high', 'medium', 'low']);
+export type ConfidenceLevelType = z.infer<typeof ConfidenceLevel>;
 
 export const OptionForAnalysisSchema = z.object({
   id: z.string(),
@@ -55,3 +57,10 @@ export type AnalysisReadyV3 = z.infer<typeof AnalysisReadyV3Schema>;
 export type ResponseMeta = z.infer<typeof ResponseMetaSchema>;
 export type AnalysisRequestIdChain = z.infer<typeof AnalysisRequestIdChainSchema>;
 export type DraftGraphTrace = z.infer<typeof DraftGraphTraceSchema>;
+
+/**
+ * Check if analysis is fully ready (status === 'ready' and has options).
+ */
+export function isFullyReady(analysisReady: AnalysisReadyV3): boolean {
+  return analysisReady.status === 'ready' && analysisReady.options.length > 0;
+}

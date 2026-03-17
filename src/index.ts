@@ -4,46 +4,55 @@ export {
   NodeKind,
   FactorCategory,
   ObservedStateSchema,
+  PriorSchema,
   StateSpaceSchema,
   NodeV3Schema,
   StrengthSchema,
+  EffectDirection,
   EdgeV3Schema,
   GraphV3Schema,
-} from './graph';
+} from './graph.js';
 export type {
   NodeV3,
   EdgeV3,
   GraphV3,
   NodeKindType,
   FactorCategoryType,
-} from './graph';
+  ObservedStateType,
+  PriorType,
+  EffectDirectionType,
+} from './graph.js';
 
 // Analysis schemas
 export {
   ProductReadiness,
   SeedSource,
   DetailLevel,
+  ConfidenceLevel,
   OptionForAnalysisSchema,
   AnalysisReadyV3Schema,
   AnalysisRequestIdChainSchema,
   DraftGraphTraceSchema,
   ResponseMetaSchema,
-} from './analysis';
+  isFullyReady,
+} from './analysis.js';
 export type {
   ProductReadinessType,
   SeedSourceType,
+  ConfidenceLevelType,
   OptionForAnalysis,
   AnalysisReadyV3,
   ResponseMeta,
   AnalysisRequestIdChain,
   DraftGraphTrace,
-} from './analysis';
+} from './analysis.js';
 
 // CIL warnings and constants
 export {
   STRENGTH_DEFAULT_SIGNATURE,
   CIL_WARNING_CODES,
   CIL_WARNING_SEVERITY,
+  CIL_THRESHOLDS,
   STRENGTH_DEFAULT_THRESHOLD,
   STRENGTH_MEAN_DEFAULT_THRESHOLD,
   STRENGTH_DEFAULT_MIN_EDGES,
@@ -53,14 +62,14 @@ export {
   StrengthMeanDefaultDominantDetailsSchema,
   EdgeStrengthDetailsSchema,
   ValidationWarningSchema,
-} from './warnings';
+} from './warnings.js';
 export type {
   CILWarningCode,
   ValidationWarning,
   StrengthDefaultAppliedDetails,
   StrengthMeanDefaultDominantDetails,
   EdgeStrengthDetails,
-} from './warnings';
+} from './warnings.js';
 
 // CEE error contracts
 export {
@@ -69,41 +78,74 @@ export {
   CeeTimeoutErrorSchema,
   CeeBudgetErrorSchema,
   CeeUpstreamLlmErrorSchema,
-} from './cee-errors';
+} from './cee-errors.js';
 export type {
   CeeErrorCodeType,
   CeeTypedError,
-} from './cee-errors';
+} from './cee-errors.js';
 
 // PLoT BFF error envelopes
 export {
   PlotProxyTimeoutErrorSchema,
   PlotCeeUpstreamEnvelopeSchema,
-} from './plot-errors';
+} from './plot-errors.js';
 export type {
   PlotProxyTimeoutError,
   PlotCeeUpstreamEnvelope,
-} from './plot-errors';
+} from './plot-errors.js';
 
 // Repairs
 export {
   RepairLayer,
   REPAIR_CODES,
   RepairEntrySchema,
-} from './repairs';
+} from './repairs.js';
 export type {
   RepairCode,
   RepairEntry,
-} from './repairs';
+} from './repairs.js';
 
-// Limits
+// Limits and constants
 export {
   LIMITS,
+  MAX_NODES,
+  MAX_EDGES,
+  MAX_OPTIONS,
+  MAX_CONSTRAINTS,
+  STD_FLOOR,
+  STD_CEILING_RATIO,
+  STD_CEILING_ABS,
+  DEFAULT_STD,
+  DEFAULT_EXISTS_PROBABILITY,
+  STRENGTH_BOUNDS,
+  DEFAULT_SEED,
   validateGraphLimits,
-} from './limits';
+} from './limits.js';
 export type {
   LimitViolation,
-} from './limits';
+} from './limits.js';
 
-// Enum re-exports (convenience)
-export {} from './enums';
+// Validation types
+export type {
+  ValidationBlocker,
+  ValidationResult,
+} from './validation.js';
+
+// Response schemas (sensitivity, fragile edges)
+export {
+  SensitivityDirection,
+  FactorSensitivitySchema,
+  FragileEdgeSchema,
+  isFactorSensitivity,
+  isFragileEdge,
+} from './responses.js';
+export type {
+  SensitivityDirectionType,
+  FactorSensitivity,
+  FragileEdge,
+} from './responses.js';
+
+// Request chain types
+export type {
+  PlotRequestIdChain,
+} from './request-chain.js';

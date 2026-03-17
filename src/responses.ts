@@ -1,0 +1,49 @@
+import { z } from 'zod';
+
+/**
+ * Effect direction for sensitivity analysis.
+ */
+export const SensitivityDirection = z.enum(['positive', 'negative']);
+export type SensitivityDirectionType = z.infer<typeof SensitivityDirection>;
+
+/**
+ * Factor sensitivity analysis result.
+ */
+export const FactorSensitivitySchema = z.object({
+  node_id: z.string(),
+  label: z.string(),
+  importance_score: z.number().min(0).max(1),
+  sensitivity_score: z.number().min(0).max(1),
+  elasticity: z.number(),
+  direction: SensitivityDirection,
+  importance_rank: z.number().int().positive(),
+  confidence: z.number().min(0).max(1).optional(),
+  confidence_components: z.object({
+    structural_certainty: z.number(),
+    sampling_stability: z.number().nullable(),
+  }).optional(),
+}).passthrough();
+
+export type FactorSensitivity = z.infer<typeof FactorSensitivitySchema>;
+
+export function isFactorSensitivity(value: unknown): value is FactorSensitivity {
+  return FactorSensitivitySchema.safeParse(value).success;
+}
+
+/**
+ * Fragile edge analysis result.
+ */
+export const FragileEdgeSchema = z.object({
+  edge_id: z.string(),
+  from_id: z.string(),
+  to_id: z.string(),
+  current_strength: z.number(),
+  threshold: z.number(),
+  impact_on_outcome: z.number(),
+}).passthrough();
+
+export type FragileEdge = z.infer<typeof FragileEdgeSchema>;
+
+export function isFragileEdge(value: unknown): value is FragileEdge {
+  return FragileEdgeSchema.safeParse(value).success;
+}
