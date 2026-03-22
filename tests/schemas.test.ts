@@ -63,6 +63,7 @@ import {
   // New v0.2.0 exports
   ConfidenceLevel,
   EffectDirection,
+  EdgeType,
   CIL_THRESHOLDS,
   SensitivityDirection,
   FactorSensitivitySchema,
@@ -78,6 +79,7 @@ import type {
   ObservedStateType,
   PriorType,
   EffectDirectionType,
+  EdgeTypeType,
   ConfidenceLevelType,
   SensitivityDirectionType,
   FactorSensitivity,
@@ -306,6 +308,32 @@ describe('EdgeV3Schema', () => {
     };
     const parsed = EdgeV3Schema.parse(edge);
     expect((parsed as Record<string, unknown>).provenance).toEqual({ source: 'llm', confidence: 0.8 });
+  });
+
+  it('defaults edge_type to "directed" when omitted', () => {
+    const parsed = EdgeV3Schema.parse(validEdge);
+    expect(parsed.edge_type).toBe('directed');
+  });
+
+  it('defaults edge_type to "directed" when explicitly undefined', () => {
+    const parsed = EdgeV3Schema.parse({ ...validEdge, edge_type: undefined });
+    expect(parsed.edge_type).toBe('directed');
+  });
+
+  it('accepts edge_type "bidirected"', () => {
+    const parsed = EdgeV3Schema.parse({ ...validEdge, edge_type: 'bidirected' });
+    expect(parsed.edge_type).toBe('bidirected');
+  });
+
+  it('accepts edge_type "directed"', () => {
+    const parsed = EdgeV3Schema.parse({ ...validEdge, edge_type: 'directed' });
+    expect(parsed.edge_type).toBe('directed');
+  });
+
+  it('rejects invalid edge_type value', () => {
+    expect(() =>
+      EdgeV3Schema.parse({ ...validEdge, edge_type: 'undirected' }),
+    ).toThrow(ZodError);
   });
 });
 
@@ -1282,6 +1310,11 @@ describe('Type exports compile correctly', () => {
   it('EffectDirectionType works', () => {
     const d: EffectDirectionType = 'positive';
     expect(d).toBe('positive');
+  });
+
+  it('EdgeTypeType works', () => {
+    const t: EdgeTypeType = 'bidirected';
+    expect(t).toBe('bidirected');
   });
 
   it('ConfidenceLevelType works', () => {

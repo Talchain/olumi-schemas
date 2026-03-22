@@ -9,6 +9,7 @@ export {
   NodeV3Schema,
   StrengthSchema,
   EffectDirection,
+  EdgeType,
   EdgeV3Schema,
   GraphV3Schema,
 } from './graph.js';
@@ -21,6 +22,7 @@ export type {
   ObservedStateType,
   PriorType,
   EffectDirectionType,
+  EdgeTypeType,
 } from './graph.js';
 
 // Analysis schemas

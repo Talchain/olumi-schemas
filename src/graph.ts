@@ -55,12 +55,16 @@ export const StrengthSchema = z.object({
 export const EffectDirection = z.enum(['positive', 'negative', 'unknown']);
 export type EffectDirectionType = z.infer<typeof EffectDirection>;
 
+export const EdgeType = z.enum(['directed', 'bidirected']);
+export type EdgeTypeType = z.infer<typeof EdgeType>;
+
 export const EdgeV3Schema = z.object({
   from: z.string().min(1).max(100),
   to: z.string().min(1).max(100),
   strength: StrengthSchema,
   exists_probability: z.number().min(0).max(1),
   effect_direction: EffectDirection.optional(),
+  edge_type: EdgeType.optional().default('directed'),
   label: z.string().optional(),
 }).passthrough();
 
