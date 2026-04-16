@@ -1,6 +1,6 @@
 {
   "name": "@talchain/schemas",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Shared TypeScript schemas and runtime validation for Olumi services",
   "type": "module",
   "main": "dist/index.js",
@@ -9,6 +9,14 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./boundary": {
+      "import": "./dist/boundary/index.js",
+      "types": "./dist/boundary/index.d.ts"
+    },
+    "./orchestrator": {
+      "import": "./dist/orchestrator/index.js",
+      "types": "./dist/orchestrator/index.d.ts"
     }
   },
   "files": [
