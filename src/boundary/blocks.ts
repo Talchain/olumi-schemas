@@ -1,6 +1,19 @@
 import { z } from 'zod';
 import { BoundaryErrorCode } from './error-codes.js';
-import { ActionType, Severity } from './enums.js';
+import { Severity } from './enums.js';
+
+// Narrowed subset of ActionType for graph-edit operations. Used by the
+// GraphPatchBlock `operation` field so semantic-garbage constructions like
+// `GraphPatchBlock{ operation: 'run_analysis' }` fail at parse time.
+// Kept inline here because GraphPatchBlock is the only consumer; if a future
+// slice needs the same subset elsewhere, lift to /boundary/enums.ts.
+// Subset-ness relative to ActionType is verified by a runtime test in the
+// schemas test suite (drift guard).
+const GraphEditOperationSchema = z.enum([
+  'set_factor_value',
+  'add_constraint',
+  'adjust_edge_strength',
+]);
 
 // Text block — carries free-form assistant content.
 export const TextBlockSchema = z.object({
@@ -48,7 +61,7 @@ export type AnalysisResultBlock = z.infer<typeof AnalysisResultBlockSchema>;
 export const GraphPatchBlockSchema = z.object({
   type: z.literal('graph_patch'),
   status: z.enum(['applied', 'noop']),
-  operation: ActionType,
+  operation: GraphEditOperationSchema,
   target_id: z.string().min(1),
   before: z.record(z.string(), z.unknown()).nullable(),
   after: z.record(z.string(), z.unknown()).nullable(),

@@ -25,7 +25,13 @@ export type ConversationTurnClass = z.infer<typeof ConversationTurnClassSchema>;
 // Fields mirror the SQL shape. `handler_id` is the V5 action-type enum when
 // the turn invoked a handler; null otherwise (direct_answer / clarify /
 // unhandled).
-export const SessionTurnSchema = z.object({
+//
+// 0.5.1: enforces the biconditional `turn_class = 'handler' ⇔ handler_id IS
+// NOT NULL` via Zod refinement. Mirrored at the persistence layer by a SQL
+// CHECK constraint (see audit §4.5). Catches the semantic-garbage class of
+// bug where a non-handler turn cites a handler, or a handler turn lacks its
+// identifier — invariants the type system cannot express alone.
+const sessionTurnObject = z.object({
   id: z.string().uuid(),
   scenario_id: z.string().uuid(),
   user_id: z.string().uuid(),
@@ -38,6 +44,15 @@ export const SessionTurnSchema = z.object({
   duration_ms: z.number().int().nonnegative(),
   created_at: z.string().datetime({ offset: true }),
 }).strict();
+
+const handlerIdBiconditional = (
+  turn: { turn_class: ConversationTurnClass; handler_id: string | null },
+): boolean => (turn.turn_class === 'handler') === (turn.handler_id !== null);
+
+export const SessionTurnSchema = sessionTurnObject.refine(handlerIdBiconditional, {
+  message: "handler_id must be non-null iff turn_class='handler'",
+  path: ['handler_id'],
+});
 export type SessionTurn = z.infer<typeof SessionTurnSchema>;
 
 // SessionCacheEntrySchema — in-memory LRU tier row.
@@ -45,10 +60,18 @@ export type SessionTurn = z.infer<typeof SessionTurnSchema>;
 // Mirrors SessionTurn plus a `stale` flag that invalidation sets when the
 // underlying graph or analysis state moved. Cache is derivative of Supabase;
 // on disagreement Supabase wins (locked decision 1 in plan rev 2 §Tranche 2).
-export const SessionCacheEntrySchema = SessionTurnSchema.extend({
+//
+// Applies the same biconditional refinement as SessionTurnSchema — cache
+// entries must not encode impossible states either.
+const sessionCacheEntryObject = sessionTurnObject.extend({
   stale: z.boolean(),
   stale_reason: z.string().nullable(),
 }).strict();
+
+export const SessionCacheEntrySchema = sessionCacheEntryObject.refine(handlerIdBiconditional, {
+  message: "handler_id must be non-null iff turn_class='handler'",
+  path: ['handler_id'],
+});
 export type SessionCacheEntry = z.infer<typeof SessionCacheEntrySchema>;
 
 // GraphInvalidationSchema — describes why cache entries are being invalidated

@@ -96,9 +96,10 @@ describe('SessionTurnSchema', () => {
     expect(parsed.handler_id).toBe('run_analysis');
   });
 
-  it('accepts all four ConversationTurnClass values', () => {
+  it('accepts all four ConversationTurnClass values (with biconditional-correct handler_id)', () => {
     for (const tc of ['direct_answer', 'clarify', 'handler', 'unhandled'] as const) {
-      const parsed = SessionTurnSchema.parse({ ...baseTurn, turn_class: tc });
+      const handler_id = tc === 'handler' ? ('run_analysis' as const) : null;
+      const parsed = SessionTurnSchema.parse({ ...baseTurn, turn_class: tc, handler_id });
       expect(parsed.turn_class).toBe(tc);
     }
   });
@@ -529,6 +530,259 @@ describe('Handler-result block schemas (boundary)', () => {
         expect(BlockSchema.parse({ type: t, narrative: 'x', flip_scenarios: [] })).toBeTruthy();
       }
     }
+  });
+});
+
+// ----------------------------------------------------------------------------
+// 0.5.1 — negative contract tests (P1-1 biconditional, P1-2 operation narrowing,
+// P1-3 constraint cross-field). Proves each refinement actually rejects the
+// class of bug it was introduced for, not just passes lint.
+// ----------------------------------------------------------------------------
+
+describe('SessionTurnSchema biconditional (0.5.1)', () => {
+  const baseTurn = {
+    id: VALID_UUID_A,
+    scenario_id: VALID_UUID_B,
+    user_id: VALID_UUID_C,
+    turn_id: 'req-xyz',
+    request_hash: 'sha256:x',
+    response_emitted: true,
+    llm_calls_used: 0,
+    duration_ms: 100,
+    created_at: '2026-04-17T10:00:00.000Z',
+  };
+
+  it('rejects non-handler turn with a handler_id (direct_answer + handler_id set)', () => {
+    expect(() =>
+      SessionTurnSchema.parse({
+        ...baseTurn,
+        turn_class: 'direct_answer',
+        handler_id: 'run_analysis',
+      }),
+    ).toThrow(/handler_id/);
+  });
+
+  it('rejects handler turn without handler_id', () => {
+    expect(() =>
+      SessionTurnSchema.parse({
+        ...baseTurn,
+        turn_class: 'handler',
+        handler_id: null,
+      }),
+    ).toThrow(/handler_id/);
+  });
+
+  it('rejects clarify turn with handler_id set', () => {
+    expect(() =>
+      SessionTurnSchema.parse({
+        ...baseTurn,
+        turn_class: 'clarify',
+        handler_id: 'set_factor_value',
+      }),
+    ).toThrow();
+  });
+
+  it('rejects unhandled turn with handler_id set', () => {
+    expect(() =>
+      SessionTurnSchema.parse({
+        ...baseTurn,
+        turn_class: 'unhandled',
+        handler_id: 'run_analysis',
+      }),
+    ).toThrow();
+  });
+
+  it('accepts a handler turn with a matching handler_id', () => {
+    const parsed = SessionTurnSchema.parse({
+      ...baseTurn,
+      turn_class: 'handler',
+      handler_id: 'run_analysis',
+    });
+    expect(parsed.handler_id).toBe('run_analysis');
+  });
+});
+
+describe('SessionCacheEntrySchema biconditional (0.5.1)', () => {
+  const baseEntry = {
+    id: VALID_UUID_A,
+    scenario_id: VALID_UUID_B,
+    user_id: VALID_UUID_C,
+    turn_id: 'req-xyz',
+    request_hash: 'sha256:y',
+    response_emitted: true,
+    llm_calls_used: 0,
+    duration_ms: 100,
+    created_at: '2026-04-17T10:00:00.000Z',
+    stale: false,
+    stale_reason: null,
+  };
+
+  it('rejects non-handler cache entry with handler_id set', () => {
+    expect(() =>
+      SessionCacheEntrySchema.parse({
+        ...baseEntry,
+        turn_class: 'direct_answer',
+        handler_id: 'run_analysis',
+      }),
+    ).toThrow(/handler_id/);
+  });
+
+  it('rejects handler cache entry without handler_id', () => {
+    expect(() =>
+      SessionCacheEntrySchema.parse({
+        ...baseEntry,
+        turn_class: 'handler',
+        handler_id: null,
+      }),
+    ).toThrow(/handler_id/);
+  });
+});
+
+describe('GraphPatchBlock operation narrowing (0.5.1, P1-2)', () => {
+  const validPatch = {
+    type: 'graph_patch' as const,
+    status: 'applied' as const,
+    target_id: 'f1',
+    before: { value: 3 },
+    after: { value: 5 },
+  };
+
+  it('rejects non-graph-edit operations (run_analysis)', () => {
+    expect(() =>
+      GraphPatchBlockSchema.parse({ ...validPatch, operation: 'run_analysis' }),
+    ).toThrow();
+    expect(() =>
+      BlockSchema.parse({ ...validPatch, operation: 'run_analysis' }),
+    ).toThrow();
+  });
+
+  it('rejects read-family operations (explain_result, compare_options, what_would_flip)', () => {
+    for (const op of ['explain_result', 'compare_options', 'what_would_flip'] as const) {
+      expect(() =>
+        GraphPatchBlockSchema.parse({ ...validPatch, operation: op }),
+      ).toThrow();
+    }
+  });
+
+  it('accepts each of the three graph-edit operations', () => {
+    for (const op of ['set_factor_value', 'add_constraint', 'adjust_edge_strength'] as const) {
+      const parsed = GraphPatchBlockSchema.parse({ ...validPatch, operation: op });
+      expect(parsed.operation).toBe(op);
+    }
+  });
+
+  it('subset guard: every GraphPatch operation is a valid ActionType', () => {
+    // Drift detector: if someone adds a literal to the narrow enum that is
+    // NOT an ActionType, this test fails and forces the reviewer to either
+    // (a) extend ActionType or (b) drop the rogue value.
+    const narrow = ['set_factor_value', 'add_constraint', 'adjust_edge_strength'] as const;
+    const wide = ActionType.options;
+    for (const lit of narrow) {
+      expect(wide).toContain(lit);
+    }
+  });
+});
+
+describe('AddConstraintArgsSchema cross-field (0.5.1, P1-3)', () => {
+  const base = { scenario_id: VALID_UUID_A, factor_id: 'f1' };
+
+  it("accepts range with both bounds", () => {
+    expect(
+      AddConstraintArgsSchema.parse({
+        ...base,
+        constraint_kind: 'range',
+        lower: 0,
+        upper: 1,
+      }),
+    ).toBeTruthy();
+  });
+
+  it("rejects range with null lower", () => {
+    expect(() =>
+      AddConstraintArgsSchema.parse({
+        ...base,
+        constraint_kind: 'range',
+        lower: null,
+        upper: 1,
+      }),
+    ).toThrow(/lower/);
+  });
+
+  it("rejects range with null upper", () => {
+    expect(() =>
+      AddConstraintArgsSchema.parse({
+        ...base,
+        constraint_kind: 'range',
+        lower: 0,
+        upper: null,
+      }),
+    ).toThrow(/upper/);
+  });
+
+  it("accepts lower_bound with lower only", () => {
+    expect(
+      AddConstraintArgsSchema.parse({
+        ...base,
+        constraint_kind: 'lower_bound',
+        lower: 0,
+        upper: null,
+      }),
+    ).toBeTruthy();
+  });
+
+  it("rejects lower_bound with null lower", () => {
+    expect(() =>
+      AddConstraintArgsSchema.parse({
+        ...base,
+        constraint_kind: 'lower_bound',
+        lower: null,
+        upper: null,
+      }),
+    ).toThrow(/lower/);
+  });
+
+  it("rejects lower_bound with non-null upper (contradiction)", () => {
+    expect(() =>
+      AddConstraintArgsSchema.parse({
+        ...base,
+        constraint_kind: 'lower_bound',
+        lower: 0,
+        upper: 1,
+      }),
+    ).toThrow(/upper/);
+  });
+
+  it("accepts upper_bound with upper only", () => {
+    expect(
+      AddConstraintArgsSchema.parse({
+        ...base,
+        constraint_kind: 'upper_bound',
+        lower: null,
+        upper: 1,
+      }),
+    ).toBeTruthy();
+  });
+
+  it("rejects upper_bound with null upper", () => {
+    expect(() =>
+      AddConstraintArgsSchema.parse({
+        ...base,
+        constraint_kind: 'upper_bound',
+        lower: null,
+        upper: null,
+      }),
+    ).toThrow(/upper/);
+  });
+
+  it("rejects upper_bound with non-null lower (contradiction)", () => {
+    expect(() =>
+      AddConstraintArgsSchema.parse({
+        ...base,
+        constraint_kind: 'upper_bound',
+        lower: 0,
+        upper: 1,
+      }),
+    ).toThrow(/lower/);
   });
 });
 

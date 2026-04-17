@@ -44,13 +44,69 @@ export const SetFactorValueArgsSchema = z.object({
 }).strict();
 export type SetFactorValueArgs = z.infer<typeof SetFactorValueArgsSchema>;
 
+// 0.5.1 cross-field validation: the `constraint_kind` discriminates which
+// bounds are required. `range` needs both; `lower_bound` needs only lower
+// and forbids upper; `upper_bound` is the mirror. Impossible combinations
+// (e.g. `range` with a null bound, `lower_bound` with a non-null upper) are
+// rejected at dispatch before a handler ever runs.
 export const AddConstraintArgsSchema = z.object({
   scenario_id: z.string().uuid(),
   factor_id: z.string().min(1),
   constraint_kind: z.enum(['lower_bound', 'upper_bound', 'range']),
   lower: z.number().nullable(),
   upper: z.number().nullable(),
-}).strict();
+}).strict().superRefine((args, ctx) => {
+  switch (args.constraint_kind) {
+    case 'range':
+      if (args.lower === null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['lower'],
+          message: "constraint_kind='range' requires lower to be non-null",
+        });
+      }
+      if (args.upper === null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['upper'],
+          message: "constraint_kind='range' requires upper to be non-null",
+        });
+      }
+      break;
+    case 'lower_bound':
+      if (args.lower === null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['lower'],
+          message: "constraint_kind='lower_bound' requires lower to be non-null",
+        });
+      }
+      if (args.upper !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['upper'],
+          message: "constraint_kind='lower_bound' forbids upper (must be null)",
+        });
+      }
+      break;
+    case 'upper_bound':
+      if (args.upper === null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['upper'],
+          message: "constraint_kind='upper_bound' requires upper to be non-null",
+        });
+      }
+      if (args.lower !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['lower'],
+          message: "constraint_kind='upper_bound' forbids lower (must be null)",
+        });
+      }
+      break;
+  }
+});
 export type AddConstraintArgs = z.infer<typeof AddConstraintArgsSchema>;
 
 export const AdjustEdgeStrengthArgsSchema = z.object({
