@@ -41,3 +41,18 @@ export const FeatureStatus = z.enum([
   'degraded',
 ]);
 export type FeatureStatusType = z.infer<typeof FeatureStatus>;
+
+// V5 handler action types. Canonical V4 literals verified against
+// src/orchestrator/deterministic/actions/*.ts at phase-0 audit time.
+// Additive: new handler classes (coaching exercises, E-series) extend
+// this enum in future minor bumps without breaking A0/A1/A2 consumers.
+export const ActionType = z.enum([
+  'run_analysis',
+  'set_factor_value',
+  'add_constraint',
+  'adjust_edge_strength',
+  'explain_result',
+  'compare_options',
+  'what_would_flip',
+]);
+export type ActionTypeLiteral = z.infer<typeof ActionType>;

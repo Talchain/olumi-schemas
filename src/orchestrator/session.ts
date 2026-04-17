@@ -1,0 +1,82 @@
+import { z } from 'zod';
+import { V5ActionTypeSchema } from './action-types.js';
+
+// ConversationTurnClassSchema — the enum carried by the `conversation_turns`
+// table's `turn_class` column. Matches the DB-level CHECK constraint in the
+// phase-0 audit §4.5. Distinct from the boundary `TurnClass` enum, which
+// describes V5 stage-ish turn intent (frame/clarify/propose/decide/review).
+//
+// E-series may add 'exercise' or similar — kept additive at both SQL and
+// schema layers.
+export const ConversationTurnClassSchema = z.enum([
+  'direct_answer',
+  'clarify',
+  'handler',
+  'unhandled',
+]);
+export type ConversationTurnClass = z.infer<typeof ConversationTurnClassSchema>;
+
+// SessionTurnSchema — response/read-side representation of one conversation
+// turn row, aligned with the `conversation_turns` Postgres table declared in
+// the phase-0 Supabase audit. Written via the `append_turn_atomic` RPC; read
+// by the TurnContext builder via the in-memory cache or a direct Supabase
+// query on cache miss.
+//
+// Fields mirror the SQL shape. `handler_id` is the V5 action-type enum when
+// the turn invoked a handler; null otherwise (direct_answer / clarify /
+// unhandled).
+export const SessionTurnSchema = z.object({
+  id: z.string().uuid(),
+  scenario_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  turn_id: z.string().min(1),
+  turn_class: ConversationTurnClassSchema,
+  handler_id: V5ActionTypeSchema.nullable(),
+  request_hash: z.string().min(1),
+  response_emitted: z.boolean(),
+  llm_calls_used: z.number().int().nonnegative(),
+  duration_ms: z.number().int().nonnegative(),
+  created_at: z.string().datetime({ offset: true }),
+}).strict();
+export type SessionTurn = z.infer<typeof SessionTurnSchema>;
+
+// SessionCacheEntrySchema — in-memory LRU tier row.
+//
+// Mirrors SessionTurn plus a `stale` flag that invalidation sets when the
+// underlying graph or analysis state moved. Cache is derivative of Supabase;
+// on disagreement Supabase wins (locked decision 1 in plan rev 2 §Tranche 2).
+export const SessionCacheEntrySchema = SessionTurnSchema.extend({
+  stale: z.boolean(),
+  stale_reason: z.string().nullable(),
+}).strict();
+export type SessionCacheEntry = z.infer<typeof SessionCacheEntrySchema>;
+
+// GraphInvalidationSchema — describes why cache entries are being invalidated
+// and what scope the invalidation covers. Slice B implements invalidation
+// primitives; Slice C+ calls them.
+//
+// - `factor`: a graph edit touched factor {target_id}; entries that referenced
+//   that factor in their analysis state become stale.
+// - `structural`: a node or edge was added/removed; all analysis-related
+//   entries for the scenario become stale.
+// - `manual`: an operational override (e.g. user "start over"); everything
+//   for the scenario becomes stale.
+export const GraphInvalidationSchema = z.discriminatedUnion('scope', [
+  z.object({
+    scope: z.literal('factor'),
+    scenario_id: z.string().uuid(),
+    target_id: z.string().min(1),
+    reason: z.string().min(1),
+  }).strict(),
+  z.object({
+    scope: z.literal('structural'),
+    scenario_id: z.string().uuid(),
+    reason: z.string().min(1),
+  }).strict(),
+  z.object({
+    scope: z.literal('manual'),
+    scenario_id: z.string().uuid(),
+    reason: z.string().min(1),
+  }).strict(),
+]);
+export type GraphInvalidation = z.infer<typeof GraphInvalidationSchema>;

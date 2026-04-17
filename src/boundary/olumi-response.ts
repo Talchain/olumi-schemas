@@ -1,13 +1,18 @@
 import { z } from 'zod';
 import { BlockSchema } from './blocks.js';
-import { Stage } from './enums.js';
+import { ActionType, Stage } from './enums.js';
 
 // Wire-level suggested action. The richer ActionRecommendation lives in the
 // orchestrator namespace (A1+). Keep this minimal and additive.
+//
+// 0.5.0: optional `action_type` links the action to a V5 handler. Omitted in
+// A0/A1/A2 responses and on non-handler suggestions; old consumers ignore it
+// because .strict() only rejects UNKNOWN fields, not optional-missing ones.
 export const ActionSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   message: z.string().min(1),
+  action_type: ActionType.optional(),
 }).strict();
 export type Action = z.infer<typeof ActionSchema>;
 

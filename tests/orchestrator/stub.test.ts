@@ -10,13 +10,17 @@ import {
   HandlerFactSchema,
 } from '../../src/orchestrator/index.js';
 
-describe('@talchain/schemas/orchestrator (A1)', () => {
-  it('exports runtime schemas for the A1 surface', async () => {
+describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
+  it('exports runtime schemas for A1 + B/C/D1/D2 additions', async () => {
     const mod = await import('../../src/orchestrator/index.js');
     const exported = Object.keys(mod).sort();
     // Snapshot the exported surface so accidental additions/removals are visible.
+    // A1 surface (8) + 0.5.0 additions: V5 action alias (1), session (3),
+    // decision-context (2), handler args (7), handler results (7),
+    // handler-fact variants (7), union (1) = 36 total.
     expect(exported).toEqual(
       [
+        // A1
         'BudgetsSchema',
         'CapabilityFlagsSchema',
         'ConversationMessageSchema',
@@ -25,6 +29,40 @@ describe('@talchain/schemas/orchestrator (A1)', () => {
         'LLMAdapterRequestSchema',
         'LLMAdapterResponseSchema',
         'TurnContextSchema',
+        // 0.5.0 — action type alias
+        'V5ActionTypeSchema',
+        // 0.5.0 — session
+        'ConversationTurnClassSchema',
+        'SessionTurnSchema',
+        'SessionCacheEntrySchema',
+        'GraphInvalidationSchema',
+        // 0.5.0 — decision context
+        'DecisionContextSchema',
+        'EMPTY_DECISION_CONTEXT',
+        // 0.5.0 — handler args
+        'RunAnalysisArgsSchema',
+        'ExplainResultArgsSchema',
+        'CompareOptionsArgsSchema',
+        'WhatWouldFlipArgsSchema',
+        'SetFactorValueArgsSchema',
+        'AddConstraintArgsSchema',
+        'AdjustEdgeStrengthArgsSchema',
+        // 0.5.0 — handler results
+        'RunAnalysisResultSchema',
+        'ExplainResultResultSchema',
+        'CompareOptionsResultSchema',
+        'WhatWouldFlipResultSchema',
+        'SetFactorValueResultSchema',
+        'AddConstraintResultSchema',
+        'AdjustEdgeStrengthResultSchema',
+        // 0.5.0 — handler-fact variants
+        'RunAnalysisHandlerFactSchema',
+        'ExplainResultHandlerFactSchema',
+        'CompareOptionsHandlerFactSchema',
+        'WhatWouldFlipHandlerFactSchema',
+        'SetFactorValueHandlerFactSchema',
+        'AddConstraintHandlerFactSchema',
+        'AdjustEdgeStrengthHandlerFactSchema',
       ].sort(),
     );
   });
@@ -217,12 +255,12 @@ describe('@talchain/schemas/orchestrator (A1)', () => {
     });
   });
 
-  describe('HandlerFact (empty union stub)', () => {
-    it('rejects every value in A1 (zero handlers)', () => {
-      // `z.never()` parses nothing. This is the correct "empty union" stub.
+  describe('HandlerFact (discriminated union, 0.5.0)', () => {
+    it('rejects values that do not carry a valid fact_type discriminator', () => {
       expect(() => HandlerFactSchema.parse({})).toThrow();
       expect(() => HandlerFactSchema.parse(null)).toThrow();
       expect(() => HandlerFactSchema.parse('anything')).toThrow();
+      expect(() => HandlerFactSchema.parse({ fact_type: 'not_a_real_handler' })).toThrow();
     });
   });
 });

@@ -8,6 +8,7 @@ export {
   Severity,
   RunResult,
   FeatureStatus,
+  ActionType,
 } from './enums.js';
 export type {
   TurnClassType,
@@ -15,6 +16,7 @@ export type {
   SeverityType,
   RunResultType,
   FeatureStatusType,
+  ActionTypeLiteral,
 } from './enums.js';
 
 // Error codes + user-visible outcome text (addendum §2.1.5)
@@ -36,12 +38,22 @@ export type { BoundaryError } from './errors.js';
 export {
   TextBlockSchema,
   ErrorBlockSchema,
+  AnalysisResultBlockSchema,
+  GraphPatchBlockSchema,
+  ExplanationBlockSchema,
+  ComparisonBlockSchema,
+  FlipAnalysisBlockSchema,
   BlockSchema,
   ChipSchema,
 } from './blocks.js';
 export type {
   TextBlock,
   ErrorBlock,
+  AnalysisResultBlock,
+  GraphPatchBlock,
+  ExplanationBlock,
+  ComparisonBlock,
+  FlipAnalysisBlock,
   Block,
   Chip,
 } from './blocks.js';
