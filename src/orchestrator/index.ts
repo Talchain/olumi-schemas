@@ -104,6 +104,16 @@ export type {
   AdjustEdgeStrengthResult,
 } from './handler-results.js';
 
+// Quantity extraction (CQE — V5 Layer 0, spec v3.2 §11.1)
+export {
+  ParameterOperatorSchema,
+  QuantityExtractionResultSchema,
+} from './quantity-extraction.js';
+export type {
+  ParameterOperator,
+  QuantityExtractionResult,
+} from './quantity-extraction.js';
+
 // HandlerFact discriminated union (widened from A1's z.never() stub)
 export {
   RunAnalysisHandlerFactSchema,
