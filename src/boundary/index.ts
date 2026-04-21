@@ -9,6 +9,8 @@ export {
   RunResult,
   FeatureStatus,
   ActionType,
+  SystemEventKind,
+  TurnSource,
 } from './enums.js';
 export type {
   TurnClassType,
@@ -17,6 +19,8 @@ export type {
   RunResultType,
   FeatureStatusType,
   ActionTypeLiteral,
+  SystemEventKindLiteral,
+  TurnSourceLiteral,
 } from './enums.js';
 
 // Error codes + user-visible outcome text (addendum §2.1.5)
@@ -58,9 +62,19 @@ export type {
   Chip,
 } from './blocks.js';
 
-// Turn payload (ingress to /orchestrate/v2/turn)
-export { OrchestratorTurnPayloadSchema } from './turn-payload.js';
-export type { OrchestratorTurnPayload } from './turn-payload.js';
+// Turn payload (ingress to /orchestrate/v2/turn) — v0.7.0 discriminated union
+export {
+  OrchestratorTurnPayloadSchema,
+  MessageTurnPayloadSchema,
+  SystemEventTurnPayloadSchema,
+  SystemEventSchema,
+} from './turn-payload.js';
+export type {
+  OrchestratorTurnPayload,
+  MessageTurnPayload,
+  SystemEventTurnPayload,
+  SystemEvent,
+} from './turn-payload.js';
 
 // OlumiResponse (egress from /orchestrate/v2/turn)
 export {

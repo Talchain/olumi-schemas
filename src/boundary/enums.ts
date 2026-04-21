@@ -56,3 +56,27 @@ export const ActionType = z.enum([
   'what_would_flip',
 ]);
 export type ActionTypeLiteral = z.infer<typeof ActionType>;
+
+// v0.7.0 — UI-initiated system-event kinds. Distinct from user-typed messages:
+// they carry no free text and never add a user bubble. CEE V5 dispatches each
+// to a deterministic handler (no LLM). See Docs/v5/v5-turn-shape-matrix.md
+// in olumi-assistants-service for the authoritative handler coverage table.
+export const SystemEventKind = z.enum([
+  'patch_accepted',
+  'patch_dismissed',
+  'direct_graph_edit',
+  'chip_click',
+  'undo',
+  'redo',
+]);
+export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
+
+// v0.7.0 — Source of a `kind: 'message'` turn. Distinguishes composer-typed
+// text from chip clicks and retries so CEE can apply the right dispatch path.
+export const TurnSource = z.enum([
+  'composer',
+  'chip',
+  'chip_click',
+  'retry',
+]);
+export type TurnSourceLiteral = z.infer<typeof TurnSource>;
