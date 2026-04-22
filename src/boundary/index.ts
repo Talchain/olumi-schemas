@@ -47,6 +47,7 @@ export {
   ExplanationBlockSchema,
   ComparisonBlockSchema,
   FlipAnalysisBlockSchema,
+  DraftGraphBlockSchema,
   BlockSchema,
   ChipSchema,
 } from './blocks.js';
@@ -58,6 +59,7 @@ export type {
   ExplanationBlock,
   ComparisonBlock,
   FlipAnalysisBlock,
+  DraftGraphBlock,
   Block,
   Chip,
 } from './blocks.js';

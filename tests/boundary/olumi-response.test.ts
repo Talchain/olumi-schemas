@@ -4,6 +4,7 @@ import {
   BlockSchema,
   TextBlockSchema,
   ErrorBlockSchema,
+  DraftGraphBlockSchema,
   FAILURE_USER_TEXT,
   FailureType,
 } from '../../src/boundary/index.js';
@@ -78,5 +79,117 @@ describe('FailureType and user-visible text (addendum §2.1.5)', () => {
       expect(FAILURE_USER_TEXT[code]).toBeTruthy();
       expect(typeof FAILURE_USER_TEXT[code]).toBe('string');
     }
+  });
+});
+
+describe('OlumiResponse v0.8.0 — draft_graph field', () => {
+  const base = {
+    response_version: 2 as const,
+    assistant_text: 'Drafted a graph.',
+    blocks: [],
+    suggested_actions: [],
+    insights: [],
+    stage_indicator: 'analyse' as const,
+  };
+
+  it('accepts a response without draft_graph (field is optional)', () => {
+    expect(OlumiResponseSchema.parse(base)).toEqual(base);
+  });
+
+  it('accepts a response with a valid draft_graph block', () => {
+    const r = {
+      ...base,
+      draft_graph: { nodes: [{ id: 'n1' }], edges: [], node_count: 1, edge_count: 0 },
+    };
+    const parsed = OlumiResponseSchema.parse(r);
+    expect(parsed.draft_graph?.node_count).toBe(1);
+    expect(parsed.draft_graph?.edge_count).toBe(0);
+  });
+
+  it('rejects draft_graph with negative node_count', () => {
+    const r = {
+      ...base,
+      draft_graph: { nodes: [], edges: [], node_count: -1, edge_count: 0 },
+    };
+    expect(OlumiResponseSchema.safeParse(r).success).toBe(false);
+  });
+
+  it('rejects draft_graph with non-integer node_count', () => {
+    const r = {
+      ...base,
+      draft_graph: { nodes: [], edges: [], node_count: 1.5, edge_count: 0 },
+    };
+    expect(OlumiResponseSchema.safeParse(r).success).toBe(false);
+  });
+});
+
+describe('OlumiResponse v0.8.1 — analysis_ready field', () => {
+  const base = {
+    response_version: 2 as const,
+    assistant_text: 'Drafted a graph.',
+    blocks: [],
+    suggested_actions: [],
+    insights: [],
+    stage_indicator: 'analyse' as const,
+  };
+
+  const validAnalysisReady = {
+    status: 'ready',
+    options: [
+      { option_id: 'opt_a', label: 'Option A', status: 'ready', interventions: { fac_revenue: 0.8 } },
+    ],
+    goal_node_id: 'goal_revenue',
+  };
+
+  it('accepts a response without analysis_ready (field is optional)', () => {
+    expect(OlumiResponseSchema.parse(base)).toEqual(base);
+  });
+
+  it('accepts a response with valid analysis_ready', () => {
+    const r = { ...base, analysis_ready: validAnalysisReady };
+    const parsed = OlumiResponseSchema.parse(r);
+    expect(parsed.analysis_ready?.status).toBe('ready');
+    expect(parsed.analysis_ready?.goal_node_id).toBe('goal_revenue');
+    expect(Array.isArray(parsed.analysis_ready?.options)).toBe(true);
+  });
+
+  it('preserves extra fields via passthrough (forward-compat)', () => {
+    const r = { ...base, analysis_ready: { ...validAnalysisReady, bias_findings: [] } };
+    const parsed = OlumiResponseSchema.parse(r);
+    expect((parsed.analysis_ready as Record<string, unknown>)?.bias_findings).toEqual([]);
+  });
+
+  it('rejects analysis_ready missing status', () => {
+    const { status: _s, ...noStatus } = validAnalysisReady;
+    expect(OlumiResponseSchema.safeParse({ ...base, analysis_ready: noStatus }).success).toBe(false);
+  });
+
+  it('rejects analysis_ready missing goal_node_id', () => {
+    const { goal_node_id: _g, ...noGoal } = validAnalysisReady;
+    expect(OlumiResponseSchema.safeParse({ ...base, analysis_ready: noGoal }).success).toBe(false);
+  });
+
+  it('rejects analysis_ready missing options', () => {
+    const { options: _o, ...noOptions } = validAnalysisReady;
+    expect(OlumiResponseSchema.safeParse({ ...base, analysis_ready: noOptions }).success).toBe(false);
+  });
+});
+
+describe('DraftGraphBlockSchema', () => {
+  it('accepts a valid draft_graph block', () => {
+    const b = { type: 'draft_graph' as const, nodes: [], edges: [], node_count: 0, edge_count: 0 };
+    expect(DraftGraphBlockSchema.parse(b)).toEqual(b);
+  });
+
+  it('is accepted by the BlockSchema discriminated union', () => {
+    const b = { type: 'draft_graph' as const, nodes: [{ id: 'n1' }], edges: [], node_count: 1, edge_count: 0 };
+    expect(BlockSchema.parse(b)).toEqual(b);
+  });
+
+  it('rejects unknown fields (strict)', () => {
+    const r = DraftGraphBlockSchema.safeParse({
+      type: 'draft_graph', nodes: [], edges: [], node_count: 0, edge_count: 0, extra: true,
+    });
+    expect(r.success).toBe(false);
   });
 });

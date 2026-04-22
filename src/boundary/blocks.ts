@@ -109,8 +109,24 @@ export const FlipAnalysisBlockSchema = z.object({
 }).strict();
 export type FlipAnalysisBlock = z.infer<typeof FlipAnalysisBlockSchema>;
 
+// DraftGraphBlock — emitted by the draft_graph pre-Sonnet dispatcher (v0.8.0).
+// Carries the full initial graph inline so the UI can render it directly from
+// the response without a Supabase re-fetch. nodes/edges are permissive arrays
+// (z.unknown() elements) so CEE-format node/edge shapes pass without a
+// schema bump when node fields evolve. node_count/edge_count are authoritative
+// counts derived from the FINAL post-repair graph.
+export const DraftGraphBlockSchema = z.object({
+  type: z.literal('draft_graph'),
+  nodes: z.array(z.unknown()),
+  edges: z.array(z.unknown()),
+  node_count: z.number().int().min(0),
+  edge_count: z.number().int().min(0),
+}).strict();
+export type DraftGraphBlock = z.infer<typeof DraftGraphBlockSchema>;
+
 // Discriminated union. Additive — new block types land in A1+ without breaking.
 // 0.5.0: handler-result blocks joined the union.
+// 0.8.0: DraftGraphBlock added.
 export const BlockSchema = z.discriminatedUnion('type', [
   TextBlockSchema,
   ErrorBlockSchema,
@@ -119,6 +135,7 @@ export const BlockSchema = z.discriminatedUnion('type', [
   ExplanationBlockSchema,
   ComparisonBlockSchema,
   FlipAnalysisBlockSchema,
+  DraftGraphBlockSchema,
 ]);
 export type Block = z.infer<typeof BlockSchema>;
 
