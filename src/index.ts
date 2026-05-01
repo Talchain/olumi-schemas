@@ -28,6 +28,15 @@ export type {
 } from './graph.js';
 
 // Coaching schemas (v0.11.0 — first-class coaching contract)
+//
+// NAMING: New types in this contract surface (BiasType, BriefCompleteness,
+// StrengthenItemActionType, StrengthBand) use a single bare identifier
+// per the brief. Each is declared in source as both a runtime Zod schema
+// AND an inferred TS type under the same name (TypeScript's value/type
+// namespace separation). A single `export { BiasType }` re-export
+// publishes both meanings — no separate `export type` line is needed.
+// Earlier types in this package (NodeKindType, EffectDirectionType, ...)
+// kept the legacy `Type` suffix; new exports do not.
 export {
   BiasType,
   BiasSignalSchema,
@@ -37,12 +46,10 @@ export {
   StrengthenItemSchema,
   CoachingSchema,
 } from './coaching.js';
+// Only types that have no value-namespace counterpart need `export type`.
 export type {
-  BiasTypeT,
   BiasSignal,
-  BriefCompletenessT,
   WideningLog,
-  StrengthenItemActionTypeT,
   StrengthenItem,
   Coaching,
 } from './coaching.js';
@@ -58,7 +65,6 @@ export {
   CausalClaimsArraySchema,
 } from './causal-claims.js';
 export type {
-  StrengthBandT,
   CausalClaim,
   CausalClaimsArray,
 } from './causal-claims.js';

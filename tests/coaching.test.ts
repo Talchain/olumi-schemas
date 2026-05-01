@@ -13,12 +13,10 @@ import {
   TopologyPlanSchema,
 } from '../src/index.js';
 import type {
-  BiasTypeT,
   BiasSignal,
   WideningLog,
   StrengthenItem,
   Coaching,
-  StrengthBandT,
   CausalClaim,
   CausalClaimsArray,
   TopologyPlan,
@@ -37,8 +35,8 @@ describe('BiasType', () => {
     }
   });
 
-  it('infers as a string-literal union', () => {
-    const t: BiasTypeT = 'anchoring';
+  it('infers as a string-literal union (value+type identifier shared)', () => {
+    const t: BiasType = 'anchoring';
     expect(t).toBe('anchoring');
   });
 });
@@ -236,8 +234,8 @@ describe('StrengthBand', () => {
     expect(() => StrengthBand.parse('weak')).toThrow();
   });
 
-  it('infers as a string-literal union', () => {
-    const t: StrengthBandT = 'very_strong';
+  it('infers as a string-literal union (value+type identifier shared)', () => {
+    const t: StrengthBand = 'very_strong';
     expect(t).toBe('very_strong');
   });
 });

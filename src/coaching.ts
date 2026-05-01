@@ -6,7 +6,7 @@ export const BiasType = z.enum([
   'status_quo_bias',
   'overconfidence',
 ]);
-export type BiasTypeT = z.infer<typeof BiasType>;
+export type BiasType = z.infer<typeof BiasType>;
 
 export const BiasSignalSchema = z.object({
   type: BiasType,
@@ -15,7 +15,7 @@ export const BiasSignalSchema = z.object({
 export type BiasSignal = z.infer<typeof BiasSignalSchema>;
 
 export const BriefCompleteness = z.enum(['complete', 'partial', 'thin']);
-export type BriefCompletenessT = z.infer<typeof BriefCompleteness>;
+export type BriefCompleteness = z.infer<typeof BriefCompleteness>;
 
 export const WideningLogSchema = z.object({
   elements_added: z.array(z.string()),
@@ -30,7 +30,7 @@ export const StrengthenItemActionType = z.enum([
   'add_risk',
   'reframe_goal',
 ]);
-export type StrengthenItemActionTypeT = z.infer<typeof StrengthenItemActionType>;
+export type StrengthenItemActionType = z.infer<typeof StrengthenItemActionType>;
 
 export const StrengthenItemSchema = z.object({
   id: z.string(),

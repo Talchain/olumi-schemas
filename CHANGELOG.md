@@ -31,13 +31,17 @@ now visible to MC-25 boundary validation and locked against silent drift.
 
 ### Changed
 
-- `src/index.ts` re-exports the new schemas and types from the root entry point. No subpath export changes.
+- `src/index.ts` re-exports the new schemas and types from the root entry point.
+- `src/boundary/index.ts` (`@talchain/schemas/boundary` subpath) re-exports the same coaching, causal-claim, and topology-plan contracts, per Boundary Contract v1.1 §2.1 — these are cross-service types, so consumers should be able to import them from a single boundary namespace without falling back to the root entry.
+- `package.json` script ordering: `test` now builds first (`npm run build && vitest run`) so `tests/exports.test.ts` (which imports from `dist/`) does not race the build step. `prepublishOnly` reordered to `lint → build → test`. `.github/workflows/publish.yml` reordered to Lint → Build → Test for the same reason.
 
 ### Notes
 
+- **Naming convention**: New types in this contract surface (`BiasType`, `BriefCompleteness`, `StrengthenItemActionType`, `StrengthBand`) use a single bare identifier — the runtime Zod schema and the inferred TS type share the same name via TypeScript's value/type namespace separation. Earlier types in this package (`NodeKindType`, `EffectDirectionType`, ...) kept the legacy `Type` suffix; new exports do not.
 - `EdgeStatedStrength` (per-edge) is intentionally NOT declared. No production consumer.
 - `UnmeasuredConfounderClaim.stated_source` is intentionally dropped. Discovery confirmed zero consumer usage and zero fixture occurrences.
 - Schemas package is shape-only. CEE consumers add referential-integrity validators and an output-safety scanner separately.
+- **Tarball reproducibility**: `npm pack` / `pnpm pack` does not produce byte-deterministic output (mtime + install state leak in). Don't pin a sha256 in this repo's commit messages or CHANGELOG; the canonical sha for v0.11.0 is recorded in CEE's `vendor/talchain-schemas-0.11.0.tgz.sha256` at vendor time, against the exact tarball CEE consumes.
 
 ## [0.10.0] — 2026-04-25 (recovery commit landed 2026-05-01)
 

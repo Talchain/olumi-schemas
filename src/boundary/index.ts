@@ -137,6 +137,8 @@ export type {
 } from '../graph.js';
 
 // Coaching contract (v0.11.0 — per Boundary Contract v1.1 §2.1, MC-25)
+// Same value+type identifier convention as the root entry point — single
+// `export { Foo }` republishes both meanings when source declares both.
 export {
   BiasType,
   BiasSignalSchema,
@@ -147,11 +149,8 @@ export {
   CoachingSchema,
 } from '../coaching.js';
 export type {
-  BiasTypeT,
   BiasSignal,
-  BriefCompletenessT,
   WideningLog,
-  StrengthenItemActionTypeT,
   StrengthenItem,
   Coaching,
 } from '../coaching.js';
@@ -167,7 +166,6 @@ export {
   CausalClaimsArraySchema,
 } from '../causal-claims.js';
 export type {
-  StrengthBandT,
   CausalClaim,
   CausalClaimsArray,
 } from '../causal-claims.js';

@@ -6,7 +6,7 @@ export const StrengthBand = z.enum([
   'moderate',
   'slight',
 ]);
-export type StrengthBandT = z.infer<typeof StrengthBand>;
+export type StrengthBand = z.infer<typeof StrengthBand>;
 
 const nodeIdString = z.string().min(1);
 
