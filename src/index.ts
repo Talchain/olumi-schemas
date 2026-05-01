@@ -12,6 +12,7 @@ export {
   EdgeType,
   EdgeV3Schema,
   GraphV3Schema,
+  TopologyPlanSchema,
 } from './graph.js';
 export type {
   NodeV3,
@@ -23,7 +24,44 @@ export type {
   PriorType,
   EffectDirectionType,
   EdgeTypeType,
+  TopologyPlan,
 } from './graph.js';
+
+// Coaching schemas (v0.11.0 — first-class coaching contract)
+export {
+  BiasType,
+  BiasSignalSchema,
+  BriefCompleteness,
+  WideningLogSchema,
+  StrengthenItemActionType,
+  StrengthenItemSchema,
+  CoachingSchema,
+} from './coaching.js';
+export type {
+  BiasTypeT,
+  BiasSignal,
+  BriefCompletenessT,
+  WideningLog,
+  StrengthenItemActionTypeT,
+  StrengthenItem,
+  Coaching,
+} from './coaching.js';
+
+// Causal claims (v0.11.0 — first-class causal-claim contract)
+export {
+  StrengthBand,
+  DirectEffectClaimSchema,
+  MediationOnlyClaimSchema,
+  NoDirectEffectClaimSchema,
+  UnmeasuredConfounderClaimSchema,
+  CausalClaimSchema,
+  CausalClaimsArraySchema,
+} from './causal-claims.js';
+export type {
+  StrengthBandT,
+  CausalClaim,
+  CausalClaimsArray,
+} from './causal-claims.js';
 
 // Analysis schemas
 export {
