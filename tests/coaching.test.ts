@@ -139,14 +139,22 @@ describe('StrengthenItemSchema', () => {
 });
 
 describe('CoachingSchema', () => {
-  it('parses a minimal coaching object (no widening_log / bias_signals)', () => {
+  const emptyWideningLog = {
+    elements_added: [],
+    elements_considered_but_excluded: [],
+    brief_completeness: 'thin' as const,
+  };
+
+  it('parses a minimal coaching object with empty widening_log + bias_signals', () => {
     const c: Coaching = CoachingSchema.parse({
       summary: 'Acquisition undervalues integration risk.',
       strengthen_items: [],
+      widening_log: emptyWideningLog,
+      bias_signals: [],
     });
     expect(c.summary).toMatch(/Acquisition/);
-    expect(c.widening_log).toBeUndefined();
-    expect(c.bias_signals).toBeUndefined();
+    expect(c.widening_log.brief_completeness).toBe('thin');
+    expect(c.bias_signals).toEqual([]);
   });
 
   it('parses a fully populated coaching object', () => {
@@ -171,7 +179,7 @@ describe('CoachingSchema', () => {
       ],
     });
     expect(c.strengthen_items).toHaveLength(1);
-    expect(c.bias_signals?.[0].type).toBe('narrow_framing');
+    expect(c.bias_signals[0].type).toBe('narrow_framing');
   });
 
   it('rejects extra top-level fields (.strict)', () => {
@@ -179,13 +187,41 @@ describe('CoachingSchema', () => {
       CoachingSchema.parse({
         summary: 'x',
         strengthen_items: [],
+        widening_log: emptyWideningLog,
+        bias_signals: [],
         unexpected: 'field',
       }),
     ).toThrow();
   });
 
   it('rejects when summary is missing', () => {
-    expect(() => CoachingSchema.parse({ strengthen_items: [] })).toThrow();
+    expect(() =>
+      CoachingSchema.parse({
+        strengthen_items: [],
+        widening_log: emptyWideningLog,
+        bias_signals: [],
+      }),
+    ).toThrow();
+  });
+
+  it('rejects when widening_log is omitted (canonical contract requires it; CEE normaliser fills empty)', () => {
+    expect(() =>
+      CoachingSchema.parse({
+        summary: 'x',
+        strengthen_items: [],
+        bias_signals: [],
+      }),
+    ).toThrow();
+  });
+
+  it('rejects when bias_signals is omitted', () => {
+    expect(() =>
+      CoachingSchema.parse({
+        summary: 'x',
+        strengthen_items: [],
+        widening_log: emptyWideningLog,
+      }),
+    ).toThrow();
   });
 });
 

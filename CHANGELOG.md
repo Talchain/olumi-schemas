@@ -19,7 +19,7 @@ now visible to MC-25 boundary validation and locked against silent drift.
 - `WideningLogSchema` — `{ elements_added: string[], elements_considered_but_excluded: string[], brief_completeness: BriefCompleteness }`.
 - `StrengthenItemActionType` — enum: `add_option | add_constraint | add_risk | reframe_goal`.
 - `StrengthenItemSchema` — `{ id, label, detail, action_type, bias_category? }` with optional bias_category typed as `BiasType`.
-- `CoachingSchema` — `{ summary, strengthen_items, widening_log?, bias_signals? }`. Top-level coaching is required at the LLM structured-output boundary; widening_log and bias_signals are optional during transition.
+- `CoachingSchema` — `{ summary, strengthen_items, widening_log, bias_signals }`. **All four fields are required.** Empty arrays / empty `WideningLog` (`{ elements_added: [], elements_considered_but_excluded: [], brief_completeness: "thin" }`) are valid. Transitional permissiveness — accepting LLM responses that omit `widening_log` or `bias_signals` — lives in CEE's normaliser, not in this canonical contract.
 - `StrengthBand` — enum: `very_strong | strong | moderate | slight` (4-band; replaces the prior consumer-side 3-band `strong | moderate | weak`).
 - `CausalClaimSchema` — discriminated union on `type`:
   - `direct_effect`: `{ from, to, stated_strength: StrengthBand }`

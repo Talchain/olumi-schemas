@@ -44,7 +44,7 @@ export type StrengthenItem = z.infer<typeof StrengthenItemSchema>;
 export const CoachingSchema = z.object({
   summary: z.string(),
   strengthen_items: z.array(StrengthenItemSchema),
-  widening_log: WideningLogSchema.optional(),
-  bias_signals: z.array(BiasSignalSchema).optional(),
+  widening_log: WideningLogSchema,
+  bias_signals: z.array(BiasSignalSchema),
 }).strict();
 export type Coaching = z.infer<typeof CoachingSchema>;

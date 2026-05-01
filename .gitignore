@@ -4,3 +4,9 @@ coverage/
 *.log
 .DS_Store
 .env
+
+# Build artefacts and stray package-manager state. Cleanup of historic
+# orphan tarballs (talchain-schemas-0.3.0..0.10.0.tgz) is a follow-up
+# hygiene concern — the patterns below stop new ones leaking.
+*.tgz
+pnpm-lock.yaml

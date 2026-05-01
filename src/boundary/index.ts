@@ -125,6 +125,7 @@ export {
   NodeV3Schema,
   EdgeV3Schema,
   GraphV3Schema,
+  TopologyPlanSchema,
 } from '../graph.js';
 export type {
   NodeV3,
@@ -132,7 +133,44 @@ export type {
   GraphV3,
   NodeKindType,
   FactorCategoryType,
+  TopologyPlan,
 } from '../graph.js';
+
+// Coaching contract (v0.11.0 — per Boundary Contract v1.1 §2.1, MC-25)
+export {
+  BiasType,
+  BiasSignalSchema,
+  BriefCompleteness,
+  WideningLogSchema,
+  StrengthenItemActionType,
+  StrengthenItemSchema,
+  CoachingSchema,
+} from '../coaching.js';
+export type {
+  BiasTypeT,
+  BiasSignal,
+  BriefCompletenessT,
+  WideningLog,
+  StrengthenItemActionTypeT,
+  StrengthenItem,
+  Coaching,
+} from '../coaching.js';
+
+// Causal claims contract (v0.11.0)
+export {
+  StrengthBand,
+  DirectEffectClaimSchema,
+  MediationOnlyClaimSchema,
+  NoDirectEffectClaimSchema,
+  UnmeasuredConfounderClaimSchema,
+  CausalClaimSchema,
+  CausalClaimsArraySchema,
+} from '../causal-claims.js';
+export type {
+  StrengthBandT,
+  CausalClaim,
+  CausalClaimsArray,
+} from '../causal-claims.js';
 
 export {
   ProductReadiness,
