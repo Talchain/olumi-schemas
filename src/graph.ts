@@ -73,6 +73,9 @@ export const GraphV3Schema = z.object({
   edges: z.array(EdgeV3Schema),
 }).passthrough();
 
+export const TopologyPlanSchema = z.array(z.string());
+export type TopologyPlan = z.infer<typeof TopologyPlanSchema>;
+
 // Inferred types
 export type NodeV3 = z.infer<typeof NodeV3Schema>;
 export type EdgeV3 = z.infer<typeof EdgeV3Schema>;

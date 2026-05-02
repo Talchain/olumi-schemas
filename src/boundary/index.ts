@@ -9,6 +9,8 @@ export {
   RunResult,
   FeatureStatus,
   ActionType,
+  SystemEventKind,
+  TurnSource,
 } from './enums.js';
 export type {
   TurnClassType,
@@ -17,6 +19,8 @@ export type {
   RunResultType,
   FeatureStatusType,
   ActionTypeLiteral,
+  SystemEventKindLiteral,
+  TurnSourceLiteral,
 } from './enums.js';
 
 // Error codes + user-visible outcome text (addendum §2.1.5)
@@ -43,6 +47,7 @@ export {
   ExplanationBlockSchema,
   ComparisonBlockSchema,
   FlipAnalysisBlockSchema,
+  DraftGraphBlockSchema,
   BlockSchema,
   ChipSchema,
 } from './blocks.js';
@@ -54,13 +59,24 @@ export type {
   ExplanationBlock,
   ComparisonBlock,
   FlipAnalysisBlock,
+  DraftGraphBlock,
   Block,
   Chip,
 } from './blocks.js';
 
-// Turn payload (ingress to /orchestrate/v2/turn)
-export { OrchestratorTurnPayloadSchema } from './turn-payload.js';
-export type { OrchestratorTurnPayload } from './turn-payload.js';
+// Turn payload (ingress to /orchestrate/v2/turn) — v0.7.0 discriminated union
+export {
+  OrchestratorTurnPayloadSchema,
+  MessageTurnPayloadSchema,
+  SystemEventTurnPayloadSchema,
+  SystemEventSchema,
+} from './turn-payload.js';
+export type {
+  OrchestratorTurnPayload,
+  MessageTurnPayload,
+  SystemEventTurnPayload,
+  SystemEvent,
+} from './turn-payload.js';
 
 // OlumiResponse (egress from /orchestrate/v2/turn)
 export {
@@ -109,6 +125,7 @@ export {
   NodeV3Schema,
   EdgeV3Schema,
   GraphV3Schema,
+  TopologyPlanSchema,
 } from '../graph.js';
 export type {
   NodeV3,
@@ -116,7 +133,42 @@ export type {
   GraphV3,
   NodeKindType,
   FactorCategoryType,
+  TopologyPlan,
 } from '../graph.js';
+
+// Coaching contract (v0.11.0 — per Boundary Contract v1.1 §2.1, MC-25)
+// Same value+type identifier convention as the root entry point — single
+// `export { Foo }` republishes both meanings when source declares both.
+export {
+  BiasType,
+  BiasSignalSchema,
+  BriefCompleteness,
+  WideningLogSchema,
+  StrengthenItemActionType,
+  StrengthenItemSchema,
+  CoachingSchema,
+} from '../coaching.js';
+export type {
+  BiasSignal,
+  WideningLog,
+  StrengthenItem,
+  Coaching,
+} from '../coaching.js';
+
+// Causal claims contract (v0.11.0)
+export {
+  StrengthBand,
+  DirectEffectClaimSchema,
+  MediationOnlyClaimSchema,
+  NoDirectEffectClaimSchema,
+  UnmeasuredConfounderClaimSchema,
+  CausalClaimSchema,
+  CausalClaimsArraySchema,
+} from '../causal-claims.js';
+export type {
+  CausalClaim,
+  CausalClaimsArray,
+} from '../causal-claims.js';
 
 export {
   ProductReadiness,

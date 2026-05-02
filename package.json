@@ -1,6 +1,6 @@
 {
   "name": "@talchain/schemas",
-  "version": "0.5.1",
+  "version": "0.11.0",
   "description": "Shared TypeScript schemas and runtime validation for Olumi services",
   "type": "module",
   "main": "dist/index.js",
@@ -24,10 +24,10 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "vitest run",
+    "test": "npm run build && vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
-    "prepublishOnly": "npm run lint && npm run test && npm run build"
+    "prepublishOnly": "npm run lint && npm run build && npm run test"
   },
   "keywords": [
     "olumi",

@@ -42,6 +42,8 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         // 0.5.0 — handler args
         'RunAnalysisArgsSchema',
         'ExplainResultArgsSchema',
+        'ExplainResultsArgsSchema',
+        'ExplainFromStructureArgsSchema',
         'CompareOptionsArgsSchema',
         'WhatWouldFlipArgsSchema',
         'SetFactorValueArgsSchema',
@@ -50,14 +52,21 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         // 0.5.0 — handler results
         'RunAnalysisResultSchema',
         'ExplainResultResultSchema',
+        'ExplainResultsResultSchema',
+        'ExplainFromStructureResultSchema',
         'CompareOptionsResultSchema',
         'WhatWouldFlipResultSchema',
         'SetFactorValueResultSchema',
         'AddConstraintResultSchema',
         'AdjustEdgeStrengthResultSchema',
+        // V5 explain-stabilisation — diagnostic field enums (additive)
+        'ExplainAnswerSourceSchema',
+        'ExplainFallbackReasonSchema',
         // 0.5.0 — handler-fact variants
         'RunAnalysisHandlerFactSchema',
         'ExplainResultHandlerFactSchema',
+        'ExplainResultsHandlerFactSchema',
+        'ExplainFromStructureHandlerFactSchema',
         'CompareOptionsHandlerFactSchema',
         'WhatWouldFlipHandlerFactSchema',
         'SetFactorValueHandlerFactSchema',

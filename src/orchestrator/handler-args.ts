@@ -17,11 +17,20 @@ export const RunAnalysisArgsSchema = z.object({
 }).strict();
 export type RunAnalysisArgs = z.infer<typeof RunAnalysisArgsSchema>;
 
+/** @deprecated use `ExplainResultsArgsSchema`. Retained for historic compat. */
 export const ExplainResultArgsSchema = z.object({
   scenario_id: z.string().uuid(),
   focus_option_id: z.string().min(1).optional(),
 }).strict();
 export type ExplainResultArgs = z.infer<typeof ExplainResultArgsSchema>;
+
+// 0.9.0 — V5 no-op handlers carry no scenario-mutating args. Schemas remain
+// for dispatch-seam validation (parser accepts {} as a valid empty arg map).
+export const ExplainResultsArgsSchema = z.object({}).strict();
+export type ExplainResultsArgs = z.infer<typeof ExplainResultsArgsSchema>;
+
+export const ExplainFromStructureArgsSchema = z.object({}).strict();
+export type ExplainFromStructureArgs = z.infer<typeof ExplainFromStructureArgsSchema>;
 
 export const CompareOptionsArgsSchema = z.object({
   scenario_id: z.string().uuid(),

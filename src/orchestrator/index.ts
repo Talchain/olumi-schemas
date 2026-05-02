@@ -68,6 +68,8 @@ export type { DecisionContext } from './decision-context.js';
 export {
   RunAnalysisArgsSchema,
   ExplainResultArgsSchema,
+  ExplainResultsArgsSchema,
+  ExplainFromStructureArgsSchema,
   CompareOptionsArgsSchema,
   WhatWouldFlipArgsSchema,
   SetFactorValueArgsSchema,
@@ -77,6 +79,8 @@ export {
 export type {
   RunAnalysisArgs,
   ExplainResultArgs,
+  ExplainResultsArgs,
+  ExplainFromStructureArgs,
   CompareOptionsArgs,
   WhatWouldFlipArgs,
   SetFactorValueArgs,
@@ -88,26 +92,36 @@ export type {
 export {
   RunAnalysisResultSchema,
   ExplainResultResultSchema,
+  ExplainResultsResultSchema,
+  ExplainFromStructureResultSchema,
   CompareOptionsResultSchema,
   WhatWouldFlipResultSchema,
   SetFactorValueResultSchema,
   AddConstraintResultSchema,
   AdjustEdgeStrengthResultSchema,
+  ExplainAnswerSourceSchema,
+  ExplainFallbackReasonSchema,
 } from './handler-results.js';
 export type {
   RunAnalysisResult,
   ExplainResultResult,
+  ExplainResultsResult,
+  ExplainFromStructureResult,
   CompareOptionsResult,
   WhatWouldFlipResult,
   SetFactorValueResult,
   AddConstraintResult,
   AdjustEdgeStrengthResult,
+  ExplainAnswerSource,
+  ExplainFallbackReason,
 } from './handler-results.js';
 
 // HandlerFact discriminated union (widened from A1's z.never() stub)
 export {
   RunAnalysisHandlerFactSchema,
   ExplainResultHandlerFactSchema,
+  ExplainResultsHandlerFactSchema,
+  ExplainFromStructureHandlerFactSchema,
   CompareOptionsHandlerFactSchema,
   WhatWouldFlipHandlerFactSchema,
   SetFactorValueHandlerFactSchema,
@@ -118,6 +132,8 @@ export {
 export type {
   RunAnalysisHandlerFact,
   ExplainResultHandlerFact,
+  ExplainResultsHandlerFact,
+  ExplainFromStructureHandlerFact,
   CompareOptionsHandlerFact,
   WhatWouldFlipHandlerFact,
   SetFactorValueHandlerFact,

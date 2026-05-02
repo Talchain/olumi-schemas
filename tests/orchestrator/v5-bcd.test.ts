@@ -15,6 +15,8 @@ import {
   AdjustEdgeStrengthArgsSchema,
   RunAnalysisResultSchema,
   ExplainResultResultSchema,
+  ExplainResultsResultSchema,
+  ExplainFromStructureResultSchema,
   CompareOptionsResultSchema,
   WhatWouldFlipResultSchema,
   SetFactorValueResultSchema,
@@ -354,6 +356,8 @@ describe('Handler result schemas', () => {
 
   it('WhatWouldFlipResultSchema accepts empty flip_scenarios', () => {
     const parsed = WhatWouldFlipResultSchema.parse({
+      precondition_unmet: false,
+      option_count: 4,
       narrative: 'No fragile edges.',
       flip_scenarios: [],
     });
@@ -387,6 +391,100 @@ describe('Handler result schemas', () => {
         status: 'deferred',
         before: null,
         after: null,
+      }),
+    ).toThrow();
+  });
+
+  // V5 explain-stabilisation: the four diagnostic fields are additive +
+  // optional. Historic v1 rows without these fields must continue to parse
+  // cleanly. The fact_version stays at 1 — additive optional-only changes
+  // do not warrant a version bump.
+  it('ExplainResultsResultSchema parses a historic v1 row without diagnostic fields', () => {
+    const parsed = ExplainResultsResultSchema.parse({
+      precondition_unmet: false,
+      option_count: 4,
+    });
+    expect(parsed.answer_source).toBeUndefined();
+    expect(parsed.fallback_reason).toBeUndefined();
+    expect(parsed.answer_text_length).toBeUndefined();
+    expect(parsed.staleness_prefixed).toBeUndefined();
+  });
+
+  it('ExplainResultsResultSchema accepts populated diagnostics', () => {
+    const parsed = ExplainResultsResultSchema.parse({
+      precondition_unmet: false,
+      option_count: 4,
+      answer_source: 'sonnet',
+      fallback_reason: null,
+      answer_text_length: 482,
+      staleness_prefixed: true,
+    });
+    expect(parsed.answer_source).toBe('sonnet');
+    expect(parsed.fallback_reason).toBeNull();
+    expect(parsed.staleness_prefixed).toBe(true);
+  });
+
+  it('ExplainResultsResultSchema accepts each fallback_reason value', () => {
+    // Brief contract: missing | too_short | forbidden_internal_term |
+    // mutation_language | null. The validator's
+    // analysis_language_without_analysis_fact code is mapped to 'missing'
+    // by the handler-side translator.
+    for (const reason of [
+      'missing',
+      'too_short',
+      'forbidden_internal_term',
+      'mutation_language',
+    ] as const) {
+      const parsed = ExplainResultsResultSchema.parse({
+        precondition_unmet: false,
+        option_count: 0,
+        answer_source: 'deterministic_fallback',
+        fallback_reason: reason,
+      });
+      expect(parsed.fallback_reason).toBe(reason);
+    }
+  });
+
+  it('ExplainFromStructureResultSchema parses a historic v1 row without diagnostic fields', () => {
+    const parsed = ExplainFromStructureResultSchema.parse({ option_count: 0 });
+    expect(parsed.answer_source).toBeUndefined();
+    expect(parsed.fallback_reason).toBeUndefined();
+  });
+
+  it('ExplainFromStructureResultSchema rejects staleness_prefixed (exempt handler)', () => {
+    // The structure projection has no staleness_reason; the exemption is
+    // enforced by .strict() — extraneous fields are rejected.
+    expect(() =>
+      ExplainFromStructureResultSchema.parse({
+        option_count: 0,
+        staleness_prefixed: true,
+      }),
+    ).toThrow();
+  });
+
+  it('WhatWouldFlipResultSchema parses a 0.9.0-shape row without the new diagnostic fields', () => {
+    // Backwards-compat baseline for the V5 explain-stabilisation additive
+    // change: `answer_source`, `fallback_reason`, `answer_text_length`,
+    // `staleness_prefixed` are all optional, so a 0.9.0-era row that
+    // predates these fields parses cleanly.
+    const parsed = WhatWouldFlipResultSchema.parse({
+      precondition_unmet: false,
+      option_count: 4,
+    });
+    expect(parsed.answer_source).toBeUndefined();
+    expect(parsed.staleness_prefixed).toBeUndefined();
+  });
+
+  it('WhatWouldFlipResultSchema rejects pre-0.9 narrative-only legacy rows (precondition_unmet + option_count became required in 0.9.0)', () => {
+    // True pre-0.9 shape: { narrative, flip_scenarios } only. These rows
+    // were rejected when 0.9.0 made `precondition_unmet` and
+    // `option_count` required (this is unrelated to the V5 explain-
+    // stabilisation additive change). Pinning the rejection so a future
+    // refactor can make a deliberate widen-or-keep call.
+    expect(() =>
+      WhatWouldFlipResultSchema.parse({
+        narrative: 'No fragile edges.',
+        flip_scenarios: [],
       }),
     ).toThrow();
   });
@@ -430,7 +528,7 @@ describe('HandlerFactSchema (discriminated union)', () => {
     const variants: Array<{ fact_type: string; result: unknown }> = [
       { fact_type: 'explain_result', result: { narrative: 'x', referenced_option_ids: [] } },
       { fact_type: 'compare_options', result: { options: [{ option_id: 'o1', label: 'L' }] } },
-      { fact_type: 'what_would_flip', result: { narrative: 'x', flip_scenarios: [] } },
+      { fact_type: 'what_would_flip', result: { precondition_unmet: false, option_count: 0, narrative: 'x', flip_scenarios: [] } },
       { fact_type: 'add_constraint', result: { target_id: 'c1', status: 'applied', before: null, after: { range: [0, 1] } } },
       { fact_type: 'adjust_edge_strength', result: { target_id: 'e1', status: 'applied', before: { strength: 0.1 }, after: { strength: 0.5 } } },
     ];

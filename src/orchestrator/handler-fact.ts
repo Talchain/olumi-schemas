@@ -2,6 +2,8 @@ import { z } from 'zod';
 import {
   RunAnalysisResultSchema,
   ExplainResultResultSchema,
+  ExplainResultsResultSchema,
+  ExplainFromStructureResultSchema,
   CompareOptionsResultSchema,
   WhatWouldFlipResultSchema,
   SetFactorValueResultSchema,
@@ -37,12 +39,31 @@ export const RunAnalysisHandlerFactSchema = z.object({
 }).strict();
 export type RunAnalysisHandlerFact = z.infer<typeof RunAnalysisHandlerFactSchema>;
 
+/** @deprecated use `ExplainResultsHandlerFactSchema` (plural). Retained
+ *  so historic `v5_handler_facts` rows with `fact_type='explain_result'`
+ *  continue to deserialise. */
 export const ExplainResultHandlerFactSchema = z.object({
   fact_type: z.literal('explain_result'),
   ...BaseHandlerFactFields,
   result: ExplainResultResultSchema,
 }).strict();
 export type ExplainResultHandlerFact = z.infer<typeof ExplainResultHandlerFactSchema>;
+
+// 0.9.0 — V5 no-op explanation fact (post-analysis path).
+export const ExplainResultsHandlerFactSchema = z.object({
+  fact_type: z.literal('explain_results'),
+  ...BaseHandlerFactFields,
+  result: ExplainResultsResultSchema,
+}).strict();
+export type ExplainResultsHandlerFact = z.infer<typeof ExplainResultsHandlerFactSchema>;
+
+// 0.9.0 — V5 no-op pre-analysis explanation fact.
+export const ExplainFromStructureHandlerFactSchema = z.object({
+  fact_type: z.literal('explain_from_structure'),
+  ...BaseHandlerFactFields,
+  result: ExplainFromStructureResultSchema,
+}).strict();
+export type ExplainFromStructureHandlerFact = z.infer<typeof ExplainFromStructureHandlerFactSchema>;
 
 export const CompareOptionsHandlerFactSchema = z.object({
   fact_type: z.literal('compare_options'),
@@ -82,6 +103,8 @@ export type AdjustEdgeStrengthHandlerFact = z.infer<typeof AdjustEdgeStrengthHan
 export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   RunAnalysisHandlerFactSchema,
   ExplainResultHandlerFactSchema,
+  ExplainResultsHandlerFactSchema,
+  ExplainFromStructureHandlerFactSchema,
   CompareOptionsHandlerFactSchema,
   WhatWouldFlipHandlerFactSchema,
   SetFactorValueHandlerFactSchema,

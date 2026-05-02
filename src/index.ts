@@ -12,6 +12,7 @@ export {
   EdgeType,
   EdgeV3Schema,
   GraphV3Schema,
+  TopologyPlanSchema,
 } from './graph.js';
 export type {
   NodeV3,
@@ -23,7 +24,50 @@ export type {
   PriorType,
   EffectDirectionType,
   EdgeTypeType,
+  TopologyPlan,
 } from './graph.js';
+
+// Coaching schemas (v0.11.0 — first-class coaching contract)
+//
+// NAMING: New types in this contract surface (BiasType, BriefCompleteness,
+// StrengthenItemActionType, StrengthBand) use a single bare identifier
+// per the brief. Each is declared in source as both a runtime Zod schema
+// AND an inferred TS type under the same name (TypeScript's value/type
+// namespace separation). A single `export { BiasType }` re-export
+// publishes both meanings — no separate `export type` line is needed.
+// Earlier types in this package (NodeKindType, EffectDirectionType, ...)
+// kept the legacy `Type` suffix; new exports do not.
+export {
+  BiasType,
+  BiasSignalSchema,
+  BriefCompleteness,
+  WideningLogSchema,
+  StrengthenItemActionType,
+  StrengthenItemSchema,
+  CoachingSchema,
+} from './coaching.js';
+// Only types that have no value-namespace counterpart need `export type`.
+export type {
+  BiasSignal,
+  WideningLog,
+  StrengthenItem,
+  Coaching,
+} from './coaching.js';
+
+// Causal claims (v0.11.0 — first-class causal-claim contract)
+export {
+  StrengthBand,
+  DirectEffectClaimSchema,
+  MediationOnlyClaimSchema,
+  NoDirectEffectClaimSchema,
+  UnmeasuredConfounderClaimSchema,
+  CausalClaimSchema,
+  CausalClaimsArraySchema,
+} from './causal-claims.js';
+export type {
+  CausalClaim,
+  CausalClaimsArray,
+} from './causal-claims.js';
 
 // Analysis schemas
 export {

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BlockSchema } from './blocks.js';
+import { BlockSchema, DraftGraphBlockSchema } from './blocks.js';
 import { ActionType, Stage } from './enums.js';
 
 // Wire-level suggested action. The richer ActionRecommendation lives in the
@@ -27,6 +27,12 @@ export type Insight = z.infer<typeof InsightSchema>;
 // OlumiResponse — the only response shape produced by /orchestrate/v2/turn.
 // Egress validator must pass this schema; failure falls back to a typed error
 // envelope, never a 500 (per Boundary Contract v1.1 §3.2.3).
+// 0.8.0: draft_graph optional top-level field for inline graph delivery on
+// draft_graph turns. Absent on all other turn types. The UI uses this for
+// immediate canvas render without a Supabase re-fetch.
+// 0.8.1: analysis_ready optional top-level field for pre-analysis panel on
+// draft_graph turns. Contains option intervention mappings, goal_node_id, and
+// readiness status computed by the pipeline boundary stage.
 export const OlumiResponseSchema = z.object({
   response_version: z.literal(2),
   assistant_text: z.string(),
@@ -34,6 +40,14 @@ export const OlumiResponseSchema = z.object({
   suggested_actions: z.array(ActionSchema),
   insights: z.array(InsightSchema),
   stage_indicator: Stage,
+  // Inline graph for immediate canvas render on draft_graph turns.
+  draft_graph: DraftGraphBlockSchema.omit({ type: true }).optional(),
+  // TODO: Extract to named AnalysisReadySchema when schema governance is formalised.
+  analysis_ready: z.object({
+    status: z.string(),
+    options: z.array(z.unknown()),
+    goal_node_id: z.string(),
+  }).passthrough().optional(),
 }).strict();
 
 export type OlumiResponse = z.infer<typeof OlumiResponseSchema>;

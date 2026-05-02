@@ -34,7 +34,7 @@ export type ConversationTurnClass = z.infer<typeof ConversationTurnClassSchema>;
 const sessionTurnObject = z.object({
   id: z.string().uuid(),
   scenario_id: z.string().uuid(),
-  user_id: z.string().uuid(),
+  user_id: z.string().uuid().nullable(),
   turn_id: z.string().min(1),
   turn_class: ConversationTurnClassSchema,
   handler_id: V5ActionTypeSchema.nullable(),
