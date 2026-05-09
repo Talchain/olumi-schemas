@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { NodeKind } from '../graph.js';
 
 // Per-handler result schemas. These validate the in-memory body a handler
 // returns; they also describe the JSONB payload persisted in the
@@ -165,3 +166,136 @@ export type AddConstraintResult = z.infer<typeof AddConstraintResultSchema>;
 
 export const AdjustEdgeStrengthResultSchema = GraphEditResultBaseSchema;
 export type AdjustEdgeStrengthResult = z.infer<typeof AdjustEdgeStrengthResultSchema>;
+
+// 0.12.0 — V5 LLM-driven graph-edit handler (DL-7 War Room contract).
+//
+// Companion to the deterministic D1 mutations above (set_factor_value,
+// add_constraint, adjust_edge_strength). The `edit_graph` dispatcher
+// handles LLM-proposed edits that compile into one or more PatchOperations
+// applied via PLoT. This result body is its turn-linked, structured
+// receipt — the canonical record of "what changed" per War Room
+// Decision 1: graph hash / graph diff may support staleness and
+// verification, but must NOT be the only source of truth for user-
+// facing "what changed?" behaviour.
+//
+// Cross-field invariants (e.g. status='applied' implies
+// operations_count>=1; noop=true is incompatible with status='applied')
+// are NOT enforced by Zod. This matches the existing GraphEditResultBase
+// pattern (set_factor_value etc. similarly leave status/noop coupling
+// to the emitter). The edit_graph dispatcher (PR B) is the single
+// authoritative emit site and owns those invariants via tests at the
+// emitter and consumer boundaries.
+//
+// Why no scenario_id or turn_id on result: turn linkage flows from the
+// canonical persistence wrapper `HandlerFactWithTurn`
+// (see CEE: src/orchestrator-v5/types/handler-fact.ts). scenario_id is
+// derived from the parent turn row. Both fields would be redundant
+// here. RunAnalysisResult carries scenario_id only because the
+// analysis fact is consumed cross-scenario in coaching cache lookups;
+// edit_graph mutation receipts have no equivalent need.
+//
+// A future fact_version may introduce a separate `analysis_stale`
+// boolean if it diverges from `rerun_recommended`. At v1 they are
+// co-equivalent — an edit that invalidates prior analysis is precisely
+// an edit for which re-running is recommended.
+
+/**
+ * Categorisation of the edit, driving downstream rendering choices in
+ * the recent_changes projection. Snake_case literals match the
+ * discriminator-style convention used elsewhere in the package.
+ */
+export const EditGraphEditKindSchema = z.enum([
+  'parameter_update',
+  'option_configuration',
+  'structural',
+]);
+export type EditGraphEditKind = z.infer<typeof EditGraphEditKindSchema>;
+
+/**
+ * Operation-impact vocabulary. Promoted from the V4 edit-graph
+ * `EditGraphOperationMeta.impact` field (CEE
+ * src/orchestrator/tools/edit-graph.ts) — not a new invention, an
+ * existing CEE-side string-set being lifted into the canonical schema.
+ */
+export const EditGraphImpactSchema = z.enum(['low', 'moderate', 'high']);
+export type EditGraphImpact = z.infer<typeof EditGraphImpactSchema>;
+
+/**
+ * Display-safe identifier of a single touched entity. Sanitised at
+ * emission, NEVER carrying raw entity IDs in `label`.
+ *
+ * Labels are display text supplied by the emitting service. Zod
+ * validates shape only — non-empty (matches the existing
+ * `CompareOptionsResultSchema.options[].label.min(1)` convention) but
+ * with no max-length cap and no content-form check. Sanitisation,
+ * truncation and raw-ID removal are emitter responsibilities;
+ * consumers must not render unsanitised labels.
+ *
+ * `kind` reuses the canonical `NodeKind` enum from `src/graph.ts`
+ * (`'goal' | 'factor' | 'outcome' | 'risk' | 'action' | 'decision'
+ * | 'option' | 'constraint'`) PLUS the literal `'edge'` for edge
+ * mutations. Reusing the canonical vocabulary means a future
+ * NodeKind extension flows through automatically; pinning the
+ * union via the test suite ensures the +1 ('edge') stays
+ * deliberate.
+ */
+export const EditGraphAffectedEntitySchema = z.object({
+  kind: z.union([NodeKind, z.literal('edge')]),
+  label: z.string().min(1),
+}).strict();
+export type EditGraphAffectedEntity = z.infer<typeof EditGraphAffectedEntitySchema>;
+
+export const EditGraphResultSchema = z.object({
+  edit_kind: EditGraphEditKindSchema,
+  /**
+   * Lifecycle. 'applied' on a successful PLoT-accepted edit; 'noop'
+   * when the LLM-proposed operations compiled to no actual change
+   * (rare). Mirrors the D1 mutation lifecycle vocabulary.
+   */
+  status: z.enum(['applied', 'noop']),
+  /**
+   * Number of patch operations actually applied. Cross-field
+   * invariants (e.g. status='applied' ⇒ operations_count >= 1) are
+   * emitter-enforced.
+   */
+  operations_count: z.number().int().min(0),
+  /**
+   * Display-safe identifiers of touched entities. Capped at 8;
+   * larger edits collapse to a generic summary at emission. The
+   * recent_changes projector reads `[0].label` as `target_label`.
+   */
+  affected_entities: z.array(EditGraphAffectedEntitySchema).max(8),
+  /**
+   * Hash of the analysis-affecting graph fields BEFORE the edit
+   * applied. Diagnostic only — NOT the user-facing source of truth
+   * for "what changed?". Nullable when hashing failed at emission.
+   */
+  graph_hash_before: z.string().nullable(),
+  /**
+   * Hash of the analysis-affecting graph fields AFTER the edit
+   * applied. Diagnostic only. Nullable when hashing failed at
+   * emission.
+   */
+  graph_hash_after: z.string().nullable(),
+  /**
+   * Decision-language summary, sanitised at emission against the
+   * post-edit graph. THIS is the user-facing source of truth for
+   * "what changed?". 80-char cap matches the consumer-side
+   * RECENT_CHANGES_SUMMARY_MAX_CHARS so dashboards / state-query
+   * guards can quote it verbatim.
+   */
+  safe_summary: z.string().min(1).max(80),
+  /**
+   * Operation-impact classification. See EditGraphImpactSchema for
+   * provenance.
+   */
+  impact: EditGraphImpactSchema,
+  /**
+   * True when the edit invalidates prior analysis AND a re-run is
+   * recommended. At v1 these two concepts (analysis_stale and
+   * rerun_recommended) are co-equivalent. A future fact_version may
+   * introduce a separate `analysis_stale` if the concepts diverge.
+   */
+  rerun_recommended: z.boolean(),
+}).strict();
+export type EditGraphResult = z.infer<typeof EditGraphResultSchema>;

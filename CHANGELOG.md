@@ -5,6 +5,100 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] — 2026-05-09
+
+### Added — `EditGraphHandlerFact` variant (DL-7 V5-integration contract)
+
+Adds a new member to the canonical `HandlerFact` discriminated union
+representing a successful (or noop) accepted `edit_graph` mutation —
+the LLM-driven counterpart to the deterministic D1 mutation facts
+(`set_factor_value`, `add_constraint`, `adjust_edge_strength`).
+Closes the schema-contract half of the downstream CEE workstream's
+DL-7 (V5 integration acceptance gate); consumer-side wiring follows
+in a separate downstream PR.
+
+- `EditGraphHandlerFactSchema` — `{ fact_type: 'edit_graph',
+  fact_version: 1, noop, result }`. Strict on both wrapper and
+  `result`. Joins the `HandlerFactSchema` discriminated union.
+- `EditGraphResultSchema` — strict object carrying `edit_kind`
+  (`'parameter_update' | 'option_configuration' | 'structural'`),
+  `status` (`'applied' | 'noop'`), `operations_count` (non-negative
+  integer), `affected_entities` (capped at 8), `graph_hash_before` /
+  `graph_hash_after` (required nullable strings — diagnostic only,
+  NOT user-facing source of truth for "what changed"),
+  `safe_summary` (`.min(1).max(80)` — user-facing source of truth),
+  `impact` (`'low' | 'moderate' | 'high'`), `rerun_recommended`
+  (boolean).
+- `EditGraphAffectedEntitySchema` — strict object whose `kind`
+  reuses the canonical `NodeKind` enum (`'goal' | 'factor' |
+  'outcome' | 'risk' | 'action' | 'decision' | 'option' |
+  'constraint'`) PLUS the literal `'edge'` for edge-mutation
+  receipts. `label` is `z.string().min(1)`, matching the existing
+  `CompareOptionsResultSchema.options[].label` convention.
+- Sub-enums exported for downstream reuse:
+  `EditGraphEditKindSchema`, `EditGraphImpactSchema`,
+  `EditGraphAffectedEntitySchema`.
+- Canonical regression-fixture file at
+  `tests/orchestrator/__fixtures__/handler-fact-fixtures.ts` — one
+  realistic, parsing-valid sample per HandlerFact variant including
+  the new `edit_graph` member. Future HandlerFact variants MUST add
+  a fixture here. `KNOWN_FACT_TYPES` sentinel pins the
+  discriminated-union members; a contract test asserts the fixture
+  map and the sentinel stay in sync.
+
+### Notes — schema bounds vs emitter-side safety boundary
+
+The schema enforces SHAPE only:
+
+- `safe_summary` capped at 80 chars (matches consumer-side
+  `RECENT_CHANGES_SUMMARY_MAX_CHARS` so dashboards / state-query
+  guards can quote it verbatim); content-form check (raw-ID
+  detection, jargon guard) is emitter responsibility.
+- `affected_entities` capped at 8 entries; per-entity `label` shape
+  is non-empty, but `.max()` and content-form checks are emitter
+  responsibility.
+- `kind` enforces canonical vocabulary via `NodeKind ∪ 'edge'`.
+
+Sanitisation, truncation, and raw-ID removal are explicitly
+emitter responsibilities — labels and `safe_summary` are display
+text supplied by the emitting service. The test suite includes
+"PERMITS …" assertions for each deliberately-permissive case
+(long labels, identifier-looking labels, identifier-looking
+summaries, jargon-laden summaries) so the contract surface is
+explicit and a future tranche won't bikeshed adding refinements.
+
+### Notes — cross-field invariants are emitter-enforced
+
+The schema deliberately permits combinations such as `noop=true`
+with `status='applied'` and `status='applied'` with
+`operations_count=0`. This matches the existing
+`GraphEditResultBaseSchema` pattern (`set_factor_value`,
+`add_constraint`, `adjust_edge_strength` similarly leave
+status/noop coupling to the emitter). A test group
+(`describe('… cross-field invariants are emitter-enforced')`)
+asserts these combinations PASS schema validation, with a
+documenting comment so a future tranche doesn't silently add Zod
+refinements. Downstream PR B (CEE wiring) is required to add
+emitter/consumer tests asserting `status='applied'` implies
+`operations_count >= 1`, `noop=false` for successful applied
+mutations, and `noop=true` facts are not surfaced as successful
+recent-change projections without explicit handling.
+
+### Backward compatibility
+
+Purely additive: new union member; no existing variant changed; no
+discriminator field rename, no field removal, no enum value
+removal. Existing consumers that don't reference `'edit_graph'`
+continue to parse and operate identically. A read-only audit of
+the primary downstream consumer (CEE / `olumi-assistants-service`)
+confirmed zero `assertNever` / `: never` exhaustiveness checks
+coupled to `fact_type` and zero `switch (fact.fact_type)` blocks
+— all branching is via guarded `if (fact.fact_type === 'X')`
+chains which forward-compatibly skip the new variant until the
+consumer's own wiring lands.
+
+---
+
 ## [0.11.0] — 2026-05-01
 
 ### Added — Coaching contract (first-class)
