@@ -99,6 +99,10 @@ export {
   SetFactorValueResultSchema,
   AddConstraintResultSchema,
   AdjustEdgeStrengthResultSchema,
+  EditGraphResultSchema,
+  EditGraphEditKindSchema,
+  EditGraphImpactSchema,
+  EditGraphAffectedEntitySchema,
   ExplainAnswerSourceSchema,
   ExplainFallbackReasonSchema,
 } from './handler-results.js';
@@ -112,6 +116,10 @@ export type {
   SetFactorValueResult,
   AddConstraintResult,
   AdjustEdgeStrengthResult,
+  EditGraphResult,
+  EditGraphEditKind,
+  EditGraphImpact,
+  EditGraphAffectedEntity,
   ExplainAnswerSource,
   ExplainFallbackReason,
 } from './handler-results.js';
@@ -127,6 +135,7 @@ export {
   SetFactorValueHandlerFactSchema,
   AddConstraintHandlerFactSchema,
   AdjustEdgeStrengthHandlerFactSchema,
+  EditGraphHandlerFactSchema,
   HandlerFactSchema,
 } from './handler-fact.js';
 export type {
@@ -139,5 +148,6 @@ export type {
   SetFactorValueHandlerFact,
   AddConstraintHandlerFact,
   AdjustEdgeStrengthHandlerFact,
+  EditGraphHandlerFact,
   HandlerFact,
 } from './handler-fact.js';

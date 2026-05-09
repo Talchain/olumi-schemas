@@ -9,6 +9,7 @@ import {
   SetFactorValueResultSchema,
   AddConstraintResultSchema,
   AdjustEdgeStrengthResultSchema,
+  EditGraphResultSchema,
 } from './handler-results.js';
 
 // HandlerFact — typed evidence of what a handler did on a turn, persisted in
@@ -100,6 +101,29 @@ export const AdjustEdgeStrengthHandlerFactSchema = z.object({
 }).strict();
 export type AdjustEdgeStrengthHandlerFact = z.infer<typeof AdjustEdgeStrengthHandlerFactSchema>;
 
+// 0.12.0 — V5 LLM-driven edit_graph mutation receipt (DL-7 contract).
+//
+// Semantic meaning of `fact_type: 'edit_graph'`: this turn was
+// processed by the `edit_graph` dispatcher; `result.status` records
+// whether the proposed mutation was applied or compiled to a noop.
+// The literal matches the handler-name convention used by every
+// other variant (`run_analysis`, `set_factor_value`, etc.) — a
+// longer literal like 'edit_graph_accepted_mutation' would diverge
+// from the established pattern without adding semantic value (the
+// `status` field already encodes the accepted-vs-noop distinction).
+//
+// Companion to the deterministic D1 mutation facts above. Like them,
+// this fact relies on the canonical persistence wrapper
+// `HandlerFactWithTurn` (CEE: src/orchestrator-v5/types/handler-fact.ts)
+// for turn linkage; no `turn_id` or `scenario_id` lives on the fact
+// itself.
+export const EditGraphHandlerFactSchema = z.object({
+  fact_type: z.literal('edit_graph'),
+  ...BaseHandlerFactFields,
+  result: EditGraphResultSchema,
+}).strict();
+export type EditGraphHandlerFact = z.infer<typeof EditGraphHandlerFactSchema>;
+
 export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   RunAnalysisHandlerFactSchema,
   ExplainResultHandlerFactSchema,
@@ -110,5 +134,6 @@ export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   SetFactorValueHandlerFactSchema,
   AddConstraintHandlerFactSchema,
   AdjustEdgeStrengthHandlerFactSchema,
+  EditGraphHandlerFactSchema,
 ]);
 export type HandlerFact = z.infer<typeof HandlerFactSchema>;

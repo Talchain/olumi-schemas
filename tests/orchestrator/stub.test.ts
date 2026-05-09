@@ -17,7 +17,9 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
     // Snapshot the exported surface so accidental additions/removals are visible.
     // A1 surface (8) + 0.5.0 additions: V5 action alias (1), session (3),
     // decision-context (2), handler args (7), handler results (7),
-    // handler-fact variants (7), union (1) = 36 total.
+    // handler-fact variants (7), union (1) = 36.
+    // 0.12.0 adds: edit-graph result (1) + edit-graph sub-enums (3) +
+    // edit-graph handler-fact variant (1) = 41 total.
     expect(exported).toEqual(
       [
         // A1
@@ -72,6 +74,12 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         'SetFactorValueHandlerFactSchema',
         'AddConstraintHandlerFactSchema',
         'AdjustEdgeStrengthHandlerFactSchema',
+        // 0.12.0 — edit_graph DL-7 contract (additive)
+        'EditGraphResultSchema',
+        'EditGraphEditKindSchema',
+        'EditGraphImpactSchema',
+        'EditGraphAffectedEntitySchema',
+        'EditGraphHandlerFactSchema',
       ].sort(),
     );
   });
