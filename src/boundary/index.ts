@@ -48,6 +48,17 @@ export {
   ComparisonBlockSchema,
   FlipAnalysisBlockSchema,
   DraftGraphBlockSchema,
+  // Phase 3 — Analysis tab data contract v1.3
+  ReviewCardBlockSchema,
+  CoachingBlockSchema,
+  EvidenceBlockSchema,
+  ExerciseBlockSchema,
+  // Phase 3 shared
+  ActionIntent,
+  TargetRefKind,
+  TargetRefSchema,
+  Phase3BlockFreshness,
+  Phase3BlockSeverity,
   BlockSchema,
   ChipSchema,
 } from './blocks.js';
@@ -60,6 +71,17 @@ export type {
   ComparisonBlock,
   FlipAnalysisBlock,
   DraftGraphBlock,
+  // Phase 3 — Analysis tab data contract v1.3
+  ReviewCardBlock,
+  CoachingBlock,
+  EvidenceBlock,
+  ExerciseBlock,
+  // Phase 3 shared
+  ActionIntentLiteral,
+  TargetRefKindLiteral,
+  TargetRef,
+  Phase3BlockFreshnessLiteral,
+  Phase3BlockSeverityLiteral,
   Block,
   Chip,
 } from './blocks.js';
