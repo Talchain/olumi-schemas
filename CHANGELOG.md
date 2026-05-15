@@ -5,6 +5,109 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] — 2026-05-15
+
+### Added — V5 Phase 3 block types per Analysis tab data contract v1.3
+
+Adds the four new V5 Phase 3 block types to the boundary `BlockSchema`
+discriminated union, encoding the field shapes from the frozen contract
+committed at
+`Docs/v5/v5-analysis-tab-data-contract-v1_3.md` in the CEE repo
+(PR #177, SHA-256
+`24905122025585da88ba3f9423bc8300ff5985736984814fce9fac334dd1df69`).
+
+Schemas only. No composer wiring. No prompts. No existing block changes.
+`FactBlock` and `GraphPatchBlock` remain unchanged per contract §1.5 / §1.6.
+
+- `ReviewCardBlockSchema` — emitted by the `decision_review` enricher
+  after `run_analysis`. Hero-eligible (`priority_rank` REQUIRED).
+  `card_kind` ∈ `narrative | bias | flip_threshold | evidence_priority
+  | pre_mortem | assumption | robustness | scenario_context`.
+- `CoachingBlockSchema` — emitted by the coaching pass and `draft_graph`
+  structured-output threading. Hero-eligible.
+  `coaching_kind` ∈ `orientation | widening | bias_signal | strengthen
+  | assumption_check | calibration_prompt`.
+- `EvidenceBlockSchema` — emitted by the evidence-ranking module.
+  Hero-eligible. Includes `factor_label` + `factor_ref` plus the strict
+  v1.3 §1.3 consistency rule (`factor_ref` MUST match the first entry
+  in `target_refs` with `kind: 'factor'`). The rule is enforced by:
+  - `EvidenceBlockSchema` itself — the natural import name carries
+    the full v1.3 contract (`.superRefine` on the underlying
+    ZodObject). Composer code that imports the obvious name cannot
+    silently bypass §1.3.
+  - `BlockSchema` — a union-level `.superRefine` applies the same
+    rule when a block's `type === 'evidence'`. The discriminated
+    union itself uses an internal `EvidenceBlockObjectSchema`
+    (bare ZodObject, NOT exported) because `z.discriminatedUnion`
+    only accepts `ZodObject` members.
+- `ExerciseBlockSchema` — emitted by on-demand handler invocation
+  (pre-mortem / outside view / devil's advocacy / consider opposite).
+  NOT hero-eligible (no `priority_rank` field).
+  `exercise_kind` ∈ `pre_mortem | outside_view | devils_advocacy
+  | consider_opposite`.
+
+### Added — shared Phase 3 schemas
+
+- `ActionIntent` — 15-value strict union per §0.4. Replaces freeform
+  `string` typings from earlier sketches.
+- `TargetRefKind` — 7-value union (`factor | option | edge | goal | risk
+  | constraint | outcome`). v1.3 adds `outcome` to the v1.2 set.
+- `TargetRefSchema` — `{ id, label, kind }` per §0.1. Strict shape.
+- `Phase3BlockFreshness` — `'fresh' | 'stale' | 'pending' | 'failed'`
+  per §0. DISTINCT from the analysis-ready freshness verdict
+  (`fresh | stale | unknown | none`) used on the existing
+  `analysis_ready` envelope field — Phase 3 blocks use `pending` /
+  `failed` for in-flight / error states.
+- `Phase3BlockSeverity` — `'info' | 'warning' | 'critical'` per §1.1 /
+  §1.3. DISTINCT from the existing system `Severity` (`info | warn
+  | error`) used for `ErrorBlock` / telemetry.
+
+### Common metadata (§0)
+
+All four Phase 3 blocks carry: `block_id` (UUID, enforced via
+`z.string().uuid()`), `signal_id` (REQUIRED for dedupe), `created_at`
+(ISO 8601, enforced via `z.string().datetime({ offset: true })`),
+`source_handler`, `graph_hash_at_generation` (REQUIRED for
+analysis-derived blocks, optional for draft / pre-analysis / exercise
+blocks), `freshness`.
+
+### Copy-length constraints (§0.2)
+
+Schemas enforce title ≤ 80 chars, body ≤ 300 chars, action_label ≤ 40
+chars as a defence-in-depth gate so a composer regression surfaces as
+a boundary Zod failure rather than being silently truncated by the
+Analysis tab.
+
+### Tests
+
+`tests/boundary/blocks-phase3a.test.ts` — 132 new cases covering valid
+fixtures, missing-required-field cases, unknown-kind / unknown-source
+rejection, strict-mode extra-field rejection, copy-length boundary,
+union exhaustiveness, discriminated-union routing, broad pre-existing-
+block-type routing regression (all 8 existing block types), strict
+format enforcement on common metadata (UUID `block_id` + ISO 8601
+`created_at`), the EvidenceBlock `factor_ref` ↔ `target_refs`
+consistency rule (with the union-level vs ZodObject-only bifurcation
+documented), and a drift guard asserting GraphPatchBlock remains free
+of Phase 3 metadata.
+
+### Consumer compatibility note
+
+`BlockSchema` is now a `ZodEffects<ZodDiscriminatedUnion>` rather than a
+plain `ZodDiscriminatedUnion` (because the §1.3 consistency rule is
+applied at the union level via `.superRefine`). Consumers that parse
+via `.parse()` / `.safeParse()` are unaffected. Consumers that
+introspect `.options` / `.discriminator` / similar internals on the
+discriminated union are now reading through a `ZodEffects` wrapper; if
+this becomes a need, a separate raw-union export can be added in a
+follow-up. None of the current in-tree consumers introspect.
+
+### Out of scope
+
+- No composer wiring (CEE PR 2 will land that).
+- No persistence-by-graph-hash logic (CEE PR 3 will land that).
+- No prompt edits, no Analysis tab UI changes.
+
 ## [0.12.0] — 2026-05-09
 
 ### Added — `EditGraphHandlerFact` variant (DL-7 V5-integration contract)

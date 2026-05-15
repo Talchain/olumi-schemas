@@ -78,4 +78,89 @@ describe('package exports — boundary subpath (dist/boundary/index.js)', () => 
     expect(boundaryDist.StrengthBand).toBe(rootDist.StrengthBand);
     expect(boundaryDist.TopologyPlanSchema).toBe(rootDist.TopologyPlanSchema);
   });
+
+  // Round-3 review correction — Phase 3 schemas must be reachable through
+  // the boundary subpath surface that consumers actually import from.
+  it('exposes Phase 3 block schemas (v1.3 contract) at the boundary entry', () => {
+    expect(boundaryDist.ReviewCardBlockSchema).toBeDefined();
+    expect(boundaryDist.CoachingBlockSchema).toBeDefined();
+    expect(boundaryDist.EvidenceBlockSchema).toBeDefined();
+    expect(boundaryDist.ExerciseBlockSchema).toBeDefined();
+  });
+
+  it('exposes Phase 3 shared schemas at the boundary entry', () => {
+    expect(boundaryDist.ActionIntent).toBeDefined();
+    expect(boundaryDist.TargetRefKind).toBeDefined();
+    expect(boundaryDist.TargetRefSchema).toBeDefined();
+    expect(boundaryDist.Phase3BlockFreshness).toBeDefined();
+    expect(boundaryDist.Phase3BlockSeverity).toBeDefined();
+  });
+
+  it('does NOT expose the internal EvidenceBlockObjectSchema helper (boundary subpath)', () => {
+    // The bare ZodObject is an implementation detail used to construct
+    // `z.discriminatedUnion`. Consumers must import `EvidenceBlockSchema`
+    // (with the §1.3 consistency rule) or `BlockSchema` (union with the
+    // rule applied at union level).
+    expect(
+      (boundaryDist as Record<string, unknown>).EvidenceBlockObjectSchema,
+    ).toBeUndefined();
+  });
+
+  it('does NOT expose the internal EvidenceBlockObjectSchema helper (root entry)', () => {
+    // Round-4 drift guard — confirm both export surfaces hide the
+    // internal helper. A future accidental re-export from `src/index.ts`
+    // would surface this symbol at the root dist and reintroduce the
+    // round-3 footgun.
+    expect(
+      (rootDist as Record<string, unknown>).EvidenceBlockObjectSchema,
+    ).toBeUndefined();
+  });
+
+  it('the exported EvidenceBlockSchema enforces the §1.3 consistency rule', () => {
+    // Smoke-test the rename — `EvidenceBlockSchema` (natural import name)
+    // must fail on a factor_ref / target_refs mismatch. This is the
+    // round-3 footgun-prevention assertion.
+    const mismatched = {
+      block_id: '550e8400-e29b-41d4-a716-446655440000',
+      signal_id: 'sig_e_001',
+      created_at: '2026-05-15T16:00:00Z',
+      source_handler: 'rank_evidence_sources',
+      graph_hash_at_generation: 'gh_xyz',
+      freshness: 'fresh' as const,
+      type: 'evidence' as const,
+      factor_label: 'Delivery risk',
+      factor_ref: { id: 'fac_other', label: 'Delivery risk', kind: 'factor' as const },
+      target_refs: [{ id: 'fac_delivery_risk', label: 'Delivery risk', kind: 'factor' as const }],
+      current_confidence: 'low' as const,
+      evidence_gap: 'g',
+      suggested_technique: 's',
+      impact_if_gathered: 'i',
+      priority_rank: 1,
+      severity: 'warning' as const,
+    };
+    const parsed = boundaryDist.EvidenceBlockSchema.safeParse(mismatched);
+    expect(parsed.success).toBe(false);
+  });
+
+  it('the exported BlockSchema enforces the §1.3 consistency rule via the union refine', () => {
+    const mismatched = {
+      block_id: '550e8400-e29b-41d4-a716-446655440001',
+      signal_id: 'sig_e_002',
+      created_at: '2026-05-15T16:00:00Z',
+      source_handler: 'rank_evidence_sources',
+      graph_hash_at_generation: 'gh_xyz',
+      freshness: 'fresh' as const,
+      type: 'evidence' as const,
+      factor_label: 'Delivery risk',
+      factor_ref: { id: 'fac_other', label: 'Delivery risk', kind: 'factor' as const },
+      target_refs: [{ id: 'fac_delivery_risk', label: 'Delivery risk', kind: 'factor' as const }],
+      current_confidence: 'low' as const,
+      evidence_gap: 'g',
+      suggested_technique: 's',
+      impact_if_gathered: 'i',
+      priority_rank: 1,
+      severity: 'warning' as const,
+    };
+    expect(boundaryDist.BlockSchema.safeParse(mismatched).success).toBe(false);
+  });
 });
