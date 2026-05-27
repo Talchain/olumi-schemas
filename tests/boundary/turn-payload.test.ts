@@ -151,4 +151,44 @@ describe('OrchestratorTurnPayload v0.7.0 — discriminated union', () => {
   it('SystemEventSchema can be imported and used standalone', () => {
     expect(SystemEventSchema.parse(baseSystemEvent.event)).toEqual(baseSystemEvent.event);
   });
+
+  // v0.13.1 — explicit draft_graph generate flags
+  it('accepts a message payload with generate_model: true', () => {
+    const payload = { ...baseMessage, generate_model: true };
+    const r = OrchestratorTurnPayloadSchema.parse(payload);
+    expect(r).toEqual(payload);
+  });
+
+  it('accepts a message payload with explicit_generate: true', () => {
+    const payload = { ...baseMessage, explicit_generate: true };
+    const r = OrchestratorTurnPayloadSchema.parse(payload);
+    expect(r).toEqual(payload);
+  });
+
+  it('accepts a message payload with both generate_model and explicit_generate (alias semantics)', () => {
+    const payload = { ...baseMessage, generate_model: true, explicit_generate: true };
+    const r = OrchestratorTurnPayloadSchema.parse(payload);
+    expect(r).toEqual(payload);
+  });
+
+  it('accepts generate_model: false (negative-explicit signal)', () => {
+    const payload = { ...baseMessage, generate_model: false };
+    const r = OrchestratorTurnPayloadSchema.parse(payload);
+    expect(r).toEqual(payload);
+  });
+
+  it('rejects non-boolean generate_model (e.g. truthy string)', () => {
+    const r = OrchestratorTurnPayloadSchema.safeParse({ ...baseMessage, generate_model: 'true' });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects non-boolean explicit_generate (e.g. number)', () => {
+    const r = OrchestratorTurnPayloadSchema.safeParse({ ...baseMessage, explicit_generate: 1 });
+    expect(r.success).toBe(false);
+  });
+
+  it('rejects generate_model on system_event payload (strict — field is message-only)', () => {
+    const r = OrchestratorTurnPayloadSchema.safeParse({ ...baseSystemEvent, generate_model: true });
+    expect(r.success).toBe(false);
+  });
 });

@@ -20,6 +20,18 @@ const BaseFields = {
 // `source` tells CEE how the text got here (composer / chip / chip_click / retry).
 // `chip` carries action_type and parameters only when source is 'chip' | 'chip_click'.
 // `retry_of` references the prior turn_id only when source is 'retry'.
+//
+// `generate_model` / `explicit_generate` — optional booleans (v0.13.1). When
+// either is `true` AND the scenario has no graph (or zero nodes), CEE may
+// deterministically dispatch the V5 draft_graph handler without first
+// consulting the LLM tool-use router. The two names are aliases of the
+// same semantic ("the user explicitly asked CEE to generate the model
+// now"): clients may send either; CEE treats them as equivalent. Both
+// default to `undefined` so existing clients (and any consumer of an
+// older schema version that omits the field) are unaffected. The flags
+// are advisory; CEE may still ignore them if the trigger preconditions
+// are not satisfied (e.g., a graph already exists).
+//
 // Cross-field refinements are applied on the discriminated-union wrapper
 // below (z.discriminatedUnion requires plain ZodObject members).
 export const MessageTurnPayloadSchema = z.object({
@@ -33,6 +45,8 @@ export const MessageTurnPayloadSchema = z.object({
     parameters: z.record(z.string(), z.unknown()).optional(),
   }).strict().optional(),
   retry_of: Uuid.optional(),
+  generate_model: z.boolean().optional(),
+  explicit_generate: z.boolean().optional(),
 }).strict();
 
 // kind: 'system_event' — UI-initiated event with no free text.
