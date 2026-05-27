@@ -5,6 +5,28 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.1] — 2026-05-27
+
+### Added — explicit draft_graph generate flags on MessageTurnPayload
+
+Adds two optional boolean fields to `MessageTurnPayloadSchema`:
+
+- `generate_model?: boolean`
+- `explicit_generate?: boolean`
+
+When either is `true` on a `kind: 'message'` turn and the scenario has
+no graph (or zero nodes), CEE may deterministically dispatch the V5
+`draft_graph` handler without first consulting the LLM tool-use router.
+
+The two names are aliases of the same semantic ("the user explicitly
+asked CEE to generate the model now"); clients may send either; CEE
+treats them as equivalent. Both default to `undefined`.
+
+Purely additive. Existing clients are unaffected. The schema remains
+`.strict()`; the new keys are simply now accepted instead of rejected.
+No discriminated-union refinement uses these fields — they are advisory
+to CEE, not contract-binding cross-field invariants.
+
 ## [0.13.0] — 2026-05-15
 
 ### Added — V5 Phase 3 block types per Analysis tab data contract v1.3
