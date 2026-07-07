@@ -5,6 +5,58 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] — 2026-07-08
+
+### Added — typed analysis-enrichment envelope (opt-in; transport unchanged)
+
+New module `src/boundary/enrichment.ts` types the PLoT→CEE→UI analysis
+`enrichment` payload that was previously an untyped
+`z.record(z.string(), z.unknown())` passthrough — the platform's dominant
+silent-data-loss seam.
+
+- `AnalysisEnrichmentSchema` — the envelope. Parses BOTH seam projections:
+  the full PLoT `/v2/run` response persisted byte-for-byte by CEE
+  `run_analysis`, and the reduced CEE→UI keep-list projection on
+  `analysis_result` blocks. All fields optional; the envelope and every
+  nested object use `.passthrough()` (unknown keys always survive).
+- Component schemas: `EnrichmentOptionComparisonEntrySchema` (incl. the
+  PR #204 doctrine-B `goal_fit_basis` annotation),
+  `EnrichmentFactorSensitivityEntrySchema` (incl. `zero_reason`,
+  `evpi_status: 'below_resolution'`, open `confidence_source`),
+  `EnrichmentRobustnessSchema` (incl. lane-W5 `display_verdict` /
+  `display_verdict_reason`; `recommendation_stability` documented
+  deprecated/no-longer-emitted), `EnrichmentFlipThresholdSchema`,
+  `EnrichmentEdgeEValueSchema`, `EnrichmentInferenceWarningSchema`
+  (incl. `CONSTRAINT_GOALFIT_MODELLED_BASIS`), `EnrichmentCritiqueSchema`,
+  `EnrichmentM1CoachingSchema`, `EnrichmentDecisionReviewSchema`,
+  `EnrichmentConstraintResultSchema`,
+  `EnrichmentConditionalProbabilitySchema`, plus status vocabularies
+  (`constraints_status` covers the PR #205 'unavailable' gating).
+- `CEE_UI_ENRICHMENT_KEEP_LIST` — the CEE→UI 11-key safe-transport
+  keep-list, exported as the single source of truth for cross-repo
+  contract tests.
+- Helpers `parseAnalysisEnrichment` / `isAnalysisEnrichment`.
+
+Every field is evidenced from a live staging capture
+(`fixtures/enrichment/plot-to-cee.run-analysis.staging.json`, mirrored
+from the CEE repo) or from current staging producer code (provenance
+tags [F1]–[F6] in the module header). Dispositions for dead/legacy
+fields (`results`, `conditional_probabilities`, `semantic_severity`,
+`recommendation_stability`) are documented on the schema rather than
+silently typed or dropped.
+
+**Purely additive.** The transport fields
+(`AnalysisResultBlock.enrichment` et al.) remain
+`z.record(z.string(), z.unknown())` — no existing consumer's validation
+behaviour changes until it opts in via
+`AnalysisEnrichmentSchema.safeParse(...)`.
+
+Also adds `contract-tests/` (wire-shape contract-test pack + per-repo
+installation notes — reference specs, adopted via per-repo lanes) and
+`docs/enrichment-v1/` (schema-pin rollout plan; PLoT V2-read residual
+spec). These folders are documentation/reference only and are not part
+of the published package (`files: ["dist"]`).
+
 ## [0.13.1] — 2026-05-27
 
 ### Added — explicit draft_graph generate flags on MessageTurnPayload
