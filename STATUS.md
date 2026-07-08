@@ -2,8 +2,9 @@
 
 Updated: 2026-07-08. Owner: Brief F lane (self-driven, dispatch delegated
 8 Jul). Branch: `claude-contract/enrichment-v1` off `origin/main` (3d31281,
-v0.13.1). Draft PR: see repo PRs (opened this session). NEVER merge from
-this lane — contract changes are Paul-gated.
+v0.13.1). Draft PR: **#5** (https://github.com/Talchain/olumi-schemas/pull/5,
+draft, head 935e905). NEVER merge from this lane — contract changes are
+Paul-gated.
 
 ## Deliverable state
 
