@@ -86,6 +86,58 @@ export type {
   Chip,
 } from './blocks.js';
 
+// Analysis enrichment envelope (v0.14.0) — typed opt-in layer over the
+// PLoT→CEE→UI enrichment passthrough. Additive: transport fields on blocks
+// remain z.record(z.unknown()); this is the validation/typing surface.
+export {
+  AnalysisEnrichmentSchema,
+  EnrichmentAnalysisStatus,
+  EnrichmentFeatureStatus,
+  EnrichmentConfidenceTier,
+  EnrichmentOutcomeStatsSchema,
+  EnrichmentGoalFitBasisSchema,
+  EnrichmentOptionComparisonEntrySchema,
+  EnrichmentConfidenceProvenanceSchema,
+  EnrichmentFactorSensitivityEntrySchema,
+  EnrichmentRobustnessEdgeSchema,
+  EnrichmentNearTieSchema,
+  EnrichmentRobustnessSchema,
+  EnrichmentFlipThresholdSchema,
+  EnrichmentEdgeEValueSchema,
+  EnrichmentInferenceWarningSchema,
+  EnrichmentCritiqueSchema,
+  EnrichmentM1CoachingSchema,
+  EnrichmentDecisionReviewSchema,
+  EnrichmentConstraintResultSchema,
+  EnrichmentConditionalProbabilitySchema,
+  CEE_UI_ENRICHMENT_KEEP_LIST,
+  parseAnalysisEnrichment,
+  isAnalysisEnrichment,
+} from './enrichment.js';
+export type {
+  AnalysisEnrichment,
+  EnrichmentAnalysisStatusType,
+  EnrichmentFeatureStatusType,
+  EnrichmentConfidenceTierType,
+  EnrichmentOutcomeStats,
+  EnrichmentGoalFitBasis,
+  EnrichmentOptionComparisonEntry,
+  EnrichmentConfidenceProvenance,
+  EnrichmentFactorSensitivityEntry,
+  EnrichmentRobustnessEdge,
+  EnrichmentNearTie,
+  EnrichmentRobustness,
+  EnrichmentFlipThreshold,
+  EnrichmentEdgeEValue,
+  EnrichmentInferenceWarning,
+  EnrichmentCritique,
+  EnrichmentM1Coaching,
+  EnrichmentDecisionReview,
+  EnrichmentConstraintResult,
+  EnrichmentConditionalProbability,
+  CeeUiEnrichmentKeepKey,
+} from './enrichment.js';
+
 // Turn payload (ingress to /orchestrate/v2/turn) — v0.7.0 discriminated union
 export {
   OrchestratorTurnPayloadSchema,

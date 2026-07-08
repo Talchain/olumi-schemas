@@ -46,6 +46,12 @@ export type ErrorBlock = z.infer<typeof ErrorBlockSchema>;
 // AnalysisResultBlock — emitted by run_analysis. Threads PLoT enrichment
 // (factor_sensitivity, flip_thresholds, conditional_probabilities, edge_e_values,
 // m1_coaching) through the `enrichment` record.
+//
+// v0.14.0: the enrichment record now has a typed opt-in envelope —
+// `AnalysisEnrichmentSchema` in ./enrichment.ts. The transport field below
+// deliberately STAYS `z.record(z.unknown())` (behaviour-preserving for every
+// pinned consumer); consumers validate/type via
+// `AnalysisEnrichmentSchema.safeParse(block.enrichment)`.
 export const AnalysisResultBlockSchema = z.object({
   type: z.literal('analysis_result'),
   summary: z.string(),
