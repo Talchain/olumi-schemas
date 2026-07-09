@@ -5,6 +5,64 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] — 2026-07-09 (DRAFT — not published; formalises two seams already live on staging)
+
+### Added — optional `reasoning` on `OlumiResponseSchema` (additive)
+
+Formalises the `_reasoning` wire sidecar shipped behind
+`CEE_REASONING_CAPTURE_ENABLED` (ROADMAP 1.42, CEE PR #387, live on staging
+9 Jul 2026, currently flag-off/dormant). Verbatim Sonnet-5 extended-thinking
+text, captured byte-for-byte (Paul's explicit ruling — never summarised or
+redacted). Display-only, for a collapsed-by-default progressive-disclosure
+surface. **By explicit product ruling this field is NOT claim-safety-caged**
+— the egress forbidden-phrase / mutation-language guards do not scrub it.
+May be absent even with the capture flag on (model-adaptive: Sonnet-5 does
+not always emit a `thinking` block; `redacted_thinking` is never captured).
+
+Consumer-migration note: on the wire today CEE emits the underscore-prefixed
+`_reasoning` sidecar, not this field. Consumers keep reading `_reasoning`
+until CEE's producer migrates to emitting `reasoning` under both pins — a
+coordinated follow-up, **not part of this PR**.
+
+### Added — `held_proposal` block kind (additive; durable fix for ROADMAP 1.43)
+
+New member of the `BlockSchema` discriminated union: `HeldProposalBlockSchema`
+(`type: "held_proposal"`), plus `HeldProposalMutationClass` (`structural` |
+`tunable`) and `HeldProposalReasonCode` (the `held`-reachable subset of CEE's
+graph-management reason-code vocabulary).
+
+Replaces the interim wire shape for a Graph Management held mutation batch —
+today a `type:"error"` / `error_code:"INTERNAL_ERROR"` block whose
+`details.blocker_readable` leaks internal doctrine prose (e.g. "§6
+structural-vs-tunable doctrine is pending sign-off") into a field a literal
+error renderer would show as a failure on a healthy hold. `held_proposal`
+carries a display-safe `summary`, a code-keyed `reason_code` (not free
+prose), `mutation_class`, a stable `proposal_id`, and `confirm_action_id` /
+`decline_action_id` refs into the response's top-level `suggested_actions` —
+never candidate/operation internals (T4.0 §5 redaction contract unchanged).
+
+Evidenced from the live GM flip-and-verify wire captures
+(`acceptance-evidence/gm-live-flip/journey/T2-gm-propose-response.json`,
+`T4-gm-propose-2-response.json`) and CEE's
+`src/orchestrator-v5/handlers/edit-graph-referee-gate.ts` /
+`src/orchestrator-v5/graph-management/{referee,classify-mutation,reason-codes}.ts`
+at `origin/staging` 2026-07-09.
+
+Consumer-migration plan: CEE emits `held_proposal` behind the existing
+`CEE_GRAPH_MANAGEMENT_MODE=live` gate (additive dispatch change, no new
+flag); UI adds `held_proposal` to `KNOWN_OLUMI_TOP_LEVEL_KEYS` / block
+renderer union + a held-proposal card component; pins bump CEE-first per
+`ROLLOUT.md`, UI second.
+
+### Paul-gate
+
+This is a **draft PR only**. Do NOT merge, do NOT publish to GitHub
+Packages, do NOT bump any consumer's `@talchain/schemas` pin. Both changes
+above are strictly additive (zero existing fields removed, renamed, or
+tightened) — verified by diff against `origin/main` — and the full test
+suite plus `tsc` build stay green. Merge + publish + pin-bump remain
+Paul-gated per this repo's `CLAUDE.md`.
+
 ## [0.14.0] — 2026-07-08
 
 ### Added — typed analysis-enrichment envelope (opt-in; transport unchanged)

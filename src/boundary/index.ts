@@ -59,6 +59,10 @@ export {
   TargetRefSchema,
   Phase3BlockFreshness,
   Phase3BlockSeverity,
+  // Held proposal (0.15.0 — ROADMAP 1.43)
+  HeldProposalBlockSchema,
+  HeldProposalMutationClass,
+  HeldProposalReasonCode,
   BlockSchema,
   ChipSchema,
 } from './blocks.js';
@@ -82,6 +86,10 @@ export type {
   TargetRef,
   Phase3BlockFreshnessLiteral,
   Phase3BlockSeverityLiteral,
+  // Held proposal (0.15.0 — ROADMAP 1.43)
+  HeldProposalBlock,
+  HeldProposalMutationClassLiteral,
+  HeldProposalReasonCodeLiteral,
   Block,
   Chip,
 } from './blocks.js';

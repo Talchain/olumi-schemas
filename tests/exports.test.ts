@@ -96,6 +96,29 @@ describe('package exports — boundary subpath (dist/boundary/index.js)', () => 
     expect(boundaryDist.Phase3BlockSeverity).toBeDefined();
   });
 
+  // 0.15.0 — ROADMAP 1.43 durable held-proposal block type.
+  it('exposes HeldProposalBlockSchema + its enums at the boundary entry', () => {
+    expect(boundaryDist.HeldProposalBlockSchema).toBeDefined();
+    expect(boundaryDist.HeldProposalMutationClass).toBeDefined();
+    expect(boundaryDist.HeldProposalReasonCode).toBeDefined();
+  });
+
+  // 0.15.0 — ROADMAP 1.42 reasoning sidecar formalisation. OlumiResponseSchema
+  // itself already had boundary-entry coverage (olumi-response.test.ts);
+  // this just confirms the schema instance carries the new optional field.
+  it('OlumiResponseSchema (boundary entry) accepts the new optional reasoning field', () => {
+    const base = {
+      response_version: 2 as const,
+      assistant_text: 'x',
+      blocks: [],
+      suggested_actions: [],
+      insights: [],
+      stage_indicator: 'frame' as const,
+    };
+    const parsed = boundaryDist.OlumiResponseSchema.safeParse({ ...base, reasoning: 'verbatim thinking text' });
+    expect(parsed.success).toBe(true);
+  });
+
   it('does NOT expose the internal EvidenceBlockObjectSchema helper (boundary subpath)', () => {
     // The bare ZodObject is an implementation detail used to construct
     // `z.discriminatedUnion`. Consumers must import `EvidenceBlockSchema`
