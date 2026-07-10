@@ -208,6 +208,26 @@ export type {
   ValidatePatchResponse,
 } from './patch.js';
 
+// Decision record (0.15.0 — ROADMAP 3.1). Standalone wire/API contract, NOT
+// wired into OlumiResponse — see decision-record.ts for scope + persistence
+// note (Supabase, coordinated separately).
+export {
+  DecisionRecordSchema,
+  DecisionRecordDecisionSchema,
+  DecisionRecordAnalysisSummarySchema,
+  DecisionRecordPredictionSchema,
+  DecisionRecordOutcomeSchema,
+  DecisionRecordOutcomeResult,
+} from './decision-record.js';
+export type {
+  DecisionRecord,
+  DecisionRecordDecision,
+  DecisionRecordAnalysisSummary,
+  DecisionRecordPrediction,
+  DecisionRecordOutcome,
+  DecisionRecordOutcomeResultLiteral,
+} from './decision-record.js';
+
 // Re-exports from the flat root for convenience inside /boundary consumers.
 // Keeping these under /boundary lets V5 code import everything it needs
 // from a single namespace.

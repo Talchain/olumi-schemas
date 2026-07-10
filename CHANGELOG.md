@@ -50,6 +50,30 @@ flow never calls. This is the V5-shaped piggyback field for the CURRENT
 turn's selection; `selection_change` (above) covers selection awareness
 between turns with no message attached.
 
+### Added — `DecisionRecordSchema` (additive; ROADMAP 3.1, "Minimal decision record now")
+
+New standalone module `src/boundary/decision-record.ts`, exported but **NOT
+wired into `OlumiResponseSchema`** or any other producer schema yet — this
+is the data-capture contract for Olumi's long-term differentiator (predict
+at decision time, review later, score against a future Brier-calibration
+pass, ROADMAP 3.2).
+
+`DecisionRecordSchema`: `{ record_id, scenario_id, created_at, decision:
+{chosen_option_id, chosen_option_label, graph_hash, analysis_summary?},
+prediction: {statement, confidence?}, review_date, outcome? }`. Every field
+that only becomes available after the decision is made
+(`decision.analysis_summary`, `outcome`) is optional-forward, so a record
+is valid the moment a decision + prediction + review date exist and gains
+fields over its lifecycle without a shape migration. `outcome.result` is a
+closed enum (`better` | `as_expected` | `worse` | `abandoned`);
+`outcome.brier_component` is one record's contribution to a future
+aggregate calibration score, not the score itself.
+
+Persistence lives in Supabase (coordinated separately, this sprint) — this
+schema types the wire/API surface only. **Coordination note:** the
+matching Supabase migration is authored in parallel; field names must
+match this schema exactly.
+
 ### Added — optional `reasoning` on `OlumiResponseSchema` (additive)
 
 Formalises the `_reasoning` wire sidecar shipped behind

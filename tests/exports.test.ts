@@ -119,6 +119,47 @@ describe('package exports — boundary subpath (dist/boundary/index.js)', () => 
     expect(parsed.success).toBe(true);
   });
 
+  // 0.15.0 — seamlessness R4 keystone.
+  it('exposes UiDirectiveBlockSchema + its enum at the boundary entry', () => {
+    expect(boundaryDist.UiDirectiveBlockSchema).toBeDefined();
+    expect(boundaryDist.UiDirectiveVerb).toBeDefined();
+  });
+
+  // 0.15.0 — selection_change system event + selected_elements message field.
+  it('exposes SelectedElementRefSchema + accepts selection_change at the boundary entry', () => {
+    expect(boundaryDist.SelectedElementRefSchema).toBeDefined();
+    const event = { kind: 'selection_change' as const, selected: [] };
+    expect(boundaryDist.SystemEventSchema.safeParse(event).success).toBe(true);
+  });
+
+  // 0.15.0 — MessageTurnPayloadSchema accepts the new optional selected_elements.
+  it('MessageTurnPayloadSchema (boundary entry) accepts the new optional selected_elements field', () => {
+    const base = {
+      turn_id: '11111111-1111-4111-8111-111111111111',
+      scenario_id: '22222222-2222-4222-8222-222222222222',
+      stage: 'frame' as const,
+      kind: 'message' as const,
+      message: 'x',
+      turn_class: 'frame' as const,
+      source: 'composer' as const,
+    };
+    const parsed = boundaryDist.MessageTurnPayloadSchema.safeParse({
+      ...base,
+      selected_elements: [{ id: 'fac_1', kind: 'factor' }],
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  // 0.15.0 — ROADMAP 3.1 decision record (standalone, not wired into OlumiResponse).
+  it('exposes DecisionRecordSchema + its component schemas at the boundary entry', () => {
+    expect(boundaryDist.DecisionRecordSchema).toBeDefined();
+    expect(boundaryDist.DecisionRecordDecisionSchema).toBeDefined();
+    expect(boundaryDist.DecisionRecordAnalysisSummarySchema).toBeDefined();
+    expect(boundaryDist.DecisionRecordPredictionSchema).toBeDefined();
+    expect(boundaryDist.DecisionRecordOutcomeSchema).toBeDefined();
+    expect(boundaryDist.DecisionRecordOutcomeResult).toBeDefined();
+  });
+
   it('does NOT expose the internal EvidenceBlockObjectSchema helper (boundary subpath)', () => {
     // The bare ZodObject is an implementation detail used to construct
     // `z.discriminatedUnion`. Consumers must import `EvidenceBlockSchema`
