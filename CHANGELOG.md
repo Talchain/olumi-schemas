@@ -5,6 +5,135 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] — 2026-07-09 (DRAFT — not published; extends across the full sprint wave)
+
+### Added — `ui_directive` block kind (additive; seamlessness R4 keystone)
+
+New member of the `BlockSchema` discriminated union: `UiDirectiveBlockSchema`
+(`type: "ui_directive"`), plus the closed `UiDirectiveVerb` enum
+(`highlight` | `focus` | `open_inspector`, v1). Fills a verified-absent
+channel — today a CEE response has no way to tell the UI "look here" /
+"open this" without inventing a graph mutation or a free-text instruction.
+
+Fail-closed dispatch contract: unknown `targets[].id` values are silently
+skipped by consumers, never an error. Advisory UX only — never a state
+mutation; a consumer that ignores every `ui_directive` block loses only
+presentation polish. `targets` reuses the existing `TargetRefSchema` shape
+(§0.1) rather than a bespoke ref type. `duration_ms` is bounded 500–10000ms;
+`note` is an optional short display-safe caption (≤140 chars). Rate
+expectation (documented, not schema-enforced): ≤3 per response.
+`annotate` / `start_tour` verbs considered and deliberately deferred to a
+future minor bump once their payload shapes are actually needed.
+
+### Added — `selection_change` inbound system-event (additive)
+
+New member of the `SystemEventSchema` discriminated union (7th member):
+`{ kind: 'selection_change', selected: SelectedElementRef[] (≤20), cleared?:
+boolean }`, plus the shared `SelectedElementRefSchema` (`{id, kind, label?}`)
+it introduces. Debounced client-side; carries between-turn canvas selection
+awareness ("here is what the user has selected now") with no accompanying
+message. Advisory context only — never a command; CEE may use it to inform
+the next response but it triggers no mutation, run, or handler side effect.
+`cleared: true` with an empty `selected` distinguishes an explicit
+deselect-all from a client simply omitting detail.
+
+### Added — `selected_elements` on the V5 message turn payload (additive)
+
+Optional `selected_elements: SelectedElementRef[]` (≤20, reusing the
+`SelectedElementRefSchema` introduced alongside `selection_change` above) on
+`MessageTurnPayloadSchema`. Verified gap: DecisionGuideAI's live V5 outbound
+builder (`src/v5/buildPayload.ts`) sends no selection context on message
+turns today — a same-named `selected_elements` field already exists on the
+wire, but only on the dead V4-era builder (`src/services/turn-request-
+builder.ts`, shape `{node_ids?, edge_ids?}`) that the live V5 conversation
+flow never calls. This is the V5-shaped piggyback field for the CURRENT
+turn's selection; `selection_change` (above) covers selection awareness
+between turns with no message attached.
+
+### Added — `DecisionRecordSchema` (additive; ROADMAP 3.1, "Minimal decision record now")
+
+New standalone module `src/boundary/decision-record.ts`, exported but **NOT
+wired into `OlumiResponseSchema`** or any other producer schema yet — this
+is the data-capture contract for Olumi's long-term differentiator (predict
+at decision time, review later, score against a future Brier-calibration
+pass, ROADMAP 3.2).
+
+`DecisionRecordSchema`: `{ record_id, scenario_id, created_at, decision:
+{chosen_option_id, chosen_option_label, graph_hash, analysis_summary?},
+prediction: {statement, confidence?}, review_date, outcome? }`. Every field
+that only becomes available after the decision is made
+(`decision.analysis_summary`, `outcome`) is optional-forward, so a record
+is valid the moment a decision + prediction + review date exist and gains
+fields over its lifecycle without a shape migration. `outcome.result` is a
+closed enum (`better` | `as_expected` | `worse` | `abandoned`);
+`outcome.brier_component` is one record's contribution to a future
+aggregate calibration score, not the score itself.
+
+Persistence lives in Supabase (coordinated separately, this sprint) — this
+schema types the wire/API surface only. **Coordination note:** the
+matching Supabase migration is authored in parallel; field names must
+match this schema exactly.
+
+### Added — optional `reasoning` on `OlumiResponseSchema` (additive)
+
+Formalises the `_reasoning` wire sidecar shipped behind
+`CEE_REASONING_CAPTURE_ENABLED` (ROADMAP 1.42, CEE PR #387, live on staging
+9 Jul 2026, currently flag-off/dormant). Verbatim Sonnet-5 extended-thinking
+text, captured byte-for-byte (Paul's explicit ruling — never summarised or
+redacted). Display-only, for a collapsed-by-default progressive-disclosure
+surface. **By explicit product ruling this field is NOT claim-safety-caged**
+— the egress forbidden-phrase / mutation-language guards do not scrub it.
+May be absent even with the capture flag on (model-adaptive: Sonnet-5 does
+not always emit a `thinking` block; `redacted_thinking` is never captured).
+
+Consumer-migration note: on the wire today CEE emits the underscore-prefixed
+`_reasoning` sidecar, not this field. Consumers keep reading `_reasoning`
+until CEE's producer migrates to emitting `reasoning` under both pins — a
+coordinated follow-up, **not part of this PR**.
+
+### Added — `held_proposal` block kind (additive; durable fix for ROADMAP 1.43)
+
+New member of the `BlockSchema` discriminated union: `HeldProposalBlockSchema`
+(`type: "held_proposal"`), plus `HeldProposalMutationClass` (`structural` |
+`tunable`) and `HeldProposalReasonCode` (the `held`-reachable subset of CEE's
+graph-management reason-code vocabulary).
+
+Replaces the interim wire shape for a Graph Management held mutation batch —
+today a `type:"error"` / `error_code:"INTERNAL_ERROR"` block whose
+`details.blocker_readable` leaks internal doctrine prose (e.g. "§6
+structural-vs-tunable doctrine is pending sign-off") into a field a literal
+error renderer would show as a failure on a healthy hold. `held_proposal`
+carries a display-safe `summary`, a code-keyed `reason_code` (not free
+prose), `mutation_class`, a stable `proposal_id`, and `confirm_action_id` /
+`decline_action_id` refs into the response's top-level `suggested_actions` —
+never candidate/operation internals (T4.0 §5 redaction contract unchanged).
+
+Evidenced from the live GM flip-and-verify wire captures
+(`acceptance-evidence/gm-live-flip/journey/T2-gm-propose-response.json`,
+`T4-gm-propose-2-response.json`) and CEE's
+`src/orchestrator-v5/handlers/edit-graph-referee-gate.ts` /
+`src/orchestrator-v5/graph-management/{referee,classify-mutation,reason-codes}.ts`
+at `origin/staging` 2026-07-09.
+
+Consumer-migration plan: CEE emits `held_proposal` behind the existing
+`CEE_GRAPH_MANAGEMENT_MODE=live` gate (additive dispatch change, no new
+flag); UI adds `held_proposal` to `KNOWN_OLUMI_TOP_LEVEL_KEYS` / block
+renderer union + a held-proposal card component; pins bump CEE-first per
+`ROLLOUT.md`, UI second.
+
+### Paul-gate
+
+This is a **draft PR only**. Do NOT merge, do NOT publish to GitHub
+Packages, do NOT bump any consumer's `@talchain/schemas` pin. All six
+changes above (`reasoning`, `held_proposal`, `ui_directive`,
+`selection_change`, `selected_elements`, `DecisionRecordSchema`) are
+strictly additive (zero existing fields removed, renamed, or tightened) —
+verified by diff against `origin/main` — and the full test suite plus
+`tsc` build stay green (745 tests: 674 baseline + 71 new across the four
+latest additions). Merge + publish + pin-bump remain Paul-gated per this
+repo's `CLAUDE.md`. **One Paul approval covers the whole wave** — the six
+additions are reviewed and gated together, not as separate PRs.
+
 ## [0.14.0] — 2026-07-08
 
 ### Added — typed analysis-enrichment envelope (opt-in; transport unchanged)

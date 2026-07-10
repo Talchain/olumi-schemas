@@ -421,11 +421,169 @@ export const ExerciseBlockSchema = z.object({
 }).strict();
 export type ExerciseBlock = z.infer<typeof ExerciseBlockSchema>;
 
+// ----------------------------------------------------------------------------
+// HeldProposalBlock (0.15.0) — durable fix for ROADMAP 1.43.
+//
+// Graph Management (`CEE_GRAPH_MANAGEMENT_MODE=live`, live on staging 9 Jul
+// 2026) currently surfaces a held mutation batch as a `type:"error"` /
+// `error_code:"INTERNAL_ERROR"` block (severity `warn`), with the real story
+// only in `details` — honest copy, but an error-styled block that a literal
+// error renderer shows as a failure on a healthy hold. `details.blocker_readable`
+// also carries internal doctrine prose verbatim (e.g. "Structural mutation
+// held: §6 structural-vs-tunable doctrine is pending sign-off"), which 1.43
+// flags as an internal-wording leak. `held_proposal` is the dedicated,
+// non-error-styled replacement.
+//
+// Evidence (verbatim wire capture, GM live-flip journey T2/T4 —
+// acceptance-evidence/gm-live-flip/journey/T2-gm-propose-response.json,
+// olumi-schemas repo consumer olumi-assistants-service):
+//   blocks: [{ type: "error", error_code: "INTERNAL_ERROR", severity: "warn",
+//     details: { source: "graph_management", verdict: "held",
+//       mutation_class: "structural", blocker_code: "STRUCTURAL_APPLY_HELD",
+//       blocker_readable: "Structural mutation held: ...", candidate_id: "...",
+//       base_hash_match: true } }]
+//   suggested_actions: [{ id: "gmh_<12hex>", label: "Continue with this change",
+//     message: "Yes" }]
+// (CEE source: src/orchestrator-v5/handlers/edit-graph-referee-gate.ts
+// `publicReasonOf` / `GM_HELD_CHIP_LABEL`; `gmHeldProposalRef` mints the
+// `gmh_` handle; src/orchestrator-v5/graph-management/referee.ts is the
+// verdict/blocker-code source of truth.)
+//
+// MINIMAL and additive, per the other block kinds. Candidate/operation
+// internals never cross this block (T4.0 §5 redaction contract carries over
+// unchanged) — it carries only what a UI needs to render a held-proposal
+// card: a display-safe summary, a code-keyed reason (not free prose), and
+// action refs into the response's top-level `suggested_actions`, never its
+// own duplicate action objects.
+
+// Mechanical structural/tunable taxonomy for the held mutation. Mirrors CEE's
+// graph-management `MutationClass`, restricted to the two classes a `held`
+// verdict can carry — `non_mutating` kinds (flag_uncertainty, clarification)
+// resolve to `clarify_required`, never `held` (CEE classify-mutation.ts).
+export const HeldProposalMutationClass = z.enum(['structural', 'tunable']);
+export type HeldProposalMutationClassLiteral = z.infer<typeof HeldProposalMutationClass>;
+
+// Code-keyed held reason — restates the `held`-reachable subset of CEE's
+// graph-management `MutationReasonCode` vocabulary (Track 3,
+// olumi-assistants-service src/orchestrator-v5/graph-management/reason-codes.ts
+// + referee.ts verdict table, read at staging tip `origin/staging` 2026-07-09).
+// Deliberately code-keyed, not free text: a consumer maps each code to its
+// OWN user-facing copy, so the internal-doctrine-prose leak 1.43 flagged in
+// `blocker_readable` cannot recur through this block. Extend additively when
+// CEE mints a new held-reachable code; do not add prose members here.
+export const HeldProposalReasonCode = z.enum([
+  'STRUCTURAL_APPLY_HELD',
+  'TUNABLE_APPLY_HELD',
+  'REMOVE_UNCONFIRMED',
+  'ADD_OPTION_APPLY_UNWIRED',
+  'OPTION_TOP_LEVEL_OPTIONS_DIVERGENCE',
+  'FRAME_UNAVAILABLE',
+  'CURRENT_GRAPH_UNREADABLE',
+  'CLASSIFY_FAILED',
+]);
+export type HeldProposalReasonCodeLiteral = z.infer<typeof HeldProposalReasonCode>;
+
+export const HeldProposalBlockSchema = z.object({
+  type: z.literal('held_proposal'),
+  // Deterministic held-pending handle CEE mints per (scenario, mutation
+  // target) — `gmh_<sha256-12hex>` on the wire today (CEE
+  // `gmHeldProposalRef`). Typed here as a stable non-empty identifier rather
+  // than the CEE-internal format so the mint scheme can evolve without a bump.
+  proposal_id: z.string().min(1),
+  // Short, user-facing description of the change being held (composer-
+  // generated). Display-safe by construction — MUST NOT be internal
+  // doctrine prose; that class of wording is exactly what `reason_code`
+  // replaces.
+  summary: z.string().min(1),
+  mutation_class: HeldProposalMutationClass,
+  reason_code: HeldProposalReasonCode,
+  // Reference into this response's top-level `suggested_actions[].id` for
+  // the "apply this change" affordance. Always present — every held verdict
+  // the referee gate emits carries a confirm chip. This block never embeds
+  // its own action object, so the chip is never duplicated on the wire.
+  confirm_action_id: z.string().min(1),
+  // Reference into `suggested_actions[].id` for an explicit "decline"
+  // affordance, when one exists. Optional: CEE does not yet emit a
+  // dedicated decline chip (today's decline path is free-text — "tell me
+  // what to adjust instead") — this field is forward-declared for when it
+  // does, not fabricated ahead of the wire carrying it.
+  decline_action_id: z.string().min(1).optional(),
+}).strict();
+export type HeldProposalBlock = z.infer<typeof HeldProposalBlockSchema>;
+
+// ----------------------------------------------------------------------------
+// UiDirectiveBlock (0.15.0) — seamlessness R4 keystone.
+//
+// Verified-absent channel: no existing block kind lets a CEE response tell
+// the UI "look here" / "open this" without inventing a graph mutation or a
+// free-text instruction the composer has to parse. `ui_directive` is that
+// channel — a pure UX hint, never a state mutation.
+//
+// Fail-closed dispatch contract: `targets[].id` values that the UI's
+// dispatcher does not recognise (stale, already-removed, or a future kind
+// the dispatcher doesn't yet handle) are SILENTLY SKIPPED — a directive
+// must never throw, block rendering, or surface an error for an unknown
+// id. This mirrors the closed-union block-renderer pattern already in the
+// UI (`InlineBlocks.tsx` switches on `block.type` with a no-op default;
+// there is no fallback affordance today) — `ui_directive` is designed to
+// degrade the same way at the id level, not just the block-kind level.
+//
+// Advisory, not a command: directives are UX suggestions (highlight/focus/
+// open a panel) for the CURRENT turn's response. They never carry graph
+// state, never imply a mutation happened or should happen, and a consumer
+// that ignores every `ui_directive` block loses only presentation polish,
+// never correctness.
+//
+// Closed `verb` enum, v1: `highlight` | `focus` | `open_inspector`.
+// `annotate` (attach a note to a graph element) and `start_tour` (multi-step
+// guided sequence) were considered and deliberately DEFERRED — both need
+// their own payload shape (annotate needs placement; start_tour needs an
+// ordered step list) that would either bloat this block or need a second
+// block kind; v1 stays minimal. Extend the enum additively when a verb's
+// shape is actually needed by a shipping consumer.
+//
+// Rate expectations: a single response should carry AT MOST ~3 of these
+// blocks. Not schema-enforced (a hard cap would be a false floor — CEE
+// composition, not wire validation, owns pacing) but documented here so a
+// future composer bug (e.g. one directive per target_ref emitted in a loop)
+// is recognisable as a bug against a stated expectation.
+export const UiDirectiveVerb = z.enum(['highlight', 'focus', 'open_inspector']);
+export type UiDirectiveVerbLiteral = z.infer<typeof UiDirectiveVerb>;
+
+const UI_DIRECTIVE_DURATION_MIN_MS = 500;
+const UI_DIRECTIVE_DURATION_MAX_MS = 10_000;
+const UI_DIRECTIVE_NOTE_MAX = 140;
+
+export const UiDirectiveBlockSchema = z.object({
+  type: z.literal('ui_directive'),
+  verb: UiDirectiveVerb,
+  // Reuses the existing TargetRefSchema shape (§0.1) rather than a
+  // bespoke minimal {id, kind} — TargetRef's `label` is harmless-but-
+  // unused here (dispatch keys off `id`/`kind` only) and reuse avoids a
+  // second near-identical ref shape in the same package.
+  targets: z.array(TargetRefSchema),
+  duration_ms: z
+    .number()
+    .int()
+    .min(UI_DIRECTIVE_DURATION_MIN_MS)
+    .max(UI_DIRECTIVE_DURATION_MAX_MS)
+    .optional(),
+  // Short, display-safe caption a UI MAY render alongside the directive
+  // (e.g. a tooltip). Same display-safety expectation as ReviewCardBlock's
+  // `title` — no internal ids, no doctrine prose. Bounded short: this is a
+  // caption, not a narrative field (compare PHASE3_TITLE_MAX=80 for a
+  // full card title).
+  note: z.string().min(1).max(UI_DIRECTIVE_NOTE_MAX).optional(),
+}).strict();
+export type UiDirectiveBlock = z.infer<typeof UiDirectiveBlockSchema>;
+
 // Discriminated union. Additive — new block types land in A1+ without breaking.
 // 0.5.0: handler-result blocks joined the union.
 // 0.8.0: DraftGraphBlock added.
 // 0.13.0: Phase 3 block types (ReviewCard / Coaching / Evidence / Exercise)
 //         added per Analysis tab data contract v1.3.
+// 0.15.0: HeldProposalBlock added (ROADMAP 1.43).
+// 0.15.0: UiDirectiveBlock added (seamlessness R4 keystone).
 export const BlockSchema = z
   .discriminatedUnion('type', [
     TextBlockSchema,
@@ -440,6 +598,8 @@ export const BlockSchema = z
     CoachingBlockSchema,
     EvidenceBlockObjectSchema,
     ExerciseBlockSchema,
+    HeldProposalBlockSchema,
+    UiDirectiveBlockSchema,
   ])
   // Apply the §1.3 EvidenceBlock consistency rule at the union level so
   // wire-level `BlockSchema.safeParse(x)` fails closed when an

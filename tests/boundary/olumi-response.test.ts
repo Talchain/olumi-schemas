@@ -175,6 +175,42 @@ describe('OlumiResponse v0.8.1 — analysis_ready field', () => {
   });
 });
 
+describe('OlumiResponse v0.15.0 — reasoning field (ROADMAP 1.42)', () => {
+  const base = {
+    response_version: 2 as const,
+    assistant_text: 'Here is my recommendation.',
+    blocks: [],
+    suggested_actions: [],
+    insights: [],
+    stage_indicator: 'decide' as const,
+  };
+
+  it('accepts a response without reasoning (field is optional — model-adaptive)', () => {
+    expect(OlumiResponseSchema.parse(base)).toEqual(base);
+  });
+
+  it('accepts a response with reasoning as a verbatim string', () => {
+    const r = { ...base, reasoning: 'Weighing option A against option B, given the cost constraint...' };
+    const parsed = OlumiResponseSchema.parse(r);
+    expect(parsed.reasoning).toBe(r.reasoning);
+  });
+
+  it('accepts an empty-string reasoning (schema does not impose a minimum length)', () => {
+    const r = { ...base, reasoning: '' };
+    expect(OlumiResponseSchema.parse(r).reasoning).toBe('');
+  });
+
+  it('rejects a non-string reasoning', () => {
+    const r = { ...base, reasoning: 12345 };
+    expect(OlumiResponseSchema.safeParse(r).success).toBe(false);
+  });
+
+  it('still rejects unknown top-level fields alongside reasoning (strict)', () => {
+    const r = { ...base, reasoning: 'text', extra_field: true };
+    expect(OlumiResponseSchema.safeParse(r).success).toBe(false);
+  });
+});
+
 describe('DraftGraphBlockSchema', () => {
   it('accepts a valid draft_graph block', () => {
     const b = { type: 'draft_graph' as const, nodes: [], edges: [], node_count: 0, edge_count: 0 };

@@ -16,6 +16,25 @@ const BaseFields = {
   stage: Stage,
 } as const;
 
+// Selected-element reference shared by `selected_elements` (on
+// `MessageTurnPayloadSchema`, below) and `selection_change` (a
+// `SystemEventSchema` member, further down this file). Deliberately
+// minimal (id + kind + an optional display label) — NOT the Phase 3
+// `TargetRefSchema` (§0.1 in blocks.ts), which requires a non-empty
+// `label`: a live canvas selection can legitimately reference an element
+// the UI has no ready-made label for (e.g. mid-drag, or a just-added
+// unlabelled node), and this is an UI→CEE inbound field, not a
+// wire-rendered UI target. Declared here (ahead of both members that use
+// it) to avoid a temporal-dead-zone reference.
+export const SelectedElementRefSchema = z.object({
+  id: z.string().min(1),
+  kind: z.string().min(1),
+  label: z.string().min(1).optional(),
+}).strict();
+export type SelectedElementRef = z.infer<typeof SelectedElementRefSchema>;
+
+const MAX_SELECTED_ELEMENTS = 20;
+
 // kind: 'message' — user-originated turn with free text.
 // `source` tells CEE how the text got here (composer / chip / chip_click / retry).
 // `chip` carries action_type and parameters only when source is 'chip' | 'chip_click'.
@@ -32,6 +51,20 @@ const BaseFields = {
 // are advisory; CEE may still ignore them if the trigger preconditions
 // are not satisfied (e.g., a graph already exists).
 //
+// `selected_elements` — optional (v0.15.0). Piggyback selection context for
+// THIS turn only: what the user had selected on the canvas at send time.
+// Verified gap this closes: the live V5 outbound builder
+// (`src/v5/buildPayload.ts` in DecisionGuideAI) sends NO selection context
+// today — a `selected_elements` field already exists on the wire, but only
+// on the dead V4-era builder path (`src/services/turn-request-builder.ts`,
+// shape `{node_ids?, edge_ids?}`), which the live V5 conversation flow does
+// not call. This field is the V5-shaped replacement (array of typed refs,
+// bounded ≤20) — the V4 field is not touched by this change; the two simply
+// coexist under the same name on different schema versions/turn shapes.
+// Between-turn selection awareness (the user changes their selection
+// without sending a turn) is NOT this field's job — that is
+// `selection_change` (below).
+//
 // Cross-field refinements are applied on the discriminated-union wrapper
 // below (z.discriminatedUnion requires plain ZodObject members).
 export const MessageTurnPayloadSchema = z.object({
@@ -47,6 +80,7 @@ export const MessageTurnPayloadSchema = z.object({
   retry_of: Uuid.optional(),
   generate_model: z.boolean().optional(),
   explicit_generate: z.boolean().optional(),
+  selected_elements: z.array(SelectedElementRefSchema).max(MAX_SELECTED_ELEMENTS).optional(),
 }).strict();
 
 // kind: 'system_event' — UI-initiated event with no free text.
@@ -80,6 +114,32 @@ const RedoEvent = z.object({
   kind: z.literal('redo'),
 }).strict();
 
+// `selection_change` (v0.15.0) — between-turn canvas selection awareness.
+// Debounced client-side (the UI should coalesce rapid selection churn
+// before emitting, not fire one event per click/drag-frame) and sent as a
+// system event because it is UI-initiated with no free text and never
+// renders a user bubble, same as every other member of this union.
+//
+// Advisory context, never a command: CEE MAY use this to inform the NEXT
+// response (e.g. "the user is looking at Factor X"), but a `selection_change`
+// event never itself triggers a mutation, an analysis run, or any handler
+// side effect — it carries no operation, only "here is what is selected
+// now". Distinct from `selected_elements` on `MessageTurnPayloadSchema`,
+// which piggybacks selection onto an already-outbound message turn; this
+// event exists so selection changes ALONE (no accompanying message) still
+// reach CEE.
+//
+// `cleared` distinguishes "selection became empty" from "no selection
+// information sent" — `selected: []` with `cleared: true` says the user
+// explicitly deselected everything; `selected: []` alone is ambiguous with
+// a client that just omits detail. Optional because most emissions are a
+// non-empty selection where the distinction does not apply.
+const SelectionChangeEvent = z.object({
+  kind: z.literal('selection_change'),
+  selected: z.array(SelectedElementRefSchema).max(MAX_SELECTED_ELEMENTS),
+  cleared: z.boolean().optional(),
+}).strict();
+
 export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
@@ -87,6 +147,7 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   ChipClickEvent,
   UndoEvent,
   RedoEvent,
+  SelectionChangeEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 

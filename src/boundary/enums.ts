@@ -71,6 +71,12 @@ export type ActionTypeLiteral = z.infer<typeof ActionType>;
 // they carry no free text and never add a user bubble. CEE V5 dispatches each
 // to a deterministic handler (no LLM). See Docs/v5/v5-turn-shape-matrix.md
 // in olumi-assistants-service for the authoritative handler coverage table.
+// 0.15.0: `selection_change` added — between-turn canvas selection
+// awareness (debounced, advisory-only). Mirrors the member added to the
+// `SystemEventSchema` discriminated union in turn-payload.ts; kept in sync
+// here for parity even though this enum is not itself composed into that
+// union (each event's `kind` there is a literal, not a reference to this
+// enum) — this export is a consumer-facing convenience list of valid kinds.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
@@ -78,6 +84,7 @@ export const SystemEventKind = z.enum([
   'chip_click',
   'undo',
   'redo',
+  'selection_change',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
 

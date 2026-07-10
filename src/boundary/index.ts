@@ -59,6 +59,13 @@ export {
   TargetRefSchema,
   Phase3BlockFreshness,
   Phase3BlockSeverity,
+  // Held proposal (0.15.0 — ROADMAP 1.43)
+  HeldProposalBlockSchema,
+  HeldProposalMutationClass,
+  HeldProposalReasonCode,
+  // UI directive (0.15.0 — seamlessness R4 keystone)
+  UiDirectiveBlockSchema,
+  UiDirectiveVerb,
   BlockSchema,
   ChipSchema,
 } from './blocks.js';
@@ -82,6 +89,13 @@ export type {
   TargetRef,
   Phase3BlockFreshnessLiteral,
   Phase3BlockSeverityLiteral,
+  // Held proposal (0.15.0 — ROADMAP 1.43)
+  HeldProposalBlock,
+  HeldProposalMutationClassLiteral,
+  HeldProposalReasonCodeLiteral,
+  // UI directive (0.15.0 — seamlessness R4 keystone)
+  UiDirectiveBlock,
+  UiDirectiveVerbLiteral,
   Block,
   Chip,
 } from './blocks.js';
@@ -144,12 +158,16 @@ export {
   MessageTurnPayloadSchema,
   SystemEventTurnPayloadSchema,
   SystemEventSchema,
+  // Selection context (0.15.0)
+  SelectedElementRefSchema,
 } from './turn-payload.js';
 export type {
   OrchestratorTurnPayload,
   MessageTurnPayload,
   SystemEventTurnPayload,
   SystemEvent,
+  // Selection context (0.15.0)
+  SelectedElementRef,
 } from './turn-payload.js';
 
 // OlumiResponse (egress from /orchestrate/v2/turn)
@@ -189,6 +207,26 @@ export type {
   ValidatePatchRequest,
   ValidatePatchResponse,
 } from './patch.js';
+
+// Decision record (0.15.0 — ROADMAP 3.1). Standalone wire/API contract, NOT
+// wired into OlumiResponse — see decision-record.ts for scope + persistence
+// note (Supabase, coordinated separately).
+export {
+  DecisionRecordSchema,
+  DecisionRecordDecisionSchema,
+  DecisionRecordAnalysisSummarySchema,
+  DecisionRecordPredictionSchema,
+  DecisionRecordOutcomeSchema,
+  DecisionRecordOutcomeResult,
+} from './decision-record.js';
+export type {
+  DecisionRecord,
+  DecisionRecordDecision,
+  DecisionRecordAnalysisSummary,
+  DecisionRecordPrediction,
+  DecisionRecordOutcome,
+  DecisionRecordOutcomeResultLiteral,
+} from './decision-record.js';
 
 // Re-exports from the flat root for convenience inside /boundary consumers.
 // Keeping these under /boundary lets V5 code import everything it needs
