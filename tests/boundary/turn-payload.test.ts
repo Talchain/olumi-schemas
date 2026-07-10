@@ -192,6 +192,78 @@ describe('OrchestratorTurnPayload v0.7.0 — discriminated union', () => {
     expect(r.success).toBe(false);
   });
 
+  // v0.15.0 — selected_elements on MessageTurnPayloadSchema (piggyback
+  // selection context for the current turn; V5-shaped replacement for the
+  // dead V4 turn-request-builder field of the same name).
+  describe('selected_elements (message payload, v0.15.0)', () => {
+    it('accepts a message payload with selected_elements', () => {
+      const payload = {
+        ...baseMessage,
+        selected_elements: [
+          { id: 'fac_delivery_risk', kind: 'factor' as const, label: 'Delivery risk' },
+          { id: 'opt_a', kind: 'option' as const },
+        ],
+      };
+      const r = OrchestratorTurnPayloadSchema.parse(payload);
+      expect(r).toEqual(payload);
+    });
+
+    it('accepts an empty selected_elements array', () => {
+      const payload = { ...baseMessage, selected_elements: [] };
+      const r = OrchestratorTurnPayloadSchema.parse(payload);
+      expect(r).toEqual(payload);
+    });
+
+    it('accepts selected_elements without the optional label', () => {
+      const payload = { ...baseMessage, selected_elements: [{ id: 'fac_1', kind: 'factor' }] };
+      const r = OrchestratorTurnPayloadSchema.parse(payload);
+      expect(r).toEqual(payload);
+    });
+
+    it('accepts exactly 20 selected_elements (bound)', () => {
+      const selected_elements = Array.from({ length: 20 }, (_, i) => ({
+        id: `fac_${i}`,
+        kind: 'factor' as const,
+      }));
+      const payload = { ...baseMessage, selected_elements };
+      const r = OrchestratorTurnPayloadSchema.parse(payload);
+      expect(r).toEqual(payload);
+    });
+
+    it('rejects more than 20 selected_elements', () => {
+      const selected_elements = Array.from({ length: 21 }, (_, i) => ({
+        id: `fac_${i}`,
+        kind: 'factor' as const,
+      }));
+      const r = OrchestratorTurnPayloadSchema.safeParse({ ...baseMessage, selected_elements });
+      expect(r.success).toBe(false);
+    });
+
+    it('rejects a selected_elements entry missing id', () => {
+      const r = OrchestratorTurnPayloadSchema.safeParse({
+        ...baseMessage,
+        selected_elements: [{ kind: 'factor' }],
+      });
+      expect(r.success).toBe(false);
+    });
+
+    it('rejects a selected_elements entry with an empty kind', () => {
+      const r = OrchestratorTurnPayloadSchema.safeParse({
+        ...baseMessage,
+        selected_elements: [{ id: 'fac_1', kind: '' }],
+      });
+      expect(r.success).toBe(false);
+    });
+
+    it('rejects selected_elements on a system_event payload (strict — field is message-only)', () => {
+      const r = OrchestratorTurnPayloadSchema.safeParse({
+        ...baseSystemEvent,
+        selected_elements: [{ id: 'fac_1', kind: 'factor' }],
+      });
+      expect(r.success).toBe(false);
+    });
+  });
+
   // v0.15.0 — selection_change inbound system-event (between-turn selection
   // awareness, debounced client-side, advisory-only).
   describe('selection_change system event (v0.15.0)', () => {

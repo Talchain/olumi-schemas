@@ -37,6 +37,19 @@ the next response but it triggers no mutation, run, or handler side effect.
 `cleared: true` with an empty `selected` distinguishes an explicit
 deselect-all from a client simply omitting detail.
 
+### Added — `selected_elements` on the V5 message turn payload (additive)
+
+Optional `selected_elements: SelectedElementRef[]` (≤20, reusing the
+`SelectedElementRefSchema` introduced alongside `selection_change` above) on
+`MessageTurnPayloadSchema`. Verified gap: DecisionGuideAI's live V5 outbound
+builder (`src/v5/buildPayload.ts`) sends no selection context on message
+turns today — a same-named `selected_elements` field already exists on the
+wire, but only on the dead V4-era builder (`src/services/turn-request-
+builder.ts`, shape `{node_ids?, edge_ids?}`) that the live V5 conversation
+flow never calls. This is the V5-shaped piggyback field for the CURRENT
+turn's selection; `selection_change` (above) covers selection awareness
+between turns with no message attached.
+
 ### Added — optional `reasoning` on `OlumiResponseSchema` (additive)
 
 Formalises the `_reasoning` wire sidecar shipped behind
