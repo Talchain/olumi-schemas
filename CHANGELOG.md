@@ -5,7 +5,25 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.15.0] — 2026-07-09 (DRAFT — not published; formalises two seams already live on staging)
+## [0.15.0] — 2026-07-09 (DRAFT — not published; extends across the full sprint wave)
+
+### Added — `ui_directive` block kind (additive; seamlessness R4 keystone)
+
+New member of the `BlockSchema` discriminated union: `UiDirectiveBlockSchema`
+(`type: "ui_directive"`), plus the closed `UiDirectiveVerb` enum
+(`highlight` | `focus` | `open_inspector`, v1). Fills a verified-absent
+channel — today a CEE response has no way to tell the UI "look here" /
+"open this" without inventing a graph mutation or a free-text instruction.
+
+Fail-closed dispatch contract: unknown `targets[].id` values are silently
+skipped by consumers, never an error. Advisory UX only — never a state
+mutation; a consumer that ignores every `ui_directive` block loses only
+presentation polish. `targets` reuses the existing `TargetRefSchema` shape
+(§0.1) rather than a bespoke ref type. `duration_ms` is bounded 500–10000ms;
+`note` is an optional short display-safe caption (≤140 chars). Rate
+expectation (documented, not schema-enforced): ≤3 per response.
+`annotate` / `start_tour` verbs considered and deliberately deferred to a
+future minor bump once their payload shapes are actually needed.
 
 ### Added — optional `reasoning` on `OlumiResponseSchema` (additive)
 

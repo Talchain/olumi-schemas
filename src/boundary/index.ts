@@ -63,6 +63,9 @@ export {
   HeldProposalBlockSchema,
   HeldProposalMutationClass,
   HeldProposalReasonCode,
+  // UI directive (0.15.0 — seamlessness R4 keystone)
+  UiDirectiveBlockSchema,
+  UiDirectiveVerb,
   BlockSchema,
   ChipSchema,
 } from './blocks.js';
@@ -90,6 +93,9 @@ export type {
   HeldProposalBlock,
   HeldProposalMutationClassLiteral,
   HeldProposalReasonCodeLiteral,
+  // UI directive (0.15.0 — seamlessness R4 keystone)
+  UiDirectiveBlock,
+  UiDirectiveVerbLiteral,
   Block,
   Chip,
 } from './blocks.js';

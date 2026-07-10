@@ -511,12 +511,79 @@ export const HeldProposalBlockSchema = z.object({
 }).strict();
 export type HeldProposalBlock = z.infer<typeof HeldProposalBlockSchema>;
 
+// ----------------------------------------------------------------------------
+// UiDirectiveBlock (0.15.0) — seamlessness R4 keystone.
+//
+// Verified-absent channel: no existing block kind lets a CEE response tell
+// the UI "look here" / "open this" without inventing a graph mutation or a
+// free-text instruction the composer has to parse. `ui_directive` is that
+// channel — a pure UX hint, never a state mutation.
+//
+// Fail-closed dispatch contract: `targets[].id` values that the UI's
+// dispatcher does not recognise (stale, already-removed, or a future kind
+// the dispatcher doesn't yet handle) are SILENTLY SKIPPED — a directive
+// must never throw, block rendering, or surface an error for an unknown
+// id. This mirrors the closed-union block-renderer pattern already in the
+// UI (`InlineBlocks.tsx` switches on `block.type` with a no-op default;
+// there is no fallback affordance today) — `ui_directive` is designed to
+// degrade the same way at the id level, not just the block-kind level.
+//
+// Advisory, not a command: directives are UX suggestions (highlight/focus/
+// open a panel) for the CURRENT turn's response. They never carry graph
+// state, never imply a mutation happened or should happen, and a consumer
+// that ignores every `ui_directive` block loses only presentation polish,
+// never correctness.
+//
+// Closed `verb` enum, v1: `highlight` | `focus` | `open_inspector`.
+// `annotate` (attach a note to a graph element) and `start_tour` (multi-step
+// guided sequence) were considered and deliberately DEFERRED — both need
+// their own payload shape (annotate needs placement; start_tour needs an
+// ordered step list) that would either bloat this block or need a second
+// block kind; v1 stays minimal. Extend the enum additively when a verb's
+// shape is actually needed by a shipping consumer.
+//
+// Rate expectations: a single response should carry AT MOST ~3 of these
+// blocks. Not schema-enforced (a hard cap would be a false floor — CEE
+// composition, not wire validation, owns pacing) but documented here so a
+// future composer bug (e.g. one directive per target_ref emitted in a loop)
+// is recognisable as a bug against a stated expectation.
+export const UiDirectiveVerb = z.enum(['highlight', 'focus', 'open_inspector']);
+export type UiDirectiveVerbLiteral = z.infer<typeof UiDirectiveVerb>;
+
+const UI_DIRECTIVE_DURATION_MIN_MS = 500;
+const UI_DIRECTIVE_DURATION_MAX_MS = 10_000;
+const UI_DIRECTIVE_NOTE_MAX = 140;
+
+export const UiDirectiveBlockSchema = z.object({
+  type: z.literal('ui_directive'),
+  verb: UiDirectiveVerb,
+  // Reuses the existing TargetRefSchema shape (§0.1) rather than a
+  // bespoke minimal {id, kind} — TargetRef's `label` is harmless-but-
+  // unused here (dispatch keys off `id`/`kind` only) and reuse avoids a
+  // second near-identical ref shape in the same package.
+  targets: z.array(TargetRefSchema),
+  duration_ms: z
+    .number()
+    .int()
+    .min(UI_DIRECTIVE_DURATION_MIN_MS)
+    .max(UI_DIRECTIVE_DURATION_MAX_MS)
+    .optional(),
+  // Short, display-safe caption a UI MAY render alongside the directive
+  // (e.g. a tooltip). Same display-safety expectation as ReviewCardBlock's
+  // `title` — no internal ids, no doctrine prose. Bounded short: this is a
+  // caption, not a narrative field (compare PHASE3_TITLE_MAX=80 for a
+  // full card title).
+  note: z.string().min(1).max(UI_DIRECTIVE_NOTE_MAX).optional(),
+}).strict();
+export type UiDirectiveBlock = z.infer<typeof UiDirectiveBlockSchema>;
+
 // Discriminated union. Additive — new block types land in A1+ without breaking.
 // 0.5.0: handler-result blocks joined the union.
 // 0.8.0: DraftGraphBlock added.
 // 0.13.0: Phase 3 block types (ReviewCard / Coaching / Evidence / Exercise)
 //         added per Analysis tab data contract v1.3.
 // 0.15.0: HeldProposalBlock added (ROADMAP 1.43).
+// 0.15.0: UiDirectiveBlock added (seamlessness R4 keystone).
 export const BlockSchema = z
   .discriminatedUnion('type', [
     TextBlockSchema,
@@ -532,6 +599,7 @@ export const BlockSchema = z
     EvidenceBlockObjectSchema,
     ExerciseBlockSchema,
     HeldProposalBlockSchema,
+    UiDirectiveBlockSchema,
   ])
   // Apply the §1.3 EvidenceBlock consistency rule at the union level so
   // wire-level `BlockSchema.safeParse(x)` fails closed when an
