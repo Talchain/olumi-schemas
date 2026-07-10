@@ -25,6 +25,18 @@ expectation (documented, not schema-enforced): ≤3 per response.
 `annotate` / `start_tour` verbs considered and deliberately deferred to a
 future minor bump once their payload shapes are actually needed.
 
+### Added — `selection_change` inbound system-event (additive)
+
+New member of the `SystemEventSchema` discriminated union (7th member):
+`{ kind: 'selection_change', selected: SelectedElementRef[] (≤20), cleared?:
+boolean }`, plus the shared `SelectedElementRefSchema` (`{id, kind, label?}`)
+it introduces. Debounced client-side; carries between-turn canvas selection
+awareness ("here is what the user has selected now") with no accompanying
+message. Advisory context only — never a command; CEE may use it to inform
+the next response but it triggers no mutation, run, or handler side effect.
+`cleared: true` with an empty `selected` distinguishes an explicit
+deselect-all from a client simply omitting detail.
+
 ### Added — optional `reasoning` on `OlumiResponseSchema` (additive)
 
 Formalises the `_reasoning` wire sidecar shipped behind

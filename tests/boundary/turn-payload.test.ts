@@ -191,4 +191,68 @@ describe('OrchestratorTurnPayload v0.7.0 — discriminated union', () => {
     const r = OrchestratorTurnPayloadSchema.safeParse({ ...baseSystemEvent, generate_model: true });
     expect(r.success).toBe(false);
   });
+
+  // v0.15.0 — selection_change inbound system-event (between-turn selection
+  // awareness, debounced client-side, advisory-only).
+  describe('selection_change system event (v0.15.0)', () => {
+    it('accepts a selection_change event with a non-empty selection', () => {
+      const payload = {
+        ...baseSystemEvent,
+        event: {
+          kind: 'selection_change' as const,
+          selected: [{ id: 'fac_1', kind: 'factor' as const, label: 'Factor one' }],
+        },
+      };
+      const r = OrchestratorTurnPayloadSchema.parse(payload);
+      expect(r).toEqual(payload);
+    });
+
+    it('accepts a selection_change event with cleared: true and an empty selection', () => {
+      const payload = {
+        ...baseSystemEvent,
+        event: { kind: 'selection_change' as const, selected: [], cleared: true },
+      };
+      const r = OrchestratorTurnPayloadSchema.parse(payload);
+      expect(r).toEqual(payload);
+    });
+
+    it('accepts a selection_change event without cleared (optional)', () => {
+      const payload = {
+        ...baseSystemEvent,
+        event: { kind: 'selection_change' as const, selected: [{ id: 'fac_1', kind: 'factor' }] },
+      };
+      const r = OrchestratorTurnPayloadSchema.parse(payload);
+      expect(r).toEqual(payload);
+    });
+
+    it('rejects a selection_change event missing selected', () => {
+      const r = OrchestratorTurnPayloadSchema.safeParse({
+        ...baseSystemEvent,
+        event: { kind: 'selection_change' },
+      });
+      expect(r.success).toBe(false);
+    });
+
+    it('rejects a selection_change event with more than 20 selected entries', () => {
+      const selected = Array.from({ length: 21 }, (_, i) => ({ id: `fac_${i}`, kind: 'factor' }));
+      const r = OrchestratorTurnPayloadSchema.safeParse({
+        ...baseSystemEvent,
+        event: { kind: 'selection_change', selected },
+      });
+      expect(r.success).toBe(false);
+    });
+
+    it('rejects unknown fields on a selection_change event (strict)', () => {
+      const r = OrchestratorTurnPayloadSchema.safeParse({
+        ...baseSystemEvent,
+        event: { kind: 'selection_change', selected: [], extra: 'x' },
+      });
+      expect(r.success).toBe(false);
+    });
+
+    it('SystemEventSchema accepts selection_change standalone', () => {
+      const event = { kind: 'selection_change' as const, selected: [] };
+      expect(SystemEventSchema.parse(event)).toEqual(event);
+    });
+  });
 });

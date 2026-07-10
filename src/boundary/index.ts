@@ -158,12 +158,16 @@ export {
   MessageTurnPayloadSchema,
   SystemEventTurnPayloadSchema,
   SystemEventSchema,
+  // Selection context (0.15.0)
+  SelectedElementRefSchema,
 } from './turn-payload.js';
 export type {
   OrchestratorTurnPayload,
   MessageTurnPayload,
   SystemEventTurnPayload,
   SystemEvent,
+  // Selection context (0.15.0)
+  SelectedElementRef,
 } from './turn-payload.js';
 
 // OlumiResponse (egress from /orchestrate/v2/turn)
