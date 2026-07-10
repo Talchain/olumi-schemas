@@ -124,11 +124,15 @@ renderer union + a held-proposal card component; pins bump CEE-first per
 ### Paul-gate
 
 This is a **draft PR only**. Do NOT merge, do NOT publish to GitHub
-Packages, do NOT bump any consumer's `@talchain/schemas` pin. Both changes
-above are strictly additive (zero existing fields removed, renamed, or
-tightened) — verified by diff against `origin/main` — and the full test
-suite plus `tsc` build stay green. Merge + publish + pin-bump remain
-Paul-gated per this repo's `CLAUDE.md`.
+Packages, do NOT bump any consumer's `@talchain/schemas` pin. All six
+changes above (`reasoning`, `held_proposal`, `ui_directive`,
+`selection_change`, `selected_elements`, `DecisionRecordSchema`) are
+strictly additive (zero existing fields removed, renamed, or tightened) —
+verified by diff against `origin/main` — and the full test suite plus
+`tsc` build stay green (745 tests: 674 baseline + 71 new across the four
+latest additions). Merge + publish + pin-bump remain Paul-gated per this
+repo's `CLAUDE.md`. **One Paul approval covers the whole wave** — the six
+additions are reviewed and gated together, not as separate PRs.
 
 ## [0.14.0] — 2026-07-08
 
