@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 // ----------------------------------------------------------------------------
-// DecisionRecordSchema (0.15.0) — ROADMAP 3.1, "Minimal decision record now".
+// DecisionRecordSchema (0.15.0; 0.16.0 additive scoring/provenance fields) —
+// ROADMAP 3.1, "Minimal decision record now".
 //
 // Types the wire/API surface for Olumi's long-term differentiator: capture a
 // prediction at decision time, then check back later against what actually
@@ -47,21 +48,55 @@ export type DecisionRecordAnalysisSummary = z.infer<typeof DecisionRecordAnalysi
 // The choice actually made, and the graph state it was made against.
 // `graph_hash` anchors the decision to a specific graph version so a later
 // review can tell whether the graph has since changed underneath it.
+//
+// `committed_by_user` (0.16.0, additive — calibration pack lane 3a,
+// docs-designs/CALIBRATION-LOOP-DESIGN-2026-07-11/05-build-slices.md):
+// true when the record was created by an explicit "log this decision"
+// action, distinguishing intentional commits from ambient auto-capture.
+// Optional; absent means the record predates the commit action (or was
+// auto-captured) — a disclosed inference, never a fabricated value.
 export const DecisionRecordDecisionSchema = z.object({
   chosen_option_id: z.string().min(1),
   chosen_option_label: z.string().min(1),
   graph_hash: z.string().min(1),
   analysis_summary: DecisionRecordAnalysisSummarySchema.optional(),
+  committed_by_user: z.boolean().optional(),
 }).strict();
 export type DecisionRecordDecision = z.infer<typeof DecisionRecordDecisionSchema>;
+
+// Provenance of `prediction.confidence` (0.16.0, additive — calibration pack
+// honesty constraint §2, docs-designs/CALIBRATION-LOOP-DESIGN-2026-07-11/
+// 04-honesty-constraints.md): 'model_derived' = the analysis's own win
+// probability; 'user_stated' = the user's elicited confidence. The two
+// populations are NEVER blended into one calibration score — a blended
+// number would be unattributable. Absent ⇒ 'model_derived' for all records
+// captured before elicitation existed (disclosed inference, per lane 3a).
+export const DecisionRecordConfidenceSource = z.enum([
+  'model_derived',
+  'user_stated',
+]);
+export type DecisionRecordConfidenceSourceLiteral = z.infer<typeof DecisionRecordConfidenceSource>;
 
 // The forward-looking claim being staked at decision time — the thing the
 // eventual `outcome` is scored against. `confidence` is the user/model's own
 // calibration input (0=no confidence, 1=certain); optional because not every
 // capture flow prompts for it.
+//
+// `probability_of_goal` / `probability_of_joint_goal` (0.16.0, additive —
+// D-N Option-B derisk, ruled 2026-07-11: "both candidate probabilities get
+// captured from day one so a Neil overrule is a recompute, never lost
+// data"): the chosen option's goal-attainment probabilities as delivered at
+// decision time. `probability_of_goal` = P(option meets the single goal
+// threshold); `probability_of_joint_goal` = P(option meets ALL constraints
+// jointly). Producer values (ISL via PLoT) recorded verbatim — the record
+// never computes or rescales them. Both optional-forward: absent whenever
+// no goal target existed at capture.
 export const DecisionRecordPredictionSchema = z.object({
   statement: z.string().min(1),
   confidence: z.number().min(0).max(1).optional(),
+  confidence_source: DecisionRecordConfidenceSource.optional(),
+  probability_of_goal: z.number().min(0).max(1).optional(),
+  probability_of_joint_goal: z.number().min(0).max(1).optional(),
 }).strict();
 export type DecisionRecordPrediction = z.infer<typeof DecisionRecordPredictionSchema>;
 

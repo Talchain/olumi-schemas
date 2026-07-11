@@ -160,6 +160,11 @@ describe('package exports — boundary subpath (dist/boundary/index.js)', () => 
     expect(boundaryDist.DecisionRecordOutcomeResult).toBeDefined();
   });
 
+  // 0.16.0 — confidence provenance enum (calibration pack honesty §2).
+  it('exposes DecisionRecordConfidenceSource at the boundary entry', () => {
+    expect(boundaryDist.DecisionRecordConfidenceSource).toBeDefined();
+  });
+
   it('does NOT expose the internal EvidenceBlockObjectSchema helper (boundary subpath)', () => {
     // The bare ZodObject is an implementation detail used to construct
     // `z.discriminatedUnion`. Consumers must import `EvidenceBlockSchema`

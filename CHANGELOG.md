@@ -5,6 +5,62 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] — 2026-07-11 (DRAFT — not published; merge + publish are Paul-gated contract class)
+
+Strictly-additive minor bump: three optional fields + one closed enum on the
+standalone `DecisionRecordSchema` family, nothing else touched. Zero fields
+removed, renamed, or tightened; every object schema stays `.strict()`. Every
+0.15.0-shaped payload parses unchanged (pinned by the existing decision-record
+suite plus a dedicated 0.15.0-compat block in
+`tests/boundary/decision-record.test.ts`).
+
+### Added — goal-attainment probabilities on `prediction` (D-N Option-B derisk)
+
+`DecisionRecordPredictionSchema` gains optional `probability_of_goal` and
+`probability_of_joint_goal` (both `number`, bounded [0,1]): the chosen
+option's goal-attainment probabilities as delivered at decision time —
+`probability_of_goal` = P(option meets the single goal threshold),
+`probability_of_joint_goal` = P(option meets ALL constraints jointly).
+Producer values (ISL via PLoT) recorded verbatim; optional-forward, absent
+whenever no goal target existed at capture.
+
+Why now: Paul ruled calibration scoring **Option B** (score the
+goal-attainment probability against whether the goal was actually hit;
+Neil ratifies async) with the explicit derisk that *both candidate
+probabilities get captured from day one so a Neil overrule is a recompute,
+never lost data*. The CEE capture-addendum lane then verified the capture
+CANNOT ship on 0.15.0: `DecisionRecordSchema` is `.strict()` at every level,
+so the additive fields are hard-rejected at every layer — the capture
+addendum is blocked on exactly this bump.
+
+### Added — `prediction.confidence_source` provenance enum (calibration honesty §2)
+
+New closed enum `DecisionRecordConfidenceSource` =
+`'model_derived' | 'user_stated'`, carried as optional
+`prediction.confidence_source`. From the calibration design pack's binding
+honesty constraint (CALIBRATION-LOOP-DESIGN-2026-07-11/04 §2): model-derived
+and user-stated confidence populations are NEVER blended into one calibration
+score. Absent ⇒ `'model_derived'` for all records captured before elicitation
+existed — a disclosed inference (lane 3a), not a fabricated value.
+
+### Added — `decision.committed_by_user` (calibration pack lane 3a)
+
+Optional `boolean` on `DecisionRecordDecisionSchema`: true when the record
+was created by an explicit "log this decision" action, distinguishing
+intentional commits from ambient auto-capture. Specified alongside
+`confidence_source` in the same 0.16.0 lane of the calibration pack's build
+slices (05, slice 3 lane 3a).
+
+### Considered and NOT added (proposed-only — awaiting the design gate)
+
+`target_ref` / `proposer` on `HeldProposalBlockSchema`: the contested-edge
+pack (CONTESTED-EDGE-DESIGN-2026-07-11, 03 §5–6 + 06 E3) parks both for "the
+first planned 0.16.0-class bump" **as a decision flagged for Paul/Neil**, with
+no ratified shapes. They are described as PROPOSED in the 0.16.0 PR body and
+deliberately kept out of the schema until that gate passes — `.strict()` on
+the block means a premature field hard-rejects whole blocks at older-pinned
+consumers during any rollout window.
+
 ## [0.15.0] — 2026-07-09 (DRAFT — not published; extends across the full sprint wave)
 
 ### Added — `ui_directive` block kind (additive; seamlessness R4 keystone)
