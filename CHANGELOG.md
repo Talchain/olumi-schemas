@@ -22,6 +22,8 @@ survival probe. Consumer repos import `MAXIMAL_FIXTURES` and deep-compare
 (the older-pin hazard that has cost coaching, evidence, and enrichment
 fields) a test failure instead of a production loss.
 
+The registry holds **102 entries**.
+
 Guard rails in this repo (`tests/fixtures/`):
 
 - **Completeness ratchet** — enumerates every non-enum Zod schema exported
@@ -29,6 +31,23 @@ Guard rails in this repo (`tests/fixtures/`):
   registered fixture (identity-matched, so re-exports are covered) or an
   explicit documented exclusion (currently: the CEE-internal `orchestrator`
   namespace). A new exported schema without a fixture fails CI here first.
+- **Maximality walker** (`src/fixtures/maximality.ts`, exported from
+  `@talchain/schemas/fixtures` so consumers can audit their own pins) —
+  the ratchet above checks schema *identity* membership only, so it is
+  satisfied by an empty fixture, and the dominant drift path (a new optional
+  field on an EXISTING schema — the shape of every historical coaching /
+  evidence / enrichment loss) tripped nothing. The walker introspects each
+  schema's `_def` recursively and fails on any optional/nullable field never
+  populated, any empty array/record/set/map whose schema allows contents, and
+  any un-exercised union branch. Gaps aggregate by schema identity (a field
+  exercised anywhere counts). Handles nested optionals, discriminated-union
+  variants, records, tuples, intersections, effects/refinement wrappers, and
+  depth-capped lazy/recursive schemas. Fields that genuinely cannot be
+  populated require an explicit documented `MAXIMALITY_EXCLUSIONS` entry
+  (currently empty) — never a silent skip; stale exclusions are rejected.
+  Both drift paths are pinned as permanent negative controls, and an
+  anti-vacuity assertion pins the reached surface so the guard cannot rot
+  into a no-op.
 - **Round-trip zero-strip suite** — every fixture parses with zero field
   loss; the package's single `.default()` mutation (`EdgeV3Schema.edge_type`
   → `'directed'`) is explicitly documented and pinned as the ONLY one.

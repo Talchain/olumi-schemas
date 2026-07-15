@@ -124,6 +124,15 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     ).toEqual([]);
   });
 
+  it('the registry size matches the documented count', () => {
+    // P2 guard: the PR body / CHANGELOG quote a registry size. It was stated as
+    // 100 while the registry actually held 102 — a small drift, but this
+    // package's entire pitch is that its counts are trustworthy. Pin it so the
+    // number in the docs and the number in the code cannot silently diverge:
+    // changing the registry now forces updating this line AND the CHANGELOG.
+    expect(MAXIMAL_FIXTURES.length).toBe(102);
+  });
+
   it('family keys are unique', () => {
     const seen = new Set<string>();
     const dupes: string[] = [];

@@ -1726,6 +1726,38 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
 });
 
 // ----------------------------------------------------------------------------
+// Maximality exclusions — per-FIELD counterpart to FIXTURE_COVERAGE_EXCLUSIONS
+// above. The completeness ratchet asks "does this schema have a fixture?";
+// the maximality walker (./maximality.ts, enforced by
+// tests/fixtures/maximality.test.ts) asks the question that actually protects
+// the guarantee: "is every optional field, collection, and union branch
+// actually EXERCISED by that fixture?".
+//
+// A field belongs here ONLY when it genuinely cannot be populated — never as a
+// way to silence a fixture that merely has not been updated yet. Each key is
+// the exact gap key printed by the walker's failure message; the walker also
+// rejects STALE keys (an exclusion that no longer describes a real gap is a
+// lie in the docs and must be deleted).
+//
+// Currently EMPTY: every optional field, collection, and union branch in the
+// package is exercised by a fixture. Keep it that way — an addition here is a
+// deliberate, reviewed narrowing of the silent-drop guarantee.
+// ----------------------------------------------------------------------------
+
+export type MaximalityExclusions = Readonly<Record<string, string>>;
+
+export const MAXIMALITY_EXCLUSIONS: MaximalityExclusions = Object.freeze({});
+
+export {
+  auditMaximality,
+  auditMaximalityRaw,
+  maximalityStats,
+  type MaximalityGap,
+  type MaximalityStats,
+  type AuditMaximalityOptions,
+} from './maximality.js';
+
+// ----------------------------------------------------------------------------
 // Lookup helper
 // ----------------------------------------------------------------------------
 
