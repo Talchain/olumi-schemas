@@ -97,8 +97,17 @@ describe('maximality — every optional field, collection, and union branch is e
     expect(stats.fieldSites).toBeGreaterThan(300);
     expect(stats.unions).toBeGreaterThan(3);
     expect(stats.collections).toBeGreaterThan(20);
-    // Maximality means EVERY reached field site is populated somewhere.
-    expect(stats.populatedFieldSites).toBe(stats.fieldSites);
+    // Maximality means EVERY reached field site is populated somewhere, except
+    // the ones a documented exclusion consciously carves out. Written as a sum
+    // so this assertion and the zero-gaps assertion above stay simultaneously
+    // satisfiable the moment MAXIMALITY_EXCLUSIONS is non-empty — otherwise the
+    // escape hatch the walker documents would be unusable in practice.
+    expect(stats.populatedFieldSites + stats.excludedFieldSites).toBe(stats.fieldSites);
+    // An exclusion can never exceed the declared hatch — a non-zero count here
+    // with an empty MAXIMALITY_EXCLUSIONS would mean the walker invented one.
+    expect(stats.excludedFieldSites).toBeLessThanOrEqual(
+      Object.keys(MAXIMALITY_EXCLUSIONS).length,
+    );
   });
 
   it('recurses into nested shapes, not just top-level keys', () => {
@@ -286,6 +295,100 @@ describe('negative control 3 — empty collections and dead union branches are c
     );
     // Depth-capped walk completes; the leaf's absent `child` is a real gap.
     expect(gaps.every((g) => g.kind === 'unpopulated-field')).toBe(true);
+  });
+});
+
+// ----------------------------------------------------------------------------
+// NEGATIVE CONTROL 4 — the escape hatch actually works.
+//
+// `exclusions` is the documented way to say "this gap is a conscious, reasoned
+// decision". An option that is DECLARED but IGNORED is precisely the
+// "machinery that looks like a guarantee but isn't" this package exists to
+// prevent — so the hatch is proven end-to-end here, in both directions:
+// auditMaximality drops the excluded gap AND maximalityStats accounts for it,
+// so the suite's two assertions can coexist.
+// ----------------------------------------------------------------------------
+describe('negative control 4 — the exclusions escape hatch is honoured, not ignored', () => {
+  const STRIPPED = { statement: 'FIXTURE stripped prediction.' };
+  const EXCLUDED_KEY = 'boundary/DecisionRecordPredictionSchema.confidence';
+
+  /** One entry with one real, deliberate gap: `confidence` is unpopulated. */
+  function oneGapRegistry(): MaximalFixtureEntry[] {
+    return [
+      {
+        family: 'boundary/DecisionRecordPredictionSchema',
+        schema: DecisionRecordPredictionSchema,
+        fixture: {
+          ...STRIPPED,
+          confidence_source: 'llm_self_report',
+          probability_of_goal: 0.5,
+          probability_of_joint_goal: 0.25,
+        },
+      } as MaximalFixtureEntry,
+    ];
+  }
+
+  const exclusions = Object.freeze({
+    [EXCLUDED_KEY]: 'Negative control: a documented, deliberate exclusion.',
+  });
+
+  it('auditMaximality drops the excluded gap and keeps the rest', () => {
+    const raw = auditMaximalityRaw(oneGapRegistry(), { schemaNames });
+    expect(raw.map((g) => g.key)).toStrictEqual([EXCLUDED_KEY]);
+    expect(auditMaximality(oneGapRegistry(), { schemaNames, exclusions })).toEqual([]);
+  });
+
+  it('maximalityStats accounts for the exclusion instead of ignoring it', () => {
+    const without = maximalityStats(oneGapRegistry(), { schemaNames });
+    expect(without.excludedFieldSites).toBe(0);
+    expect(without.populatedFieldSites).toBe(without.fieldSites - 1);
+
+    const withExclusion = maximalityStats(oneGapRegistry(), { schemaNames, exclusions });
+    // Same surface reached — an exclusion narrows the GUARANTEE, never the walk.
+    expect(withExclusion.fieldSites).toBe(without.fieldSites);
+    expect(withExclusion.populatedFieldSites).toBe(without.populatedFieldSites);
+    expect(withExclusion.excludedFieldSites).toBe(1);
+  });
+
+  it('the suite’s two assertions coexist when an exclusion exists', () => {
+    // Before this fix these were mutually exclusive: auditMaximality honoured
+    // the exclusion (→ []) while maximalityStats ignored it, so
+    // populatedFieldSites < fieldSites and the anti-vacuity assertion failed.
+    const opts2 = { schemaNames, exclusions };
+    expect(auditMaximality(oneGapRegistry(), opts2)).toEqual([]);
+    const stats = maximalityStats(oneGapRegistry(), opts2);
+    expect(stats.populatedFieldSites + stats.excludedFieldSites).toBe(stats.fieldSites);
+  });
+
+  it('an exclusion on a collection / union branch is accounted for too', () => {
+    const Arr = z.object({ items: z.array(z.object({ a: z.string() })) });
+    const arrEntry = [{ family: 'control/EmptyArray', schema: Arr, fixture: { items: [] } }];
+    const arrKey = auditMaximalityRaw(arrEntry, {})[0].key;
+    expect(auditMaximality(arrEntry, { exclusions: { [arrKey]: 'documented reason' } })).toEqual([]);
+    expect(
+      maximalityStats(arrEntry, { exclusions: { [arrKey]: 'documented reason' } })
+        .excludedCollections,
+    ).toBe(1);
+
+    const Union = z.discriminatedUnion('type', [
+      z.object({ type: z.literal('a'), a: z.string() }),
+      z.object({ type: z.literal('b'), b: z.string() }),
+    ]);
+    const uEntry = [{ family: 'control/Union', schema: Union, fixture: { type: 'a', a: 'x' } }];
+    const uKey = auditMaximalityRaw(uEntry, {})[0].key;
+    expect(auditMaximality(uEntry, { exclusions: { [uKey]: 'documented reason' } })).toEqual([]);
+    expect(
+      maximalityStats(uEntry, { exclusions: { [uKey]: 'documented reason' } })
+        .excludedUnionBranches,
+    ).toBe(1);
+  });
+
+  it('a stale exclusion changes nothing (it excludes no real gap)', () => {
+    const stats = maximalityStats(MAXIMAL_FIXTURES, {
+      schemaNames,
+      exclusions: { 'boundary/NoSuchSchema.no_such_field': 'stale' },
+    });
+    expect(stats.excludedFieldSites).toBe(0);
   });
 });
 

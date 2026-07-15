@@ -53,7 +53,13 @@ export interface AuditMaximalityOptions {
    * Typically built by enumerating the package entry points.
    */
   schemaNames?: ReadonlyMap<z.ZodTypeAny, string>;
-  /** Gap key → documented reason. Keys must match a real gap (no stale). */
+  /**
+   * Gap key → documented reason. Keys must match a real gap (no stale).
+   * Honoured by BOTH `auditMaximality` (the gap is dropped) and
+   * `maximalityStats` (the site is counted under `excluded*`), so the two
+   * assertions a suite makes off this module stay simultaneously satisfiable
+   * once an exclusion exists.
+   */
   exclusions?: Readonly<Record<string, string>>;
   /** Recursion guard for lazy / self-referential schemas. */
   maxDepth?: number;
@@ -314,20 +320,19 @@ function runWalk(
   return { objects, collections, unions };
 }
 
-/**
- * Walk every registered fixture against its schema and report every
- * non-maximal site. Returns [] when the library is fully maximal.
- */
-export function auditMaximality(
-  entries: readonly RegistryEntryLike[],
-  options: AuditMaximalityOptions = {},
-): MaximalityGap[] {
-  const names = options.schemaNames;
-  const { objects, collections, unions } = runWalk(entries, options);
+type Walk = ReturnType<typeof runWalk>;
 
-  // --------------------------------------------------------------------------
-  // Reduce observations → gaps
-  // --------------------------------------------------------------------------
+/**
+ * Reduce raw walk observations → the complete gap list, BEFORE exclusions are
+ * applied. Both `auditMaximality` and `maximalityStats` derive from this single
+ * function, so a gap key means exactly the same thing to the reporter and to
+ * the counters — an exclusion cannot be honoured by one and ignored by the
+ * other.
+ */
+function reduceGaps(
+  { objects, collections, unions }: Walk,
+  names?: ReadonlyMap<z.ZodTypeAny, string>,
+): MaximalityGap[] {
   const gaps: MaximalityGap[] = [];
 
   const nameOf = (schema: z.ZodTypeAny, fallback: string): string =>
@@ -372,6 +377,18 @@ export function auditMaximality(
     });
   }
 
+  return gaps;
+}
+
+/**
+ * Walk every registered fixture against its schema and report every
+ * non-maximal site. Returns [] when the library is fully maximal.
+ */
+export function auditMaximality(
+  entries: readonly RegistryEntryLike[],
+  options: AuditMaximalityOptions = {},
+): MaximalityGap[] {
+  const gaps = reduceGaps(runWalk(entries, options), options.schemaNames);
   const exclusions = options.exclusions ?? {};
   const surviving = gaps.filter((gap) => !(gap.key in exclusions));
   surviving.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
@@ -392,19 +409,31 @@ export interface MaximalityStats {
   fieldSites: number;
   /** (object, field) sites observed populated at least once */
   populatedFieldSites: number;
+  /**
+   * Unpopulated (object, field) sites carved out by a documented exclusion.
+   * `populatedFieldSites + excludedFieldSites === fieldSites` is the maximality
+   * invariant callers should assert: an exclusion narrows the GUARANTEE, never
+   * the walk, so the reached-surface counts stay honest.
+   */
+  excludedFieldSites: number;
   /** distinct union identities reached */
   unions: number;
   /** union branches exercised at least once */
   exercisedUnionBranches: number;
+  /** un-exercised union branches carved out by a documented exclusion */
+  excludedUnionBranches: number;
   /** distinct array/record/set/map identities reached */
   collections: number;
+  /** empty collections carved out by a documented exclusion */
+  excludedCollections: number;
 }
 
 export function maximalityStats(
   entries: readonly RegistryEntryLike[],
   options: AuditMaximalityOptions = {},
 ): MaximalityStats {
-  const { objects, collections, unions } = runWalk(entries, options);
+  const walk = runWalk(entries, options);
+  const { objects, collections, unions } = walk;
   let fieldSites = 0;
   let populatedFieldSites = 0;
   for (const obs of objects.values()) {
@@ -415,13 +444,32 @@ export function maximalityStats(
   }
   let exercisedUnionBranches = 0;
   for (const obs of unions.values()) exercisedUnionBranches += obs.seen.size;
+
+  // Honour `exclusions` off the SAME reduction auditMaximality uses, so an
+  // excluded gap is accounted for here exactly as it is dropped there. An
+  // exclusion key that matches no real gap (a stale one) counts nothing — the
+  // stale-exclusion check remains the thing that catches it.
+  const exclusions = options.exclusions ?? {};
+  let excludedFieldSites = 0;
+  let excludedUnionBranches = 0;
+  let excludedCollections = 0;
+  for (const gap of reduceGaps(walk, options.schemaNames)) {
+    if (!(gap.key in exclusions)) continue;
+    if (gap.kind === 'unpopulated-field') excludedFieldSites++;
+    else if (gap.kind === 'empty-collection') excludedCollections++;
+    else excludedUnionBranches++;
+  }
+
   return {
     objectSchemas: objects.size,
     fieldSites,
     populatedFieldSites,
+    excludedFieldSites,
     unions: unions.size,
     exercisedUnionBranches,
+    excludedUnionBranches,
     collections: collections.size,
+    excludedCollections,
   };
 }
 
