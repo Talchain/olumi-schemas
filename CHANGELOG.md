@@ -5,6 +5,39 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Strictly-additive: no existing schema definition touched; version bump
+deferred to the orchestrator (recommended: minor, e.g. 0.17.0 — a new public
+subpath export is API surface).
+
+### Added — maximal-fixture contract library + completeness ratchet (W2E-1)
+
+New `@talchain/schemas/fixtures` subpath (`src/fixtures/index.ts`, wired in
+the package.json `exports` map): a maximal fixture for every cross-service
+wire-format family — every optional field populated with clearly-synthetic
+`FIXTURE_`-prefixed values, passthrough objects carrying an unknown-key
+survival probe. Consumer repos import `MAXIMAL_FIXTURES` and deep-compare
+`schema.parse(fixture)` against the fixture to make silent field drops
+(the older-pin hazard that has cost coaching, evidence, and enrichment
+fields) a test failure instead of a production loss.
+
+Guard rails in this repo (`tests/fixtures/`):
+
+- **Completeness ratchet** — enumerates every non-enum Zod schema exported
+  from the root / `boundary` / `orchestrator` entry points; each must have a
+  registered fixture (identity-matched, so re-exports are covered) or an
+  explicit documented exclusion (currently: the CEE-internal `orchestrator`
+  namespace). A new exported schema without a fixture fails CI here first.
+- **Round-trip zero-strip suite** — every fixture parses with zero field
+  loss; the package's single `.default()` mutation (`EdgeV3Schema.edge_type`
+  → `'directed'`) is explicitly documented and pinned as the ONLY one.
+- **Union coverage** — `maximalOlumiResponse.blocks` must carry one block of
+  every `BlockSchema` union member (introspected, so a new block type fails
+  until covered); every `SystemEventSchema` member has a fixture variant.
+- **Dist export guard** — the built `dist/fixtures/index.js` and the
+  `./fixtures` exports-map wiring are asserted against the shipped artefact.
+
 ## [0.16.0] — 2026-07-11 (DRAFT — not published; merge + publish are Paul-gated contract class)
 
 Strictly-additive minor bump: three optional fields + one closed enum on the

@@ -17,6 +17,10 @@
     "./orchestrator": {
       "import": "./dist/orchestrator/index.js",
       "types": "./dist/orchestrator/index.d.ts"
+    },
+    "./fixtures": {
+      "import": "./dist/fixtures/index.js",
+      "types": "./dist/fixtures/index.d.ts"
     }
   },
   "files": [
