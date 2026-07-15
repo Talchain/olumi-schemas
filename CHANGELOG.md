@@ -5,6 +5,58 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Strictly-additive: no existing schema definition touched; version bump
+deferred to the orchestrator (recommended: minor, e.g. 0.17.0 — a new public
+subpath export is API surface).
+
+### Added — maximal-fixture contract library + completeness ratchet (W2E-1)
+
+New `@talchain/schemas/fixtures` subpath (`src/fixtures/index.ts`, wired in
+the package.json `exports` map): a maximal fixture for every cross-service
+wire-format family — every optional field populated with clearly-synthetic
+`FIXTURE_`-prefixed values, passthrough objects carrying an unknown-key
+survival probe. Consumer repos import `MAXIMAL_FIXTURES` and deep-compare
+`schema.parse(fixture)` against the fixture to make silent field drops
+(the older-pin hazard that has cost coaching, evidence, and enrichment
+fields) a test failure instead of a production loss.
+
+The registry holds **102 entries**.
+
+Guard rails in this repo (`tests/fixtures/`):
+
+- **Completeness ratchet** — enumerates every non-enum Zod schema exported
+  from the root / `boundary` / `orchestrator` entry points; each must have a
+  registered fixture (identity-matched, so re-exports are covered) or an
+  explicit documented exclusion (currently: the CEE-internal `orchestrator`
+  namespace). A new exported schema without a fixture fails CI here first.
+- **Maximality walker** (`src/fixtures/maximality.ts`, exported from
+  `@talchain/schemas/fixtures` so consumers can audit their own pins) —
+  the ratchet above checks schema *identity* membership only, so it is
+  satisfied by an empty fixture, and the dominant drift path (a new optional
+  field on an EXISTING schema — the shape of every historical coaching /
+  evidence / enrichment loss) tripped nothing. The walker introspects each
+  schema's `_def` recursively and fails on any optional/nullable field never
+  populated, any empty array/record/set/map whose schema allows contents, and
+  any un-exercised union branch. Gaps aggregate by schema identity (a field
+  exercised anywhere counts). Handles nested optionals, discriminated-union
+  variants, records, tuples, intersections, effects/refinement wrappers, and
+  depth-capped lazy/recursive schemas. Fields that genuinely cannot be
+  populated require an explicit documented `MAXIMALITY_EXCLUSIONS` entry
+  (currently empty) — never a silent skip; stale exclusions are rejected.
+  Both drift paths are pinned as permanent negative controls, and an
+  anti-vacuity assertion pins the reached surface so the guard cannot rot
+  into a no-op.
+- **Round-trip zero-strip suite** — every fixture parses with zero field
+  loss; the package's single `.default()` mutation (`EdgeV3Schema.edge_type`
+  → `'directed'`) is explicitly documented and pinned as the ONLY one.
+- **Union coverage** — `maximalOlumiResponse.blocks` must carry one block of
+  every `BlockSchema` union member (introspected, so a new block type fails
+  until covered); every `SystemEventSchema` member has a fixture variant.
+- **Dist export guard** — the built `dist/fixtures/index.js` and the
+  `./fixtures` exports-map wiring are asserted against the shipped artefact.
+
 ## [0.16.0] — 2026-07-11 (DRAFT — not published; merge + publish are Paul-gated contract class)
 
 Strictly-additive minor bump: three optional fields + one closed enum on the
