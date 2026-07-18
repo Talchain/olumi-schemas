@@ -102,6 +102,7 @@ import {
   ComparisonBlockSchema,
   FlipAnalysisBlockSchema,
   DraftGraphBlockSchema,
+  DraftGoalConstraintSchema,
   ReviewCardBlockSchema,
   CoachingBlockSchema,
   EvidenceBlockSchema,
@@ -1004,12 +1005,41 @@ export const maximalFlipAnalysisBlock = deepFreeze({
   enrichment: { [PROBE]: true },
 });
 
+// Draft-time goal constraint (0.18.0). Distinct from `maximalGoalConstraint`
+// below, which is the V2 RUN-REQUEST constraint (`boundary/run.ts`) — two
+// different shapes at two different seams; see DraftGoalConstraintSchema.
+export const maximalDraftGoalConstraint = deepFreeze({
+  constraint_id: 'FIXTURE_constraint_first_year_cost_max',
+  node_id: 'FIXTURE_fac_first_year_cost',
+  operator: '<=',
+  value: 50000,
+  label: 'FIXTURE synthetic first-year budget cap',
+  unit: '£',
+  source_quote: 'FIXTURE synthetic source quote from the brief.',
+  confidence: 0.85,
+  provenance: 'explicit',
+  deadline_metadata: {
+    deadline_date: '2027-01-01',
+    reference_date: '2026-01-01',
+    assumed_reference_date: true,
+    [PROBE]: true,
+  },
+  provenance_unit_normalised: {
+    rule: 'percent_to_fraction',
+    original_value: 15,
+    original_unit: '%',
+    [PROBE]: true,
+  },
+  [PROBE]: true,
+});
+
 export const maximalDraftGraphBlock = deepFreeze({
   type: 'draft_graph',
   nodes: maximalGraphV3.nodes,
   edges: maximalGraphV3.edges,
   node_count: 4,
   edge_count: 2,
+  goal_constraints: [maximalDraftGoalConstraint],
 });
 
 export const maximalReviewCardBlock = deepFreeze({
@@ -1170,6 +1200,11 @@ export const maximalOlumiResponse = deepFreeze({
     edges: maximalGraphV3.edges,
     node_count: 4,
     edge_count: 2,
+    // `OlumiResponseSchema.draft_graph` is DraftGraphBlockSchema.omit({type}),
+    // a distinct schema identity from the block itself — the walker tracks it
+    // separately, so this is the site that proves goal_constraints survives on
+    // the actual CEE->UI egress projection, not just on the bare block.
+    goal_constraints: [maximalDraftGoalConstraint],
   },
   analysis_ready: {
     status: 'ready',
@@ -1466,6 +1501,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'boundary/ComparisonBlockSchema', schema: ComparisonBlockSchema, fixture: maximalComparisonBlock },
   { family: 'boundary/FlipAnalysisBlockSchema', schema: FlipAnalysisBlockSchema, fixture: maximalFlipAnalysisBlock },
   { family: 'boundary/DraftGraphBlockSchema', schema: DraftGraphBlockSchema, fixture: maximalDraftGraphBlock },
+  {
+    family: 'boundary/DraftGoalConstraintSchema',
+    schema: DraftGoalConstraintSchema,
+    fixture: maximalDraftGoalConstraint,
+  },
   { family: 'boundary/ReviewCardBlockSchema', schema: ReviewCardBlockSchema, fixture: maximalReviewCardBlock },
   { family: 'boundary/CoachingBlockSchema', schema: CoachingBlockSchema, fixture: maximalCoachingBlock },
   { family: 'boundary/EvidenceBlockSchema', schema: EvidenceBlockSchema, fixture: maximalEvidenceBlock },

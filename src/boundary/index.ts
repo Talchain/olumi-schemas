@@ -48,6 +48,9 @@ export {
   ComparisonBlockSchema,
   FlipAnalysisBlockSchema,
   DraftGraphBlockSchema,
+  // Draft-time goal constraints (0.18.0). NOT `GoalConstraintSchema` from
+  // ./run.ts — see the note on the schema for why the two are distinct.
+  DraftGoalConstraintSchema,
   // Phase 3 — Analysis tab data contract v1.3
   ReviewCardBlockSchema,
   CoachingBlockSchema,
@@ -78,6 +81,7 @@ export type {
   ComparisonBlock,
   FlipAnalysisBlock,
   DraftGraphBlock,
+  DraftGoalConstraint,
   // Phase 3 — Analysis tab data contract v1.3
   ReviewCardBlock,
   CoachingBlock,
