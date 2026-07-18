@@ -115,18 +115,114 @@ export const FlipAnalysisBlockSchema = z.object({
 }).strict();
 export type FlipAnalysisBlock = z.infer<typeof FlipAnalysisBlockSchema>;
 
+// DraftGoalConstraint — a hard constraint extracted from the user's brief at
+// DRAFT time and carried on the draft_graph block (v0.18.0).
+//
+// ⚠ NOT THE SAME TYPE AS `GoalConstraintSchema` in `./run.ts`. These are two
+// different payloads at two different seams, and conflating them is the exact
+// same-named-twin defect that has bitten this programme before:
+//
+//   ./run.ts GoalConstraintSchema  — the V2 RUN-REQUEST constraint (UI/CEE ->
+//     PLoT compute). Identity `id`, five-way `bound` enum
+//     ('lt'|'lte'|'gt'|'gte'|'eq'), no node binding, no provenance. `.strict()`.
+//   THIS schema                    — the DRAFTING-time EXTRACTION (CEE -> UI).
+//     Identity `constraint_id`, node-bound via `node_id`, two-way ASCII
+//     `operator` ('>='|'<='), and carries extraction provenance the compute
+//     path has no concept of (source_quote / confidence / provenance).
+//
+// Neither is a superset of the other, and reshaping `run.ts`'s to fit would be
+// a BREAKING change to `V2RunRequestSchema` (a major bump, blast radius = the
+// PLoT compute path). They are therefore kept distinct and DIFFERENTLY NAMED.
+//
+// Field-level validators mirror CEE's producer schema (`src/schemas/assist.ts`
+// `GoalConstraintSchema`) exactly. That is safe rather than risky: CEE's Stage-4
+// structural-parse substep already runs `DraftGraphOutput.parse()` — which
+// embeds those same validators — over this very array and hard-fails the turn
+// (400 CEE_GRAPH_INVALID) before egress, so anything that reaches the wire has
+// already satisfied them. Re-declaring them here adds no new rejection surface.
+//
+// `.passthrough()` — deliberate, and the one place this schema does NOT mirror
+// CEE. CEE's regex path emits `provenance_unit_normalised` (from the
+// percent->fraction rewrite in `normaliseConstraintUnits`), which is absent from
+// CEE's own schema; its structural-parse is validation-only (the parsed result
+// is discarded, so nothing is stripped) and the key reaches the wire. A
+// `.strict()` element would turn every percent constraint into an
+// EGRESS_CONTRACT_VIOLATION — the precise failure mode this change exists to
+// remove. Passthrough is also this package's documented default (README).
+export const DraftGoalConstraintSchema = z.object({
+  /** Unique constraint identifier (CEE: `constraint_<node_id>_<min|max>`). */
+  constraint_id: z.string().min(1),
+  /**
+   * Target node this constraint binds to. CEE drops any constraint whose
+   * node_id does not match a node in the drafted graph, so a value here is
+   * guaranteed to resolve against the sibling `nodes` array.
+   */
+  node_id: z.string().min(1),
+  /** ASCII only — CEE normalises away '<', '>' and the Unicode forms. */
+  operator: z.enum(['>=', '<=']),
+  /** Threshold in the user's units; PLoT normalises downstream. */
+  value: z.number(),
+  /** Human-readable label, e.g. 'First-year budget cap'. */
+  label: z.string().optional(),
+  /** Unit if known ('£', '%', 'fraction', 'hours', ...). */
+  unit: z.string().optional(),
+  /**
+   * Verbatim span from the brief that produced this constraint. CEE truncates
+   * to 200 chars at extraction; not re-capped here — the cap is CEE ingestion
+   * policy, not a wire invariant, and this contract must never be the thing
+   * that fails a draft response.
+   */
+  source_quote: z.string().optional(),
+  /** Extraction confidence (0-1). Regex path: 0.85 explicit / 0.6 inferred. */
+  confidence: z.number().min(0).max(1).optional(),
+  /** How the constraint was obtained — drives UI provenance display. */
+  provenance: z.enum(['explicit', 'inferred', 'proxy']).optional(),
+  /** Present only for temporal ('by <date>') constraints. */
+  deadline_metadata: z.object({
+    deadline_date: z.string().optional(),
+    reference_date: z.string().optional(),
+    assumed_reference_date: z.boolean().optional(),
+  }).passthrough().optional(),
+  /**
+   * Audit trail for the percent->fraction rewrite. Declared (rather than left
+   * to passthrough) so the value is typed for consumers and cannot be silently
+   * dropped by a future stricter pin.
+   */
+  provenance_unit_normalised: z.object({
+    rule: z.string(),
+    original_value: z.number(),
+    original_unit: z.string(),
+  }).passthrough().optional(),
+}).passthrough();
+export type DraftGoalConstraint = z.infer<typeof DraftGoalConstraintSchema>;
+
 // DraftGraphBlock — emitted by the draft_graph pre-Sonnet dispatcher (v0.8.0).
 // Carries the full initial graph inline so the UI can render it directly from
 // the response without a Supabase re-fetch. nodes/edges are permissive arrays
 // (z.unknown() elements) so CEE-format node/edge shapes pass without a
 // schema bump when node fields evolve. node_count/edge_count are authoritative
 // counts derived from the FINAL post-repair graph.
+//
+// `.strict()` is retained deliberately. It is why `goal_constraints` had to be
+// declared here before CEE could emit it (an undeclared key produces
+// `unrecognized_keys`, which CEE's validateEgress turns into a whole-response
+// EGRESS_CONTRACT_VIOLATION fallback) — the fix for a dropped field at this
+// seam is to DECLARE it, never to loosen the block to passthrough.
 export const DraftGraphBlockSchema = z.object({
   type: z.literal('draft_graph'),
   nodes: z.array(z.unknown()),
   edges: z.array(z.unknown()),
   node_count: z.number().int().min(0),
   edge_count: z.number().int().min(0),
+  /**
+   * Hard constraints extracted from the brief (v0.18.0, additive/optional).
+   * Constraints are METADATA, not causal structure — CEE deliberately does not
+   * emit them as graph nodes or edges, so this array is the ONLY channel by
+   * which a user's stated constraint reaches the client on the drafting path.
+   * Absent when the brief carried none; consumers must treat absence and `[]`
+   * as equivalent.
+   */
+  goal_constraints: z.array(DraftGoalConstraintSchema).optional(),
 }).strict();
 export type DraftGraphBlock = z.infer<typeof DraftGraphBlockSchema>;
 
@@ -584,6 +680,8 @@ export type UiDirectiveBlock = z.infer<typeof UiDirectiveBlockSchema>;
 //         added per Analysis tab data contract v1.3.
 // 0.15.0: HeldProposalBlock added (ROADMAP 1.43).
 // 0.15.0: UiDirectiveBlock added (seamlessness R4 keystone).
+// 0.18.0: DraftGraphBlock gained optional `goal_constraints` (additive; the
+//         block stays strict, so the union member's key set widened by one).
 export const BlockSchema = z
   .discriminatedUnion('type', [
     TextBlockSchema,

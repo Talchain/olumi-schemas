@@ -5,11 +5,95 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.18.0] — 2026-07-18 (UNPUBLISHED — merge + publish are Paul-gated contract class)
 
-Strictly-additive: no existing schema definition touched; version bump
-deferred to the orchestrator (recommended: minor, e.g. 0.17.0 — a new public
-subpath export is API surface).
+Strictly-additive: one new optional field on an existing schema, one new
+exported schema. No existing field changed, removed, or re-typed; every
+pre-0.18.0 payload still parses. Minor per the README semver policy ("new
+schemas, new optional fields → minor").
+
+### Added — `goal_constraints` on the draft_graph block
+
+`DraftGraphBlockSchema` gains an optional `goal_constraints` array, and a new
+`DraftGoalConstraintSchema` describes its elements (exported from `/boundary`).
+
+**The defect this unblocks.** A brief carrying a hard constraint ("first-year
+budget cannot exceed £50,000") is correctly extracted by CEE's deterministic
+regex extractor (`cee.compound_goal.integrated constraint_count:1
+from_regex:1`) and survives to the draft dispatcher, which then rebuilds the
+wire block as exactly `{nodes, edges, node_count, edge_count}`. CEE could not
+simply thread the field through: this block is `.strict()`, so an undeclared
+key yields `unrecognized_keys`, which CEE's `validateEgress` converts into a
+whole-response `EGRESS_CONTRACT_VIOLATION` fallback. The contract had to
+declare the field first. Net effect today: a user's stated hard constraint
+never reaches the client on the drafting path, leaving the entire downstream
+constraint chain (CEE's `CEE_CONSTRAINT_INFEASIBLE_GATE`, PLoT's constraint
+compilation, ISL's constraint tracking) unreachable from a natural draft.
+
+**`.strict()` is retained.** The fix for a dropped field at this seam is to
+DECLARE it, never to loosen the block to passthrough — a regression test pins
+that an unknown key alongside `goal_constraints` still fails.
+
+**Not a twin of `GoalConstraintSchema`.** `boundary/run.ts` already exports a
+`GoalConstraintSchema`, and it is a DIFFERENT payload at a different seam: the
+V2 run-request constraint (`{id, label, bound: lt|lte|gt|gte|eq, value}`,
+`.strict()`, no node binding, no provenance). The draft-time constraint is
+node-bound (`node_id`), uses the two-way ASCII `operator` (`>=` / `<=`), and
+carries extraction provenance the compute path has no concept of
+(`source_quote` / `confidence` / `provenance`). Neither is a superset of the
+other, and reshaping the run-request one would be a BREAKING change to
+`V2RunRequestSchema` (major bump, blast radius = the PLoT compute path). They
+are therefore kept distinct and deliberately differently NAMED, with a
+cross-reference on each — a same-named twin is a defect class this programme
+has paid for before.
+
+**Shape fidelity.** Field-level validators mirror CEE's producer schema
+(`src/schemas/assist.ts` `GoalConstraintSchema`) exactly, with two documented
+deviations:
+
+- `source_quote` is NOT re-capped at 200 chars. CEE truncates at extraction;
+  the cap is CEE ingestion policy, not a wire invariant, and this contract
+  must never be the thing that fails a draft response.
+- The element is `.passthrough()`, not `.strict()`. CEE's regex path emits
+  `provenance_unit_normalised` (from the percent→fraction rewrite in
+  `normaliseConstraintUnits`), which is absent from CEE's own schema; CEE's
+  structural-parse is validation-only (the parsed result is discarded, so
+  nothing is stripped) and the key reaches the wire. A strict element would
+  have turned every percent constraint into an egress violation — the exact
+  failure mode this change exists to remove. The field is nonetheless
+  DECLARED, so it is typed rather than riding as an anonymous unknown key.
+
+Mirroring CEE's validators adds no new rejection surface: CEE's Stage-4
+structural-parse substep already runs `DraftGraphOutput.parse()` — embedding
+those same validators — over this very array and hard-fails the turn with a
+400 `CEE_GRAPH_INVALID` before egress.
+
+Registry: **102 → 103 entries** (`boundary/DraftGoalConstraintSchema`). The
+maximal fixture populates every optional including `deadline_metadata` and
+`provenance_unit_normalised`, at both the bare-block site and the
+`OlumiResponseSchema.draft_graph` omit-projection the UI actually reads —
+these are distinct schema identities to the maximality walker, and only the
+second proves the field survives on the real egress projection.
+
+18 new tests (900 → 918). Written RED-first: before the schema change they
+failed with the production error verbatim — `unrecognized_keys:
+['goal_constraints']`.
+
+## [0.17.0] — 2026-07-15
+
+> **Publication-state correction (2026-07-18).** This section was previously
+> headed `[Unreleased]` with the bump "deferred to the orchestrator". It in
+> fact shipped: `package.json` was set to 0.17.0 in the same commit (f18217b),
+> tag `v0.17.0` exists, and publish run 29428237394 shows `Publish to GitHub
+> Packages: success` + `Create release tag: success`. Only `Trigger
+> propagation` failed (the known missing-PAT step that reds every publish
+> while the publish itself succeeds) — which is why the run reads as a
+> failure at a glance. The same applies to the `[0.15.0]` and `[0.16.0]`
+> sections below, still labelled "DRAFT — not published": both are tagged and
+> both show `Publish to GitHub Packages: success` (runs 29084981289 and
+> 29162653316 respectively), failing only on the same propagation step. Those
+> headings are left as the original lanes wrote them, but they should not be
+> read as current truth.
 
 ### Added — maximal-fixture contract library + completeness ratchet (W2E-1)
 

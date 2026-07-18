@@ -130,7 +130,8 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // package's entire pitch is that its counts are trustworthy. Pin it so the
     // number in the docs and the number in the code cannot silently diverge:
     // changing the registry now forces updating this line AND the CHANGELOG.
-    expect(MAXIMAL_FIXTURES.length).toBe(102);
+    // 0.18.0: 102 -> 103 (boundary/DraftGoalConstraintSchema).
+    expect(MAXIMAL_FIXTURES.length).toBe(103);
   });
 
   it('family keys are unique', () => {
