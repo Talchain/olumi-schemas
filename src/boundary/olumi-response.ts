@@ -8,11 +8,21 @@ import { ActionType, Stage } from './enums.js';
 // 0.5.0: optional `action_type` links the action to a V5 handler. Omitted in
 // A0/A1/A2 responses and on non-handler suggestions; old consumers ignore it
 // because .strict() only rejects UNKNOWN fields, not optional-missing ones.
+// 0.19.0: optional `detail` (wave-2 ask #20, the held-proposal confirm chip).
+// The chip `label` is the SHORT display string a UI renders on the button;
+// `detail` carries the FULL producer text behind it verbatim (e.g. the
+// complete held-changeset description a confirm applies) so a consumer can
+// show the whole sentence — tooltip, card body, accessible name — without
+// the label having to be it. The UI renders producer strings verbatim and
+// authors no copy, so BOTH halves are producer-owned: never derive `detail`
+// from `label` or vice versa consumer-side. Absent on actions whose label
+// already says everything.
 export const ActionSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   message: z.string().min(1),
   action_type: ActionType.optional(),
+  detail: z.string().min(1).optional(),
 }).strict();
 export type Action = z.infer<typeof ActionSchema>;
 
@@ -23,6 +33,58 @@ export const InsightSchema = z.object({
   text: z.string().min(1),
 }).strict();
 export type Insight = z.infer<typeof InsightSchema>;
+
+// ----------------------------------------------------------------------------
+// Decision classification (0.19.0) — wave-2 producer field, UI-SEM-077.
+//
+// The Decision Overview card renders four classification pills (stakes /
+// reversibility / horizon / risk appetite). Before 0.19.0 there was NO
+// producer contract for any of them: the UI fails closed to explicit
+// "not set" pills (never fabricates), with `horizon` as the only populated
+// dimension (read client-side from the decision node's brief timeframe).
+// This schema is that contract.
+//
+// Code-keyed by design (same doctrine as HeldProposalReasonCode): the three
+// enum dimensions carry CODES a consumer maps to its OWN display copy —
+// never prose — so producer wording can't leak internal doctrine and copy
+// stays consumer-owned. `horizon` is the exception: it is the user's OWN
+// timeframe wording (display-safe by provenance), carried verbatim.
+//
+// Every dimension is optional: a producer states only what it actually
+// assessed, and a consumer renders "not set" for absent dimensions —
+// partial classification is honest, absence is never defaulted.
+export const DecisionClassificationStakes = z.enum(['low', 'medium', 'high']);
+export type DecisionClassificationStakesLiteral =
+  z.infer<typeof DecisionClassificationStakes>;
+
+export const DecisionClassificationReversibility = z.enum([
+  'reversible',
+  'partially_reversible',
+  'irreversible',
+]);
+export type DecisionClassificationReversibilityLiteral =
+  z.infer<typeof DecisionClassificationReversibility>;
+
+export const DecisionClassificationRisk = z.enum([
+  'averse',
+  'balanced',
+  'seeking',
+]);
+export type DecisionClassificationRiskLiteral =
+  z.infer<typeof DecisionClassificationRisk>;
+
+const DECISION_CLASSIFICATION_HORIZON_MAX = 60;
+
+export const DecisionClassificationSchema = z.object({
+  stakes: DecisionClassificationStakes.optional(),
+  reversibility: DecisionClassificationReversibility.optional(),
+  // The decision's timeframe in the user's own words (e.g. "next quarter").
+  // Bounded short: this is a pill, not a narrative field.
+  horizon: z.string().min(1).max(DECISION_CLASSIFICATION_HORIZON_MAX).optional(),
+  // Risk APPETITE (the user's stance), not outcome risk.
+  risk: DecisionClassificationRisk.optional(),
+}).strict();
+export type DecisionClassification = z.infer<typeof DecisionClassificationSchema>;
 
 // OlumiResponse — the only response shape produced by /orchestrate/v2/turn.
 // Egress validator must pass this schema; failure falls back to a typed error
@@ -71,6 +133,21 @@ export const OlumiResponseSchema = z.object({
     goal_node_id: z.string(),
   }).passthrough().optional(),
   reasoning: z.string().optional(),
+  // 0.19.0 additive (wave-2 producer fields) ---------------------------------
+  // Explicit producer-authored framing question (UI-SEM-078). The "Olumi's
+  // framing question" slot previously promoted a guidance item and derived a
+  // question client-side — a verified leak rendered a CEE rerun nudge under
+  // the framing label. This field is the honest channel: when present, the
+  // UI renders it VERBATIM in the framing slot and derives nothing; when
+  // absent, the slot stays empty (fail closed — the UI's heuristic
+  // derivation retires rather than remaining as a fallback). Interrogative
+  // producer copy, bounded short (a question, not a narrative).
+  framing_question: z.string().min(1).max(240).optional(),
+  // Producer decision classification (UI-SEM-077) — see
+  // DecisionClassificationSchema above for vocabulary + doctrine. Absent
+  // until the producing turn has actually assessed the decision; consumers
+  // MUST NOT default absent dimensions.
+  decision_classification: DecisionClassificationSchema.optional(),
 }).strict();
 
 export type OlumiResponse = z.infer<typeof OlumiResponseSchema>;

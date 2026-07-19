@@ -12,6 +12,21 @@ export const TurnClass = z.enum([
 export type TurnClassType = z.infer<typeof TurnClass>;
 
 // Stage indicator attached to every OlumiResponse.
+//
+// 0.19.0 (UI-SEM-020, wave-2 ask ⑥) — THIS ENUM IS THE CANONICAL
+// `stage_indicator` VOCABULARY, versioned by this package's version. Stated
+// explicitly because a consumer was observed typing its OWN stage union
+// locally, which drifted (`'analyse'` — a canonical member since this enum
+// shipped — sat outside it, silently disabling stage-adaptive behaviour).
+//
+//   * The complete vocabulary is exactly: frame | analyse | decide | review.
+//   * British spelling `analyse` is canonical — never `analyze`.
+//   * Consumers MUST derive their stage type from `Stage` / `StageType`
+//     (or the runtime member list `Stage.options`), never re-declare it. A
+//     hand-maintained mirror of this list is the known drift defect.
+//   * Additions land here first as a MINOR bump and are announced in the
+//     CHANGELOG; consumers should treat an unrecognised future member as
+//     "no stage signal" (fail closed), not as an error.
 export const Stage = z.enum([
   'frame',
   'analyse',

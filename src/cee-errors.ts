@@ -9,12 +9,39 @@ export const CeeErrorCode = z.enum([
   'CEE_INTERNAL_ERROR',
 ]);
 
+/**
+ * Structured recovery guidance on a CEE error envelope (0.19.0 — wave-2
+ * ask 7). This types the `recovery` object CEE's `buildCeeErrorResponse`
+ * has emitted untyped since the draft pipeline shipped: `hints` are short
+ * actionable bullets, `suggestion` is the one display-safe sentence a UI
+ * surfaces next to the failure, `example` is an optional illustrative
+ * rewrite. Display-safe by contract: never raw codes, never internal
+ * doctrine prose.
+ */
+export const CeeErrorRecoverySchema = z.object({
+  hints: z.array(z.string()),
+  suggestion: z.string(),
+  example: z.string().optional(),
+}).passthrough();
+export type CeeErrorRecovery = z.infer<typeof CeeErrorRecoverySchema>;
+
+// 0.19.0 (wave-2 ask 7, routed from DGAI #383): `recovery_suggestion` is the
+// PINNED flat producer field name for the recovery sentence — the UI was
+// passthrough-sniffing three fallback names (`recovery_suggestion`,
+// `suggested_action`, `recovery`) because no name was typed. Producers emit
+// BOTH the flat `recovery_suggestion` (mirror of `recovery.suggestion`) and
+// the structured `recovery` object; consumers read `recovery_suggestion`
+// first and may stop sniffing alternates once their producer is ≥ 0.19.0.
+// Both fields are optional: absent when the failure has no actionable
+// recovery (consumers fall back to their generic failure copy).
 export const CeeTypedErrorSchema = z.object({
   error: CeeErrorCode,
   message: z.string(),
   retryable: z.boolean(),
   elapsed_ms: z.number().optional(),
   request_id: z.string().optional(),
+  recovery_suggestion: z.string().optional(),
+  recovery: CeeErrorRecoverySchema.optional(),
 }).passthrough();
 
 export const CeeTimeoutErrorSchema = CeeTypedErrorSchema.extend({

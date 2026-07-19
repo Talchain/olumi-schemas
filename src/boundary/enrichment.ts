@@ -346,6 +346,76 @@ export type EnrichmentFlipThreshold = z.infer<typeof EnrichmentFlipThresholdSche
  * documented values were 'positive_to_negative'|'negative_to_positive'|
  * 'removal' — typed open to match the wire [F2].
  */
+/**
+ * Per-edge flip-stability band (0.19.0 — wave-2 ask 8; A3 compute wave).
+ * This is the canonical SHARED type for the `edge_e_values[].stability`
+ * object PLoT's seed-sweep emits (previously untyped — it rode the
+ * `.passthrough()` parent, so a malformed band survived every schema parse;
+ * PLoT's egress guard `assessStabilityBands` carries a local interim parse
+ * whose invariants this schema restates as the cross-repo source of truth).
+ *
+ * Shape + invariants (verified against PLoT staging
+ * `src/routes/v2/enrichment-egress-guard.ts` + the F12 test fixtures):
+ *   - `n_seeds` / `n_seeds_flipped`: non-negative integers,
+ *     `n_seeds_flipped` ≤ `n_seeds` (REQUIRED — a band without counts is
+ *     not a band);
+ *   - `band_min` ≤ `band_median` ≤ `band_max` where present (each finite;
+ *     all three MAY be omitted, e.g. when `n_seeds_flipped` is 0 there is
+ *     nothing to band);
+ *   - `band_width`: finite, ≥ 0, optional;
+ *   - `seed_flip_means`: one cell per seed (length === `n_seeds`), each a
+ *     finite number or null (null = that seed did not flip), optional.
+ * `.passthrough()` for forward tolerance: ISL/PLoT may add diagnostics
+ * before this package types them.
+ */
+export const EnrichmentEdgeEValueStabilitySchema = z.object({
+  n_seeds: z.number().int().nonnegative(),
+  n_seeds_flipped: z.number().int().nonnegative(),
+  band_min: z.number().finite().optional(),
+  band_median: z.number().finite().optional(),
+  band_max: z.number().finite().optional(),
+  band_width: z.number().finite().nonnegative().optional(),
+  seed_flip_means: z.array(z.number().finite().nullable()).optional(),
+}).passthrough().superRefine((s, ctx) => {
+  if (s.n_seeds_flipped > s.n_seeds) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['n_seeds_flipped'],
+      message: 'n_seeds_flipped must be ≤ n_seeds',
+    });
+  }
+  if (s.seed_flip_means !== undefined && s.seed_flip_means.length !== s.n_seeds) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['seed_flip_means'],
+      message: 'seed_flip_means must carry exactly one cell per seed (length === n_seeds)',
+    });
+  }
+  if (s.band_min !== undefined && s.band_median !== undefined && s.band_min > s.band_median) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['band_median'],
+      message: 'band_median must be ≥ band_min',
+    });
+  }
+  if (s.band_median !== undefined && s.band_max !== undefined && s.band_median > s.band_max) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['band_max'],
+      message: 'band_max must be ≥ band_median',
+    });
+  }
+  if (s.band_min !== undefined && s.band_max !== undefined && s.band_min > s.band_max) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['band_max'],
+      message: 'band_max must be ≥ band_min (reversed band)',
+    });
+  }
+});
+export type EnrichmentEdgeEValueStability =
+  z.infer<typeof EnrichmentEdgeEValueStabilitySchema>;
+
 export const EnrichmentEdgeEValueSchema = z.object({
   edge_id: z.string().min(1),
   from_id: z.string(),
@@ -356,6 +426,8 @@ export const EnrichmentEdgeEValueSchema = z.object({
   flip_direction: z.string(),
   current_mean: z.number(),
   flip_mean: z.number(),
+  /** 0.19.0 — per-edge flip-stability band (see the schema above). */
+  stability: EnrichmentEdgeEValueStabilitySchema.optional(),
   _normalised: z.boolean().optional(),
 }).passthrough();
 export type EnrichmentEdgeEValue = z.infer<typeof EnrichmentEdgeEValueSchema>;
@@ -582,6 +654,17 @@ export const AnalysisEnrichmentSchema = z.object({
   // --- coaching / review ---------------------------------------------------
   m1_coaching: EnrichmentM1CoachingSchema.nullable().optional(),
   decision_review: EnrichmentDecisionReviewSchema.nullable().optional(),
+  /**
+   * PLoT's per-run decision brief (#200 leader band) — 0.19.0. Typed OPEN
+   * (shape owned by PLoT; observed on the staging capture: brief_id,
+   * version, headline, options[], top_drivers[], key_assumptions[],
+   * what_would_change[], robustness, warnings[] — plus `seed` and
+   * `graph_hash` lineage keys that CEE's transport projection strips at any
+   * depth before the CEE→UI hop). Newly on the CEE→UI keep-list below:
+   * the UI's leader-band consumer (DGAI #291/#292) shipped contract-pinned
+   * and had never fired because this one key was missing from the list.
+   */
+  decision_brief: z.object({}).passthrough().nullable().optional(),
 
   // --- legacy / inbound-tolerance ------------------------------------------
   /** See disposition note above — deprecated-inbound-only. */
@@ -608,6 +691,14 @@ export const CEE_UI_ENRICHMENT_KEEP_LIST = [
   'inference_warnings',
   'confidence_tier',
   'flip_thresholds',
+  // 0.19.0 (wave-2 ask 3, UI-verified 19 Jul): the PLoT #200 leader band.
+  // The UI-side consumer (DGAI #291/#292) is built, contract-pinned, and
+  // has been dark since it shipped because a conforming CEE projection
+  // strips this key. CEE's deep internal-key strip removes the `seed` /
+  // `graph_hash` lineage nested inside it before transport, so keeping the
+  // key does not reopen the lineage leak the original omission was
+  // guarding against.
+  'decision_brief',
 ] as const;
 export type CeeUiEnrichmentKeepKey = (typeof CEE_UI_ENRICHMENT_KEEP_LIST)[number];
 
