@@ -5,6 +5,115 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] — 2026-07-19 (UNPUBLISHED — merge + publish are Paul-gated contract class)
+
+The wave-2 producer fields (UI-TO-ORCHESTRATOR-2026-07-19 Q3 ranked asks +
+the two schema asks A1 registered into task #13 + ask #20). Strictly
+additive: every new field is optional, no existing field changed, removed,
+or re-typed; every pre-0.19.0 payload still parses. Minor per the README
+semver policy. Maximal-fixture registry: 103 → 106.
+
+**⚠ Landing sequence (strict-consumer hazard).** The block schemas, the
+envelope, and `ActionSchema` are `.strict()`: a consumer on an OLDER pin
+strict-fails a payload carrying the new keys. Producers must therefore not
+emit `category` / `priority` / `framing_question` / `decision_classification`
+/ `detail` until every strict consumer has re-vendored ≥ 0.19.0. Order:
+**this package merges → DGAI re-vendors (tolerates absence) → CEE re-vendors
+and emits.** The passthrough-parent additions (`edge_e_values[].stability`,
+CEE error `recovery` / `recovery_suggestion`, enrichment `decision_brief`)
+have no such hazard — old consumers already tolerate them as untyped
+siblings.
+
+### Added — `category` + `priority` on every guidance block (ask 1, UI-SEM-085)
+
+`ReviewCardBlockSchema`, `CoachingBlockSchema`, `EvidenceBlockSchema` and
+`ExerciseBlockSchema` gain optional `category` (new `GuidanceCategory` enum:
+`must_fix | should_fix | could_fix | technique`) and `priority` (number,
+0–100). Measured on the 19-Jul live capture, the UI invented BOTH signals on
+10/10 guidance blocks (`category` → `'should_fix'`, `signal_code` →
+`block.type`) because no producer contract existed. `category` is code-keyed
+(consumer maps values to its own copy); `priority` is a COARSE urgency score
+(higher = more urgent, ties expected, producer derives it 1:1 from category)
+— it is NOT a display order.
+
+### Changed — the `priority_rank` contract is now STATED (ask 2)
+
+No shape change. The authoritative statement lives as the block comment above
+`GuidanceCategory` in `boundary/blocks.ts`: `priority_rank` is an ASCENDING
+ordinal (lower = shown first), positive integers, UNBOUNDED, band prefix
+meaningful (1–9 lifecycle-urgent / 10–99 review cards / 100–199 coaching /
+200+ prompts), unique only within a band. The UI's `100 - priority_rank`
+inversion is wrong for this scale and can now be retired.
+
+### Added — `decision_brief` joins `CEE_UI_ENRICHMENT_KEEP_LIST` (ask 3)
+
+11 → 12 keys, and `AnalysisEnrichmentSchema` types the field open
+(shape owned by PLoT, #200 leader band). The UI-side consumer (DGAI
+#291/#292) shipped contract-pinned and has never fired because a conforming
+CEE projection strips this one key. The persisted brief carries `seed` /
+`graph_hash` / `lineage`; CEE's deep internal-key strip removes them before
+the CEE→UI hop — the new contract test pins exactly that (positive control:
+the staging capture's persisted copy really carries all three).
+**Paired change:** CEE's `P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP` must add the
+same key in the CEE re-vendor PR (its contract test binds the two lists).
+
+### Added — `framing_question` on `OlumiResponseSchema` (ask 4, UI-SEM-078)
+
+Optional, 1–240 chars. The explicit producer channel for "Olumi's framing
+question" — the UI currently promotes a guidance item and derives a question
+client-side (verified leak: a CEE rerun nudge rendered under the framing
+label). When present the UI renders it verbatim; when absent the slot stays
+empty. Producer emission is a follow-on (the draft prompt is PMS-managed).
+
+### Added — `decision_classification` on `OlumiResponseSchema` (ask 5, UI-SEM-077)
+
+Optional `DecisionClassificationSchema`: `stakes` (`low|medium|high`),
+`reversibility` (`reversible|partially_reversible|irreversible`), `horizon`
+(the user's own timeframe wording, ≤ 60 chars), `risk` (appetite:
+`averse|balanced|seeking`). Every dimension optional — partial classification
+is honest; consumers render "not set" for absent dimensions and never
+default. Enum dimensions are code-keyed. Producer emission is a follow-on
+(same PMS vehicle as `framing_question`).
+
+### Changed — `Stage` is declared the canonical `stage_indicator` vocabulary (ask 6, UI-SEM-020)
+
+No shape change. `frame | analyse | decide | review` (British `analyse`) is
+the complete vocabulary, versioned by this package; consumers must derive
+their stage type from `Stage` / `Stage.options`, never re-declare it (a
+consumer's hand-declared union drifted and silently disabled stage-adaptive
+ordering). Pinned by test.
+
+### Added — typed recovery on the CEE error envelope (ask 7, routed from DGAI #383)
+
+`CeeTypedErrorSchema` gains optional `recovery_suggestion` (string — the
+PINNED flat field name the UI reads first, ending its three-name passthrough
+sniffing) and optional `recovery` (new `CeeErrorRecoverySchema`:
+`{hints: string[], suggestion: string, example?: string}` — the object CEE's
+`buildCeeErrorResponse` has emitted untyped since the draft pipeline
+shipped). Passthrough parent: additive with no consumer hazard.
+
+### Added — `edge_e_values[].stability`, the canonical shared band type (ask 8)
+
+New `EnrichmentEdgeEValueStabilitySchema`, referenced optionally from
+`EnrichmentEdgeEValueSchema`. Types the per-edge flip-stability band A3's
+seed-sweep emits (previously it rode the passthrough parent untyped, so a
+malformed band survived every schema parse — PLoT added a local interim
+guard whose invariants this schema restates as the cross-repo source of
+truth, verified against PLoT staging `enrichment-egress-guard.ts` + the F12
+fixtures): non-negative integer counts with `n_seeds_flipped ≤ n_seeds`,
+ordered finite endpoints (`band_min ≤ band_median ≤ band_max`), non-negative
+`band_width`, and `seed_flip_means` with exactly one finite-or-null cell per
+seed.
+
+### Added — `detail` on `ActionSchema` (ask 20, the held-proposal confirm chip)
+
+Optional, min 1. The R8 confirm chip's `label` was the entire ~300-char
+mutation sentence (the UI renders producer strings verbatim and authors no
+copy, so only the producer can shorten it). The contract split: `label` is
+the SHORT display string; `detail` carries the FULL producer text behind it
+verbatim. The CEE producer pair (short chip label + full changeset
+description in the held-proposal card body) lands in the CEE wave-2 PRs.
+
 ## [0.18.0] — 2026-07-18 (UNPUBLISHED — merge + publish are Paul-gated contract class)
 
 Strictly-additive: one new optional field on an existing schema, one new

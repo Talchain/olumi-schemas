@@ -309,6 +309,52 @@ export const Phase3BlockSeverity = z.enum([
 ]);
 export type Phase3BlockSeverityLiteral = z.infer<typeof Phase3BlockSeverity>;
 
+// ----------------------------------------------------------------------------
+// Guidance signals (0.19.0) — wave-2 producer fields, UI-SEM-085.
+//
+// THE `priority_rank` CONTRACT, stated once, authoritatively (this is the
+// answer to the UI's §3.2 ask — consumers were inverting it as
+// `100 - priority_rank`, which is WRONG):
+//
+//   * `priority_rank` is an ASCENDING ordinal: LOWER = shown FIRST. It is a
+//     display order, not a merit score.
+//   * Its range is the positive integers, UNBOUNDED. It is NOT a 0–100 scale;
+//     never invert it against 100 (ranks ≥ 100 are routine).
+//   * The band prefix IS meaningful — it encodes the producer's block-class
+//     ordering, not a score: 1–9 lifecycle-urgent (e.g. the stale-rerun
+//     nudge at rank 1); 10–99 analysis review cards (curated per-kind bands:
+//     narrative 10, pre-mortem 20, flip 30+, bias 40+, robustness 50,
+//     evidence-priority 60, assumption 70+, scenario-context 80+);
+//     100–199 coaching; 200+ calibration prompts / exercises.
+//   * Ranks are unique only WITHIN a producing band, not globally: a
+//     consumer sorting a mixed guidance feed sorts ascending and treats
+//     equal ranks as producer-order ties.
+//
+// `GuidanceCategory` + `priority` (both OPTIONAL, additive 0.19.0) are the
+// producer-owned severity/urgency signals the UI previously invented
+// client-side (UI-SEM-085: measured 10/10 blocks with UI-authored
+// `category`). Semantics:
+//
+//   * `category` — the canonical four-value guidance class the Strengthen
+//     surface budgets and filters on. Code-keyed: a consumer maps each value
+//     to its OWN display copy (same doctrine as HeldProposalReasonCode).
+//   * `priority` — a COARSE 0–100 urgency score for cross-surface budgeting,
+//     HIGHER = more urgent. It is intentionally band-granular (derived 1:1
+//     from `category` by the producer): ties are expected and normal. It is
+//     NOT a display order — to order a feed, sort by `priority_rank`
+//     ascending; use `priority`/`category` to budget, filter, and style.
+//
+// Consumers MUST tolerate absence (fail closed to their existing unranked
+// treatment): blocks produced before 0.19.0, or by producers that have not
+// re-vendored, will not carry these fields.
+export const GuidanceCategory = z.enum([
+  'must_fix',
+  'should_fix',
+  'could_fix',
+  'technique',
+]);
+export type GuidanceCategoryLiteral = z.infer<typeof GuidanceCategory>;
+
 // §0.2 — Copy-length constraints. CEE enforces at the composer layer;
 // schema-side enforcement is defence-in-depth so a composer bug surfaces
 // as a Zod validation failure at the boundary rather than being silently
@@ -346,6 +392,10 @@ export const ReviewCardBlockSchema = z.object({
   severity: Phase3BlockSeverity,
   target_refs: z.array(TargetRefSchema),
   priority_rank: z.number(),
+  // 0.19.0 additive (UI-SEM-085) — producer-owned guidance class + coarse
+  // urgency score. See the GuidanceCategory block comment for semantics.
+  category: GuidanceCategory.optional(),
+  priority: z.number().min(0).max(100).optional(),
   action_intent: ActionIntent.optional(),
   action_label: z.string().min(1).max(PHASE3_ACTION_LABEL_MAX).optional(),
 }).strict();
@@ -379,6 +429,12 @@ export const CoachingBlockSchema = z.object({
   source: z.enum(['draft_graph', 'decision_review', 'deterministic_signal']),
   target_refs: z.array(TargetRefSchema),
   priority_rank: z.number(),
+  // 0.19.0 additive (UI-SEM-085) — producer-owned guidance class + coarse
+  // urgency score. See the GuidanceCategory block comment for semantics.
+  // (CoachingBlock has no `severity` field; `category` is its ONLY
+  // producer-owned severity-class signal.)
+  category: GuidanceCategory.optional(),
+  priority: z.number().min(0).max(100).optional(),
   action_intent: ActionIntent.optional(),
   action_label: z.string().min(1).max(PHASE3_ACTION_LABEL_MAX).optional(),
 }).strict();
@@ -425,6 +481,10 @@ const EvidenceBlockObjectSchema = z.object({
   impact_if_gathered: z.string().min(1),
   priority_rank: z.number(),
   severity: Phase3BlockSeverity,
+  // 0.19.0 additive (UI-SEM-085) — producer-owned guidance class + coarse
+  // urgency score. See the GuidanceCategory block comment for semantics.
+  category: GuidanceCategory.optional(),
+  priority: z.number().min(0).max(100).optional(),
   action_intent: ActionIntent.optional(),
   action_label: z.string().min(1).max(PHASE3_ACTION_LABEL_MAX).optional(),
 }).strict();
@@ -514,6 +574,12 @@ export const ExerciseBlockSchema = z.object({
   counter_case: z.string().min(1).optional(),
   review_trigger: z.string().min(1).optional(),
   target_refs: z.array(TargetRefSchema),
+  // 0.19.0 additive (UI-SEM-085) — producer-owned guidance class + coarse
+  // urgency score, declared on every guidance-bearing block kind for
+  // uniformity (ExerciseBlock has no priority_rank per v1.3; `category` /
+  // `priority` give a consumer its only producer-owned budgeting signals).
+  category: GuidanceCategory.optional(),
+  priority: z.number().min(0).max(100).optional(),
 }).strict();
 export type ExerciseBlock = z.infer<typeof ExerciseBlockSchema>;
 
@@ -682,6 +748,11 @@ export type UiDirectiveBlock = z.infer<typeof UiDirectiveBlockSchema>;
 // 0.15.0: UiDirectiveBlock added (seamlessness R4 keystone).
 // 0.18.0: DraftGraphBlock gained optional `goal_constraints` (additive; the
 //         block stays strict, so the union member's key set widened by one).
+// 0.19.0: ReviewCard / Coaching / Evidence / Exercise gained optional
+//         `category` + `priority` (wave-2 producer fields, UI-SEM-085; all
+//         four stay strict — consumers on OLDER pins strict-fail a block
+//         carrying the new keys, so producers must not emit them until every
+//         strict consumer has re-vendored ≥ 0.19.0).
 export const BlockSchema = z
   .discriminatedUnion('type', [
     TextBlockSchema,

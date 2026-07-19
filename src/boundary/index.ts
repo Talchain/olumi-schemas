@@ -62,6 +62,8 @@ export {
   TargetRefSchema,
   Phase3BlockFreshness,
   Phase3BlockSeverity,
+  // Guidance signals (0.19.0 — wave-2 producer fields, UI-SEM-085)
+  GuidanceCategory,
   // Held proposal (0.15.0 — ROADMAP 1.43)
   HeldProposalBlockSchema,
   HeldProposalMutationClass,
@@ -93,6 +95,8 @@ export type {
   TargetRef,
   Phase3BlockFreshnessLiteral,
   Phase3BlockSeverityLiteral,
+  // Guidance signals (0.19.0 — wave-2 producer fields, UI-SEM-085)
+  GuidanceCategoryLiteral,
   // Held proposal (0.15.0 — ROADMAP 1.43)
   HeldProposalBlock,
   HeldProposalMutationClassLiteral,
@@ -122,6 +126,8 @@ export {
   EnrichmentRobustnessSchema,
   EnrichmentFlipThresholdSchema,
   EnrichmentEdgeEValueSchema,
+  // 0.19.0 — per-edge flip-stability band (wave-2 ask 8)
+  EnrichmentEdgeEValueStabilitySchema,
   EnrichmentInferenceWarningSchema,
   EnrichmentCritiqueSchema,
   EnrichmentM1CoachingSchema,
@@ -147,6 +153,8 @@ export type {
   EnrichmentRobustness,
   EnrichmentFlipThreshold,
   EnrichmentEdgeEValue,
+  // 0.19.0 — per-edge flip-stability band (wave-2 ask 8)
+  EnrichmentEdgeEValueStability,
   EnrichmentInferenceWarning,
   EnrichmentCritique,
   EnrichmentM1Coaching,
@@ -179,11 +187,21 @@ export {
   ActionSchema,
   InsightSchema,
   OlumiResponseSchema,
+  // 0.19.0 — decision classification (wave-2 ask 5, UI-SEM-077)
+  DecisionClassificationSchema,
+  DecisionClassificationStakes,
+  DecisionClassificationReversibility,
+  DecisionClassificationRisk,
 } from './olumi-response.js';
 export type {
   Action,
   Insight,
   OlumiResponse,
+  // 0.19.0 — decision classification (wave-2 ask 5, UI-SEM-077)
+  DecisionClassification,
+  DecisionClassificationStakesLiteral,
+  DecisionClassificationReversibilityLiteral,
+  DecisionClassificationRiskLiteral,
 } from './olumi-response.js';
 
 // V2 run contract (PLoT surface; pinned now, used later)

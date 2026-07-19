@@ -124,10 +124,14 @@ export {
   CeeTimeoutErrorSchema,
   CeeBudgetErrorSchema,
   CeeUpstreamLlmErrorSchema,
+  // 0.19.0 — typed recovery guidance (wave-2 ask 7)
+  CeeErrorRecoverySchema,
 } from './cee-errors.js';
 export type {
   CeeErrorCodeType,
   CeeTypedError,
+  // 0.19.0 — typed recovery guidance (wave-2 ask 7)
+  CeeErrorRecovery,
 } from './cee-errors.js';
 
 // PLoT BFF error envelopes

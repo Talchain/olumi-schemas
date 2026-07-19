@@ -228,15 +228,17 @@ describe('AnalysisEnrichmentSchema — rejects malformed known keys (the drift c
 });
 
 describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
-  it('matches the CEE compose.ts P0B keep-list exactly (11 keys)', () => {
+  it('matches the CEE compose.ts P0B keep-list exactly (12 keys)', () => {
     // Mirrored from olumi-assistants-service
-    // src/orchestrator-v5/compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP
-    // @ staging e122f16. The CEE-side contract test asserts the same list
-    // against its own constant; if CEE changes the list, BOTH tests must
-    // move in the same PR pair.
+    // src/orchestrator-v5/compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP.
+    // The CEE-side contract test asserts the same list against its own
+    // constant; if CEE changes the list, BOTH tests must move in the same
+    // PR pair. 0.19.0 adds `decision_brief` (wave-2 ask 3) — the paired
+    // CEE change lands in the CEE re-vendor PR of the same wave.
     expect([...CEE_UI_ENRICHMENT_KEEP_LIST].sort()).toEqual([
       'conditional_probabilities',
       'confidence_tier',
+      'decision_brief',
       'decision_review',
       'edge_e_values',
       'factor_sensitivity',

@@ -81,6 +81,7 @@ import {
   CeeTimeoutErrorSchema,
   CeeBudgetErrorSchema,
   CeeUpstreamLlmErrorSchema,
+  CeeErrorRecoverySchema,
   // plot errors
   PlotProxyTimeoutErrorSchema,
   PlotCeeUpstreamEnvelopeSchema,
@@ -124,6 +125,7 @@ import {
   EnrichmentRobustnessSchema,
   EnrichmentFlipThresholdSchema,
   EnrichmentEdgeEValueSchema,
+  EnrichmentEdgeEValueStabilitySchema,
   EnrichmentInferenceWarningSchema,
   EnrichmentCritiqueSchema,
   EnrichmentM1CoachingSchema,
@@ -140,6 +142,7 @@ import {
   ActionSchema,
   InsightSchema,
   OlumiResponseSchema,
+  DecisionClassificationSchema,
   // run
   GoalConstraintSchema,
   V2OptionSchema,
@@ -486,12 +489,22 @@ export const maximalValidationWarning = deepFreeze({
 // CEE / PLoT error envelopes (root)
 // ----------------------------------------------------------------------------
 
+// 0.19.0 (wave-2 ask 7) — typed recovery guidance on CEE error envelopes.
+export const maximalCeeErrorRecovery = deepFreeze({
+  hints: ['FIXTURE synthetic recovery hint.'],
+  suggestion: 'FIXTURE synthetic recovery suggestion.',
+  example: 'FIXTURE synthetic recovery example.',
+  [PROBE]: true,
+});
+
 export const maximalCeeTypedError = deepFreeze({
   error: 'CEE_INTERNAL_ERROR',
   message: 'FIXTURE synthetic error message.',
   retryable: false,
   elapsed_ms: 1234,
   request_id: 'fixture_req_1',
+  recovery_suggestion: 'FIXTURE synthetic recovery suggestion.',
+  recovery: maximalCeeErrorRecovery,
   [PROBE]: true,
 });
 
@@ -502,6 +515,8 @@ export const maximalCeeTimeoutError = deepFreeze({
   elapsed_ms: 30000,
   request_id: 'fixture_req_1',
   model: 'FIXTURE_model_id',
+  recovery_suggestion: 'FIXTURE synthetic recovery suggestion.',
+  recovery: maximalCeeErrorRecovery,
   [PROBE]: true,
 });
 
@@ -512,6 +527,8 @@ export const maximalCeeBudgetError = deepFreeze({
   elapsed_ms: 45000,
   request_id: 'fixture_req_1',
   stage: 'FIXTURE_compose',
+  recovery_suggestion: 'FIXTURE synthetic recovery suggestion.',
+  recovery: maximalCeeErrorRecovery,
   [PROBE]: true,
 });
 
@@ -525,6 +542,8 @@ export const maximalCeeUpstreamLlmError = deepFreeze({
   upstream_body_preview: 'FIXTURE upstream body preview.',
   upstream_status: 502,
   provider: 'FIXTURE_provider',
+  recovery_suggestion: 'FIXTURE synthetic recovery suggestion.',
+  recovery: maximalCeeErrorRecovery,
   [PROBE]: true,
 });
 
@@ -779,6 +798,21 @@ export const maximalEnrichmentFlipThreshold = deepFreeze({
   [PROBE]: true,
 });
 
+// 0.19.0 (wave-2 ask 8) — per-edge flip-stability band. Values honour the
+// schema's cross-field invariants: counts are non-negative integers with
+// n_seeds_flipped ≤ n_seeds, endpoints are ordered min ≤ median ≤ max, and
+// seed_flip_means carries exactly one cell per seed.
+export const maximalEnrichmentEdgeEValueStability = deepFreeze({
+  n_seeds: 10,
+  n_seeds_flipped: 3,
+  band_min: 0.2,
+  band_median: 0.5,
+  band_max: 0.8,
+  band_width: 0.6,
+  seed_flip_means: [0.2, null, 0.5, null, 0.8, null, null, null, null, null],
+  [PROBE]: true,
+});
+
 export const maximalEnrichmentEdgeEValue = deepFreeze({
   edge_id: ID_EDGE,
   from_id: ID_FACTOR,
@@ -789,6 +823,7 @@ export const maximalEnrichmentEdgeEValue = deepFreeze({
   flip_direction: 'increase',
   current_mean: 0.6,
   flip_mean: 0.33,
+  stability: maximalEnrichmentEdgeEValueStability,
   _normalised: true,
   [PROBE]: true,
 });
@@ -908,6 +943,17 @@ export const maximalAnalysisEnrichment = deepFreeze({
   conditional_probabilities: [maximalEnrichmentConditionalProbability],
   m1_coaching: maximalEnrichmentM1Coaching,
   decision_review: maximalEnrichmentDecisionReview,
+  // 0.19.0 (wave-2 ask 3) — PLoT #200 leader band, typed open. The
+  // TRANSPORTED shape: lineage keys (`seed` / `graph_hash`) are already
+  // stripped by CEE's projection before the CEE→UI hop, so the maximal
+  // fixture models the post-strip wire, not the persisted fact.
+  decision_brief: {
+    brief_id: 'fixture-brief-0001',
+    version: '1',
+    headline: 'FIXTURE synthetic leader-band headline.',
+    options: [{ option_id: ID_OPTION_A, label: LABEL_OPTION_A, win_probability: 0.7, rank: 1 }],
+    [PROBE]: true,
+  },
   // deprecated-inbound-only legacy array — see envelope disposition notes.
   results: [{ FIXTURE_legacy_key: 'FIXTURE_legacy_value' }],
   [PROBE]: true,
@@ -1056,6 +1102,8 @@ export const maximalReviewCardBlock = deepFreeze({
   severity: 'warning',
   target_refs: [maximalTargetRef],
   priority_rank: 1,
+  category: 'should_fix',
+  priority: 70,
   action_intent: 'what_would_flip',
   action_label: 'FIXTURE test the tipping point',
 });
@@ -1074,6 +1122,8 @@ export const maximalCoachingBlock = deepFreeze({
   source: 'decision_review',
   target_refs: [maximalTargetRef],
   priority_rank: 2,
+  category: 'could_fix',
+  priority: 50,
   action_intent: 'gather_evidence',
   action_label: 'FIXTURE gather evidence',
 });
@@ -1102,6 +1152,8 @@ export const maximalEvidenceBlock = deepFreeze({
   impact_if_gathered: 'FIXTURE synthetic impact.',
   priority_rank: 3,
   severity: 'info',
+  category: 'must_fix',
+  priority: 90,
   action_intent: 'gather_evidence',
   action_label: 'FIXTURE gather this evidence',
 });
@@ -1123,6 +1175,8 @@ export const maximalExerciseBlock = deepFreeze({
   counter_case: 'FIXTURE synthetic counter case.',
   review_trigger: 'FIXTURE synthetic review trigger.',
   target_refs: [maximalTargetRef],
+  category: 'technique',
+  priority: 30,
 });
 
 export const maximalHeldProposalBlock = deepFreeze({
@@ -1158,11 +1212,21 @@ export const maximalAction = deepFreeze({
   label: 'FIXTURE_confirm_label',
   message: 'FIXTURE synthetic action message.',
   action_type: 'run_analysis',
+  // 0.19.0 (wave-2 ask 20) — full producer text behind a short label.
+  detail: 'FIXTURE synthetic full action detail sentence.',
 });
 
 export const maximalInsight = deepFreeze({
   id: 'fixture_insight_1',
   text: 'FIXTURE synthetic insight text.',
+});
+
+// 0.19.0 (wave-2 ask 5, UI-SEM-077) — every dimension populated.
+export const maximalDecisionClassification = deepFreeze({
+  stakes: 'high',
+  reversibility: 'partially_reversible',
+  horizon: 'FIXTURE next quarter',
+  risk: 'balanced',
 });
 
 export const maximalOlumiResponse = deepFreeze({
@@ -1213,6 +1277,9 @@ export const maximalOlumiResponse = deepFreeze({
     [PROBE]: true,
   },
   reasoning: 'FIXTURE synthetic verbatim model reasoning.',
+  // 0.19.0 — wave-2 producer fields (asks 4 + 5).
+  framing_question: 'FIXTURE what would it take to reach the synthetic goal?',
+  decision_classification: maximalDecisionClassification,
 });
 
 // ----------------------------------------------------------------------------
@@ -1467,6 +1534,7 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'root/EdgeStrengthDetailsSchema', schema: EdgeStrengthDetailsSchema, fixture: maximalEdgeStrengthDetails },
   { family: 'root/ValidationWarningSchema', schema: ValidationWarningSchema, fixture: maximalValidationWarning },
   // --- cee / plot errors -------------------------------------------------------
+  { family: 'root/CeeErrorRecoverySchema', schema: CeeErrorRecoverySchema, fixture: maximalCeeErrorRecovery },
   { family: 'root/CeeTypedErrorSchema', schema: CeeTypedErrorSchema, fixture: maximalCeeTypedError },
   { family: 'root/CeeTimeoutErrorSchema', schema: CeeTimeoutErrorSchema, fixture: maximalCeeTimeoutError },
   { family: 'root/CeeBudgetErrorSchema', schema: CeeBudgetErrorSchema, fixture: maximalCeeBudgetError },
@@ -1568,6 +1636,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalEnrichmentEdgeEValue,
   },
   {
+    family: 'boundary/EnrichmentEdgeEValueStabilitySchema',
+    schema: EnrichmentEdgeEValueStabilitySchema,
+    fixture: maximalEnrichmentEdgeEValueStability,
+  },
+  {
     family: 'boundary/EnrichmentInferenceWarningSchema',
     schema: EnrichmentInferenceWarningSchema,
     fixture: maximalEnrichmentInferenceWarning,
@@ -1652,6 +1725,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   // --- olumi response --------------------------------------------------------------
   { family: 'boundary/ActionSchema', schema: ActionSchema, fixture: maximalAction },
   { family: 'boundary/InsightSchema', schema: InsightSchema, fixture: maximalInsight },
+  {
+    family: 'boundary/DecisionClassificationSchema',
+    schema: DecisionClassificationSchema,
+    fixture: maximalDecisionClassification,
+  },
   {
     family: 'boundary/OlumiResponseSchema',
     schema: OlumiResponseSchema,

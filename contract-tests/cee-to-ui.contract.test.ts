@@ -117,9 +117,33 @@ describe('CEE→UI: keep-list projection', () => {
   });
 
   it('drops the non-keep-listed keys (they exist on the persisted fact, not the wire)', () => {
-    for (const droppedKey of ['m1_coaching', '_meta', 'meta', 'downstream_calls', 'decision_brief', 'fact_objects', 'critiques']) {
+    for (const droppedKey of ['m1_coaching', '_meta', 'meta', 'downstream_calls', 'fact_objects', 'critiques']) {
       expect(projected, `${droppedKey} must not ship`).not.toHaveProperty(droppedKey);
     }
+  });
+
+  // 0.19.0 (wave-2 ask 3): decision_brief joined the keep-list — the UI's
+  // leader-band consumer (DGAI #291/#292) shipped contract-pinned and never
+  // fired because this key was stripped. Mutation-check discipline: the
+  // PERSISTED copy on this staging capture carries `seed`, `graph_hash` AND
+  // `lineage` (verified — that leak risk is WHY the key was originally
+  // omitted), so these assertions are their own positive control: if the
+  // deep strip ever stops discriminating, the internal-key checks go red.
+  it('ships decision_brief WITH its internal lineage stripped (0.19.0)', () => {
+    const persistedBrief = persisted.decision_brief as Record<string, unknown>;
+    // Positive control — the source really carries the internal keys.
+    expect(persistedBrief).toHaveProperty('seed');
+    expect(persistedBrief).toHaveProperty('graph_hash');
+    expect(persistedBrief).toHaveProperty('lineage');
+    // The projection ships the brief…
+    const shipped = projected.decision_brief as Record<string, unknown>;
+    expect(shipped).toBeDefined();
+    expect(shipped.headline).toBe(persistedBrief.headline);
+    expect(shipped.options).toEqual(persistedBrief.options);
+    // …minus every internal carrier.
+    expect(shipped).not.toHaveProperty('seed');
+    expect(shipped).not.toHaveProperty('graph_hash');
+    expect(shipped).not.toHaveProperty('lineage');
   });
 });
 
@@ -133,7 +157,11 @@ describe('CEE→UI: keep-list membership pins', () => {
     expect(CEE_UI_ENRICHMENT_KEEP_LIST).not.toContain('m1_coaching');
   });
 
-  it('keep-list is exactly the CEE compose.ts P0B list (11 keys)', () => {
-    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(11);
+  it('decision_brief is keep-listed (0.19.0, wave-2 ask 3)', () => {
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('decision_brief');
+  });
+
+  it('keep-list is exactly the CEE compose.ts P0B list (12 keys)', () => {
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(12);
   });
 });
