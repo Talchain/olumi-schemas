@@ -5,6 +5,96 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] — AUTHORED, unpublished; publish gated on single-graph ratification (Paul)
+
+**⚠ DO NOT PUBLISH.** This version is authored as a DRAFT (schemas-0.21.0-manifest,
+SINGLE-GRAPH-DESIGN-2026-07-20-v2, S2 build spec). It is one coordinated,
+fully-additive bump carrying three riders (S1 graph identity + S2 typed intent +
+S3 lifecycle) so three mid-flight consumers ride a SINGLE re-vendor event rather
+than three independent pin-skew windows (system-map hazard 1). The one-bump
+coupling is deliberate — do not split. `[Unreleased]` above (the #14 false-twin
+rename) folds into this version on publish.
+
+Publish is gated on Paul's single-graph ratification. Paul-confirmable design
+choices flagged in-source:
+- `CoachingIntent` as a PARALLEL enum vs extending `ActionType` (architect / S2 §4
+  recommend parallel — this).
+- exact `CoachingIntent` membership (12 values incl. the optional 12th
+  `mitigation_help`).
+- node `type` / `categories` / `state_space` + `observed_state.std` HASHED beyond
+  CEE's abbreviated floor list (analysis-affecting; safe over-detect direction) —
+  confirm at CEE adoption.
+- `goal_constraints` hashed WHOLE-ARRAY (manifest §3) — constraint
+  provenance/display sub-fields therefore participate; narrowable if preferred.
+
+### Added — S1 graph identity handshake
+
+- **`computeGraphHash(graph)` — the ONE canonical graph-IDENTITY hash** (new
+  `src/graph-hash.ts`, exported from root + `/boundary`). Deterministic 16-hex
+  SHA-256 prefix of a canonical, analysis-affecting projection; `null` when the
+  graph is structurally empty (no nodes). WHITELIST projection (not blacklist) so
+  two writers carrying different extra passthrough keys — the CEE layout-strip vs
+  UI layout-carry asymmetry — still agree. INCLUDES nodes/edges semantics +
+  options + `goal_node_id` + `goal_constraints` (the S1 §D/§F.1 defect fix: v1's
+  keep-list omitted constraints, so a hard-constraint edit read FRESH). EXCLUDES
+  labels/descriptions/provenance/display, layout & positions, and Monte-Carlo
+  reproducibility config. Also exports `stableStringify`,
+  `GRAPH_HASH_CLASSIFICATION`, `GRAPH_HASH_CLASSIFIED_SCHEMAS`. Package exported NO
+  hash function before this — adopting ONE is a real new deliverable, not a
+  re-export.
+- **Classification-completeness guard** (`tests/graph-hash-classification.test.ts`)
+  — DERIVES the field universe from the live Zod shapes and FAILS THE BUILD if any
+  declared field (or nested sub-field of a HASHED object) lacks a hashed/excluded
+  disposition, or if a registry key is stale. Proven fail-loud by a mutation (an
+  unclassified field turns it RED) and by a positive control (trap-12/13).
+- **CEE/UI byte-parity fixture** (`identityParityGraph` + `IDENTITY_PARITY_GRAPH_HASH`
+  in `/fixtures`) with a committed expected constant `965d721bd37964e8`, plus a
+  mutation guard (`tests/graph-hash-parity.test.ts`) asserting every INCLUDED field
+  changes the hash and every EXCLUDED field does not. CEE and UI ship the mirror
+  assertion against their own vendored fn — the cross-repo agreement proof.
+- **`graph_hash`** on the turn payloads (message + system-event) —
+  `.nullable().optional()` tri-state (string = graph rendered · null = no graph ·
+  absent = old client); the null/absent distinction drives whether divergence
+  enforcement engages.
+- **`computed_against_hash`** on the OlumiResponse envelope and the
+  `analysis_result` block (`z.string().optional()`) — the echo a client compares
+  to its current canvas.
+- **`GRAPH_DIVERGED`** typed code on `BoundaryErrorCode` (+ `FAILURE_USER_TEXT`).
+- **`GraphWriteRequest` / `GraphWriteResult`** (new `src/boundary/graph-write.ts`)
+  — the CEE write-through / CAS endpoint contract, LOAD-BEARING for guests (the
+  client Supabase RPC path RLS-fails silently for guests). `base_hash` nullable
+  (`null` = create/first write); result is a discriminated union (`ok {new_hash}` |
+  `diverged {server_hash, code:'GRAPH_DIVERGED'}`).
+
+### Added — S2 typed intent vocabulary + first-class chip identity
+
+- **`CoachingIntent`** — a parallel typed coaching/elicitation intent enum (12
+  values), DECOUPLED from `ActionType` (which names handler ids). Closes the
+  meta-decision defect where anonymous chip text was re-inferred by regex.
+- **`chip.id`** and **`chip.intent`** on the message-turn chip shape — promoting
+  chip identity out of the untyped `parameters` bag and giving each chip a typed
+  intent channel alongside its handler-imperative `action_type`.
+- **Batched `direct_graph_edit`** system event — `target_id`/`operation` demoted
+  to optional, batch fields (`changed_node_ids`, `changed_edge_ids`, `operations`,
+  `fields_changed?`, `summary?`) added alongside, so CEE is no longer blind to
+  batched manual canvas edits (the old singular shape had no live producer and was
+  silently dropped).
+
+### Added — S3 transactional edit lifecycle
+
+- **`base_graph_hash`** on the `held_proposal` block (`z.string().optional()`) —
+  lets the client verify a confirm-receipt applied against the graph it holds
+  (kills the `zero_overlap_drop` heuristic at the held-proposal render path). S3
+  otherwise rides S1's hash fields; no net-new S3 wire type (the V4 `ProposedChange`
+  is vestigial on V5 and is not extended).
+
+### Fixtures / ratchet
+
+- Maximal-fixture registry 106 → 111 (the five graph-write entries). New optional
+  fields (`graph_hash`, `chip.id`/`chip.intent`, `computed_against_hash`,
+  `base_graph_hash`, batched `direct_graph_edit`) populated in their existing
+  fixtures to keep the maximality guard satisfied.
+
 ## [Unreleased]
 
 ### Changed (rename only — no shape change, version untouched)

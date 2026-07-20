@@ -152,6 +152,11 @@ import {
   // patch
   ValidatePatchRequestSchema,
   ValidatePatchResponseSchema,
+  // graph write-through / CAS (0.21.0)
+  GraphWriteRequestSchema,
+  GraphWriteResultSchema,
+  GraphWriteAppliedSchema,
+  GraphWriteDivergedSchema,
   // decision record
   DecisionRecordSchema,
   DecisionRecordDecisionSchema,
@@ -159,6 +164,12 @@ import {
   DecisionRecordPredictionSchema,
   DecisionRecordOutcomeSchema,
 } from '../boundary/index.js';
+
+// 0.21.0 — the canonical graph-identity hash, used to COMPUTE the byte-parity
+// fixture's expected constant at module-eval time (not hand-copied — derived
+// from the same function CEE/UI vendor, so the constant cannot drift from the
+// implementation).
+import { computeGraphHash } from '../graph-hash.js';
 
 // ----------------------------------------------------------------------------
 // Registry types
@@ -217,6 +228,11 @@ const UUID_RETRY_OF = '33333333-3333-4333-8333-333333333333';
 const UUID_BLOCK = '44444444-4444-4444-8444-444444444444';
 const TS_Z = '2026-01-01T00:00:00.000Z';
 const TS_OFFSET = '2026-01-01T09:30:00.000+01:00';
+
+// 0.21.0 — a synthetic 16-hex graph-identity hash (the `computeGraphHash`
+// output shape). Populates the tri-state `graph_hash` request field and the
+// `computed_against_hash` / `base_graph_hash` echoes.
+const FIXTURE_GRAPH_HASH = '0123456789abcdef';
 
 const ID_GOAL = 'fixture_goal_revenue';
 const ID_FACTOR = 'fixture_factor_market_demand';
@@ -989,6 +1005,8 @@ export const maximalAnalysisResultBlock = deepFreeze({
   // the transport field is z.record(z.unknown()) — carry the full maximal
   // typed envelope so one fixture exercises both layers.
   enrichment: maximalAnalysisEnrichment,
+  // 0.21.0 — the graph-identity hash this analysis was computed against.
+  computed_against_hash: FIXTURE_GRAPH_HASH,
 });
 
 export const maximalGraphPatchBlock = deepFreeze({
@@ -1200,6 +1218,8 @@ export const maximalHeldProposalBlock = deepFreeze({
   reason_code: 'STRUCTURAL_APPLY_HELD',
   confirm_action_id: 'fixture_action_confirm_apply',
   decline_action_id: 'fixture_action_decline_apply',
+  // 0.21.0 (c1) — the graph-identity hash this proposal was composed against.
+  base_graph_hash: FIXTURE_GRAPH_HASH,
 });
 
 export const maximalUiDirectiveBlock = deepFreeze({
@@ -1295,6 +1315,8 @@ export const maximalOlumiResponse = deepFreeze({
   decision_classification: maximalDecisionClassification,
   // 0.20.0 — producer framing-quality verdict (ROADMAP 1.120, UI-SEM-079).
   framing_quality: 'ready',
+  // 0.21.0 — echo of the graph-identity hash the turn computed against.
+  computed_against_hash: FIXTURE_GRAPH_HASH,
 });
 
 // ----------------------------------------------------------------------------
@@ -1317,12 +1339,18 @@ export const maximalMessageTurnPayloadChip = deepFreeze({
   turn_id: UUID_TURN,
   scenario_id: UUID_SCENARIO,
   stage: 'analyse',
+  // 0.21.0 tri-state graph_hash — populated as a string (null/absent read as
+  // unpopulated by the maximality walker).
+  graph_hash: FIXTURE_GRAPH_HASH,
   kind: 'message',
   message: 'FIXTURE synthetic user message.',
   turn_class: 'propose',
   source: 'chip',
   chip: {
+    // 0.21.0 — first-class chip identity + typed coaching intent.
+    id: 'fixture_chip_spark_pre_mortem',
     action_type: 'run_analysis',
+    intent: 'pre_mortem',
     parameters: { FIXTURE_parameter: 'FIXTURE_value' },
   },
   generate_model: true,
@@ -1334,6 +1362,7 @@ export const maximalMessageTurnPayloadRetry = deepFreeze({
   turn_id: UUID_TURN,
   scenario_id: UUID_SCENARIO,
   stage: 'analyse',
+  graph_hash: FIXTURE_GRAPH_HASH,
   kind: 'message',
   message: 'FIXTURE synthetic retried message.',
   turn_class: 'propose',
@@ -1346,10 +1375,19 @@ export const maximalMessageTurnPayloadRetry = deepFreeze({
 
 const eventPatchAccepted = deepFreeze({ kind: 'patch_accepted', patch_id: 'fixture_patch_1' });
 const eventPatchDismissed = deepFreeze({ kind: 'patch_dismissed', patch_id: 'fixture_patch_1' });
+// 0.21.0 — carries BOTH the legacy singular pair AND the batched shape so the
+// maximality walker exercises every optional field of the (now all-optional)
+// DirectGraphEditEvent member. A real wire event carries one shape or the
+// other; this library's job is field-loss detection, not wire semantics.
 const eventDirectGraphEdit = deepFreeze({
   kind: 'direct_graph_edit',
   target_id: ID_FACTOR,
   operation: 'set_factor_value',
+  changed_node_ids: [ID_FACTOR, ID_GOAL],
+  changed_edge_ids: [ID_EDGE],
+  operations: ['set_factor_value', 'adjust_edge_strength'],
+  fields_changed: ['observed_state.value', 'strength.mean'],
+  summary: 'FIXTURE synthetic batched canvas edit summary.',
 });
 const eventChipClick = deepFreeze({ kind: 'chip_click', chip_id: 'fixture_chip_1' });
 const eventUndo = deepFreeze({ kind: 'undo' });
@@ -1364,6 +1402,8 @@ export const maximalSystemEventTurnPayload = deepFreeze({
   turn_id: UUID_TURN,
   scenario_id: UUID_SCENARIO,
   stage: 'analyse',
+  // 0.21.0 — graph_hash rides system-event turns too (BaseFields).
+  graph_hash: FIXTURE_GRAPH_HASH,
   kind: 'system_event',
   event: maximalSelectionChangeEvent,
 });
@@ -1478,6 +1518,181 @@ export const maximalDecisionRecord = deepFreeze({
   review_date: '2026-02-01T00:00:00.000Z',
   outcome: maximalDecisionRecordOutcome,
 });
+
+// ----------------------------------------------------------------------------
+// Graph write-through / CAS (boundary, 0.21.0)
+// ----------------------------------------------------------------------------
+
+export const maximalGraphWriteRequest = deepFreeze({
+  scenario_id: UUID_SCENARIO,
+  graph: maximalGraphV3,
+  // string (not null) so the maximality walker sees base_hash populated; the
+  // null "create / first write" case is a legal runtime value, not a fixture
+  // gap the walker can express.
+  base_hash: FIXTURE_GRAPH_HASH,
+});
+
+export const maximalGraphWriteApplied = deepFreeze({
+  status: 'ok',
+  new_hash: FIXTURE_GRAPH_HASH,
+});
+
+export const maximalGraphWriteDiverged = deepFreeze({
+  status: 'diverged',
+  server_hash: 'fedcba9876543210',
+  code: 'GRAPH_DIVERGED',
+});
+
+// ----------------------------------------------------------------------------
+// Byte-parity identity fixture (0.21.0, manifest §5 — NON-OPTIONAL, gap 1).
+//
+// ONE frozen graph that exercises every INCLUDED field of the computeGraphHash
+// surface + at least one EXCLUDED field at each level + a non-empty
+// goal_constraints + a non-`ready` option carrying raw_interventions. Its
+// expected hash is COMPUTED here from the vendored `computeGraphHash` (never
+// hand-copied), so the constant cannot drift from the implementation.
+//
+// BOTH CEE and the UI ship a test that imports this fixture, calls their OWN
+// vendored `computeGraphHash`, and asserts `=== IDENTITY_PARITY_GRAPH_HASH`.
+// That cross-repo assertion is what proves the two agree byte-for-byte over the
+// amended surface after re-vendor — the guarantee three separate hash functions
+// could never give.
+//
+// The graph is a GraphV3 (`.passthrough()`), so the CEE-richer analysis fields
+// (options / goal_node_id / goal_constraints at top level; factor_type /
+// is_baseline / prior / encoding_map / intercept / interventions on nodes)
+// ride through validation and reach the hash.
+// ----------------------------------------------------------------------------
+
+export const identityParityGraph = deepFreeze({
+  nodes: [
+    {
+      id: 'fac_demand',
+      kind: 'factor',
+      // EXCLUDED (cosmetic): label + body must NOT affect the hash.
+      label: 'PARITY_market_demand',
+      body: 'PARITY excluded free-text description.',
+      // INCLUDED: value-domain / encoding.
+      type: 'numeric',
+      categories: ['PARITY_low', 'PARITY_high'],
+      category: 'observable',
+      observed_state: {
+        value: 42.5,
+        std: 3.2,
+        baseline: 40,
+        // EXCLUDED observed_state sub-fields.
+        unit: 'PARITY_units',
+        source: 'PARITY_user_estimate',
+      },
+      state_space: { range: { min: 0, max: 100 } },
+      goal_threshold: 75,
+      // INCLUDED passthrough (CEE floor).
+      factor_type: 'controllable',
+      is_baseline: false,
+      goal_threshold_raw: 75,
+      goal_threshold_cap: 100,
+      intercept: 0.1,
+      prior: { distribution: 'normal', range_min: 10, range_max: 90 },
+      encoding_map: { low: 0, high: 1 },
+      interventions: {
+        fac_price: {
+          value: 12,
+          value_type: 'absolute',
+          encoding_map: { cheap: 0, dear: 1 },
+          target_match: {
+            node_id: 'fac_price',
+            // EXCLUDED intervention/target_match sub-fields.
+            match_type: 'exact',
+            confidence: 0.95,
+          },
+          // EXCLUDED intervention sub-fields.
+          unit: 'PARITY_gbp',
+          source: 'PARITY_llm',
+          reasoning: 'PARITY excluded reasoning.',
+          value_confidence: 0.8,
+          display_value: 'PARITY £12',
+        },
+      },
+      // EXCLUDED: layout / position.
+      position: { x: 120, y: 240 },
+      x: 120,
+      y: 240,
+    },
+    {
+      id: 'goal_revenue',
+      kind: 'goal',
+      label: 'PARITY_monthly_revenue',
+      goal_threshold: 100,
+      position: { x: 400, y: 80 },
+    },
+  ],
+  edges: [
+    {
+      from: 'fac_demand',
+      to: 'goal_revenue',
+      strength: { mean: 0.6, std: 0.15 },
+      exists_probability: 0.9,
+      effect_direction: 'positive',
+      edge_type: 'directed',
+      // EXCLUDED edge cosmetics / provenance.
+      label: 'PARITY_demand_drives_revenue',
+      validation: { status: 'ok' },
+      defaulted: false,
+    },
+  ],
+  // Top-level passthrough analysis surface.
+  goal_node_id: 'goal_revenue',
+  options: [
+    {
+      id: 'opt_ready',
+      // EXCLUDED option cosmetics.
+      label: 'PARITY_option_ready',
+      description: 'PARITY excluded option description.',
+      status: 'ready',
+      is_baseline: true,
+      interventions: { fac_demand: 55 },
+      // raw_interventions on a READY option is EXCLUDED (manifest §3: only when
+      // status !== 'ready').
+      raw_interventions: { fac_demand: 'PARITY_should_be_ignored' },
+    },
+    {
+      id: 'opt_draft',
+      label: 'PARITY_option_draft',
+      status: 'needs_encoding',
+      is_baseline: false,
+      interventions: { fac_demand: 60 },
+      // INCLUDED: raw_interventions on a NON-ready option.
+      raw_interventions: { fac_demand: 'high', fac_price: true },
+    },
+  ],
+  goal_constraints: [
+    {
+      constraint_id: 'constraint_fac_demand_max',
+      node_id: 'fac_demand',
+      operator: '<=',
+      value: 90,
+      label: 'PARITY demand ceiling',
+      unit: 'PARITY_units',
+      source_quote: 'PARITY brief span.',
+      confidence: 0.85,
+      provenance: 'explicit',
+    },
+  ],
+  // EXCLUDED: top-level layout + reproducibility config.
+  layout: { fac_demand: { x: 120, y: 240 } },
+  seed: 424242,
+  n_samples: 10000,
+  request_id: 'PARITY_req_1',
+});
+
+/**
+ * The expected 16-hex hash of `identityParityGraph`. Computed from the vendored
+ * `computeGraphHash` at module-eval — the source of truth for the CEE/UI
+ * cross-repo parity assertion (manifest §5).
+ */
+export const IDENTITY_PARITY_GRAPH_HASH: string = computeGraphHash(
+  identityParityGraph as unknown as Parameters<typeof computeGraphHash>[0],
+) as string;
 
 // ----------------------------------------------------------------------------
 // The registry
@@ -1776,6 +1991,34 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/ValidatePatchResponseSchema',
     schema: ValidatePatchResponseSchema,
     fixture: maximalValidatePatchResponse,
+  },
+  // --- graph write-through / CAS (0.21.0) --------------------------------------------
+  {
+    family: 'boundary/GraphWriteRequestSchema',
+    schema: GraphWriteRequestSchema,
+    fixture: maximalGraphWriteRequest,
+  },
+  {
+    family: 'boundary/GraphWriteAppliedSchema',
+    schema: GraphWriteAppliedSchema,
+    fixture: maximalGraphWriteApplied,
+  },
+  {
+    family: 'boundary/GraphWriteDivergedSchema',
+    schema: GraphWriteDivergedSchema,
+    fixture: maximalGraphWriteDiverged,
+  },
+  {
+    family: 'boundary/GraphWriteResultSchema#applied',
+    schema: GraphWriteResultSchema,
+    fixture: maximalGraphWriteApplied,
+    notes:
+      'Discriminated union — this entry exercises the `ok` branch; #diverged exercises the 409 branch.',
+  },
+  {
+    family: 'boundary/GraphWriteResultSchema#diverged',
+    schema: GraphWriteResultSchema,
+    fixture: maximalGraphWriteDiverged,
   },
   // --- decision record ---------------------------------------------------------------
   {

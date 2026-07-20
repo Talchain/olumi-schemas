@@ -58,6 +58,11 @@ export const AnalysisResultBlockSchema = z.object({
   leading_option_id: z.string().nullable(),
   win_probabilities: z.record(z.string(), z.number()).optional(),
   enrichment: z.record(z.string(), z.unknown()).optional(),
+  // 0.21.0 (manifest a3) — the graph-identity hash (`computeGraphHash`) this
+  // analysis was computed against, echoed on the result block itself so a
+  // freshness check has the identity at the point of render, not only on the
+  // turn envelope. Optional; old strict pins drop it (safe skew direction).
+  computed_against_hash: z.string().min(1).optional(),
 }).strict();
 export type AnalysisResultBlock = z.infer<typeof AnalysisResultBlockSchema>;
 
@@ -738,6 +743,14 @@ export const HeldProposalBlockSchema = z.object({
   // what to adjust instead") — this field is forward-declared for when it
   // does, not fabricated ahead of the wire carrying it.
   decline_action_id: z.string().min(1).optional(),
+  // 0.21.0 (manifest c1 — the ONE optional S3 rider). The graph-identity hash
+  // (`computeGraphHash`) this proposal was composed against. Lets the client
+  // verify a confirm-receipt applied against the graph it holds — killing the
+  // `zero_overlap_drop` heuristic (SINGLE-GRAPH-DESIGN v2 §2) at the
+  // held-proposal render path, independently of the turn envelope's
+  // `computed_against_hash`. Optional: mostly subsumed by the envelope echo, so
+  // absent unless the held-proposal path needs it standalone.
+  base_graph_hash: z.string().min(1).optional(),
 }).strict();
 export type HeldProposalBlock = z.infer<typeof HeldProposalBlockSchema>;
 

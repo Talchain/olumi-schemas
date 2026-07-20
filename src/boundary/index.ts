@@ -11,6 +11,8 @@ export {
   ActionType,
   SystemEventKind,
   TurnSource,
+  // 0.21.0 — typed coaching / elicitation intent vocabulary
+  CoachingIntent,
 } from './enums.js';
 export type {
   TurnClassType,
@@ -21,6 +23,8 @@ export type {
   ActionTypeLiteral,
   SystemEventKindLiteral,
   TurnSourceLiteral,
+  // 0.21.0 — typed coaching / elicitation intent vocabulary
+  CoachingIntentLiteral,
 } from './enums.js';
 
 // Error codes + user-visible outcome text (addendum §2.1.5)
@@ -237,6 +241,20 @@ export type {
   ValidatePatchResponse,
 } from './patch.js';
 
+// Graph write-through / CAS contract (0.21.0 — load-bearing for guests)
+export {
+  GraphWriteRequestSchema,
+  GraphWriteResultSchema,
+  GraphWriteAppliedSchema,
+  GraphWriteDivergedSchema,
+} from './graph-write.js';
+export type {
+  GraphWriteRequest,
+  GraphWriteResult,
+  GraphWriteApplied,
+  GraphWriteDiverged,
+} from './graph-write.js';
+
 // Decision record (0.15.0 — ROADMAP 3.1; 0.16.0 adds the additive scoring/
 // provenance fields + DecisionRecordConfidenceSource). Standalone wire/API
 // contract, NOT wired into OlumiResponse — see decision-record.ts for scope
@@ -336,3 +354,13 @@ export {
 
 export { NODE_ID_PATTERN } from '../graph.js';
 export { STRENGTH_DEFAULT_SIGNATURE } from '../warnings.js';
+
+// Graph identity hash (0.21.0) — re-exported so boundary consumers get the
+// canonical `computeGraphHash` from the single namespace they import from.
+export {
+  computeGraphHash,
+  stableStringify,
+  GRAPH_HASH_CLASSIFICATION,
+  GRAPH_HASH_CLASSIFIED_SCHEMAS,
+} from '../graph-hash.js';
+export type { GraphHashDisposition } from '../graph-hash.js';
