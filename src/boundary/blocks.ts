@@ -355,6 +355,42 @@ export const GuidanceCategory = z.enum([
 ]);
 export type GuidanceCategoryLiteral = z.infer<typeof GuidanceCategory>;
 
+// ----------------------------------------------------------------------------
+// Guidance signal provenance (0.20.0) — ROADMAP 1.120 residual, UI-SEM-085.
+//
+// `signal_code` + `signal` (both OPTIONAL, additive 0.20.0, declared on the
+// same four guidance-bearing blocks as 0.19.0's `category` / `priority`).
+// They finish the UI-SEM-085 repair: on the live path the UI was measured
+// inventing `signal_code` from `block.type` on 10/10 guidance blocks
+// ('review_card' / 'coaching' — block TYPES, not signal codes — which is why
+// nothing ever matched a real code such as MISSING_BASE_RATE, and why
+// 'discuss'-actionability is still a client-side heuristic).
+//
+//   * `signal_code` — a STABLE machine-readable code naming the producer
+//     signal that generated this item (e.g. `MISSING_BASE_RATE`, a
+//     readiness-blocker code, the stale-rerun nudge). DISTINCT from
+//     `signal_id`: `signal_id` is the per-instance DEDUPE identity;
+//     `signal_code` is the signal's CLASS, shared by every instance the same
+//     detector produces. Consumers key behaviour (actionability, icons,
+//     grouping) off this code and fail closed to their existing generic
+//     treatment on codes they do not recognise. Typed as an open non-empty
+//     string, NOT a closed enum: the vocabulary is producer-owned (CEE's
+//     signal registry) and evolves without a schema bump — a closed enum
+//     here would be a hand-maintained mirror of a registry this package
+//     does not own (the known drift defect). ⚠ Vocabulary + casing
+//     convention are NOT adjudicated by this package — flagged in the
+//     0.20.0 CHANGELOG for consumer sign-off.
+//   * `signal` — a SHORT producer-authored display line stating what
+//     triggered this item, rendered per-item by guidance surfaces (the
+//     Strengthen panel's signal line is UI-derived today). Display-safe by
+//     the same rules as `title`: no internal ids, no doctrine prose.
+//     Bounded short (a caption, not a narrative — same treatment as
+//     UiDirectiveBlock's `note`).
+//
+// Consumers MUST tolerate absence (fail closed): blocks produced before
+// 0.20.0, or by producers that have not re-vendored, will not carry them.
+const GUIDANCE_SIGNAL_LINE_MAX = 140;
+
 // §0.2 — Copy-length constraints. CEE enforces at the composer layer;
 // schema-side enforcement is defence-in-depth so a composer bug surfaces
 // as a Zod validation failure at the boundary rather than being silently
@@ -396,6 +432,10 @@ export const ReviewCardBlockSchema = z.object({
   // urgency score. See the GuidanceCategory block comment for semantics.
   category: GuidanceCategory.optional(),
   priority: z.number().min(0).max(100).optional(),
+  // 0.20.0 additive (UI-SEM-085 residual) — signal class code + short
+  // per-item signal line. See the guidance-signal-provenance block comment.
+  signal_code: z.string().min(1).optional(),
+  signal: z.string().min(1).max(GUIDANCE_SIGNAL_LINE_MAX).optional(),
   action_intent: ActionIntent.optional(),
   action_label: z.string().min(1).max(PHASE3_ACTION_LABEL_MAX).optional(),
 }).strict();
@@ -435,6 +475,13 @@ export const CoachingBlockSchema = z.object({
   // producer-owned severity-class signal.)
   category: GuidanceCategory.optional(),
   priority: z.number().min(0).max(100).optional(),
+  // 0.20.0 additive (UI-SEM-085 residual) — signal class code + short
+  // per-item signal line. See the guidance-signal-provenance block comment.
+  // (`signal_code` names the DETECTOR CLASS; `coaching_kind` above stays the
+  // block's rendering taxonomy — the housekeeping/rerun nudges 1.120 calls
+  // out carry their code here, not by overloading `coaching_kind`.)
+  signal_code: z.string().min(1).optional(),
+  signal: z.string().min(1).max(GUIDANCE_SIGNAL_LINE_MAX).optional(),
   action_intent: ActionIntent.optional(),
   action_label: z.string().min(1).max(PHASE3_ACTION_LABEL_MAX).optional(),
 }).strict();
@@ -485,6 +532,10 @@ const EvidenceBlockObjectSchema = z.object({
   // urgency score. See the GuidanceCategory block comment for semantics.
   category: GuidanceCategory.optional(),
   priority: z.number().min(0).max(100).optional(),
+  // 0.20.0 additive (UI-SEM-085 residual) — signal class code + short
+  // per-item signal line. See the guidance-signal-provenance block comment.
+  signal_code: z.string().min(1).optional(),
+  signal: z.string().min(1).max(GUIDANCE_SIGNAL_LINE_MAX).optional(),
   action_intent: ActionIntent.optional(),
   action_label: z.string().min(1).max(PHASE3_ACTION_LABEL_MAX).optional(),
 }).strict();
@@ -580,6 +631,11 @@ export const ExerciseBlockSchema = z.object({
   // `priority` give a consumer its only producer-owned budgeting signals).
   category: GuidanceCategory.optional(),
   priority: z.number().min(0).max(100).optional(),
+  // 0.20.0 additive (UI-SEM-085 residual) — signal class code + short
+  // per-item signal line, declared on every guidance-bearing block kind for
+  // uniformity. See the guidance-signal-provenance block comment.
+  signal_code: z.string().min(1).optional(),
+  signal: z.string().min(1).max(GUIDANCE_SIGNAL_LINE_MAX).optional(),
 }).strict();
 export type ExerciseBlock = z.infer<typeof ExerciseBlockSchema>;
 
@@ -753,6 +809,10 @@ export type UiDirectiveBlock = z.infer<typeof UiDirectiveBlockSchema>;
 //         four stay strict — consumers on OLDER pins strict-fail a block
 //         carrying the new keys, so producers must not emit them until every
 //         strict consumer has re-vendored ≥ 0.19.0).
+// 0.20.0: the same four blocks gained optional `signal_code` + `signal`
+//         (ROADMAP 1.120 residual, UI-SEM-085; same strict-consumer landing
+//         hazard as 0.19.0 — producers must not emit until every strict
+//         consumer has re-vendored ≥ 0.20.0).
 export const BlockSchema = z
   .discriminatedUnion('type', [
     TextBlockSchema,

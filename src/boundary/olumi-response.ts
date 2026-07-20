@@ -75,6 +75,32 @@ export type DecisionClassificationRiskLiteral =
 
 const DECISION_CLASSIFICATION_HORIZON_MAX = 60;
 
+// ----------------------------------------------------------------------------
+// Framing quality (0.20.0) — ROADMAP 1.120 residual, UI-SEM-079.
+//
+// The producer's verdict on the quality of the user's decision FRAMING. The
+// Decision Overview card renders a framing-quality bar that is today derived
+// entirely client-side (blocker-severity critique + a null goal-threshold
+// check) — a quality verdict on the user's own framing, authored by the UI.
+// This enum is the honest producer channel; when it ships on the wire the
+// UI's heuristic retires (fail closed: absent field → no quality verdict
+// rendered, never a client-side derivation).
+//
+// Code-keyed by design (same doctrine as GuidanceCategory /
+// HeldProposalReasonCode): a consumer maps each value to its OWN display
+// copy. Vocabulary per ROADMAP 1.120:
+//   * `ready`    — the framing is sound enough to analyse.
+//   * `thin`     — the brief/framing lacks substance (options, success
+//                  measure, or context missing).
+//   * `conflict` — elements of the framing contradict each other (e.g.
+//                  options that cannot serve the stated goal).
+// ⚠ NOTE for consumer sign-off: the UI's CURRENT heuristic states are
+// `blocked | thin | ready` — this producer vocabulary replaces `blocked`
+// with `conflict` (per the ROADMAP row). The mapping ships with the UI
+// re-vendor, flagged in the 0.20.0 CHANGELOG.
+export const FramingQuality = z.enum(['ready', 'thin', 'conflict']);
+export type FramingQualityLiteral = z.infer<typeof FramingQuality>;
+
 export const DecisionClassificationSchema = z.object({
   stakes: DecisionClassificationStakes.optional(),
   reversibility: DecisionClassificationReversibility.optional(),
@@ -148,6 +174,12 @@ export const OlumiResponseSchema = z.object({
   // until the producing turn has actually assessed the decision; consumers
   // MUST NOT default absent dimensions.
   decision_classification: DecisionClassificationSchema.optional(),
+  // 0.20.0 additive (ROADMAP 1.120 residual) --------------------------------
+  // Producer framing-quality verdict (UI-SEM-079) — see the FramingQuality
+  // block comment above for vocabulary + doctrine. Absent until the
+  // producing turn has actually assessed the framing; consumers MUST NOT
+  // derive a verdict client-side when it is absent.
+  framing_quality: FramingQuality.optional(),
 }).strict();
 
 export type OlumiResponse = z.infer<typeof OlumiResponseSchema>;
