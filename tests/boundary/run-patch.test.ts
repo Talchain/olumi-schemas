@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   V2OptionSchema,
-  GoalConstraintSchema,
+  LegacyGoalConstraintStubSchema,
   V2RunResponseSchema,
   ValidatePatchResponseSchema,
   RunResult,
@@ -12,8 +12,8 @@ describe('V2 run surface (pinned, not exercised in A0)', () => {
     expect(V2OptionSchema.parse({ id: 'opt_1', label: 'Option 1' })).toBeDefined();
   });
 
-  it('GoalConstraint rejects unknown bound operator', () => {
-    const r = GoalConstraintSchema.safeParse({ id: 'c1', label: 'x', bound: 'neq', value: 1 });
+  it('LegacyGoalConstraintStub rejects unknown bound operator', () => {
+    const r = LegacyGoalConstraintStubSchema.safeParse({ id: 'c1', label: 'x', bound: 'neq', value: 1 });
     expect(r.success).toBe(false);
   });
 

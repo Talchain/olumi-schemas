@@ -118,21 +118,27 @@ export type FlipAnalysisBlock = z.infer<typeof FlipAnalysisBlockSchema>;
 // DraftGoalConstraint — a hard constraint extracted from the user's brief at
 // DRAFT time and carried on the draft_graph block (v0.18.0).
 //
-// ⚠ NOT THE SAME TYPE AS `GoalConstraintSchema` in `./run.ts`. These are two
-// different payloads at two different seams, and conflating them is the exact
+// ⚠ NOT THE SAME TYPE AS `LegacyGoalConstraintStubSchema` in `./run.ts`.
+// These are two different payloads, and conflating them is the exact
 // same-named-twin defect that has bitten this programme before:
 //
-//   ./run.ts GoalConstraintSchema  — the V2 RUN-REQUEST constraint (UI/CEE ->
-//     PLoT compute). Identity `id`, five-way `bound` enum
-//     ('lt'|'lte'|'gt'|'gte'|'eq'), no node binding, no provenance. `.strict()`.
-//   THIS schema                    — the DRAFTING-time EXTRACTION (CEE -> UI).
-//     Identity `constraint_id`, node-bound via `node_id`, two-way ASCII
-//     `operator` ('>='|'<='), and carries extraction provenance the compute
-//     path has no concept of (source_quote / confidence / provenance).
+//   ./run.ts LegacyGoalConstraintStubSchema — a never-exercised A0 stub
+//     (formerly misnamed `GoalConstraintSchema`, which mislabelled it as the
+//     compute-seam constraint; no service imports it). Identity `id`,
+//     five-way `bound` enum ('lt'|'lte'|'gt'|'gte'|'eq'), no node binding,
+//     no provenance. `.strict()`.
+//   THIS schema                             — the DRAFTING-time EXTRACTION
+//     (CEE -> UI). Identity `constraint_id`, node-bound via `node_id`,
+//     two-way ASCII `operator` ('>='|'<='), and carries extraction
+//     provenance the compute path has no concept of (source_quote /
+//     confidence / provenance).
 //
-// Neither is a superset of the other, and reshaping `run.ts`'s to fit would be
-// a BREAKING change to `V2RunRequestSchema` (a major bump, blast radius = the
-// PLoT compute path). They are therefore kept distinct and DIFFERENTLY NAMED.
+// The LIVE compute-seam constraint is PLoT's own `GoalConstraint`
+// (plot-lite `src/types/engine-v3.ts`, `constraint_id`/`node_id`/ASCII
+// `operator` — the shape THIS schema mirrors); the analysis-result side of
+// that seam is published as JSON-Schema from `src/boundary/enrichment.ts`.
+// Neither schema here is a superset of the other; they are kept distinct and
+// DIFFERENTLY NAMED.
 //
 // Field-level validators mirror CEE's producer schema (`src/schemas/assist.ts`
 // `GoalConstraintSchema`) exactly. That is safe rather than risky: CEE's Stage-4
