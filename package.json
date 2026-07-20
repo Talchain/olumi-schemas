@@ -21,16 +21,19 @@
     "./fixtures": {
       "import": "./dist/fixtures/index.js",
       "types": "./dist/fixtures/index.d.ts"
-    }
+    },
+    "./json-schema/*.json": "./json-schema/*.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "json-schema"
   ],
   "scripts": {
     "build": "tsc",
     "test": "npm run build && vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
+    "generate:json-schema": "npm run build && node scripts/generate-json-schema.mjs",
     "prepublishOnly": "npm run lint && npm run build && npm run test"
   },
   "keywords": [
@@ -53,8 +56,10 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "ajv": "^8.20.0",
     "typescript": "^5.3.0",
-    "vitest": "^1.2.0"
+    "vitest": "^1.2.0",
+    "zod-to-json-schema": "^3.25.2"
   },
   "engines": {
     "node": ">=18.0.0"
