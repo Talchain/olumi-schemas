@@ -68,6 +68,22 @@ export type FeatureStatusType = z.infer<typeof FeatureStatus>;
 // (singular) is retained as a DEPRECATED literal — historic
 // `v5_handler_facts` rows reference it and existing fixtures / tests
 // assert against it. New code should target `explain_results`.
+//
+// 0.20.0 addition: `analysis_readiness` — the analysis-preparation /
+// readiness intent for PRODUCT-AUTHORED chips (the UI's pre-analysis spark
+// prompts, e.g. "What should I check before running the first analysis?").
+// Today those sparks travel as anonymous free text; CEE's draft-shape
+// heuristic misclassified one as a decision brief and Monte-Carlo'd the
+// meta-decision (META-DECISION-DIAGNOSIS-2026-07-20 §5 P0 — derive intent,
+// don't re-infer it by regex). This value lets the UI declare the intent on
+// the wire (`chip.action_type`) so CEE routes the turn through the existing
+// pre-heuristic chip branch to its readiness/coaching arm, never the draft
+// heuristic. Named after CEE's own coaching-arm vocabulary (coaching signal
+// source `'analysis_readiness'`, `readiness_blocker` signals); like
+// `what_would_flip` it names an intent, not an imperative graph operation.
+// Name SIGNED OFF by the UI workstream (20 Jul 2026), with a scope rule:
+// this value covers the READINESS-CLASS sparks only — a spark whose honest
+// intent differs stays gated dark rather than borrowing this literal.
 export const ActionType = z.enum([
   'run_analysis',
   'set_factor_value',
@@ -79,6 +95,7 @@ export const ActionType = z.enum([
   'explain_from_structure',
   'compare_options',
   'what_would_flip',
+  'analysis_readiness',
 ]);
 export type ActionTypeLiteral = z.infer<typeof ActionType>;
 

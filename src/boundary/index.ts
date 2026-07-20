@@ -192,6 +192,8 @@ export {
   DecisionClassificationStakes,
   DecisionClassificationReversibility,
   DecisionClassificationRisk,
+  // 0.20.0 — producer framing-quality verdict (ROADMAP 1.120, UI-SEM-079)
+  FramingQuality,
 } from './olumi-response.js';
 export type {
   Action,
@@ -202,6 +204,8 @@ export type {
   DecisionClassificationStakesLiteral,
   DecisionClassificationReversibilityLiteral,
   DecisionClassificationRiskLiteral,
+  // 0.20.0 — producer framing-quality verdict (ROADMAP 1.120, UI-SEM-079)
+  FramingQualityLiteral,
 } from './olumi-response.js';
 
 // V2 run contract (PLoT surface; pinned now, used later)

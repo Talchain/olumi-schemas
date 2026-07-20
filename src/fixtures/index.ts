@@ -1104,6 +1104,9 @@ export const maximalReviewCardBlock = deepFreeze({
   priority_rank: 1,
   category: 'should_fix',
   priority: 70,
+  // 0.20.0 (ROADMAP 1.120 residual) — signal class code + per-item line.
+  signal_code: 'FIXTURE_SIGNAL_CODE',
+  signal: 'FIXTURE synthetic per-item signal line.',
   action_intent: 'what_would_flip',
   action_label: 'FIXTURE test the tipping point',
 });
@@ -1124,6 +1127,9 @@ export const maximalCoachingBlock = deepFreeze({
   priority_rank: 2,
   category: 'could_fix',
   priority: 50,
+  // 0.20.0 (ROADMAP 1.120 residual) — signal class code + per-item line.
+  signal_code: 'FIXTURE_SIGNAL_CODE',
+  signal: 'FIXTURE synthetic per-item signal line.',
   action_intent: 'gather_evidence',
   action_label: 'FIXTURE gather evidence',
 });
@@ -1154,6 +1160,9 @@ export const maximalEvidenceBlock = deepFreeze({
   severity: 'info',
   category: 'must_fix',
   priority: 90,
+  // 0.20.0 (ROADMAP 1.120 residual) — signal class code + per-item line.
+  signal_code: 'FIXTURE_SIGNAL_CODE',
+  signal: 'FIXTURE synthetic per-item signal line.',
   action_intent: 'gather_evidence',
   action_label: 'FIXTURE gather this evidence',
 });
@@ -1177,6 +1186,9 @@ export const maximalExerciseBlock = deepFreeze({
   target_refs: [maximalTargetRef],
   category: 'technique',
   priority: 30,
+  // 0.20.0 (ROADMAP 1.120 residual) — signal class code + per-item line.
+  signal_code: 'FIXTURE_SIGNAL_CODE',
+  signal: 'FIXTURE synthetic per-item signal line.',
 });
 
 export const maximalHeldProposalBlock = deepFreeze({
@@ -1280,6 +1292,8 @@ export const maximalOlumiResponse = deepFreeze({
   // 0.19.0 — wave-2 producer fields (asks 4 + 5).
   framing_question: 'FIXTURE what would it take to reach the synthetic goal?',
   decision_classification: maximalDecisionClassification,
+  // 0.20.0 — producer framing-quality verdict (ROADMAP 1.120, UI-SEM-079).
+  framing_quality: 'ready',
 });
 
 // ----------------------------------------------------------------------------

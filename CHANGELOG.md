@@ -5,6 +5,101 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] — 2026-07-20 (UNPUBLISHED — merge + publish are Paul-gated contract class)
+
+The four schemas-blocked items accumulated on 20 Jul: the readiness chip
+intent (META-DECISION-DIAGNOSIS-2026-07-20 §5 P0 / INTAKE-FIX-LANE F1) and
+the three ROADMAP 1.120 residual fields the wave-2 inventory verified ABSENT
+from the published 0.19.0 tarball (`signal_code` / `signal` /
+`framing_quality` — 0 occurrences each, positive controls passed;
+WAVE2-REMAINDER-LANE-2026-07-20). Strictly additive: one new enum value, five
+new optional fields, no existing field changed, removed, or re-typed; every
+pre-0.20.0 payload still parses. Minor per the README semver policy.
+Maximal-fixture registry: unchanged at 106 (no new object schemas — the one
+new export, `FramingQuality`, is a scalar vocabulary, auto-exempt).
+
+**⚠ Landing sequence (strict-consumer hazard — same as 0.19.0).** The block
+schemas and the envelope are `.strict()`: a consumer on an OLDER pin
+strict-fails a payload carrying `signal_code` / `signal` /
+`framing_quality`. Producers must not emit them until every strict consumer
+has re-vendored ≥ 0.20.0. The enum addition has the MIRROR hazard on
+ingress: CEE's B1 validates `chip.action_type` fail-closed, so the UI must
+not SEND `analysis_readiness` until CEE has re-vendored ≥ 0.20.0 (an older
+CEE 422s the turn). Order: **this package merges → CEE re-vendors (accepts +
+routes) and DGAI re-vendors (tolerates absence) → UI sends the chip intent /
+CEE emits the new fields.**
+
+**Consumer sign-offs (all three received from the UI workstream, 20 Jul
+2026, before merge):**
+
+1. **`analysis_readiness` approved as-is** (the UI's sparks will send that
+   literal). Scope rule attached: the value covers the READINESS-CLASS
+   sparks only — a spark whose honest intent differs stays gated dark
+   rather than borrowing this literal.
+2. **`signal_code` casing: SCREAMING_SNAKE_CASE adopted** as the doc-level
+   convention (platform's code-keyed families precedent: MISSING_BASE_RATE,
+   GRAPH_TOO_LARGE, the PLoT critique codes; visually distinguishes codes
+   from lower_snake field names, serving the signal_code ≠ signal_id
+   distinction). The schema stays an open string — the vocabulary registry
+   remains producer-owned and casing is not validated.
+3. **`framing_quality` `ready | thin | conflict` confirmed** — `conflict`
+   displaces the UI's `blocked` heuristic state; the UI retires its
+   client-side derivation on consumption. **The `signal` 140 cap is
+   confirmed as a WIRE BOUND, not a layout contract**: consumers clamp
+   visually, and no future card redesign should require a schema change.
+
+### Added — `analysis_readiness` joins `ActionType` (chip intent, meta-decision fix)
+
+The 10th value of the shared handler/action-type enum, reaching
+`chip.action_type` (turn-payload ingress) and `ActionSchema.action_type`
+(suggested actions) through the existing references. The defect this
+unblocks: the UI's pre-analysis spark chips ("Prepare first analysis" etc.)
+travel as anonymous free text, and CEE's draft-shape regex misclassified a
+product-authored coaching prompt as a decision brief — clarify captured it
+as the working brief with 0 LLM calls, the drafter faithfully modelled the
+meta-decision, and run_analysis Monte-Carlo'd it ("Check Prerequisites Then
+Run leads by 99 points"). Reproduced live at the deployed tip. The
+mechanism-level fix is to carry product-authored intent explicitly; the CEE
+routing arm (#575) and the UI chip metadata both stalled on this value
+existing (B1 ingress is fail-closed — an unknown `action_type` 422s, and
+smuggling intent through the untyped `chip.parameters` record was correctly
+refused). Naming: matches CEE's own coaching-arm vocabulary (coaching signal
+source `'analysis_readiness'`, `readiness_blocker` signals) so the wire
+value and the arm it routes to share one name; like `what_would_flip` it
+names an intent, not an imperative graph operation. All nine existing
+values are retained verbatim (removal would be breaking) and pinned by test.
+
+### Added — `signal_code` + `signal` on every guidance block (ROADMAP 1.120, UI-SEM-085 residual)
+
+`ReviewCardBlockSchema`, `CoachingBlockSchema`, `EvidenceBlockSchema` and
+`ExerciseBlockSchema` gain optional `signal_code` (non-empty string — the
+stable machine code naming the producer signal that generated the item,
+DISTINCT from the per-instance dedupe `signal_id`) and `signal` (1–140
+chars — the short producer-authored per-item display line guidance surfaces
+render; the Strengthen panel's signal line is UI-derived today). Measured on
+the 19-Jul live capture the UI invents `signal_code` from `block.type` on
+10/10 guidance blocks ('review_card' / 'coaching' — block TYPES), which is
+why nothing ever matches a real code and 'discuss'-actionability is still a
+client-side heuristic. `signal_code` is deliberately an OPEN string, not a
+closed enum: the vocabulary is CEE's signal registry, and a closed enum here
+would be a hand-maintained mirror of a registry this package does not own.
+On CoachingBlock, `signal_code` carries the housekeeping/rerun nudge codes
+1.120 calls out — `coaching_kind` stays the rendering taxonomy and is not
+overloaded.
+
+### Added — `framing_quality` on `OlumiResponseSchema` (ROADMAP 1.120, UI-SEM-079)
+
+Optional, new `FramingQuality` enum: `ready | thin | conflict`. The
+producer's verdict on the user's decision framing, sitting beside 0.19.0's
+`framing_question`. Today the Decision Overview card derives a
+framing-quality bar client-side (blocker-severity critique + null
+goal-threshold) — a quality verdict on the user's own framing, authored by
+the UI. When this ships on the wire the UI heuristic retires; when absent,
+no verdict is rendered (fail closed, never re-derived). Code-keyed (consumer
+maps values to its own copy). Producer emission is a follow-on (the honest
+source is CEE's readiness/critique machinery; prompt-estate where LLM-
+assessed).
+
 ## [0.19.0] — 2026-07-19 (UNPUBLISHED — merge + publish are Paul-gated contract class)
 
 The wave-2 producer fields (UI-TO-ORCHESTRATOR-2026-07-19 Q3 ranked asks +
