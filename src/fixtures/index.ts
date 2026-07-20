@@ -144,7 +144,7 @@ import {
   OlumiResponseSchema,
   DecisionClassificationSchema,
   // run
-  GoalConstraintSchema,
+  LegacyGoalConstraintStubSchema,
   V2OptionSchema,
   V2RunRequestSchema,
   V2RunErrorSchema,
@@ -1051,9 +1051,10 @@ export const maximalFlipAnalysisBlock = deepFreeze({
   enrichment: { [PROBE]: true },
 });
 
-// Draft-time goal constraint (0.18.0). Distinct from `maximalGoalConstraint`
-// below, which is the V2 RUN-REQUEST constraint (`boundary/run.ts`) — two
-// different shapes at two different seams; see DraftGoalConstraintSchema.
+// Draft-time goal constraint (0.18.0). Distinct from
+// `maximalLegacyGoalConstraintStub` below, which exercises the never-used A0
+// run stub (`boundary/run.ts`) — two different shapes; see
+// DraftGoalConstraintSchema and the note on LegacyGoalConstraintStubSchema.
 export const maximalDraftGoalConstraint = deepFreeze({
   constraint_id: 'FIXTURE_constraint_first_year_cost_max',
   node_id: 'FIXTURE_fac_first_year_cost',
@@ -1371,7 +1372,7 @@ export const maximalSystemEventTurnPayload = deepFreeze({
 // V2 run + patch validation (boundary)
 // ----------------------------------------------------------------------------
 
-export const maximalGoalConstraint = deepFreeze({
+export const maximalLegacyGoalConstraintStub = deepFreeze({
   id: ID_CONSTRAINT,
   label: 'FIXTURE_budget_cap',
   bound: 'lte',
@@ -1389,7 +1390,7 @@ export const maximalV2RunRequest = deepFreeze({
   scenario_id: UUID_SCENARIO,
   graph: maximalGraphV3,
   options: [maximalV2Option],
-  constraints: [maximalGoalConstraint],
+  constraints: [maximalLegacyGoalConstraintStub],
   seed: 42,
 });
 
@@ -1752,7 +1753,7 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
       'The /orchestrate/v2/turn egress. Carries every top-level optional (draft_graph, analysis_ready, reasoning) AND one block of every union member — the fields consumers have historically lost (coaching, evidence, enrichment, held_proposal, ui_directive) are all present.',
   },
   // --- v2 run + patch ---------------------------------------------------------------
-  { family: 'boundary/GoalConstraintSchema', schema: GoalConstraintSchema, fixture: maximalGoalConstraint },
+  { family: 'boundary/LegacyGoalConstraintStubSchema', schema: LegacyGoalConstraintStubSchema, fixture: maximalLegacyGoalConstraintStub },
   { family: 'boundary/V2OptionSchema', schema: V2OptionSchema, fixture: maximalV2Option },
   { family: 'boundary/V2RunRequestSchema', schema: V2RunRequestSchema, fixture: maximalV2RunRequest },
   { family: 'boundary/V2RunErrorSchema', schema: V2RunErrorSchema, fixture: maximalV2RunError },

@@ -92,7 +92,7 @@ Array indices are zero-based. Paths refer to the canonical graph structure.
 
 | Change type | Version bump | Example |
 |-------------|-------------|---------|
-| New schemas, new optional fields, new enum values | **Minor** | Adding `GoalConstraintSchema` |
+| New schemas, new optional fields, new enum values | **Minor** | Adding `DraftGoalConstraintSchema` |
 | Bug fixes, documentation, internal refactors | **Patch** | Fixing regex pattern |
 | Field removal, type changes, stricter validation | **Major** | Removing `.passthrough()`, renaming fields |
 

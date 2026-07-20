@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (rename only — no shape change, version untouched)
+
+- **False-twin rename: `GoalConstraintSchema` → `LegacyGoalConstraintStubSchema`**
+  (type `GoalConstraint` → `LegacyGoalConstraintStub`; fixture
+  `maximalGoalConstraint` → `maximalLegacyGoalConstraintStub`; registry family
+  `boundary/GoalConstraintSchema` → `boundary/LegacyGoalConstraintStubSchema`).
+  The old name — and its comment "Goal constraint for V2 runs" plus the 0.18.0
+  note calling it "the V2 RUN-REQUEST constraint (UI/CEE -> PLoT compute)" —
+  mislabelled a never-exercised A0 stub as the live compute-seam constraint
+  contract. It is not: reference manifest verified 2026-07-20 across src, dist
+  (generated), tests, and all four consumers at their staging tips (CEE
+  `b3d3742`, PLoT `13ecf98`, UI `66bbe03`, ISL via org-wide code search) found
+  ZERO external imports of the symbol. CEE has its own producer
+  `GoalConstraintSchema` (`src/schemas/assist.ts`), PLoT its own
+  `GoalConstraint` interface (`src/types/engine-v3.ts` — the real compute-seam
+  type), the UI consumes `DraftGoalConstraintSchema` (positive control: that
+  import IS found by the same probe). Renamed rather than deleted because
+  `V2RunRequestSchema.constraints` embeds it in-repo and deletion would be a
+  shape change. Registry stays at 106 entries (rename, not add/remove). The
+  0.18.0 entry below is left as written (historical record); its description
+  of the run-stub as the live compute seam is superseded by this note.
+
 ### Added (tooling only — no schema shape changed, version untouched)
 
 - **Published JSON-Schema for the compute-seam analysis types (A3
@@ -32,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New devDependencies: `zod-to-json-schema`, `ajv`. No runtime
     dependency change; no existing schema, export, or fixture touched.
 
-## [0.20.0] — 2026-07-20 (UNPUBLISHED — merge + publish are Paul-gated contract class)
+## [0.20.0] — 2026-07-20 (PUBLISHED 2026-07-20: tagged `v0.20.0`, merged to `main`, vendored by CEE PR #578 on staging — the "UNPUBLISHED — Paul-gated" label this heading carried was written pre-gate and is corrected here)
 
 The four schemas-blocked items accumulated on 20 Jul: the readiness chip
 intent (META-DECISION-DIAGNOSIS-2026-07-20 §5 P0 / INTAKE-FIX-LANE F1) and

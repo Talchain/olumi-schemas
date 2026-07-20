@@ -2,14 +2,33 @@ import { z } from 'zod';
 import { GraphV3Schema } from '../graph.js';
 import { RunResult } from './enums.js';
 
-// Goal constraint for V2 runs. Minimal A0 stub — tightened in later slices.
-export const GoalConstraintSchema = z.object({
+// LEGACY STUB — NOT the compute-seam constraint type, and NOT used by any
+// service. This `id`/`bound` shape was pinned as a minimal A0 placeholder for
+// a V2 run surface that was never exercised; its old name
+// (`GoalConstraintSchema`) mislabelled it as the live constraint contract.
+// Reference manifest (verified 2026-07-20, staging tips): CEE, PLoT, UI and
+// ISL each have ZERO imports of this symbol — CEE has its own producer
+// `GoalConstraintSchema` (assistants `src/schemas/assist.ts`), PLoT has its
+// own `GoalConstraint` interface (plot-lite `src/types/engine-v3.ts`), the UI
+// consumes `DraftGoalConstraintSchema`.
+//
+// The REAL constraint types are:
+//   - draft seam (CEE -> UI): `DraftGoalConstraintSchema` in ./blocks.ts
+//     (`constraint_id` / `node_id` / ASCII `operator`, with provenance).
+//   - compute seam (UI/CEE -> PLoT -> ISL): PLoT's `GoalConstraint`
+//     (plot-lite `src/types/engine-v3.ts`); the analysis-result side of that
+//     seam is published as JSON-Schema from `src/boundary/enrichment.ts`
+//     (see `json-schema/`, e.g. `EnrichmentConstraintResultSchema`).
+//
+// Renamed rather than deleted only because `V2RunRequestSchema.constraints`
+// below embeds it and removing it would be a shape change. Do not build on it.
+export const LegacyGoalConstraintStubSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
   bound: z.enum(['lt', 'lte', 'gt', 'gte', 'eq']),
   value: z.number(),
 }).strict();
-export type GoalConstraint = z.infer<typeof GoalConstraintSchema>;
+export type LegacyGoalConstraintStub = z.infer<typeof LegacyGoalConstraintStubSchema>;
 
 // V2 option envelope carried in run requests/responses.
 export const V2OptionSchema = z.object({
@@ -26,7 +45,7 @@ export const V2RunRequestSchema = z.object({
   scenario_id: z.string().min(1),
   graph: GraphV3Schema,
   options: z.array(V2OptionSchema),
-  constraints: z.array(GoalConstraintSchema),
+  constraints: z.array(LegacyGoalConstraintStubSchema),
   seed: z.number().int().optional(),
 }).strict();
 export type V2RunRequest = z.infer<typeof V2RunRequestSchema>;

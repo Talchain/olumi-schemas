@@ -48,8 +48,9 @@ export {
   ComparisonBlockSchema,
   FlipAnalysisBlockSchema,
   DraftGraphBlockSchema,
-  // Draft-time goal constraints (0.18.0). NOT `GoalConstraintSchema` from
-  // ./run.ts — see the note on the schema for why the two are distinct.
+  // Draft-time goal constraints (0.18.0). NOT the legacy run-stub constraint
+  // (`LegacyGoalConstraintStubSchema` in ./run.ts) — see the note on the
+  // schema for why the two are distinct.
   DraftGoalConstraintSchema,
   // Phase 3 — Analysis tab data contract v1.3
   ReviewCardBlockSchema,
@@ -208,16 +209,18 @@ export type {
   FramingQualityLiteral,
 } from './olumi-response.js';
 
-// V2 run contract (PLoT surface; pinned now, used later)
+// V2 run contract — a pinned A0 stub surface that was never exercised by any
+// service (verified 2026-07-20; see the note in ./run.ts). NOT the live
+// compute seam.
 export {
-  GoalConstraintSchema,
+  LegacyGoalConstraintStubSchema,
   V2OptionSchema,
   V2RunRequestSchema,
   V2RunErrorSchema,
   V2RunResponseSchema,
 } from './run.js';
 export type {
-  GoalConstraint,
+  LegacyGoalConstraintStub,
   V2Option,
   V2RunRequest,
   V2RunError,
