@@ -377,15 +377,21 @@ export type GuidanceCategoryLiteral = z.infer<typeof GuidanceCategory>;
 //     string, NOT a closed enum: the vocabulary is producer-owned (CEE's
 //     signal registry) and evolves without a schema bump — a closed enum
 //     here would be a hand-maintained mirror of a registry this package
-//     does not own (the known drift defect). ⚠ Vocabulary + casing
-//     convention are NOT adjudicated by this package — flagged in the
-//     0.20.0 CHANGELOG for consumer sign-off.
+//     does not own (the known drift defect). Casing convention (signed off
+//     by the UI workstream, 20 Jul 2026): SCREAMING_SNAKE_CASE, per the
+//     platform's code-keyed families (MISSING_BASE_RATE, GRAPH_TOO_LARGE,
+//     the PLoT critique codes) — it also visually distinguishes CODES from
+//     lower_snake field names, which serves the signal_code ≠ signal_id
+//     distinction. Doc-level convention only: the schema deliberately does
+//     NOT validate casing (the registry stays producer-owned).
 //   * `signal` — a SHORT producer-authored display line stating what
 //     triggered this item, rendered per-item by guidance surfaces (the
 //     Strengthen panel's signal line is UI-derived today). Display-safe by
 //     the same rules as `title`: no internal ids, no doctrine prose.
 //     Bounded short (a caption, not a narrative — same treatment as
-//     UiDirectiveBlock's `note`).
+//     UiDirectiveBlock's `note`). The 140 cap is a WIRE BOUND, not a layout
+//     contract: consumers clamp visually to their own surfaces, and no
+//     future card redesign should require a schema change here.
 //
 // Consumers MUST tolerate absence (fail closed): blocks produced before
 // 0.20.0, or by producers that have not re-vendored, will not carry them.

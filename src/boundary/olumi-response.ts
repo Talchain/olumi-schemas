@@ -94,10 +94,9 @@ const DECISION_CLASSIFICATION_HORIZON_MAX = 60;
 //                  measure, or context missing).
 //   * `conflict` — elements of the framing contradict each other (e.g.
 //                  options that cannot serve the stated goal).
-// ⚠ NOTE for consumer sign-off: the UI's CURRENT heuristic states are
-// `blocked | thin | ready` — this producer vocabulary replaces `blocked`
-// with `conflict` (per the ROADMAP row). The mapping ships with the UI
-// re-vendor, flagged in the 0.20.0 CHANGELOG.
+// Vocabulary SIGNED OFF by the UI workstream (20 Jul 2026): `conflict`
+// displaces the UI's former `blocked` heuristic state — the UI retires its
+// client-side derivation (blocked/thin/ready) on consumption of this field.
 export const FramingQuality = z.enum(['ready', 'thin', 'conflict']);
 export type FramingQualityLiteral = z.infer<typeof FramingQuality>;
 

@@ -81,9 +81,9 @@ export type FeatureStatusType = z.infer<typeof FeatureStatus>;
 // heuristic. Named after CEE's own coaching-arm vocabulary (coaching signal
 // source `'analysis_readiness'`, `readiness_blocker` signals); like
 // `what_would_flip` it names an intent, not an imperative graph operation.
-// ⚠ NAME PROPOSED BY THIS PACKAGE — CEE #575 deliberately hard-coded no
-// expected literal; UI + CEE sign off on the name before emitting/routing
-// (see the 0.20.0 CHANGELOG entry).
+// Name SIGNED OFF by the UI workstream (20 Jul 2026), with a scope rule:
+// this value covers the READINESS-CLASS sparks only — a spark whose honest
+// intent differs stays gated dark rather than borrowing this literal.
 export const ActionType = z.enum([
   'run_analysis',
   'set_factor_value',

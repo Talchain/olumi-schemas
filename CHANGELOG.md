@@ -29,23 +29,24 @@ CEE 422s the turn). Order: **this package merges → CEE re-vendors (accepts +
 routes) and DGAI re-vendors (tolerates absence) → UI sends the chip intent /
 CEE emits the new fields.**
 
-**⚠ Three items explicitly held for consumer sign-off (proposed here, not
-adjudicated — say so in the re-vendor PRs):**
+**Consumer sign-offs (all three received from the UI workstream, 20 Jul
+2026, before merge):**
 
-1. **The literal `analysis_readiness` itself.** CEE #575 deliberately
-   hard-coded no expected name; this package proposes one (rationale below).
-   UI + CEE both sign off before the UI emits it or CEE routes on it.
-2. **`signal_code` vocabulary + casing.** Typed as an open string because
-   the code registry is CEE-owned; the convention (SCREAMING_SNAKE per the
-   UI's `MISSING_BASE_RATE` matcher vs CEE's lower-snake signal kinds) is
-   NOT pinned by this package. Consumers agree the vocabulary before
-   emission; a future minor may pin it once adjudicated.
-3. **`framing_quality`'s `conflict` member and the `signal` length cap.**
-   The UI's current heuristic states are `blocked | thin | ready`; the
-   ROADMAP 1.120 vocabulary shipped here replaces `blocked` with
-   `conflict` — UI confirms the mapping at re-vendor. The `signal` cap
-   (140) reuses the ui_directive `note` precedent, not a measured
-   product copy limit.
+1. **`analysis_readiness` approved as-is** (the UI's sparks will send that
+   literal). Scope rule attached: the value covers the READINESS-CLASS
+   sparks only — a spark whose honest intent differs stays gated dark
+   rather than borrowing this literal.
+2. **`signal_code` casing: SCREAMING_SNAKE_CASE adopted** as the doc-level
+   convention (platform's code-keyed families precedent: MISSING_BASE_RATE,
+   GRAPH_TOO_LARGE, the PLoT critique codes; visually distinguishes codes
+   from lower_snake field names, serving the signal_code ≠ signal_id
+   distinction). The schema stays an open string — the vocabulary registry
+   remains producer-owned and casing is not validated.
+3. **`framing_quality` `ready | thin | conflict` confirmed** — `conflict`
+   displaces the UI's `blocked` heuristic state; the UI retires its
+   client-side derivation on consumption. **The `signal` 140 cap is
+   confirmed as a WIRE BOUND, not a layout contract**: consumers clamp
+   visually, and no future card redesign should require a schema change.
 
 ### Added — `analysis_readiness` joins `ActionType` (chip intent, meta-decision fix)
 
