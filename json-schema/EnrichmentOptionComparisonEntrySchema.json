@@ -1,0 +1,121 @@
+{
+  "$ref": "#/definitions/EnrichmentOptionComparisonEntrySchema",
+  "definitions": {
+    "EnrichmentOptionComparisonEntrySchema": {
+      "type": "object",
+      "properties": {
+        "option_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "option_label": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "expected_outcome": {
+          "type": "number"
+        },
+        "confidence_interval": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "outcome": {
+          "type": "object",
+          "properties": {
+            "mean": {
+              "type": "number"
+            },
+            "std": {
+              "type": "number"
+            },
+            "p10": {
+              "type": "number"
+            },
+            "p50": {
+              "type": "number"
+            },
+            "p90": {
+              "type": "number"
+            },
+            "n_samples": {
+              "type": "number"
+            },
+            "n_valid_samples": {
+              "type": "number"
+            },
+            "validity_ratio": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "mean",
+            "p10",
+            "p50",
+            "p90"
+          ],
+          "additionalProperties": true
+        },
+        "status": {
+          "type": "string"
+        },
+        "status_reason": {
+          "type": "string"
+        },
+        "probability_of_goal": {
+          "type": "number"
+        },
+        "win_probability": {
+          "type": "number"
+        },
+        "probability_of_joint_goal": {
+          "type": "number"
+        },
+        "constraint_probabilities": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "goal_fit_basis": {
+          "type": "object",
+          "properties": {
+            "scored_from": {
+              "type": "string"
+            },
+            "node_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "scored_from",
+            "node_ids"
+          ],
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "option_id"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "GENERATED from src/boundary/enrichment.ts by scripts/generate-json-schema.mjs — do not edit by hand; run `npm run generate:json-schema` to regenerate."
+}

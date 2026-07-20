@@ -5,6 +5,33 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added (tooling only — no schema shape changed, version untouched)
+
+- **Published JSON-Schema for the compute-seam analysis types (A3
+  drift-check lane).** `json-schema/` now carries a draft-07 JSON-Schema
+  document per Zod schema exported from `src/boundary/enrichment.ts`
+  (21 documents + `manifest.json`), published via the `files` array and a
+  `./json-schema/*.json` exports subpath (the `./fixtures` 0.17.0
+  precedent). Purpose: ISL (Python/Pydantic) hand-mirrors this contract
+  with no mechanical check — these artifacts let it CI-validate/diff its
+  models against the contract (derive-don't-mirror).
+  - The export list is **derived by introspection**, never hand-listed: a
+    new schema export in `enrichment.ts` automatically joins the set and
+    the drift guard fails until `npm run generate:json-schema` output is
+    committed.
+  - The drift guard (`tests/json-schema.test.ts`) is **read-only and
+    cannot self-heal**: only the explicit CLI regenerates. Tests include
+    positive controls proving the guard sees stale/missing/orphan
+    artifacts and that the documents reject broken payloads (enum, type,
+    minimum, missing-required violations), not just accept good ones.
+  - Known limit (recorded in the manifest): Zod refinement invariants
+    (e.g. `n_seeds_flipped <= n_seeds`) are not expressible in JSON
+    Schema; only the structural layer is captured.
+  - New devDependencies: `zod-to-json-schema`, `ajv`. No runtime
+    dependency change; no existing schema, export, or fixture touched.
+
 ## [0.20.0] — 2026-07-20 (UNPUBLISHED — merge + publish are Paul-gated contract class)
 
 The four schemas-blocked items accumulated on 20 Jul: the readiness chip
