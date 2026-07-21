@@ -16,10 +16,11 @@
 // in Node, the browser, edge runtimes, and a Web Worker.
 //
 // CORRECTNESS is pinned by known-answer vectors (tests/sha256.test.ts) AND by
-// the byte-parity fixture keeping its committed constant `965d721bd37964e8`
-// (tests/graph-hash-parity.test.ts) — that constant was produced by
-// `node:crypto` before this change, so an unchanged constant is positive proof
-// this implementation agrees with the reference SHA-256 bit-for-bit.
+// the byte-parity fixture holding a committed constant (`4310378fc45ec344`,
+// tests/graph-hash-parity.test.ts) — this pure-TS SHA-256 reproduces the exact
+// digest `node:crypto` computes over the same canonical bytes, so the KAT
+// vectors + the stable parity constant together prove bit-for-bit agreement
+// with the reference SHA-256.
 // ============================================================================
 
 // Round constants: first 32 bits of the fractional parts of the cube roots of

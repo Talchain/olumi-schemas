@@ -1660,7 +1660,34 @@ export const identityParityGraph = deepFreeze({
       label: 'PARITY_option_draft',
       status: 'needs_encoding',
       is_baseline: false,
-      interventions: { fac_demand: 60 },
+      // A draft option carries the pre-encoding OBJECT-valued intervention shape
+      // (target_match + provenance) alongside a resolved scalar. This pins the
+      // option-path routing (projectOption → projectInterventionMap, P1): the
+      // object entry's EXCLUDED sub-fields (unit / display_value / …) and its
+      // target_match's EXCLUDED sub-fields must NOT leak into identity. Under a
+      // wholesale-copy revert they WOULD — so the committed parity constant and
+      // the option-path EXCLUDED discriminators below both go RED on that revert.
+      // (Scalar `fac_demand` proves the mixed scalar+object map still projects.)
+      interventions: {
+        fac_demand: 60,
+        fac_price: {
+          value: 30,
+          value_type: 'absolute',
+          encoding_map: { cheap: 0, dear: 1 },
+          target_match: {
+            node_id: 'fac_price',
+            // EXCLUDED target_match sub-fields (option path).
+            match_type: 'exact',
+            confidence: 0.9,
+          },
+          // EXCLUDED intervention sub-fields (option path).
+          unit: 'PARITY_gbp',
+          source: 'PARITY_llm',
+          reasoning: 'PARITY excluded reasoning.',
+          value_confidence: 0.7,
+          display_value: 'PARITY £30',
+        },
+      },
       // INCLUDED: raw_interventions on a NON-ready option.
       raw_interventions: { fac_demand: 'high', fac_price: true },
     },

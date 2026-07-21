@@ -40,7 +40,7 @@ vi.mock('crypto', () => ({
   },
 }));
 
-const EXPECTED_PARITY_HASH = '965d721bd37964e8';
+const EXPECTED_PARITY_HASH = '4310378fc45ec344';
 
 describe('computeGraphHash runs with node builtins unavailable (browser proof)', () => {
   it('POSITIVE CONTROL — node:crypto is genuinely disabled (a module using it throws)', async () => {

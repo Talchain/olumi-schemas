@@ -27,7 +27,7 @@ import {
 // The committed expected hash. CEE + UI copy this literal into their own parity
 // tests. If the projection surface changes, this line changes — deliberately, in
 // the same PR that re-vendors every consumer.
-const EXPECTED_PARITY_HASH = '965d721bd37964e8';
+const EXPECTED_PARITY_HASH = '4310378fc45ec344';
 
 type Graph = Parameters<typeof computeGraphHash>[0];
 
@@ -120,6 +120,10 @@ describe('computeGraphHash — INCLUDED fields change the hash', () => {
     ['goal_node_id', (g) => (g.goal_node_id = 'fac_demand')],
     ['option.status', (g) => (g.options[1].status = 'ready')],
     ['option.interventions', (g) => (g.options[0].interventions.fac_demand = 1)],
+    // Positive control for the option-path P1 pin: an object-valued option
+    // intervention's HASHED subkey must enter identity (proves the routing reads
+    // it at all — the anchor the EXCLUDED discriminators below stand on).
+    ['option.intervention.value (object-valued, option path)', (g) => (g.options[1].interventions.fac_price.value = 999)],
     ['option.raw_interventions (non-ready)', (g) => (g.options[1].raw_interventions.fac_demand = 'low')],
     ['goal_constraint.value', (g) => (g.goal_constraints[0].value = 1)],
     ['goal_constraint.operator', (g) => (g.goal_constraints[0].operator = '>=')],
@@ -157,6 +161,17 @@ describe('computeGraphHash — EXCLUDED fields do NOT change the hash', () => {
     ['option.label', (g) => (g.options[0].label = 'RENAMED')],
     ['option.description', (g) => (g.options[0].description = 'different')],
     ['option.raw_interventions on a READY option', (g) => (g.options[0].raw_interventions.fac_demand = 'CHANGED')],
+    // P1 option-path whitelist discriminators — an object-valued OPTION
+    // intervention's EXCLUDED / UNKNOWN subkeys must NOT enter identity. Under
+    // the old wholesale-copy projection (projectOption copying interventions raw)
+    // these would LEAK and change the hash; routing through projectInterventionMap
+    // drops them. Reverting that routing turns each of these RED (the pin).
+    ['option.intervention.display_value (cosmetic, option path)', (g) => (g.options[1].interventions.fac_price.display_value = 'OTHER')],
+    ['option.intervention.unit (cosmetic, option path)', (g) => (g.options[1].interventions.fac_price.unit = 'OTHER')],
+    ['option.intervention.reasoning (cosmetic, option path)', (g) => (g.options[1].interventions.fac_price.reasoning = 'OTHER')],
+    ['option.intervention UNKNOWN future subkey (whitelist drops, option path)', (g) => (g.options[1].interventions.fac_price.future_display_hint = 'x')],
+    ['option.intervention.target_match.match_type (cosmetic, option path)', (g) => (g.options[1].interventions.fac_price.target_match.match_type = 'fuzzy')],
+    ['option.intervention.target_match.confidence (cosmetic, option path)', (g) => (g.options[1].interventions.fac_price.target_match.confidence = 0.1)],
     ['top-level layout', (g) => (g.layout = { fac_demand: { x: 9, y: 9 } })],
     ['seed (reproducibility)', (g) => (g.seed = 1)],
     ['n_samples (reproducibility)', (g) => (g.n_samples = 5)],
