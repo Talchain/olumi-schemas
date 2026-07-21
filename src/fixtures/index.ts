@@ -132,6 +132,9 @@ import {
   EnrichmentDecisionReviewSchema,
   EnrichmentConstraintResultSchema,
   EnrichmentConditionalProbabilitySchema,
+  // F6 — constraint margin + scale/decision-grade provenance
+  EnrichmentConstraintMarginSchema,
+  EnrichmentScaleProvenanceSchema,
   // turn payload
   OrchestratorTurnPayloadSchema,
   MessageTurnPayloadSchema,
@@ -645,6 +648,19 @@ export const maximalEnrichmentGoalFitBasis = deepFreeze({
   [PROBE]: true,
 });
 
+// F6 — per-option graded breach margin. Values honour the schema: the median
+// failure margin is a finite non-negative breach DISTANCE in user units (the
+// live-capture magnitude, £24000 over a cost cap), near_miss_fraction is a rate
+// in [0,1], and margin_precision is the 'lower_bound' branch (an intervention
+// clamped in the operator-compatible direction, so the magnitude understates).
+export const maximalEnrichmentConstraintMargin = deepFreeze({
+  constraint_id: ID_CONSTRAINT,
+  failure_margin_median: 24000,
+  near_miss_fraction: 0.15,
+  margin_precision: 'lower_bound',
+  [PROBE]: true,
+});
+
 export const maximalEnrichmentOptionComparisonEntry = deepFreeze({
   option_id: ID_OPTION_A,
   option_label: LABEL_OPTION_A,
@@ -662,6 +678,9 @@ export const maximalEnrichmentOptionComparisonEntry = deepFreeze({
   probability_of_joint_goal: 0.58,
   constraint_probabilities: { [ID_CONSTRAINT]: 0.83 },
   goal_fit_basis: maximalEnrichmentGoalFitBasis,
+  // F6 — graded breach margins + fail-closed decision-grade marker.
+  constraint_margins: [maximalEnrichmentConstraintMargin],
+  constraints_decision_grade: true,
   [PROBE]: true,
 });
 
@@ -907,12 +926,27 @@ export const maximalEnrichmentDecisionReview = deepFreeze({
   [PROBE]: true,
 });
 
+// F6 — normalisation-scale provenance. Every field populated (threshold_clamped
+// is the sole optional): the threshold shares the intervention range
+// (range_unified true), the optional clamp branch is exercised ('high'), and
+// the fail-closed decision_grade marker is present. This library detects field
+// loss, not wire semantics — the combination is clearly-synthetic.
+export const maximalEnrichmentScaleProvenance = deepFreeze({
+  source: 'FIXTURE_plot_constraint_normaliser',
+  range_unified: true,
+  threshold_clamped: 'high',
+  decision_grade: true,
+  [PROBE]: true,
+});
+
 export const maximalEnrichmentConstraintResult = deepFreeze({
   constraint_id: ID_CONSTRAINT,
   node_id: ID_GOAL,
   operator: '>=',
   value: 100,
   probability: 0.83,
+  // F6 — normalisation-scale provenance + fail-closed decision-grade marker.
+  scale_provenance: maximalEnrichmentScaleProvenance,
   [PROBE]: true,
 });
 
@@ -1615,6 +1649,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalEnrichmentGoalFitBasis,
   },
   {
+    family: 'boundary/EnrichmentConstraintMarginSchema',
+    schema: EnrichmentConstraintMarginSchema,
+    fixture: maximalEnrichmentConstraintMargin,
+  },
+  {
     family: 'boundary/EnrichmentOptionComparisonEntrySchema',
     schema: EnrichmentOptionComparisonEntrySchema,
     fixture: maximalEnrichmentOptionComparisonEntry,
@@ -1670,6 +1709,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/EnrichmentDecisionReviewSchema',
     schema: EnrichmentDecisionReviewSchema,
     fixture: maximalEnrichmentDecisionReview,
+  },
+  {
+    family: 'boundary/EnrichmentScaleProvenanceSchema',
+    schema: EnrichmentScaleProvenanceSchema,
+    fixture: maximalEnrichmentScaleProvenance,
   },
   {
     family: 'boundary/EnrichmentConstraintResultSchema',

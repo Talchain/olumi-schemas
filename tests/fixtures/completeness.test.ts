@@ -134,7 +134,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.19.0: 103 -> 106 (root/CeeErrorRecoverySchema,
     //   boundary/EnrichmentEdgeEValueStabilitySchema,
     //   boundary/DecisionClassificationSchema).
-    expect(MAXIMAL_FIXTURES.length).toBe(106);
+    // Unreleased (F6): 106 -> 108 (boundary/EnrichmentConstraintMarginSchema,
+    //   boundary/EnrichmentScaleProvenanceSchema).
+    expect(MAXIMAL_FIXTURES.length).toBe(108);
   });
 
   it('family keys are unique', () => {
