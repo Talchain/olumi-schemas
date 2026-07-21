@@ -362,5 +362,8 @@ export {
   stableStringify,
   GRAPH_HASH_CLASSIFICATION,
   GRAPH_HASH_CLASSIFIED_SCHEMAS,
+  GRAPH_HASH_SUBTREE_CLASSIFICATION,
+  SCHEMA_DEFAULTS,
+  extractDefaults,
 } from '../graph-hash.js';
 export type { GraphHashDisposition } from '../graph-hash.js';

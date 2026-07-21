@@ -144,6 +144,13 @@ describe('computeGraphHash — EXCLUDED fields do NOT change the hash', () => {
     ['node.intervention.unit (cosmetic sub-field)', (g) => (g.nodes[0].interventions.fac_price.unit = 'OTHER')],
     ['node.intervention.reasoning', (g) => (g.nodes[0].interventions.fac_price.reasoning = 'OTHER')],
     ['node.intervention.target_match.confidence', (g) => (g.nodes[0].interventions.fac_price.target_match.confidence = 0.1)],
+    // P1 whitelist discriminators — an UNKNOWN passthrough subkey must NOT enter
+    // identity. Under the old blacklist/wholesale projection these would LEAK
+    // and change the hash; the whitelist drops them.
+    ['node.intervention UNKNOWN future subkey (whitelist drops)', (g) => (g.nodes[0].interventions.fac_price.future_display_hint = 'x')],
+    ['node.intervention.target_match UNKNOWN subkey (whitelist drops)', (g) => (g.nodes[0].interventions.fac_price.target_match.future_hint = 'x')],
+    ['node.state_space UNKNOWN passthrough key (whitelist drops)', (g) => (g.nodes[0].state_space.future_axis = { foo: 1 })],
+    ['node.state_space.range UNKNOWN subkey (whitelist drops)', (g) => (g.nodes[0].state_space.range.step = 5)],
     ['edge.label', (g) => (g.edges[0].label = 'RENAMED')],
     ['edge.validation (provenance)', (g) => (g.edges[0].validation = { status: 'warn' })],
     ['edge.defaulted', (g) => (g.edges[0].defaulted = true)],

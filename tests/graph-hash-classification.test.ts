@@ -29,7 +29,9 @@ import { z } from 'zod';
 import {
   GRAPH_HASH_CLASSIFICATION,
   GRAPH_HASH_CLASSIFIED_SCHEMAS,
+  GRAPH_HASH_SUBTREE_CLASSIFICATION,
 } from '../src/graph-hash.js';
+import { identityParityGraph } from '../src/fixtures/index.js';
 
 // ----------------------------------------------------------------------------
 // Peel the wrappers Zod puts between a field declaration and its core shape,
@@ -192,5 +194,126 @@ describe('computeGraphHash classification completeness — derived, fail-loud (m
     expect(control.unclassified).toContain(
       'NodeV3Schema.observed_state.classification_nested_control',
     );
+  });
+});
+
+// ============================================================================
+// SUBTREE completeness (0.21.0, P1) — the passthrough subtrees that have NO Zod
+// schema to derive from (node/option `interventions` entries and their nested
+// `target_match`). These are the subtrees the projection now WHITELISTS; a
+// hand whitelist is exactly the mirror class (trap-12), so its completeness is
+// made fail-loud against the EXHAUSTIVE parity fixture: every subtree key the
+// fixture carries must appear in GRAPH_HASH_SUBTREE_CLASSIFICATION as `hashed`
+// or `excluded`. The fixture is the presence source (trap-13): it is designed
+// to carry every INCLUDED key + at least one EXCLUDED key at each subtree, so a
+// NEW wire subkey riding the fixture with no disposition fails the build.
+//
+// The projection reads the SAME arrays this test polices (one source of truth),
+// so a key hashed here is a key hashed there — they cannot drift apart.
+// ============================================================================
+type Json = Record<string, unknown>;
+
+function isPlainObject(v: unknown): v is Json {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
+/** Collect every observed key of each passthrough subtree from a graph. */
+function collectSubtreeKeys(graph: Json): { Intervention: string[]; TargetMatch: string[] } {
+  const intervention = new Set<string>();
+  const targetMatch = new Set<string>();
+  const scanMap = (map: unknown): void => {
+    if (!isPlainObject(map)) return;
+    for (const entry of Object.values(map)) {
+      if (!isPlainObject(entry)) continue; // scalar option intervention → no subtree
+      for (const k of Object.keys(entry)) intervention.add(k);
+      if (isPlainObject(entry.target_match)) {
+        for (const k of Object.keys(entry.target_match)) targetMatch.add(k);
+      }
+    }
+  };
+  for (const n of (graph.nodes as unknown[]) ?? []) {
+    if (isPlainObject(n)) scanMap(n.interventions);
+  }
+  for (const o of (graph.options as unknown[]) ?? []) {
+    if (isPlainObject(o)) scanMap(o.interventions);
+  }
+  return { Intervention: [...intervention], TargetMatch: [...targetMatch] };
+}
+
+function subtreeGaps(
+  graph: Json,
+  classification: typeof GRAPH_HASH_SUBTREE_CLASSIFICATION,
+): { unclassified: string[]; observed: string[] } {
+  const observedByCtx = collectSubtreeKeys(graph);
+  const unclassified: string[] = [];
+  const observed: string[] = [];
+  for (const ctx of Object.keys(observedByCtx) as Array<keyof typeof observedByCtx>) {
+    const reg = classification[ctx];
+    for (const key of observedByCtx[ctx]) {
+      observed.push(`${ctx}.${key}`);
+      const known = reg.hashed.includes(key) || reg.excluded.includes(key);
+      if (!known) unclassified.push(`${ctx}.${key}`);
+    }
+  }
+  return { unclassified, observed };
+}
+
+/** Deep clone so a mutation on the frozen fixture is local. */
+function clone<T>(v: T): T {
+  return JSON.parse(JSON.stringify(v)) as T;
+}
+
+describe('computeGraphHash SUBTREE classification completeness — fail-loud (P1)', () => {
+  const fixture = identityParityGraph as unknown as Json;
+
+  it('every observed intervention / target_match subkey in the fixture is classified', () => {
+    const gaps = subtreeGaps(fixture, GRAPH_HASH_SUBTREE_CLASSIFICATION);
+    expect(
+      gaps.unclassified,
+      'These passthrough subtree keys have NO hashed/excluded disposition in ' +
+        'GRAPH_HASH_SUBTREE_CLASSIFICATION (src/graph-hash.ts). Each would silently ' +
+        'leak into — or drop out of — the identity surface. Classify each:\n  ' +
+        gaps.unclassified.join('\n  '),
+    ).toEqual([]);
+  });
+
+  it('the walk reached both subtrees non-trivially (anti-vacuity)', () => {
+    const gaps = subtreeGaps(fixture, GRAPH_HASH_SUBTREE_CLASSIFICATION);
+    // 9 intervention keys + 3 target_match keys in the exhaustive fixture.
+    expect(gaps.observed.length).toBeGreaterThanOrEqual(12);
+    expect(gaps.observed).toContain('Intervention.value');
+    expect(gaps.observed).toContain('Intervention.display_value'); // an EXCLUDED one
+    expect(gaps.observed).toContain('TargetMatch.node_id');
+    expect(gaps.observed).toContain('TargetMatch.match_type'); // an EXCLUDED one
+  });
+
+  it('POSITIVE CONTROL — a new UNCLASSIFIED intervention subkey is flagged', () => {
+    const g = clone(fixture);
+    (((g.nodes as Json[])[0].interventions as Json).fac_price as Json).future_subkey = 'x';
+    const gaps = subtreeGaps(g, GRAPH_HASH_SUBTREE_CLASSIFICATION);
+    expect(gaps.unclassified).toContain('Intervention.future_subkey');
+  });
+
+  it('POSITIVE CONTROL — a new UNCLASSIFIED target_match subkey is flagged', () => {
+    const g = clone(fixture);
+    (
+      (((g.nodes as Json[])[0].interventions as Json).fac_price as Json).target_match as Json
+    ).future_tm_subkey = 'x';
+    const gaps = subtreeGaps(g, GRAPH_HASH_SUBTREE_CLASSIFICATION);
+    expect(gaps.unclassified).toContain('TargetMatch.future_tm_subkey');
+  });
+
+  it('classifying the new subkey clears the gap (satisfiable, not just noisy)', () => {
+    const g = clone(fixture);
+    (((g.nodes as Json[])[0].interventions as Json).fac_price as Json).future_subkey = 'x';
+    const extended = {
+      ...GRAPH_HASH_SUBTREE_CLASSIFICATION,
+      Intervention: {
+        hashed: GRAPH_HASH_SUBTREE_CLASSIFICATION.Intervention.hashed,
+        excluded: [...GRAPH_HASH_SUBTREE_CLASSIFICATION.Intervention.excluded, 'future_subkey'],
+      },
+    } as typeof GRAPH_HASH_SUBTREE_CLASSIFICATION;
+    const gaps = subtreeGaps(g, extended);
+    expect(gaps.unclassified).not.toContain('Intervention.future_subkey');
   });
 });

@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
 import { z } from 'zod';
+import { sha256Hex } from './sha256.js';
 import { GraphV3Schema, NodeV3Schema, EdgeV3Schema } from './graph.js';
 import { OptionForAnalysisSchema } from './analysis.js';
 import { DraftGoalConstraintSchema } from './boundary/blocks.js';
@@ -175,6 +175,140 @@ export const GRAPH_HASH_CLASSIFIED_SCHEMAS: ReadonlyArray<{
 ]);
 
 // ----------------------------------------------------------------------------
+// Parse-normalisation — DERIVED Zod defaults (0.21.0 fix, P0-2)
+//
+// THE DEFECT: `hash(graph) !== hash(GraphV3Schema.parse(graph))`. Zod's
+// `EdgeV3.edge_type` is `.optional().default('directed')`, so `.parse()`
+// MATERIALISES `edge_type: 'directed'` on an edge that omitted it, while a raw
+// (un-parsed) edge has no such key — the projection reads two different objects
+// for the same logical graph and hashes them differently. A UI that hashes the
+// raw wire and a CEE that hashes the parsed graph would then disagree on
+// identity: silent divergence.
+//
+// THE FIX AT THE MECHANISM (not a hand-patch of edge_type): the projection
+// normalises every Zod-DEFAULTED field to its declared default before hashing,
+// and the default set is DERIVED from the live schemas — never hand-listed.
+// `extractDefaults` reads each classified schema's `.default()` declarations;
+// `SCHEMA_DEFAULTS` is the derived per-schema map. The package has exactly ONE
+// `.default()` today (edge_type), but hand-normalising just that one would
+// recreate the dominant defect class (a hand-maintained mirror that drifts the
+// instant someone adds a second `.default()`). Deriving means a NEW default on
+// any classified schema is normalised automatically — and the parse-invariant
+// test (tests/graph-hash-parse-invariant.test.ts) proves raw≡parsed for every
+// fixture + a fuzz set, mutation-proven (revert this normalisation → RED).
+// ----------------------------------------------------------------------------
+
+/**
+ * Extract the `.default()` value declared on each top-level field of a
+ * ZodObject. Handles a `.default()` sitting above or below optional/nullable
+ * wrappers (`X.optional().default(v)` and `X.default(v).optional()`). Returns
+ * only fields that DECLARE a default. Derived from the live schema — the anti-
+ * mirror guarantee: a default added tomorrow is picked up with no code change.
+ */
+export function extractDefaults(
+  schema: z.ZodObject<z.ZodRawShape>,
+): Readonly<Record<string, unknown>> {
+  const out: Record<string, unknown> = {};
+  const shape = schema.shape;
+  for (const key of Object.keys(shape)) {
+    let node: z.ZodTypeAny = shape[key];
+    for (let i = 0; i < 20; i++) {
+      if (node instanceof z.ZodDefault) {
+        out[key] = (node._def as { defaultValue: () => unknown }).defaultValue();
+        break;
+      }
+      const def = (node as unknown as { _def: Record<string, unknown> })._def;
+      if (
+        node instanceof z.ZodOptional ||
+        node instanceof z.ZodNullable ||
+        node instanceof z.ZodReadonly
+      ) {
+        node = def.innerType as z.ZodTypeAny;
+      } else if (node instanceof z.ZodEffects) {
+        node = def.schema as z.ZodTypeAny;
+      } else {
+        break;
+      }
+    }
+  }
+  return Object.freeze(out);
+}
+
+/**
+ * Derived per-schema default map. One source of truth for both the projection's
+ * normalisation and the parse-invariant test. Today: `{ EdgeV3Schema:
+ * { edge_type: 'directed' } }`, every other schema `{}`.
+ */
+export const SCHEMA_DEFAULTS: Readonly<Record<string, Readonly<Record<string, unknown>>>> =
+  Object.freeze(
+    Object.fromEntries(
+      GRAPH_HASH_CLASSIFIED_SCHEMAS.map(({ name, schema }) => [name, extractDefaults(schema)]),
+    ),
+  );
+
+// ----------------------------------------------------------------------------
+// Subtree whitelists — passthrough objects with NO Zod schema (0.21.0 fix, P1)
+//
+// THE INVARIANT THIS RESTORES: "WHITELIST, not blacklist, BY DESIGN — only the
+// enumerated fields are read." The node-level `interventions` map, its nested
+// `target_match`, the option-level `interventions` map, and `state_space` are
+// CEE-floor PASSTHROUGH shapes (not declared on the thin GraphV3), so the
+// classification walk over Zod shapes cannot reach them. The prior projection
+// broke the invariant three ways: node interventions were BLACKLISTED (`strip`
+// the known-cosmetic keys, pass everything else — so a NEW cosmetic key would
+// leak into identity), option interventions were passed WHOLESALE, and
+// `state_space` was passed WHOLESALE (StateSpaceSchema is `.passthrough()`).
+//
+// Now every subtree is a true WHITELIST (`pick`), and — because these subtrees
+// have no schema to DERIVE completeness from — the mirror is made FAIL-LOUD
+// against the exhaustive parity fixture: `GRAPH_HASH_SUBTREE_CLASSIFICATION`
+// enumerates each subtree's hashed AND excluded keys, and
+// tests/graph-hash-classification.test.ts walks the fixture and fails the build
+// on any observed subtree key absent from that registry (trap-12), with a
+// positive control that adds a subkey and proves the walk SEES it (trap-13).
+// The projection reads the SAME arrays the test polices — one source of truth.
+// ----------------------------------------------------------------------------
+
+/** Analysis-affecting keys of one intervention entry (manifest §3 floor). */
+export const INTERVENTION_HASHED_SUBKEYS: readonly string[] = [
+  'value',
+  'value_type',
+  'encoding_map',
+  'target_match',
+];
+/** Cosmetic / provenance keys of an intervention entry (must NOT be hashed). */
+export const INTERVENTION_EXCLUDED_SUBKEYS: readonly string[] = [
+  'unit',
+  'source',
+  'reasoning',
+  'value_confidence',
+  'display_value',
+];
+/** The only analysis-affecting key of a target_match. */
+export const TARGET_MATCH_HASHED_SUBKEYS: readonly string[] = ['node_id'];
+/** Cosmetic keys of a target_match. */
+export const TARGET_MATCH_EXCLUDED_SUBKEYS: readonly string[] = ['match_type', 'confidence'];
+
+/**
+ * The subtree classification registry — the fail-loud source of truth for the
+ * passthrough subtrees that have no Zod schema. Both the projection (which keys
+ * to `pick`) and the completeness test (which keys must be classified) read
+ * THIS object, so there is no second mirror.
+ */
+export const GRAPH_HASH_SUBTREE_CLASSIFICATION: Readonly<
+  Record<string, { readonly hashed: readonly string[]; readonly excluded: readonly string[] }>
+> = Object.freeze({
+  Intervention: Object.freeze({
+    hashed: INTERVENTION_HASHED_SUBKEYS,
+    excluded: INTERVENTION_EXCLUDED_SUBKEYS,
+  }),
+  TargetMatch: Object.freeze({
+    hashed: TARGET_MATCH_HASHED_SUBKEYS,
+    excluded: TARGET_MATCH_EXCLUDED_SUBKEYS,
+  }),
+});
+
+// ----------------------------------------------------------------------------
 // Canonical serialisation
 // ----------------------------------------------------------------------------
 
@@ -223,10 +357,22 @@ function pick(src: Obj, keys: readonly string[]): Obj {
   return out;
 }
 
-/** Remove `keys` from a shallow copy of `src`. */
-function strip(src: Obj, keys: readonly string[]): Obj {
-  const out: Obj = { ...src };
-  for (const k of keys) delete out[k];
+/**
+ * Return `src` with any DECLARED Zod default filled in for a field that is
+ * absent (undefined). Copy-on-write: the input is not mutated. This is the
+ * P0-2 parse-normalisation — after it, a raw edge (no `edge_type`) and a parsed
+ * edge (`edge_type: 'directed'`) project identically. `defaults` is DERIVED
+ * from the live schema (`SCHEMA_DEFAULTS`), so a future `.default()` is honoured
+ * automatically.
+ */
+function applyDefaults(src: Obj, defaults: Readonly<Record<string, unknown>>): Obj {
+  let out = src;
+  for (const k of Object.keys(defaults)) {
+    if (out[k] === undefined) {
+      if (out === src) out = { ...src };
+      out[k] = defaults[k];
+    }
+  }
   return out;
 }
 
@@ -252,17 +398,11 @@ const NODE_SCALAR_HASHED: readonly string[] = [
 const OBSERVED_STATE_HASHED: readonly string[] = ['value', 'std', 'baseline', 'cap'];
 const PRIOR_HASHED: readonly string[] = ['distribution', 'range_min', 'range_max'];
 
-// Cosmetic / provenance sub-keys stripped from each intervention entry
-// (manifest §3 EXCLUDE: intervention.{unit, source, reasoning, value_confidence,
-// display_value}; target_match.{match_type, confidence}).
-const INTERVENTION_EXCLUDED_SUBKEYS: readonly string[] = [
-  'unit',
-  'source',
-  'reasoning',
-  'value_confidence',
-  'display_value',
-];
-const TARGET_MATCH_EXCLUDED_SUBKEYS: readonly string[] = ['match_type', 'confidence'];
+// state_space whitelist (P1): only `range` is read, and only its `{min,max}`.
+// StateSpaceSchema is `.passthrough()`, so a wholesale copy would leak any extra
+// cosmetic key into identity.
+const STATE_SPACE_HASHED: readonly string[] = ['range'];
+const STATE_SPACE_RANGE_HASHED: readonly string[] = ['min', 'max'];
 
 const EDGE_HASHED: readonly string[] = [
   'from',
@@ -280,10 +420,15 @@ const OPTION_SCALAR_HASHED: readonly string[] = [
 ];
 
 function projectIntervention(value: unknown): unknown {
+  // A scalar intervention (the option-level `Record<node_id, number>`) has no
+  // subtree to whitelist — it IS the value.
   if (!isObj(value)) return value;
-  const out = strip(value, INTERVENTION_EXCLUDED_SUBKEYS);
+  // WHITELIST (P1): read only the enumerated analysis-affecting keys, so a NEW
+  // cosmetic key cannot leak into identity (the blacklist it replaces would
+  // have).
+  const out = pick(value, INTERVENTION_HASHED_SUBKEYS);
   if (isObj(out.target_match)) {
-    out.target_match = strip(out.target_match, TARGET_MATCH_EXCLUDED_SUBKEYS);
+    out.target_match = pick(out.target_match, TARGET_MATCH_HASHED_SUBKEYS);
   }
   return out;
 }
@@ -297,41 +442,53 @@ function projectInterventionMap(value: unknown): unknown {
 
 function projectNode(node: unknown): Obj {
   if (!isObj(node)) return {};
-  const out = pick(node, NODE_SCALAR_HASHED);
-  if (isObj(node.observed_state)) {
-    out.observed_state = pick(node.observed_state, OBSERVED_STATE_HASHED);
+  const norm = applyDefaults(node, SCHEMA_DEFAULTS.NodeV3Schema);
+  const out = pick(norm, NODE_SCALAR_HASHED);
+  if (isObj(norm.observed_state)) {
+    out.observed_state = pick(norm.observed_state, OBSERVED_STATE_HASHED);
   }
-  if (isObj(node.state_space)) {
-    // whole state_space (range → {min,max}) is analysis-affecting
-    out.state_space = node.state_space;
+  if (isObj(norm.state_space)) {
+    // WHITELIST (P1): only `range → {min,max}`. A wholesale copy would leak
+    // StateSpaceSchema's passthrough keys into identity.
+    const ss = pick(norm.state_space, STATE_SPACE_HASHED);
+    if (isObj(ss.range)) ss.range = pick(ss.range, STATE_SPACE_RANGE_HASHED);
+    out.state_space = ss;
   }
-  if (isObj(node.prior)) {
-    out.prior = pick(node.prior, PRIOR_HASHED);
+  if (isObj(norm.prior)) {
+    out.prior = pick(norm.prior, PRIOR_HASHED);
   }
-  if (node.interventions !== undefined) {
-    out.interventions = projectInterventionMap(node.interventions);
+  if (norm.interventions !== undefined) {
+    out.interventions = projectInterventionMap(norm.interventions);
   }
   return out;
 }
 
 function projectEdge(edge: unknown): Obj {
   if (!isObj(edge)) return {};
-  const out = pick(edge, EDGE_HASHED);
-  if (isObj(edge.strength)) {
-    out.strength = pick(edge.strength, ['mean', 'std']);
+  // P0-2: normalise Zod defaults (edge_type ← 'directed') so raw ≡ parsed.
+  const norm = applyDefaults(edge, SCHEMA_DEFAULTS.EdgeV3Schema);
+  const out = pick(norm, EDGE_HASHED);
+  if (isObj(norm.strength)) {
+    out.strength = pick(norm.strength, ['mean', 'std']);
   }
   return out;
 }
 
 function projectOption(option: unknown): Obj {
   if (!isObj(option)) return {};
-  const out = pick(option, OPTION_SCALAR_HASHED);
-  if (option.interventions !== undefined) {
-    out.interventions = option.interventions;
+  const norm = applyDefaults(option, SCHEMA_DEFAULTS.OptionForAnalysisSchema);
+  const out = pick(norm, OPTION_SCALAR_HASHED);
+  if (norm.interventions !== undefined) {
+    // WHITELIST (P1): route through the same intervention projector as nodes so
+    // an object-valued intervention riding the passthrough gets whitelisted,
+    // not copied wholesale. Scalar (number) entries pass through unchanged.
+    out.interventions = projectInterventionMap(norm.interventions);
   }
-  // manifest §3: raw_interventions only when status !== 'ready'
-  if (option.status !== 'ready' && option.raw_interventions !== undefined) {
-    out.raw_interventions = option.raw_interventions;
+  // manifest §3: raw_interventions only when status !== 'ready'. Values are
+  // scalar by schema (`number | string | boolean`), so the map has no subtree
+  // to whitelist — it is passed as-is.
+  if (norm.status !== 'ready' && norm.raw_interventions !== undefined) {
+    out.raw_interventions = norm.raw_interventions;
   }
   return out;
 }
@@ -418,5 +575,8 @@ function isStructurallyEmpty(graph: GraphV3 | null | undefined): boolean {
 export function computeGraphHash(graph: GraphV3 | null | undefined): string | null {
   if (isStructurallyEmpty(graph)) return null;
   const canonical = stableStringify(projectGraph(graph as GraphV3));
-  return createHash('sha256').update(canonical, 'utf8').digest('hex').slice(0, 16);
+  // Pure-TS SHA-256 (src/sha256.ts) — byte-identical to node:crypto's sha256
+  // but runnable in the UI's browser bundle (see sha256.ts header + the
+  // browser-runtime proof in tests/graph-hash-browser-runtime.test.ts).
+  return sha256Hex(canonical).slice(0, 16);
 }

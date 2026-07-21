@@ -66,6 +66,41 @@ choices flagged in-source:
   (`null` = create/first write); result is a discriminated union (`ok {new_hash}` |
   `diverged {server_hash, code:'GRAPH_DIVERGED'}`).
 
+### Fixed — S1 hash, Fable review round (pre-ratification, hash unchanged `965d721bd37964e8`)
+
+- **P0-1 browser-inoperable hash → isomorphic pure-TS SHA-256.** `computeGraphHash`
+  hashed via `node:crypto`.`createHash`, which the UI's Vite BROWSER bundle cannot
+  execute (Vite externalises `node:crypto` to a throwing stub) — so the UI's
+  vendored hash would throw at runtime while the Node-env parity test stayed green:
+  guarantee-theatre. Replaced with a dependency-free, synchronous SHA-256 (new
+  `src/sha256.ts`, FIPS 180-4, no `node:*` / no WebCrypto), byte-identical to the
+  reference (the committed parity constant is unchanged — positive proof of
+  agreement). BROWSER-RUNTIME PROOF added (`tests/graph-hash-browser-runtime.test.ts`):
+  runs the hash with `node:crypto` stubbed to throw and requires the committed
+  hash, with a positive control that the stub genuinely blocks node builtins;
+  mutation-proven (re-introducing a `node:crypto` digest → RED). KAT vectors +
+  node:crypto cross-check in `tests/sha256.test.ts`.
+- **P0-2 parse-normalisation.** `hash(graph) !== hash(GraphV3Schema.parse(graph))`
+  because `EdgeV3.edge_type`'s `.default('directed')` materialises at parse while a
+  raw wire edge omits it. The projection now normalises every Zod-DEFAULTED field to
+  its declared default before hashing, and the default set is DERIVED from the live
+  schemas (`extractDefaults`/`SCHEMA_DEFAULTS` — not a hand-list, so a future
+  `.default()` is honoured automatically). Invariant `hash(raw) === hash(parsed)`
+  pinned over every fixture + a 300-graph fuzz set
+  (`tests/graph-hash-parse-invariant.test.ts`), mutation-proven.
+- **P1 whitelist violations.** Three subtrees breached the module's own
+  whitelist-by-design invariant: node `interventions` were BLACKLISTED (strip known
+  cosmetics, pass the rest), option `interventions` and `state_space` were passed
+  WHOLESALE. All three are now true WHITELISTS (`pick` the enumerated
+  analysis-affecting keys per manifest §3: intervention `{value, value_type,
+  encoding_map, target_match{node_id}}`; `state_space {range{min,max}}`). Because
+  these passthrough subtrees have no Zod schema to derive from,
+  `GRAPH_HASH_SUBTREE_CLASSIFICATION` makes the whitelist FAIL-LOUD against the
+  exhaustive parity fixture — an unclassified subtree key fails the build
+  (`tests/graph-hash-classification.test.ts`, positive-control + registry-drift
+  mutation proven). New parity discriminators assert an UNKNOWN passthrough subkey
+  does not enter identity (would have leaked under the old blacklist/wholesale).
+
 ### Added — S2 typed intent vocabulary + first-class chip identity
 
 - **`CoachingIntent`** — a parallel typed coaching/elicitation intent enum (12
