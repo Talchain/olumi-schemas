@@ -120,6 +120,54 @@ export const ActionType = z.enum([
 ]);
 export type ActionTypeLiteral = z.infer<typeof ActionType>;
 
+// CoachingIntent (0.21.0) — the typed coaching / elicitation intent vocabulary
+// (S2 spec §3 addition 1, schemas-0.21.0-manifest b1).
+//
+// A PARALLEL literal set, DECOUPLED from `ActionType` — deliberately NOT an
+// `ActionType` extension. `ActionType` names registered V5 mutation-handler
+// IDs (the imperative "dispatch to THIS handler" channel: set_factor_value,
+// add_constraint, adjust_edge_strength, run_analysis, ...). A coaching intent
+// names WHAT THE USER MEANT ("run a pre-mortem with me", "take the outside
+// view"), not a handler to invoke — exactly as `analysis_readiness` already
+// "names an intent, not an imperative graph operation" (the note on
+// `ActionType`). Fusing the two would re-conflate intent-naming with
+// handler-dispatch, the meta-decision defect this vocabulary exists to close
+// (META-DECISION-DIAGNOSIS-2026-07-20). So a chip declares its handler
+// imperative through `chip.action_type` (unchanged) AND its coaching intent
+// through the new `chip.intent` (turn-payload.ts) — two channels, two
+// vocabularies.
+//
+// ⚠ PAUL-CONFIRMABLE (single-graph ratification batch):
+//   (1) parallel enum vs extending `ActionType` — the architect / S2 §4
+//       recommend PARALLEL (this); confirm.
+//   (2) exact membership. `analysis_readiness` is NOT repeated here — it is the
+//       readiness-class intent and already lives in `ActionType` from 0.20.0;
+//       these are the REST of the coaching vocabulary the product authors
+//       today (currently travelling as anonymous chip text or as UI-stripped
+//       invalid literals). Each value below maps to a real UI source (S2 §3
+//       table). `mitigation_help` is the S2 table's optional 12th
+//       (Strengthen / mitigation family) — included for completeness; drop if
+//       the mitigation family is not to declare an intent yet.
+//
+// Forward-compat (same rule as `Stage` / `ActionType`): a consumer MUST treat
+// an unrecognised future member as "no intent signal" (fail closed), never an
+// error. Additions land here as a MINOR bump, announced in the CHANGELOG.
+export const CoachingIntent = z.enum([
+  'challenge_frame', // "Is this the right question… fit my wider goals?" (ACTIONS_MENU)
+  'elicit_options', // "Suggest materially different options… different mechanism"
+  'outside_view', // "Take the outside view… base rates"
+  'pre_mortem', // "Run a pre-mortem… imagine this choice failed"
+  'elicit_risks', // "What risks and best-case upsides are missing"
+  'estimate_help', // "Help me check the estimates that matter most"
+  'discuss', // "Compare my view… where do we differ"
+  'define_success', // "Help me define a measurable success target"
+  'reflect_bias', // "You flagged a possible blind spot…" (reflectBias spark)
+  'challenge_assumption', // InsightsStrip / AskOlumiDrawer authored-but-stripped
+  'add_option', // InsightsStrip authored-but-stripped
+  'mitigation_help', // Strengthen / mitigation family (S2 §3 optional 12th)
+]);
+export type CoachingIntentLiteral = z.infer<typeof CoachingIntent>;
+
 // v0.7.0 — UI-initiated system-event kinds. Distinct from user-typed messages:
 // they carry no free text and never add a user bubble. CEE V5 dispatches each
 // to a deterministic handler (no LLM). See Docs/v5/v5-turn-shape-matrix.md

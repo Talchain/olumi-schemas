@@ -179,6 +179,14 @@ export const OlumiResponseSchema = z.object({
   // producing turn has actually assessed the framing; consumers MUST NOT
   // derive a verdict client-side when it is absent.
   framing_quality: FramingQuality.optional(),
+  // 0.21.0 additive (SINGLE-GRAPH-DESIGN v2 §1, manifest a3) ------------------
+  // Echo of the graph-identity hash (`computeGraphHash`) the response /
+  // analysis was computed against. The client compares it to the canvas it now
+  // holds: equal ⇒ fresh, unequal ⇒ the model moved since compute
+  // (divergence). Old pins strip this unknown key on a strict parse, which is
+  // the SAFE skew direction — a producer leading its consumers. Optional so the
+  // field is absent on turns that computed against no graph.
+  computed_against_hash: z.string().min(1).optional(),
 }).strict();
 
 export type OlumiResponse = z.infer<typeof OlumiResponseSchema>;

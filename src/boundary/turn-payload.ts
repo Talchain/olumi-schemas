@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TurnClass, Stage, ActionType, TurnSource } from './enums.js';
+import { TurnClass, Stage, ActionType, TurnSource, CoachingIntent } from './enums.js';
 
 // UUIDv4 pattern — keep loose; CEE also re-checks.
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -10,10 +10,32 @@ const Uuid = z.string().regex(UUID_V4);
 // Clean cutover — no backwards-compat legacy branch. Both UI and CEE move
 // together. See Docs/v5/v5-turn-shape-matrix.md for the handler coverage map.
 
+// `graph_hash` (0.21.0) — the graph-identity handshake field, on EVERY turn
+// (message and system-event), per SINGLE-GRAPH-DESIGN v2 §1 and
+// schemas-0.21.0-manifest a2. The client stamps it with `computeGraphHash` of
+// the canvas it rendered at send time; CEE compares it against the
+// authoritative graph and blocks compute / edit-confirm on divergence.
+//
+// TRI-STATE, load-bearing — `.nullable().optional()`, NOT merely optional:
+//   * a hex string  → a graph was rendered; this is its identity hash.
+//   * null          → NO graph rendered (empty canvas). Explicit, distinct from
+//                     "old client".
+//   * ABSENT        → an old client that predates 0.21.0 and cannot compute the
+//                     hash. Divergence enforcement engages only when the field
+//                     is PRESENT (string|null); an absent hash preserves
+//                     today's behaviour (safe roll — producer/consumer skew).
+// Collapsing null and absent would either enforce divergence against clients
+// that cannot participate, or blind CEE to "the user is looking at an empty
+// canvas" — hence the tri-state is declared, not simplified.
+const GraphHashField = {
+  graph_hash: z.string().min(1).nullable().optional(),
+} as const;
+
 const BaseFields = {
   turn_id: Uuid,
   scenario_id: Uuid,
   stage: Stage,
+  ...GraphHashField,
 } as const;
 
 // Selected-element reference shared by `selected_elements` (on
@@ -74,7 +96,20 @@ export const MessageTurnPayloadSchema = z.object({
   turn_class: TurnClass,
   source: TurnSource,
   chip: z.object({
+    // First-class chip identity (0.21.0, manifest b2). Today message-turn chip
+    // identity is untyped ballast inside `parameters` (a `z.record`) with ZERO
+    // typed readers — only the `chip_click` SYSTEM EVENT carries a typed
+    // `chip_id`. Promote it to a typed field so the S2 readiness/coaching arm
+    // and the provenance reader key off a typed slot, not a bag lookup.
+    id: z.string().min(1).optional(),
+    // Handler-imperative channel (unchanged) — the registered V5 handler id.
     action_type: ActionType.optional(),
+    // Coaching-intent channel (0.21.0, manifest b3). The typed intent the chip
+    // declares — the wire slot the 12 identity-only node chips, the unmapped
+    // sparks, and the insight/drawer/coaching families speak through. Parallel
+    // to `action_type`, never a substitute: a chip may carry either, both, or
+    // neither. Unknown/absent intent = "no intent signal" (fail closed).
+    intent: CoachingIntent.optional(),
     parameters: z.record(z.string(), z.unknown()).optional(),
   }).strict().optional(),
   retry_of: Uuid.optional(),
@@ -95,10 +130,31 @@ const PatchDismissedEvent = z.object({
   patch_id: z.string().min(1),
 }).strict();
 
+// `direct_graph_edit` (batched shape added 0.21.0, manifest b4). The singular
+// `{target_id, operation}` shape has NO live producer: the UI's manual-canvas
+// edits are BATCHED, so its batch event failed the old singular `.strict()`
+// member and was silently dropped client-side — leaving CEE BLIND to manual
+// canvas edits (S2 §1b / S3 §4), which is also an S1/S3 divergence-blindness
+// input. The batch fields are the shape the UI actually emits.
+//
+// ADDITIVE, not a swap: `target_id` / `operation` are demoted to OPTIONAL (a
+// stray singular producer, if any survives, still validates) and the batch
+// fields are added alongside. A discriminated union cannot carry two members
+// with the same `kind`, so both shapes live on ONE member with everything
+// optional. The UI emitter fix + the eventual retirement of the singular pair
+// are UI-lane (A2) work; the wire simply admits both here.
 const DirectGraphEditEvent = z.object({
   kind: z.literal('direct_graph_edit'),
-  target_id: z.string().min(1),
-  operation: z.string().min(1),
+  // Singular (legacy) shape — now optional.
+  target_id: z.string().min(1).optional(),
+  operation: z.string().min(1).optional(),
+  // Batched shape — the ids/ops of everything the user changed in one canvas
+  // interaction, so CEE sees the whole manual edit, not one element of it.
+  changed_node_ids: z.array(z.string().min(1)).optional(),
+  changed_edge_ids: z.array(z.string().min(1)).optional(),
+  operations: z.array(z.string().min(1)).optional(),
+  fields_changed: z.array(z.string().min(1)).optional(),
+  summary: z.string().min(1).optional(),
 }).strict();
 
 const ChipClickEvent = z.object({

@@ -27,6 +27,18 @@ export type {
   TopologyPlan,
 } from './graph.js';
 
+// Graph identity hash (0.21.0 — the ONE canonical graph-IDENTITY hash)
+export {
+  computeGraphHash,
+  stableStringify,
+  GRAPH_HASH_CLASSIFICATION,
+  GRAPH_HASH_CLASSIFIED_SCHEMAS,
+  GRAPH_HASH_SUBTREE_CLASSIFICATION,
+  SCHEMA_DEFAULTS,
+  extractDefaults,
+} from './graph-hash.js';
+export type { GraphHashDisposition } from './graph-hash.js';
+
 // Coaching schemas (v0.11.0 — first-class coaching contract)
 //
 // NAMING: New types in this contract surface (BiasType, BriefCompleteness,

@@ -12,6 +12,13 @@ export const BoundaryErrorCode = z.enum([
   'UPSTREAM_UNAVAILABLE',
   'LLM_UNAVAILABLE',
   'INTERNAL_ERROR',
+  // 0.21.0 (SINGLE-GRAPH-DESIGN v2 §1, schemas-0.21.0-manifest a4) — the
+  // blocking, user-visible graph-divergence state's wire code. The single
+  // authoritative graph moved under the client (compare-and-set base_hash no
+  // longer matches the server hash); compute and edit-confirm are blocked until
+  // the client reconciles. Additive to the enum; also carried as the literal
+  // `code` on GraphWriteDivergedSchema (boundary/graph-write.ts).
+  'GRAPH_DIVERGED',
 ]);
 export type BoundaryErrorCodeType = z.infer<typeof BoundaryErrorCode>;
 
@@ -40,4 +47,6 @@ export const FAILURE_USER_TEXT: Record<FailureTypeLiteral, string> = {
     'The model is temporarily unavailable. Please retry shortly.',
   INTERNAL_ERROR:
     'Something went wrong on our side. Please retry.',
+  GRAPH_DIVERGED:
+    'Your canvas is out of sync with the saved model. Reload to see the latest before continuing.',
 };

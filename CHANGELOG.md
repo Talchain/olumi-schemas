@@ -5,6 +5,131 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] — AUTHORED, unpublished; publish gated on single-graph ratification (Paul)
+
+**⚠ DO NOT PUBLISH.** This version is authored as a DRAFT (schemas-0.21.0-manifest,
+SINGLE-GRAPH-DESIGN-2026-07-20-v2, S2 build spec). It is one coordinated,
+fully-additive bump carrying three riders (S1 graph identity + S2 typed intent +
+S3 lifecycle) so three mid-flight consumers ride a SINGLE re-vendor event rather
+than three independent pin-skew windows (system-map hazard 1). The one-bump
+coupling is deliberate — do not split. `[Unreleased]` above (the #14 false-twin
+rename) folds into this version on publish.
+
+Publish is gated on Paul's single-graph ratification. Paul-confirmable design
+choices flagged in-source:
+- `CoachingIntent` as a PARALLEL enum vs extending `ActionType` (architect / S2 §4
+  recommend parallel — this).
+- exact `CoachingIntent` membership (12 values incl. the optional 12th
+  `mitigation_help`).
+- node `type` / `categories` / `state_space` + `observed_state.std` HASHED beyond
+  CEE's abbreviated floor list (analysis-affecting; safe over-detect direction) —
+  confirm at CEE adoption.
+- `goal_constraints` hashed WHOLE-ARRAY (manifest §3) — constraint
+  provenance/display sub-fields therefore participate; narrowable if preferred.
+
+### Added — S1 graph identity handshake
+
+- **`computeGraphHash(graph)` — the ONE canonical graph-IDENTITY hash** (new
+  `src/graph-hash.ts`, exported from root + `/boundary`). Deterministic 16-hex
+  SHA-256 prefix of a canonical, analysis-affecting projection; `null` when the
+  graph is structurally empty (no nodes). WHITELIST projection (not blacklist) so
+  two writers carrying different extra passthrough keys — the CEE layout-strip vs
+  UI layout-carry asymmetry — still agree. INCLUDES nodes/edges semantics +
+  options + `goal_node_id` + `goal_constraints` (the S1 §D/§F.1 defect fix: v1's
+  keep-list omitted constraints, so a hard-constraint edit read FRESH). EXCLUDES
+  labels/descriptions/provenance/display, layout & positions, and Monte-Carlo
+  reproducibility config. Also exports `stableStringify`,
+  `GRAPH_HASH_CLASSIFICATION`, `GRAPH_HASH_CLASSIFIED_SCHEMAS`. Package exported NO
+  hash function before this — adopting ONE is a real new deliverable, not a
+  re-export.
+- **Classification-completeness guard** (`tests/graph-hash-classification.test.ts`)
+  — DERIVES the field universe from the live Zod shapes and FAILS THE BUILD if any
+  declared field (or nested sub-field of a HASHED object) lacks a hashed/excluded
+  disposition, or if a registry key is stale. Proven fail-loud by a mutation (an
+  unclassified field turns it RED) and by a positive control (trap-12/13).
+- **CEE/UI byte-parity fixture** (`identityParityGraph` + `IDENTITY_PARITY_GRAPH_HASH`
+  in `/fixtures`) with a committed expected constant `965d721bd37964e8`, plus a
+  mutation guard (`tests/graph-hash-parity.test.ts`) asserting every INCLUDED field
+  changes the hash and every EXCLUDED field does not. CEE and UI ship the mirror
+  assertion against their own vendored fn — the cross-repo agreement proof.
+- **`graph_hash`** on the turn payloads (message + system-event) —
+  `.nullable().optional()` tri-state (string = graph rendered · null = no graph ·
+  absent = old client); the null/absent distinction drives whether divergence
+  enforcement engages.
+- **`computed_against_hash`** on the OlumiResponse envelope and the
+  `analysis_result` block (`z.string().optional()`) — the echo a client compares
+  to its current canvas.
+- **`GRAPH_DIVERGED`** typed code on `BoundaryErrorCode` (+ `FAILURE_USER_TEXT`).
+- **`GraphWriteRequest` / `GraphWriteResult`** (new `src/boundary/graph-write.ts`)
+  — the CEE write-through / CAS endpoint contract, LOAD-BEARING for guests (the
+  client Supabase RPC path RLS-fails silently for guests). `base_hash` nullable
+  (`null` = create/first write); result is a discriminated union (`ok {new_hash}` |
+  `diverged {server_hash, code:'GRAPH_DIVERGED'}`).
+
+### Fixed — S1 hash, Fable review round (pre-ratification, hash unchanged `965d721bd37964e8`)
+
+- **P0-1 browser-inoperable hash → isomorphic pure-TS SHA-256.** `computeGraphHash`
+  hashed via `node:crypto`.`createHash`, which the UI's Vite BROWSER bundle cannot
+  execute (Vite externalises `node:crypto` to a throwing stub) — so the UI's
+  vendored hash would throw at runtime while the Node-env parity test stayed green:
+  guarantee-theatre. Replaced with a dependency-free, synchronous SHA-256 (new
+  `src/sha256.ts`, FIPS 180-4, no `node:*` / no WebCrypto), byte-identical to the
+  reference (the committed parity constant is unchanged — positive proof of
+  agreement). BROWSER-RUNTIME PROOF added (`tests/graph-hash-browser-runtime.test.ts`):
+  runs the hash with `node:crypto` stubbed to throw and requires the committed
+  hash, with a positive control that the stub genuinely blocks node builtins;
+  mutation-proven (re-introducing a `node:crypto` digest → RED). KAT vectors +
+  node:crypto cross-check in `tests/sha256.test.ts`.
+- **P0-2 parse-normalisation.** `hash(graph) !== hash(GraphV3Schema.parse(graph))`
+  because `EdgeV3.edge_type`'s `.default('directed')` materialises at parse while a
+  raw wire edge omits it. The projection now normalises every Zod-DEFAULTED field to
+  its declared default before hashing, and the default set is DERIVED from the live
+  schemas (`extractDefaults`/`SCHEMA_DEFAULTS` — not a hand-list, so a future
+  `.default()` is honoured automatically). Invariant `hash(raw) === hash(parsed)`
+  pinned over every fixture + a 300-graph fuzz set
+  (`tests/graph-hash-parse-invariant.test.ts`), mutation-proven.
+- **P1 whitelist violations.** Three subtrees breached the module's own
+  whitelist-by-design invariant: node `interventions` were BLACKLISTED (strip known
+  cosmetics, pass the rest), option `interventions` and `state_space` were passed
+  WHOLESALE. All three are now true WHITELISTS (`pick` the enumerated
+  analysis-affecting keys per manifest §3: intervention `{value, value_type,
+  encoding_map, target_match{node_id}}`; `state_space {range{min,max}}`). Because
+  these passthrough subtrees have no Zod schema to derive from,
+  `GRAPH_HASH_SUBTREE_CLASSIFICATION` makes the whitelist FAIL-LOUD against the
+  exhaustive parity fixture — an unclassified subtree key fails the build
+  (`tests/graph-hash-classification.test.ts`, positive-control + registry-drift
+  mutation proven). New parity discriminators assert an UNKNOWN passthrough subkey
+  does not enter identity (would have leaked under the old blacklist/wholesale).
+
+### Added — S2 typed intent vocabulary + first-class chip identity
+
+- **`CoachingIntent`** — a parallel typed coaching/elicitation intent enum (12
+  values), DECOUPLED from `ActionType` (which names handler ids). Closes the
+  meta-decision defect where anonymous chip text was re-inferred by regex.
+- **`chip.id`** and **`chip.intent`** on the message-turn chip shape — promoting
+  chip identity out of the untyped `parameters` bag and giving each chip a typed
+  intent channel alongside its handler-imperative `action_type`.
+- **Batched `direct_graph_edit`** system event — `target_id`/`operation` demoted
+  to optional, batch fields (`changed_node_ids`, `changed_edge_ids`, `operations`,
+  `fields_changed?`, `summary?`) added alongside, so CEE is no longer blind to
+  batched manual canvas edits (the old singular shape had no live producer and was
+  silently dropped).
+
+### Added — S3 transactional edit lifecycle
+
+- **`base_graph_hash`** on the `held_proposal` block (`z.string().optional()`) —
+  lets the client verify a confirm-receipt applied against the graph it holds
+  (kills the `zero_overlap_drop` heuristic at the held-proposal render path). S3
+  otherwise rides S1's hash fields; no net-new S3 wire type (the V4 `ProposedChange`
+  is vestigial on V5 and is not extended).
+
+### Fixtures / ratchet
+
+- Maximal-fixture registry 106 → 111 (the five graph-write entries). New optional
+  fields (`graph_hash`, `chip.id`/`chip.intent`, `computed_against_hash`,
+  `base_graph_hash`, batched `direct_graph_edit`) populated in their existing
+  fixtures to keep the maximality guard satisfied.
+
 ## [Unreleased]
 
 ### Changed (rename only — no shape change, version untouched)
