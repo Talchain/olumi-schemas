@@ -19,6 +19,36 @@
         },
         "probability": {
           "type": "number"
+        },
+        "scale_provenance": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "range_unified": {
+              "type": "boolean",
+              "description": "True iff the constraint threshold's normalisation range is identical by construction to the range the node's interventions used or would use; false precisely when resolution diverged (e.g. a producer-declared cap overridden by a measured intervention spread)."
+            },
+            "threshold_clamped": {
+              "type": "string",
+              "enum": [
+                "low",
+                "high"
+              ]
+            },
+            "decision_grade": {
+              "type": "boolean",
+              "description": "Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy."
+            }
+          },
+          "required": [
+            "source",
+            "range_unified",
+            "decision_grade"
+          ],
+          "additionalProperties": true,
+          "description": "Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy."
         }
       },
       "required": [

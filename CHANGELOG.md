@@ -7,7 +7,158 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed (rename only — no shape change, version untouched)
+## [0.22.0] — 2026-07-22 — ⚠ HELD (A1-sequenced landing train; NOT yet published)
+
+The S2+S3 Phase-1 batch (ROADMAP 1.179) riding the row-1.181 absorption batch.
+`0.21.0` was published off `release/0.21.0-additive` as the additive `what_changed`
+release (`main` never carried a `[0.21.0]` CHANGELOG entry — the known main-vs-release
+divergence); **0.22.0 publishes from `main`** and is therefore ALSO the first VERSIONED
+release of the two items that sat under `[Unreleased]` on main, deliberately excluded
+from 0.21.0: schemas **#13** (compute-seam JSON-Schema tooling) + **#14** (the
+`GoalConstraintSchema` → `LegacyGoalConstraintStubSchema` false-twin rename) — both
+documented in their original sub-sections below. Strictly additive: no field removed,
+no enum member removed, no required field added to an existing object; every pre-0.22.0
+payload still parses. Minor per the README semver policy. Maximal-fixture registry:
+**106 → 113** (+7 — see the itemised list under each Added section).
+
+**⚠ LANDING SEQUENCE — the strict-consumer hazard (dominant risk R-1; same class as
+0.19.0/0.20.0, but this is a BIG batch — trace every field producer→validator→consumer
+at each hop).** The block schemas, the turn payload, and the enrichment envelope are
+`.strict()`/typed: a consumer pinned to an OLDER version silently DROPS an unknown new
+field, and on INGRESS a fail-closed validator (CEE's B1) 422s a turn carrying a field
+its pin does not know. Therefore:
+
+1. **Producers must not EMIT the new response/receipt fields** (`graph_hash`,
+   `computed_against_hash`, `feedback` events, the Group-A response fields, the F6
+   constraint-margin/provenance fields) until every strict consumer on that hop has
+   re-vendored ≥ 0.22.0.
+2. **The UI must not SEND the new ingress fields** (`chip.id`, `chip.intent`, the batched
+   `direct_graph_edit` fields, the `feedback` system event) until CEE has re-vendored
+   ≥ 0.22.0 and routes/accepts them — an older CEE 422s the turn (mirror hazard on the
+   `Intent` enum + the `feedback` kind, exactly as the `analysis_readiness` enum add in
+   0.20.0). Order: **this package publishes → CEE re-vendors (accepts + routes) → UI
+   re-vendors → UI sends the new intents/feedback / producers emit the new fields.**
+3. **`#13`/`#14` FIRST-SHIP absorption warning.** 0.22.0 is the first published version
+   carrying #13/#14 from `main`. The CEE re-vendor (row 1.181) and the UI re-vendor
+   (A2's twin row) must redo the import adjustments the F2-B re-pack lane recorded for
+   the rename surface + #13 types. The UI re-vendor is A2's row-1.181 twin — **~113 tsc
+   deltas** from the `GoalConstraintSchema`→`LegacyGoalConstraintStubSchema` rename
+   surface; budget for it, do not treat "typecheck clean" as free.
+4. **The S1 identity handshake is a THREE-HOP trace.** `graph_hash` (OlumiResponse) and
+   `computed_against_hash` (AnalysisResultBlock) are inert until the CEE producer stamps
+   them (using its `computeAnalysisAffectingGraphHash` — the runtime hash lives CEE-side,
+   NOT in this package; see `graph-hash-contract.ts`) AND the UI client verifies its own
+   canonical hash against them and raises the `GRAPH_DIVERGED` divergence state. Ship the
+   fields, then the CEE producer, then the UI verifier — a half-wired hop reads as no
+   handshake (fail-closed), never a false freshness verdict.
+
+### Added — S2 intent vocabulary + first-class chip identity (ROADMAP 1.179, decision ①)
+
+- **`Intent`** (`boundary/enums.ts`) — a NEW PARALLEL literal set, DECOUPLED from
+  `ActionType` (decision ①: not a wider `ActionType`; keeps the handler-id space clean
+  and lets one intent fan out to several handlers). Members: `elicit_options`,
+  `add_option`, `challenge_frame`, `challenge_assumption`, `outside_view`, `pre_mortem`,
+  `elicit_risks`, `estimate_help`, `mitigation_help`, `define_success`, `discuss`. The
+  three UI literals authored-but-invalid against `ActionType` and silently stripped today
+  (`add_option`, `challenge_assumption`, `discuss`) get their typed home here. **Reserved
+  headroom (R-6, ROADMAP 1.183):** `framework_request` / `research_request` are documented
+  as anticipated future members (NOT added yet) so the capability layer needs no second
+  contract shape — only two literals appended.
+- **First-class `chip.id` + typed `chip.intent`** on the message-turn `chip`
+  (`turn-payload.ts`). Chip identity (`chip_id`/`spark_id`) was smuggled untyped inside
+  `chip.parameters` with zero CEE readers; `id` promotes the discipline the `chip_click`
+  system-event member already has. `intent` carries the typed `Intent` parallel to
+  `action_type`. Both optional/additive.
+- Enum-scalar, no fixture impact (registry unchanged for `Intent`); the chip fields are
+  exercised by the existing message-chip fixture.
+
+### Added — batched `direct_graph_edit` (decision ②)
+
+- The `direct_graph_edit` system event gains optional `changed_node_ids[]`,
+  `changed_edge_ids[]`, `operations[]`, `fields_changed[]`, `summary` (`turn-payload.ts`).
+  The singular `{target_id, operation}` pair stays **REQUIRED** (decision ② — "keep
+  singular for back-compat": an older consumer requires them, so a new producer keeps
+  sending a representative pair). Closes the blindness where the UI's debounced batch
+  emitter (`useGraphEditEvents.ts`) was refused by the singular-only `.strict()` shape
+  (build → null → the turn was never sent). Chosen over a new `graph_edited` event.
+
+### Added — typed `feedback` system event (decision ⑥ — Paul ruled WIRE)
+
+- A `feedback` member on `SystemEventSchema` (`turn-payload.ts`) + `feedback` in the
+  `SystemEventKind` parity list: `{ kind, rating: 'up'|'down', comment?, target: {id, kind} }`.
+  Replaces the dead-thumbs class (the V5 feedback builder silently refused
+  `feedback_submitted`). `FeedbackRating` + `FeedbackTargetKind` (closed vocab:
+  `turn|message|block|suggestion|analysis`) exported. Registry **+1**
+  (`boundary/SystemEventSchema#feedback` fixture variant).
+
+### Added — S1 graph-identity handshake fields + canonical hash CONTRACT
+
+- **`graph_hash`** on `OlumiResponseSchema` (turn response / receipt) +
+  **`computed_against_hash`** on `AnalysisResultBlockSchema` (analysis result) +
+  **`GRAPH_DIVERGED`** in `BoundaryErrorCode` (+ `FAILURE_USER_TEXT`). Optional/additive.
+- **`graph-hash-contract.ts`** carries the ONE canonical keep-list DOCUMENTATION —
+  `CANONICAL_GRAPH_HASH_KEEP_LIST` = nodes + edges + options + goal_node_id +
+  **goal_constraints** (the CORRECTED floor; the single-graph design's own list omitted
+  `goal_constraints`, so a hard-constraint edit would not move the hash → analysis read
+  FRESH after a constraint change, S1 §D — pinned by a regression test). A
+  classification-completeness test DERIVES the GraphV3 field set from the schema so a new
+  graph field fails the build until classified (derive-don't-mirror). **No hashing
+  function is implemented here** — the runtime hash is CEE's
+  `computeAnalysisAffectingGraphHash`; shipping a second same-named digest is exactly the
+  hash-twin defect this programme keeps paying for (trap-12). The reserved canonical name
+  is `computeCanonicalGraphHash`. Enum/const, no registry impact.
+
+### Added — Group-A compute-seam response surfaces (ROADMAP 1.181; A3 byte-verified dossier)
+
+- **`SequentialAnalysisResponseSchema`**, **`CounterfactualResponseSchema`**,
+  **`OptimiseResponseSchema`** (+ `OptimiseUtilitySchema` and the closed ISL/PLoT enums)
+  in `boundary/group-a.ts` — typed contract for A3's three live Group-A endpoints
+  (ISL `/api/v1/analysis/sequential`, ISL `/api/v1/causal/counterfactual`, PLoT SCM-lite
+  `/v1/optimise`). Authored + reviewed against A3's byte-verified dossier and validated
+  against the POST-FIX optimise wire captures (deployed build `51abbc8`). Honesty rails
+  carried per the dossier:
+  - **Optimise is the PLoT SCM-lite surface** (discriminator: top-level key `schema`,
+    NOT the ISL `schema_version`; carries `method`/`action_semantics`). `method` and
+    `action_semantics` are **MANDATORY, structurally-required disclosure markers**.
+    `utility` is `.strict()` with only `expected` — a **deliberate deviation** from the
+    repo passthrough convention that makes the killed-bands guarantee STRUCTURAL: a
+    re-introduced `p10/p50/p90` band FAILS validation (the fabricated bands were removed
+    producer-side; they must never ride again).
+  - **Counterfactual**: NO `lower < upper` refinement — a degenerate CI
+    (`lower == upper == point_estimate`) is CORRECT abduction semantics under pinned
+    context; consumers must not widen it.
+  - Closed enums include ALL source members incl. valid-but-unwitnessed ones
+    (`sensitivity_to_timing:'medium'`, `UncertaintyLevel:'medium'`, `ConfidenceLevel:'high'`,
+    `RobustnessLevel:'robust'`); `ResponseMetadata.config_details` kept OPEN.
+  - Every object `.passthrough()` (except the strict `utility`), consistent with
+    `enrichment.ts`. Registry **+4** (Sequential, Counterfactual, Optimise, OptimiseUtility).
+
+### Added (F6 — constraint margin + scale/decision-grade provenance; schemas #16 absorbed)
+
+Additive typing on the analysis-enrichment boundary (`src/boundary/enrichment.ts`),
+incorporated from open PR #16 (`a3-constraint-margin-provenance`) into this batch —
+fully compatible (additive, enrichment-only). These fields ride PLoT's constraint path;
+before this they rode the `.passthrough()` and any malformed value was silently accepted.
+
+- **`EnrichmentConstraintMarginSchema`** — per-option, per-constraint graded breach
+  margin. Mirrors PLoT's shipped `ConstraintMargin` (`src/types/engine-v3.ts` @ staging
+  tip `ea10656`): `{ constraint_id, failure_margin_median? (finite ≥ 0), near_miss_fraction?
+  ([0,1]), margin_precision? ('exact'|'lower_bound') }`. Wired onto
+  `option_comparison[].constraint_margins`.
+- **`EnrichmentScaleProvenanceSchema`** — constraint-threshold normalisation-scale
+  provenance: `{ source, range_unified, threshold_clamped? ('low'|'high'), decision_grade }`.
+  Wired onto `constraint_results[].scale_provenance`.
+- **`constraints_decision_grade?: boolean`** on the option-comparison entry.
+- Fail-closed **ABSENCE RULE** frozen verbatim on `scale_provenance`,
+  `constraints_decision_grade`, and the inner `decision_grade`; `margin_precision` carries
+  the sibling "absent = precision unknown" rule.
+- **⚠ CONTRACT-AHEAD:** `scale_provenance`/`decision_grade`/`range_unified`/
+  `threshold_clamped`/`constraints_decision_grade` are NOT yet emitted by PLoT at
+  `ea10656` (only `ConstraintMargin` is evidenced); typed ahead of the producer, made
+  safe by the fail-closed ABSENCE RULE. Registry **+2**; JSON-Schema regenerated
+  (`json-schema/`, 22 → 24 documents, picked up by the derive-don't-mirror generator).
+
+### Changed (rename only — no shape change) — FIRST VERSIONED in 0.22.0 (was under `[Unreleased]` on `main`)
 
 - **False-twin rename: `GoalConstraintSchema` → `LegacyGoalConstraintStubSchema`**
   (type `GoalConstraint` → `LegacyGoalConstraintStub`; fixture

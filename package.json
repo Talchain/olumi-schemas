@@ -1,6 +1,6 @@
 {
   "name": "@talchain/schemas",
-  "version": "0.20.0",
+  "version": "0.22.0",
   "description": "Shared TypeScript schemas and runtime validation for Olumi services",
   "type": "module",
   "main": "dist/index.js",

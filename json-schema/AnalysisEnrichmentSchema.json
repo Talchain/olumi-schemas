@@ -161,6 +161,43 @@
                   "node_ids"
                 ],
                 "additionalProperties": true
+              },
+              "constraint_margins": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "constraint_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "failure_margin_median": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "near_miss_fraction": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "margin_precision": {
+                      "type": "string",
+                      "enum": [
+                        "exact",
+                        "lower_bound"
+                      ],
+                      "description": "Absent means precision is unknown; consumers MUST NOT assume exactness."
+                    }
+                  },
+                  "required": [
+                    "constraint_id"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "constraints_decision_grade": {
+                "type": "boolean",
+                "description": "Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy."
               }
             },
             "required": [
@@ -801,6 +838,36 @@
               },
               "probability": {
                 "type": "number"
+              },
+              "scale_provenance": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  },
+                  "range_unified": {
+                    "type": "boolean",
+                    "description": "True iff the constraint threshold's normalisation range is identical by construction to the range the node's interventions used or would use; false precisely when resolution diverged (e.g. a producer-declared cap overridden by a measured intervention spread)."
+                  },
+                  "threshold_clamped": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "high"
+                    ]
+                  },
+                  "decision_grade": {
+                    "type": "boolean",
+                    "description": "Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy."
+                  }
+                },
+                "required": [
+                  "source",
+                  "range_unified",
+                  "decision_grade"
+                ],
+                "additionalProperties": true,
+                "description": "Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy."
               }
             },
             "required": [

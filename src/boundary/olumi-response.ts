@@ -179,6 +179,16 @@ export const OlumiResponseSchema = z.object({
   // producing turn has actually assessed the framing; consumers MUST NOT
   // derive a verdict client-side when it is absent.
   framing_quality: FramingQuality.optional(),
+  // 0.22.0 additive (S1 — graph-identity handshake) -------------------------
+  // The canonical hash of the graph state THIS turn / receipt was produced
+  // against (the `CANONICAL_GRAPH_HASH_KEEP_LIST` floor — see
+  // ./graph-hash-contract.ts; the runtime hash is CEE's
+  // `computeAnalysisAffectingGraphHash`). The client verifies its OWN current
+  // canonical hash == this value and, on mismatch, enters a fail-loud
+  // `GRAPH_DIVERGED` divergence state instead of silently dropping the receipt
+  // (replaces the `zero_overlap_drop` class). Optional so pinned consumers are
+  // unaffected until they re-vendor 0.22.0; absent = no handshake asserted.
+  graph_hash: z.string().min(1).optional(),
 }).strict();
 
 export type OlumiResponse = z.infer<typeof OlumiResponseSchema>;

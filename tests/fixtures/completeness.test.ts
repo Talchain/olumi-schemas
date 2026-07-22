@@ -134,7 +134,14 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.19.0: 103 -> 106 (root/CeeErrorRecoverySchema,
     //   boundary/EnrichmentEdgeEValueStabilitySchema,
     //   boundary/DecisionClassificationSchema).
-    expect(MAXIMAL_FIXTURES.length).toBe(106);
+    // 0.22.0: 106 -> 113 (+7): schemas #16 F6 —
+    //   boundary/EnrichmentConstraintMarginSchema,
+    //   boundary/EnrichmentScaleProvenanceSchema; the typed feedback event —
+    //   boundary/SystemEventSchema#feedback; and the Group-A response surfaces
+    //   (ROADMAP 1.181) — boundary/SequentialAnalysisResponseSchema,
+    //   boundary/CounterfactualResponseSchema, boundary/OptimiseResponseSchema,
+    //   boundary/OptimiseUtilitySchema.
+    expect(MAXIMAL_FIXTURES.length).toBe(113);
   });
 
   it('family keys are unique', () => {

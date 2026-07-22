@@ -28,6 +28,9 @@ import {
   EnrichmentInferenceWarningSchema,
   EnrichmentFlipThresholdSchema,
   EnrichmentOptionComparisonEntrySchema,
+  EnrichmentConstraintMarginSchema,
+  EnrichmentScaleProvenanceSchema,
+  EnrichmentConstraintResultSchema,
 } from '../../src/boundary/enrichment.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -224,6 +227,138 @@ describe('AnalysisEnrichmentSchema — rejects malformed known keys (the drift c
         flip_value: null, direction: 'decrease',
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('F6 (schemas #16) — constraint margins + scale/decision-grade provenance', () => {
+  // A captured PLoT-shaped margin: £24000 over a cost cap, understated because
+  // the option's intervention clamped in the operator-compatible direction.
+  const capturedMargin = {
+    constraint_id: 'c_cost_cap',
+    failure_margin_median: 24000,
+    near_miss_fraction: 0.15,
+    margin_precision: 'lower_bound',
+  };
+
+  it('accepts the captured PLoT constraint-margin shape', () => {
+    const result = EnrichmentConstraintMarginSchema.safeParse(capturedMargin);
+    if (!result.success) {
+      throw new Error(`captured margin failed to parse: ${result.error.message}`);
+    }
+    expect(result.data.failure_margin_median).toBe(24000);
+    expect(result.data.margin_precision).toBe('lower_bound');
+  });
+
+  it('accepts a margin carrying only the required constraint_id (missing ≠ zero)', () => {
+    const result = EnrichmentConstraintMarginSchema.safeParse({ constraint_id: 'c_x' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.failure_margin_median).toBeUndefined();
+      expect(result.data.near_miss_fraction).toBeUndefined();
+    }
+  });
+
+  it('accepts an option-comparison entry carrying constraint_margins + constraints_decision_grade', () => {
+    const entry = {
+      option_id: 'opt_a',
+      constraint_margins: [capturedMargin],
+      constraints_decision_grade: true,
+    };
+    const result = EnrichmentOptionComparisonEntrySchema.safeParse(entry);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.constraint_margins?.[0].constraint_id).toBe('c_cost_cap');
+      expect(result.data.constraints_decision_grade).toBe(true);
+    }
+  });
+
+  it('accepts a scale_provenance object with every field, and the diverged-range case', () => {
+    const unified = EnrichmentScaleProvenanceSchema.safeParse({
+      source: 'plot_constraint_normaliser',
+      range_unified: true,
+      threshold_clamped: 'high',
+      decision_grade: true,
+    });
+    expect(unified.success).toBe(true);
+    const diverged = EnrichmentScaleProvenanceSchema.safeParse({
+      source: 'plot_constraint_normaliser',
+      range_unified: false,
+      decision_grade: false,
+    });
+    expect(diverged.success).toBe(true);
+  });
+
+  it('accepts a constraint result carrying scale_provenance', () => {
+    const result = EnrichmentConstraintResultSchema.safeParse({
+      constraint_id: 'c_cost_cap',
+      node_id: 'fac_cost',
+      operator: '<=',
+      value: 50000,
+      probability: 0.4,
+      scale_provenance: { source: 'plot', range_unified: true, decision_grade: true },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  // --- REJECT: the malformed-known-key drift class the envelope exists to catch
+  it('rejects a negative failure_margin_median (a breach distance cannot be negative)', () => {
+    expect(
+      EnrichmentConstraintMarginSchema.safeParse({
+        constraint_id: 'c_x',
+        failure_margin_median: -1,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects margin_precision outside the producer vocabulary', () => {
+    expect(
+      EnrichmentConstraintMarginSchema.safeParse({
+        constraint_id: 'c_x',
+        margin_precision: 'invented',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects near_miss_fraction outside [0,1]', () => {
+    expect(
+      EnrichmentConstraintMarginSchema.safeParse({
+        constraint_id: 'c_x',
+        near_miss_fraction: 1.5,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects a non-boolean decision_grade on scale_provenance', () => {
+    expect(
+      EnrichmentScaleProvenanceSchema.safeParse({
+        source: 'plot',
+        range_unified: true,
+        decision_grade: 'yes',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects threshold_clamped outside low|high', () => {
+    expect(
+      EnrichmentScaleProvenanceSchema.safeParse({
+        source: 'plot',
+        range_unified: true,
+        threshold_clamped: 'middle',
+        decision_grade: true,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('freezes the fail-closed ABSENCE RULE verbatim on the trust markers', () => {
+    const RULE =
+      'Absence of this marker means NOT decision-grade (fail-closed). ' +
+      'Consumers MUST NOT treat a missing marker as trustworthy.';
+    const ocShape = EnrichmentOptionComparisonEntrySchema._def.shape();
+    expect(ocShape.constraints_decision_grade.description).toBe(RULE);
+    const spShape = EnrichmentScaleProvenanceSchema._def.shape();
+    expect(spShape.decision_grade.description).toBe(RULE);
+    const crShape = EnrichmentConstraintResultSchema._def.shape();
+    expect(crShape.scale_provenance.description).toBe(RULE);
   });
 });
 

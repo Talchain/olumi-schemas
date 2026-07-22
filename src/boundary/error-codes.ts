@@ -12,6 +12,14 @@ export const BoundaryErrorCode = z.enum([
   'UPSTREAM_UNAVAILABLE',
   'LLM_UNAVAILABLE',
   'INTERNAL_ERROR',
+  // 0.22.0 (S1) — the graph the client holds no longer matches the graph a
+  // result was computed against. Emitted when a receipt's `graph_hash` /
+  // `computed_against_hash` (see olumi-response.ts / blocks.ts) diverges from
+  // the caller's current canonical graph hash (see
+  // CANONICAL_GRAPH_HASH_KEEP_LIST in ./graph-hash-contract.ts). The client's
+  // fail-loud divergence state keys off this code instead of silently dropping
+  // the receipt (the `zero_overlap_drop` class).
+  'GRAPH_DIVERGED',
 ]);
 export type BoundaryErrorCodeType = z.infer<typeof BoundaryErrorCode>;
 
@@ -40,4 +48,6 @@ export const FAILURE_USER_TEXT: Record<FailureTypeLiteral, string> = {
     'The model is temporarily unavailable. Please retry shortly.',
   INTERNAL_ERROR:
     'Something went wrong on our side. Please retry.',
+  GRAPH_DIVERGED:
+    'Your decision has changed since this result was computed. Re-run the analysis to refresh it.',
 };
