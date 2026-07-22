@@ -120,6 +120,69 @@ export const ActionType = z.enum([
 ]);
 export type ActionTypeLiteral = z.infer<typeof ActionType>;
 
+// ----------------------------------------------------------------------------
+// Intent vocabulary (0.22.0 — S2, ROADMAP 1.179/1.181; design decision ①).
+//
+// A PARALLEL literal set, DECOUPLED from `ActionType` above. `ActionType`
+// conflates "names a user intent" with "names an imperative handler id"; this
+// enum carries the product's authored COACHING / ELICITATION intent vocabulary
+// so CEE routes a typed chip on its TYPE instead of re-inferring intent from
+// canned chip copy via the hand-maintained ten-string mirror
+// (`PRODUCT_COACHING_PROMPTS` in CEE `process-meta-intake.ts` — the drift
+// defect this closes; derive intent, don't re-parse it).
+//
+// WHY A NEW SET, NOT A WIDER `ActionType` (decision ①, rec adopted): keeping
+// the handler-id space clean lets ONE intent fan out to several handlers, and
+// avoids stamping coaching intents into an enum whose other members name
+// graph-mutating operations. `analysis_readiness` already set the precedent
+// that a member can name an intent, not a handler — this enum generalises that
+// discipline to the whole coaching/elicitation surface. The three UI literals
+// that are ALREADY authored-but-invalid against `ActionType` and silently
+// stripped at the UI gate today (`add_option`, `challenge_assumption`,
+// `discuss`) get their typed home HERE (S2 §1a).
+//
+// Members cover the 12 identity-only node chips + 8 unmapped sparks + the
+// insight / drawer / coaching-card families (design §2.1):
+//   * elicit_options       — "help me list the options"
+//   * add_option           — add a decision option (the compound-transaction
+//                            intent; the referee `add_option` case wires to a
+//                            LIVE producer through this — design §3.3)
+//   * challenge_frame       — challenge how the decision is framed
+//   * challenge_assumption  — challenge a stated assumption
+//   * outside_view          — take the outside/base-rate view
+//   * pre_mortem            — run a pre-mortem
+//   * elicit_risks          — surface risks
+//   * estimate_help         — help estimating a value
+//   * mitigation_help       — help mitigating a risk
+//   * define_success        — define the success measure
+//   * discuss               — open-ended coaching discussion
+//
+// ADDITIONS land here as a MINOR bump and are announced in the CHANGELOG;
+// consumers treat an unrecognised future member as "no typed intent" (fail
+// closed to the existing free-text path), never as an error.
+//
+// RESERVED HEADROOM (R-6, ROADMAP 1.183 CAPABILITY LAYER — do NOT re-design):
+// the capability layer names S2 typed intents as a HARD GATE for
+// framework/research requests. `framework_request` and `research_request` are
+// ANTICIPATED members of THIS set; they are intentionally NOT added yet (no
+// producer/consumer maps them at 0.22.0), but this vocabulary is designed to
+// grow to include them additively so 1.183-P1 needs no second contract shape —
+// only the two literals appended here.
+export const Intent = z.enum([
+  'elicit_options',
+  'add_option',
+  'challenge_frame',
+  'challenge_assumption',
+  'outside_view',
+  'pre_mortem',
+  'elicit_risks',
+  'estimate_help',
+  'mitigation_help',
+  'define_success',
+  'discuss',
+]);
+export type IntentLiteral = z.infer<typeof Intent>;
+
 // v0.7.0 — UI-initiated system-event kinds. Distinct from user-typed messages:
 // they carry no free text and never add a user bubble. CEE V5 dispatches each
 // to a deterministic handler (no LLM). See Docs/v5/v5-turn-shape-matrix.md
@@ -130,6 +193,9 @@ export type ActionTypeLiteral = z.infer<typeof ActionType>;
 // here for parity even though this enum is not itself composed into that
 // union (each event's `kind` there is a literal, not a reference to this
 // enum) — this export is a consumer-facing convenience list of valid kinds.
+// 0.22.0: `feedback` added — the typed thumbs-rating event (Paul ruled WIRE,
+// design decision ⑥). Mirrors the `feedback` member added to the
+// `SystemEventSchema` union in turn-payload.ts; kept in parity here.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
@@ -138,6 +204,7 @@ export const SystemEventKind = z.enum([
   'undo',
   'redo',
   'selection_change',
+  'feedback',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
 

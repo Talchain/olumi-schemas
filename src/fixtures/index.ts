@@ -132,6 +132,14 @@ import {
   EnrichmentDecisionReviewSchema,
   EnrichmentConstraintResultSchema,
   EnrichmentConditionalProbabilitySchema,
+  // F6 — constraint margin + scale/decision-grade provenance (schemas #16)
+  EnrichmentConstraintMarginSchema,
+  EnrichmentScaleProvenanceSchema,
+  // Group-A compute-seam response surfaces (ROADMAP 1.181)
+  SequentialAnalysisResponseSchema,
+  CounterfactualResponseSchema,
+  OptimiseResponseSchema,
+  OptimiseUtilitySchema,
   // turn payload
   OrchestratorTurnPayloadSchema,
   MessageTurnPayloadSchema,
@@ -645,6 +653,20 @@ export const maximalEnrichmentGoalFitBasis = deepFreeze({
   [PROBE]: true,
 });
 
+// F6 (schemas #16) — per-option graded breach margin. Values honour the schema:
+// the median failure margin is a finite non-negative breach DISTANCE in user
+// units (the live-capture magnitude, £24000 over a cost cap), near_miss_fraction
+// is a rate in [0,1], and margin_precision is the 'lower_bound' branch (an
+// intervention clamped in the operator-compatible direction, so the magnitude
+// understates).
+export const maximalEnrichmentConstraintMargin = deepFreeze({
+  constraint_id: ID_CONSTRAINT,
+  failure_margin_median: 24000,
+  near_miss_fraction: 0.15,
+  margin_precision: 'lower_bound',
+  [PROBE]: true,
+});
+
 export const maximalEnrichmentOptionComparisonEntry = deepFreeze({
   option_id: ID_OPTION_A,
   option_label: LABEL_OPTION_A,
@@ -662,6 +684,9 @@ export const maximalEnrichmentOptionComparisonEntry = deepFreeze({
   probability_of_joint_goal: 0.58,
   constraint_probabilities: { [ID_CONSTRAINT]: 0.83 },
   goal_fit_basis: maximalEnrichmentGoalFitBasis,
+  // F6 — graded breach margins + fail-closed decision-grade marker.
+  constraint_margins: [maximalEnrichmentConstraintMargin],
+  constraints_decision_grade: true,
   [PROBE]: true,
 });
 
@@ -907,12 +932,28 @@ export const maximalEnrichmentDecisionReview = deepFreeze({
   [PROBE]: true,
 });
 
+// F6 (schemas #16) — normalisation-scale provenance. Every field populated
+// (threshold_clamped is the sole optional): the threshold shares the
+// intervention range (range_unified true), the optional clamp branch is
+// exercised ('high'), and the fail-closed decision_grade marker is present.
+// This library detects field loss, not wire semantics — the combination is
+// clearly-synthetic.
+export const maximalEnrichmentScaleProvenance = deepFreeze({
+  source: 'FIXTURE_plot_constraint_normaliser',
+  range_unified: true,
+  threshold_clamped: 'high',
+  decision_grade: true,
+  [PROBE]: true,
+});
+
 export const maximalEnrichmentConstraintResult = deepFreeze({
   constraint_id: ID_CONSTRAINT,
   node_id: ID_GOAL,
   operator: '>=',
   value: 100,
   probability: 0.83,
+  // F6 — normalisation-scale provenance + fail-closed decision-grade marker.
+  scale_provenance: maximalEnrichmentScaleProvenance,
   [PROBE]: true,
 });
 
@@ -989,6 +1030,8 @@ export const maximalAnalysisResultBlock = deepFreeze({
   // the transport field is z.record(z.unknown()) — carry the full maximal
   // typed envelope so one fixture exercises both layers.
   enrichment: maximalAnalysisEnrichment,
+  // 0.22.0 — S1: the canonical hash the result was computed against.
+  computed_against_hash: 'FIXTURE_graph_hash_0a1b2c3d4e5f',
 });
 
 export const maximalGraphPatchBlock = deepFreeze({
@@ -1295,6 +1338,9 @@ export const maximalOlumiResponse = deepFreeze({
   decision_classification: maximalDecisionClassification,
   // 0.20.0 — producer framing-quality verdict (ROADMAP 1.120, UI-SEM-079).
   framing_quality: 'ready',
+  // 0.22.0 — S1 graph-identity handshake (the hash this turn was produced
+  // against). A synthetic canonical hash string.
+  graph_hash: 'FIXTURE_graph_hash_0a1b2c3d4e5f',
 });
 
 // ----------------------------------------------------------------------------
@@ -1322,7 +1368,10 @@ export const maximalMessageTurnPayloadChip = deepFreeze({
   turn_class: 'propose',
   source: 'chip',
   chip: {
+    // 0.22.0 (S2) — first-class chip identity + typed intent.
+    id: 'fixture_chip_run_analysis',
     action_type: 'run_analysis',
+    intent: 'elicit_options',
     parameters: { FIXTURE_parameter: 'FIXTURE_value' },
   },
   generate_model: true,
@@ -1350,10 +1399,24 @@ const eventDirectGraphEdit = deepFreeze({
   kind: 'direct_graph_edit',
   target_id: ID_FACTOR,
   operation: 'set_factor_value',
+  // 0.22.0 (S2, decision ②) — batch payload alongside the representative
+  // singular pair. Arrays non-empty so the walker exercises the element shape.
+  changed_node_ids: [ID_FACTOR, ID_OPTION_A],
+  changed_edge_ids: [ID_EDGE],
+  operations: ['set_factor_value', 'adjust_edge_strength'],
+  fields_changed: ['value', 'strength'],
+  summary: 'FIXTURE batched canvas edit: 2 nodes, 1 edge.',
 });
 const eventChipClick = deepFreeze({ kind: 'chip_click', chip_id: 'fixture_chip_1' });
 const eventUndo = deepFreeze({ kind: 'undo' });
 const eventRedo = deepFreeze({ kind: 'redo' });
+// 0.22.0 (design decision ⑥) — typed thumbs feedback event.
+const eventFeedback = deepFreeze({
+  kind: 'feedback',
+  rating: 'up',
+  comment: 'FIXTURE synthetic feedback comment.',
+  target: { id: UUID_TURN, kind: 'turn' },
+});
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
   selected: [maximalSelectedElementRef],
@@ -1477,6 +1540,156 @@ export const maximalDecisionRecord = deepFreeze({
   prediction: maximalDecisionRecordPrediction,
   review_date: '2026-02-01T00:00:00.000Z',
   outcome: maximalDecisionRecordOutcome,
+});
+
+// ----------------------------------------------------------------------------
+// Group-A compute-seam response surfaces (0.22.0 — ROADMAP 1.181; A3 dossier).
+// Values track the byte-verified captures (sequential det_a, counterfactual
+// det_a/m3_context, optimise post-fix respA @ build 51abbc8). Every optional /
+// nullable field is populated so the walker exercises it; each passthrough
+// object carries the PROBE. `optimise.utility` is `.strict()` (no PROBE, only
+// `expected`) — the killed-bands guarantee.
+// ----------------------------------------------------------------------------
+
+export const maximalSequentialAnalysisResponse = deepFreeze({
+  schema_version: 'sequential.v1',
+  optimal_policy: {
+    stages: [{
+      stage_index: 0,
+      stage_label: 'FIXTURE Stage 0 — Decide',
+      decision_rule: {
+        default_action: 'go',
+        conditional_actions: [{
+          condition: 'If choosing stop',
+          action: 'stop',
+          expected_value_if_taken: 0.0,
+          [PROBE]: true,
+        }],
+        [PROBE]: true,
+      },
+      contingent_on: ['stage_prior'],
+      [PROBE]: true,
+    }],
+    expected_total_value: 126.06,
+    value_distribution: {
+      type: 'normal',
+      parameters: { mean: 126.06, std: 12.3 },
+      [PROBE]: true,
+    },
+    [PROBE]: true,
+  },
+  stage_analyses: [{
+    stage_index: 0,
+    stage_label: 'FIXTURE Decision Stage',
+    options_at_stage: [{
+      option_id: ID_OPTION_A,
+      label: LABEL_OPTION_A,
+      immediate_value: 10,
+      continuation_value: 20,
+      total_value: 30,
+      [PROBE]: true,
+    }],
+    information_value: 587.87,
+    optimal_waiting_value: 587.87,
+    [PROBE]: true,
+  }],
+  value_of_flexibility: 0.0,
+  sensitivity_to_timing: 'high',
+  _metadata: {
+    isl_version: '1.0.0',
+    config_fingerprint: 'FIXTURE_cb0a8a533671',
+    config_details: { monte_carlo_samples: 1000, deterministic_mode: true },
+    request_id: 'FIXTURE_req_3fa0d94669f9',
+    [PROBE]: true,
+  },
+  [PROBE]: true,
+});
+
+export const maximalCounterfactualResponse = deepFreeze({
+  scenario: {
+    intervention: { X: 5.0 },
+    outcome: 'Y',
+    context: { u_b: 20.0 },
+    [PROBE]: true,
+  },
+  prediction: {
+    point_estimate: 9.938,
+    confidence_interval: {
+      lower: -9.898,
+      upper: 29.8,
+      confidence_level: 0.95,
+      [PROBE]: true,
+    },
+    sensitivity_range: {
+      optimistic: 29.8,
+      pessimistic: -9.898,
+      explanation: 'FIXTURE synthetic sensitivity range explanation.',
+      [PROBE]: true,
+    },
+    [PROBE]: true,
+  },
+  uncertainty: {
+    overall: 'high',
+    sources: [{
+      factor: 'U',
+      impact: 102.18,
+      confidence: 'low',
+      explanation: 'FIXTURE synthetic uncertainty-source explanation.',
+      basis: 'Distribution: normal with parameters {mean: 0, std: 1}',
+      [PROBE]: true,
+    }],
+    [PROBE]: true,
+  },
+  robustness: {
+    score: 'moderate',
+    critical_assumptions: [{
+      assumption: 'FIXTURE synthetic critical assumption.',
+      impact: 1.0,
+      confidence: 'medium',
+      recommendation: 'FIXTURE synthetic recommendation.',
+      [PROBE]: true,
+    }],
+    [PROBE]: true,
+  },
+  explanation: {
+    summary: 'FIXTURE synthetic counterfactual summary.',
+    reasoning: 'FIXTURE synthetic reasoning.',
+    technical_basis: 'FIXTURE synthetic technical basis.',
+    assumptions: ['FIXTURE assumption one'],
+    simple_explanation: 'FIXTURE synthetic simple explanation.',
+    learn_more_url: 'https://example.invalid/fixture/learn-more',
+    visual_type: 'uncertainty_plot',
+    [PROBE]: true,
+  },
+  _metadata: {
+    isl_version: '1.0.0',
+    config_fingerprint: 'FIXTURE_cb0a8a533671',
+    config_details: { deterministic_mode: true },
+    request_id: 'FIXTURE_req_cf_0001',
+    [PROBE]: true,
+  },
+  [PROBE]: true,
+});
+
+export const maximalOptimiseResponse = deepFreeze({
+  schema: 'optimise.v1',
+  method: 'greedy_independent_v1',
+  action_semantics: 'edge_weight_scaling',
+  selected: ['aY'],
+  // STRICT — only `expected`, no bands, no PROBE.
+  utility: { expected: 6 },
+  explanations: [{ action_id: 'aY', marginal_gain: 4, [PROBE]: true }],
+  meta: {
+    seed: 4242,
+    solver: 'greedy_kernel_v1',
+    constraints_applied: ['FIXTURE_cost_cap'],
+    constraints_resolved: {
+      budget: { value: 2, source: 'top_level', [PROBE]: true },
+      FIXTURE_cost_cap: { source: 'user', [PROBE]: true },
+    },
+    [PROBE]: true,
+  },
+  [PROBE]: true,
 });
 
 // ----------------------------------------------------------------------------
@@ -1615,6 +1828,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalEnrichmentGoalFitBasis,
   },
   {
+    family: 'boundary/EnrichmentConstraintMarginSchema',
+    schema: EnrichmentConstraintMarginSchema,
+    fixture: maximalEnrichmentConstraintMargin,
+  },
+  {
     family: 'boundary/EnrichmentOptionComparisonEntrySchema',
     schema: EnrichmentOptionComparisonEntrySchema,
     fixture: maximalEnrichmentOptionComparisonEntry,
@@ -1672,6 +1890,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalEnrichmentDecisionReview,
   },
   {
+    family: 'boundary/EnrichmentScaleProvenanceSchema',
+    schema: EnrichmentScaleProvenanceSchema,
+    fixture: maximalEnrichmentScaleProvenance,
+  },
+  {
     family: 'boundary/EnrichmentConstraintResultSchema',
     schema: EnrichmentConstraintResultSchema,
     fixture: maximalEnrichmentConstraintResult,
@@ -1716,6 +1939,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/SystemEventSchema#selection_change',
     schema: SystemEventSchema,
     fixture: maximalSelectionChangeEvent,
+  },
+  {
+    family: 'boundary/SystemEventSchema#feedback',
+    schema: SystemEventSchema,
+    fixture: eventFeedback,
   },
   {
     family: 'boundary/SystemEventTurnPayloadSchema',
@@ -1776,6 +2004,27 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/ValidatePatchResponseSchema',
     schema: ValidatePatchResponseSchema,
     fixture: maximalValidatePatchResponse,
+  },
+  // --- Group-A compute-seam response surfaces (ROADMAP 1.181) -----------------------
+  {
+    family: 'boundary/SequentialAnalysisResponseSchema',
+    schema: SequentialAnalysisResponseSchema,
+    fixture: maximalSequentialAnalysisResponse,
+  },
+  {
+    family: 'boundary/CounterfactualResponseSchema',
+    schema: CounterfactualResponseSchema,
+    fixture: maximalCounterfactualResponse,
+  },
+  {
+    family: 'boundary/OptimiseResponseSchema',
+    schema: OptimiseResponseSchema,
+    fixture: maximalOptimiseResponse,
+  },
+  {
+    family: 'boundary/OptimiseUtilitySchema',
+    schema: OptimiseUtilitySchema,
+    fixture: { expected: 6 },
   },
   // --- decision record ---------------------------------------------------------------
   {

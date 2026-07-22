@@ -59,6 +59,22 @@ import { z } from 'zod';
 // ============================================================================
 
 // ----------------------------------------------------------------------------
+// Fail-closed provenance markers (F6 — constraint scale/margin trust seam)
+// ----------------------------------------------------------------------------
+
+/**
+ * The cross-lane, contract-FROZEN fail-closed sentence. Hoisted to ONE const
+ * (rather than re-typed at each `.describe()` site the way this module usually
+ * inlines them) so every marker below carries it BYTE-IDENTICALLY and a future
+ * edit cannot let one site drift from the others — derive-don't-mirror applied
+ * to prose. DO NOT reword: cross-repo consumers key trust decisions off this
+ * exact wording.
+ */
+const ABSENCE_FAIL_CLOSED_RULE =
+  'Absence of this marker means NOT decision-grade (fail-closed). Consumers ' +
+  'MUST NOT treat a missing marker as trustworthy.';
+
+// ----------------------------------------------------------------------------
 // Shared vocabularies
 // ----------------------------------------------------------------------------
 
@@ -133,6 +149,32 @@ export const EnrichmentGoalFitBasisSchema = z.object({
 export type EnrichmentGoalFitBasis = z.infer<typeof EnrichmentGoalFitBasisSchema>;
 
 /**
+ * Per-option, per-constraint graded breach margin (F6 — additive PoC plumbing).
+ * Mirrors PLoT's `ConstraintMargin` interface (src/types/engine-v3.ts @ staging
+ * ea10656, emitted at src/routes/v2/run.ts): breaching options become ORDERABLE
+ * by how far over the constraint they are. Rides
+ * `option_comparison[].constraint_margins`.
+ *
+ * EVIDENCED shape — every field verified against the PLoT source at ea10656.
+ * `failure_margin_median` is denormalised to USER UNITS by PLoT before egress
+ * and is a breach DISTANCE: finite and non-negative (a negative distance is
+ * upstream garbage; a non-finite value would serialise to a fabricated `null`).
+ * `near_miss_fraction` is a rate in [0,1]. Absent margin fields are OMITTED,
+ * never zeroed — missing ≠ zero (a fabricated 0 read by a live consumer was the
+ * exact defect PLoT's producer-honesty gate closed).
+ */
+export const EnrichmentConstraintMarginSchema = z.object({
+  constraint_id: z.string().min(1),
+  failure_margin_median: z.number().finite().nonnegative().optional(),
+  near_miss_fraction: z.number().min(0).max(1).optional(),
+  margin_precision: z.enum(['exact', 'lower_bound']).optional().describe(
+    'Absent means precision is unknown; consumers MUST NOT assume exactness.',
+  ),
+}).passthrough();
+export type EnrichmentConstraintMargin =
+  z.infer<typeof EnrichmentConstraintMarginSchema>;
+
+/**
  * Per-option comparison entry. [F1][F2].
  *
  * `option_id` is the only field every evidenced emission carries. `id` /
@@ -158,6 +200,16 @@ export const EnrichmentOptionComparisonEntrySchema = z.object({
   probability_of_joint_goal: z.number().optional(),
   constraint_probabilities: z.record(z.string(), z.number()).optional(),
   goal_fit_basis: EnrichmentGoalFitBasisSchema.optional(),
+  /**
+   * F6 — per-constraint graded breach margins for THIS option (additive).
+   * Delivered under the SAME honesty gate as the probabilities: never attached
+   * on a suppressed / direction-suspect constraint target [PLoT run.ts].
+   */
+  constraint_margins: z.array(EnrichmentConstraintMarginSchema).optional(),
+  /**
+   * F6 — fail-closed decision-grade marker for this option's constraint block.
+   */
+  constraints_decision_grade: z.boolean().optional().describe(ABSENCE_FAIL_CLOSED_RULE),
 }).passthrough();
 export type EnrichmentOptionComparisonEntry =
   z.infer<typeof EnrichmentOptionComparisonEntrySchema>;
@@ -561,6 +613,37 @@ export type EnrichmentDecisionReview = z.infer<typeof EnrichmentDecisionReviewSc
 // constraints — [F2] ConstraintResult / ConditionalProbability (PR #203/#205)
 // ----------------------------------------------------------------------------
 
+/**
+ * F6 — constraint-threshold normalisation-scale provenance. Discloses whether
+ * the constraint's threshold was normalised on the SAME range the constraint
+ * node's interventions used (so the emitted breach margin is comparable) or on
+ * a diverged range (so it is not), plus a fail-closed decision-grade marker.
+ *
+ * CONTRACT-AHEAD: unlike `EnrichmentConstraintMarginSchema`, this object is NOT
+ * yet emitted by PLoT at staging tip ea10656 (verified: absent from run.ts /
+ * engine-v3.ts and every constraint/provenance module fetched at that ref). It
+ * is typed ahead of the producer per Codex F6, and the fail-closed ABSENCE RULE
+ * is exactly what makes that safe — a producer not yet emitting the marker
+ * reads as NOT decision-grade, which is the correct default. Typed now so that
+ * the moment PLoT ships it, no `.passthrough()` garbage rides the seam.
+ *
+ * `source` is a producer-owned open string (normaliser identity). Closed enums
+ * are used only where the vocabulary is closed and stable.
+ */
+export const EnrichmentScaleProvenanceSchema = z.object({
+  source: z.string(),
+  range_unified: z.boolean().describe(
+    "True iff the constraint threshold's normalisation range is identical by " +
+    "construction to the range the node's interventions used or would use; " +
+    'false precisely when resolution diverged (e.g. a producer-declared cap ' +
+    'overridden by a measured intervention spread).',
+  ),
+  threshold_clamped: z.enum(['low', 'high']).optional(),
+  decision_grade: z.boolean().describe(ABSENCE_FAIL_CLOSED_RULE),
+}).passthrough();
+export type EnrichmentScaleProvenance =
+  z.infer<typeof EnrichmentScaleProvenanceSchema>;
+
 /** Per-constraint evaluation result. [F2] ConstraintResult. */
 export const EnrichmentConstraintResultSchema = z.object({
   constraint_id: z.string().min(1),
@@ -569,6 +652,11 @@ export const EnrichmentConstraintResultSchema = z.object({
   value: z.number(),
   /** Absent = ISL echoed the constraint without prob_satisfied (honest absence). */
   probability: z.number().optional(),
+  /**
+   * F6 — normalisation-scale provenance for this constraint's threshold
+   * (contract-ahead; see EnrichmentScaleProvenanceSchema).
+   */
+  scale_provenance: EnrichmentScaleProvenanceSchema.optional().describe(ABSENCE_FAIL_CLOSED_RULE),
 }).passthrough();
 export type EnrichmentConstraintResult =
   z.infer<typeof EnrichmentConstraintResultSchema>;

@@ -9,6 +9,8 @@ export {
   RunResult,
   FeatureStatus,
   ActionType,
+  // 0.22.0 — typed coaching/elicitation/mutation intent vocabulary (S2, ①)
+  Intent,
   SystemEventKind,
   TurnSource,
 } from './enums.js';
@@ -19,6 +21,7 @@ export type {
   RunResultType,
   FeatureStatusType,
   ActionTypeLiteral,
+  IntentLiteral,
   SystemEventKindLiteral,
   TurnSourceLiteral,
 } from './enums.js';
@@ -135,6 +138,9 @@ export {
   EnrichmentDecisionReviewSchema,
   EnrichmentConstraintResultSchema,
   EnrichmentConditionalProbabilitySchema,
+  // F6 — constraint margin + scale/decision-grade provenance (schemas #16)
+  EnrichmentConstraintMarginSchema,
+  EnrichmentScaleProvenanceSchema,
   CEE_UI_ENRICHMENT_KEEP_LIST,
   parseAnalysisEnrichment,
   isAnalysisEnrichment,
@@ -162,6 +168,9 @@ export type {
   EnrichmentDecisionReview,
   EnrichmentConstraintResult,
   EnrichmentConditionalProbability,
+  // F6 — constraint margin + scale/decision-grade provenance (schemas #16)
+  EnrichmentConstraintMargin,
+  EnrichmentScaleProvenance,
   CeeUiEnrichmentKeepKey,
 } from './enrichment.js';
 
@@ -173,6 +182,9 @@ export {
   SystemEventSchema,
   // Selection context (0.15.0)
   SelectedElementRefSchema,
+  // Typed feedback event (0.22.0 — design decision ⑥, WIRE)
+  FeedbackRating,
+  FeedbackTargetKind,
 } from './turn-payload.js';
 export type {
   OrchestratorTurnPayload,
@@ -181,7 +193,46 @@ export type {
   SystemEvent,
   // Selection context (0.15.0)
   SelectedElementRef,
+  // Typed feedback event (0.22.0)
+  FeedbackRatingLiteral,
+  FeedbackTargetKindLiteral,
 } from './turn-payload.js';
+
+// Canonical graph-hash CONTRACT (0.22.0 — S1). Documented keep-list + the
+// GraphV3-derived classification source; the runtime hash lives CEE-side (see
+// the module header — no rival hash implementation, trap-12).
+export {
+  CANONICAL_GRAPH_HASH_FUNCTION_NAME,
+  CANONICAL_GRAPH_HASH_KEEP_LIST,
+  CANONICAL_GRAPH_HASH_GRAPHV3_FIELDS,
+  CANONICAL_GRAPH_HASH_ANALYSIS_STATE_FIELDS,
+  GRAPH_HASH_EXCLUDED_GRAPHV3_FIELDS,
+  graphV3TopLevelFields,
+} from './graph-hash-contract.js';
+export type { CanonicalGraphHashKeepKey } from './graph-hash-contract.js';
+
+// Group-A compute-seam response surfaces (0.22.0 — ROADMAP 1.181; A3 dossier).
+export {
+  SequentialAnalysisResponseSchema,
+  SequentialSensitivityToTiming,
+  CounterfactualResponseSchema,
+  CounterfactualUncertaintyLevel,
+  CounterfactualConfidenceLevel,
+  CounterfactualRobustnessLevel,
+  OptimiseResponseSchema,
+  OptimiseUtilitySchema,
+} from './group-a.js';
+export type {
+  SequentialAnalysisResponse,
+  SequentialSensitivityToTimingLiteral,
+  CounterfactualResponse,
+  CounterfactualUncertaintyLevelLiteral,
+  CounterfactualConfidenceLevelLiteral,
+  CounterfactualRobustnessLevelLiteral,
+  OptimiseResponse,
+  OptimiseUtility,
+  GroupAResponseMetadata,
+} from './group-a.js';
 
 // OlumiResponse (egress from /orchestrate/v2/turn)
 export {

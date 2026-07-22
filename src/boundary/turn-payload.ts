@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TurnClass, Stage, ActionType, TurnSource } from './enums.js';
+import { TurnClass, Stage, ActionType, Intent, TurnSource } from './enums.js';
 
 // UUIDv4 pattern — keep loose; CEE also re-checks.
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -74,7 +74,17 @@ export const MessageTurnPayloadSchema = z.object({
   turn_class: TurnClass,
   source: TurnSource,
   chip: z.object({
+    // 0.22.0 (S2) — FIRST-CLASS chip identity. Was smuggled untyped inside
+    // `parameters` (chip_id / spark_id) with ZERO CEE readers. This promotes
+    // the same discipline the `chip_click` system-event member already has
+    // (typed `chip_id`, below) to the message-turn chip.
+    id: z.string().min(1).optional(),
     action_type: ActionType.optional(),
+    // 0.22.0 (S2, decision ①) — typed coaching / elicitation / mutation
+    // INTENT, PARALLEL to `action_type` (which names a handler id). CEE routes
+    // a typed chip on its `intent` instead of re-inferring intent from the
+    // rendered chip copy. See `Intent` in ./enums.ts.
+    intent: Intent.optional(),
     parameters: z.record(z.string(), z.unknown()).optional(),
   }).strict().optional(),
   retry_of: Uuid.optional(),
@@ -95,10 +105,27 @@ const PatchDismissedEvent = z.object({
   patch_id: z.string().min(1),
 }).strict();
 
+// `direct_graph_edit` — a manual canvas edit reported to CEE.
+// 0.22.0 (S2, decision ②): the singular `{target_id, operation}` shape stays
+// REQUIRED (back-compat: a consumer on an older pin requires them, so a new
+// producer keeps sending a representative singular pair), and the UI's REAL
+// debounced BATCH emitter (`useGraphEditEvents.ts`) is accommodated additively
+// by the optional batch fields below. Before this, the singular-only `.strict()`
+// shape REFUSED the batch (build → null → the turn was never sent), so CEE was
+// blind to manual edits. Chosen over a new `graph_edited` event (decision ②
+// rec: additive fields on the existing member) to keep one event, one owner.
 const DirectGraphEditEvent = z.object({
   kind: z.literal('direct_graph_edit'),
   target_id: z.string().min(1),
   operation: z.string().min(1),
+  // Batch payload (all optional — additive). `operations` is the plural of the
+  // singular `operation` verb; `fields_changed` names the touched fields;
+  // `summary` is a short human description of the batch.
+  changed_node_ids: z.array(z.string().min(1)).optional(),
+  changed_edge_ids: z.array(z.string().min(1)).optional(),
+  operations: z.array(z.string().min(1)).optional(),
+  fields_changed: z.array(z.string().min(1)).optional(),
+  summary: z.string().min(1).max(2000).optional(),
 }).strict();
 
 const ChipClickEvent = z.object({
@@ -140,6 +167,45 @@ const SelectionChangeEvent = z.object({
   cleared: z.boolean().optional(),
 }).strict();
 
+// `feedback` (0.22.0) — the typed thumbs-rating event. Paul ruled WIRE
+// (design decision ⑥, ROADMAP 1.181): the V5 feedback builder silently
+// REFUSED `feedback_submitted` (the dead-thumbs class — a control that did
+// nothing). This member is the honest channel: CEE consumes + persists it, the
+// UI emitter switches from the dead builder to this event. UI-initiated, no
+// free-text bubble → a system event like every sibling of this union.
+export const FeedbackRating = z.enum(['up', 'down']);
+export type FeedbackRatingLiteral = z.infer<typeof FeedbackRating>;
+
+// The class of artifact a rating is ABOUT. A small CLOSED vocabulary (not an
+// open string) so a consumer keys display / telemetry off the target class.
+export const FeedbackTargetKind = z.enum([
+  'turn',
+  'message',
+  'block',
+  'suggestion',
+  'analysis',
+]);
+export type FeedbackTargetKindLiteral = z.infer<typeof FeedbackTargetKind>;
+
+const FeedbackEvent = z.object({
+  kind: z.literal('feedback'),
+  // The thumbs verdict.
+  rating: FeedbackRating,
+  // Optional free-text the user typed alongside the thumb.
+  comment: z.string().min(1).max(2000).describe(
+    'User free-text feedback. MAY contain PII (names, emails, whatever the ' +
+      'user typed) — consumers MUST handle per R-004: treat as sensitive, ' +
+      'never log verbatim, redact before persistence/telemetry.',
+  ).optional(),
+  // The artifact being rated (id + its class). Required: a rating with no
+  // referent is not actionable. `id` is any stable id (a turn UUID for a
+  // whole-turn rating, else a block / suggestion id).
+  target: z.object({
+    id: z.string().min(1),
+    kind: FeedbackTargetKind,
+  }).strict(),
+}).strict();
+
 export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
@@ -148,6 +214,7 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   UndoEvent,
   RedoEvent,
   SelectionChangeEvent,
+  FeedbackEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 

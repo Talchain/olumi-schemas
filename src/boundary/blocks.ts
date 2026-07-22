@@ -58,6 +58,14 @@ export const AnalysisResultBlockSchema = z.object({
   leading_option_id: z.string().nullable(),
   win_probabilities: z.record(z.string(), z.number()).optional(),
   enrichment: z.record(z.string(), z.unknown()).optional(),
+  // 0.22.0 additive (S1 — graph-identity handshake). The canonical hash of the
+  // graph state this analysis result was COMPUTED AGAINST (the
+  // CANONICAL_GRAPH_HASH_KEEP_LIST floor — see ./graph-hash-contract.ts). A
+  // client compares it against its current canonical hash to decide freshness;
+  // a mismatch is a GRAPH_DIVERGED divergence, never a silent stale render.
+  // Optional so pinned consumers are unaffected until re-vendored; absent = no
+  // computed-against assertion.
+  computed_against_hash: z.string().min(1).optional(),
 }).strict();
 export type AnalysisResultBlock = z.infer<typeof AnalysisResultBlockSchema>;
 
