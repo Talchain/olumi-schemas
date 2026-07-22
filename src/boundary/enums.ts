@@ -90,11 +90,15 @@ export type FeatureStatusType = z.infer<typeof FeatureStatus>;
 // (`WhatChangedChip.tsx` computes a localStorage graph diff and only pulses
 // the canvas) that NEVER reaches CEE, while CEE's real two-run comparison
 // (`compareRuns` → `RunDelta`, `run-comparison-gate.ts`) is reachable only via
-// free-text typed in chat and answered by canned prose. This value lets the UI
-// declare the intent on the wire (`chip.action_type`) so CEE narrates the real
-// RunDelta through the coach with the conversation window (freshness
-// fail-closed unchanged; the deterministic `composeComparison` stays as the
-// fallback). Like `what_would_flip`/`analysis_readiness` it names an INTENT,
+// free-text typed in chat. This value lets the UI declare the intent on the
+// wire (`chip.action_type`) so CEE answers it from the real `RunDelta`. As
+// shipped (the accept-half, CEE PR #620), a confirmed-fresh compared delta is
+// answered by the DETERMINISTIC `composeComparison` (0-LLM); freshness stays
+// fail-closed. Coach-narration of that delta is DEFERRED — an architectural
+// fold with its own review — its precondition being `what_changed` registered
+// as a PINNED explanation-class handler + the `RunDelta` threaded as ground
+// truth, with `composeComparison` kept as the fallback. Like
+// `what_would_flip`/`analysis_readiness` it names an INTENT,
 // not an imperative graph operation. Name chosen for END-TO-END parity with
 // CEE's existing intent literal `'what_changed'` (`classifyAnalyticalIntent` /
 // `run-comparison-gate.ts`) so the typed pill and the free-text path answer to
