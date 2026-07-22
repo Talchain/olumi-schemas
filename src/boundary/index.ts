@@ -135,6 +135,9 @@ export {
   EnrichmentDecisionReviewSchema,
   EnrichmentConstraintResultSchema,
   EnrichmentConditionalProbabilitySchema,
+  // F6 — constraint margin + scale/decision-grade provenance
+  EnrichmentConstraintMarginSchema,
+  EnrichmentScaleProvenanceSchema,
   CEE_UI_ENRICHMENT_KEEP_LIST,
   parseAnalysisEnrichment,
   isAnalysisEnrichment,
@@ -162,6 +165,9 @@ export type {
   EnrichmentDecisionReview,
   EnrichmentConstraintResult,
   EnrichmentConditionalProbability,
+  // F6 — constraint margin + scale/decision-grade provenance
+  EnrichmentConstraintMargin,
+  EnrichmentScaleProvenance,
   CeeUiEnrichmentKeepKey,
 } from './enrichment.js';
 

@@ -32,6 +32,11 @@
       "definition": "#/definitions/EnrichmentConfidenceTier"
     },
     {
+      "export": "EnrichmentConstraintMarginSchema",
+      "file": "EnrichmentConstraintMarginSchema.json",
+      "definition": "#/definitions/EnrichmentConstraintMarginSchema"
+    },
+    {
       "export": "EnrichmentConstraintResultSchema",
       "file": "EnrichmentConstraintResultSchema.json",
       "definition": "#/definitions/EnrichmentConstraintResultSchema"
@@ -110,6 +115,11 @@
       "export": "EnrichmentRobustnessSchema",
       "file": "EnrichmentRobustnessSchema.json",
       "definition": "#/definitions/EnrichmentRobustnessSchema"
+    },
+    {
+      "export": "EnrichmentScaleProvenanceSchema",
+      "file": "EnrichmentScaleProvenanceSchema.json",
+      "definition": "#/definitions/EnrichmentScaleProvenanceSchema"
     }
   ]
 }

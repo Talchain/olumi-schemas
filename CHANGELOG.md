@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (F6 — constraint margin + scale/decision-grade provenance)
+
+Additive typing on the analysis-enrichment boundary (`src/boundary/enrichment.ts`).
+These fields ride PLoT's constraint path; before this change they rode the
+`.passthrough()` and any malformed value was silently accepted. **No version
+decision is made here** — the version bump belongs to the orchestrator.
+
+- **`EnrichmentConstraintMarginSchema`** — per-option, per-constraint graded
+  breach margin. Mirrors PLoT's shipped `ConstraintMargin` interface
+  (`src/types/engine-v3.ts` @ staging tip `ea10656`, emitted from
+  `src/routes/v2/run.ts`), verified against the source at that ref:
+  `{ constraint_id, failure_margin_median? (finite, ≥ 0), near_miss_fraction?
+  ([0,1]), margin_precision? ('exact' | 'lower_bound') }`. Wired onto
+  `option_comparison[].constraint_margins`.
+- **`EnrichmentScaleProvenanceSchema`** — constraint-threshold
+  normalisation-scale provenance: `{ source, range_unified, threshold_clamped?
+  ('low' | 'high'), decision_grade }`. Wired onto
+  `constraint_results[].scale_provenance`.
+- **`constraints_decision_grade?: boolean`** on the option-comparison entry.
+- **Fail-closed ABSENCE RULE** frozen verbatim on `scale_provenance`,
+  `constraints_decision_grade`, and the inner `decision_grade` marker: a missing
+  marker means NOT decision-grade; consumers must not treat absence as
+  trustworthy. `margin_precision` carries the sibling "absent = precision
+  unknown" rule.
+- **CONTRACT-AHEAD (honest provenance):** `scale_provenance` /
+  `decision_grade` / `range_unified` / `threshold_clamped` /
+  `constraints_decision_grade` are NOT yet emitted by PLoT at `ea10656`
+  (verified: absent from `run.ts`, `engine-v3.ts`, and every constraint /
+  provenance module fetched at that ref — only `ConstraintMargin` is evidenced).
+  They are typed ahead of the producer per Codex F6; the fail-closed ABSENCE
+  RULE is what makes that safe (a producer not yet emitting the marker reads as
+  NOT decision-grade, the correct default).
+- Maximal fixtures added for both new schemas; existing option-comparison /
+  constraint-result fixtures grown to populate the new fields (registry
+  106 → 108). JSON-Schema artifacts regenerated (`json-schema/`, +2 documents),
+  picked up automatically by the derive-don't-mirror generator.
+
 ### Changed (rename only — no shape change, version untouched)
 
 - **False-twin rename: `GoalConstraintSchema` → `LegacyGoalConstraintStubSchema`**
