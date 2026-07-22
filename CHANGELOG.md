@@ -5,6 +5,26 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] — 2026-07-22 (ADDITIVE-ONLY release — cut from release/0.21.0-additive, not main)
+
+One change: `what_changed` added to the `ActionType` enum (PR #17), the typed
+door for the F2-B "What changed?" pill. Strictly additive; every pre-0.21.0
+payload still parses.
+
+**Deliberately EXCLUDED (Paul-ruled option A, 22 Jul):** PR #13 (compute-seam
+JSON-Schema types) and PR #14 (`GoalConstraintSchema` →
+`LegacyGoalConstraintStubSchema` rename) are on main but NOT in this release —
+the rename is non-additive for consumers (~113 UI tsc deltas). Both ship in
+**0.22.0**, with a NAMED absorption row on each consumer side. This release =
+`1b936ec` (0.20.0) + the #17 enum commits, byte-verified against both
+consumers' prep tarballs. Main at cut time was `734e6c72`.
+
+**Landing sequence (same enum ingress hazard class as 0.20.0):** CEE validates
+`chip.action_type` fail-closed, so the UI must not SEND `what_changed` until
+CEE has re-vendored ≥ 0.21.0 and is live. Order: **this publishes → CEE
+re-vendors (accepts + routes, PR #620) → deploy-verified → UI re-vendors +
+sends (PR #423).**
+
 ## [0.20.0] — 2026-07-20 (UNPUBLISHED — merge + publish are Paul-gated contract class)
 
 The four schemas-blocked items accumulated on 20 Jul: the readiness chip
