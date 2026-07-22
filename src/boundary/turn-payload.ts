@@ -192,7 +192,11 @@ const FeedbackEvent = z.object({
   // The thumbs verdict.
   rating: FeedbackRating,
   // Optional free-text the user typed alongside the thumb.
-  comment: z.string().min(1).max(2000).optional(),
+  comment: z.string().min(1).max(2000).describe(
+    'User free-text feedback. MAY contain PII (names, emails, whatever the ' +
+      'user typed) — consumers MUST handle per R-004: treat as sensitive, ' +
+      'never log verbatim, redact before persistence/telemetry.',
+  ).optional(),
   // The artifact being rated (id + its class). Required: a rating with no
   // referent is not actionable. `id` is any stable id (a turn UUID for a
   // whole-turn rating, else a block / suggestion id).

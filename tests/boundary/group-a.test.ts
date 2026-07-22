@@ -119,6 +119,18 @@ describe('Sequential — reject (dossier §3)', () => {
     delete opt[0].total_value;
     expect(SequentialAnalysisResponseSchema.safeParse(v).success).toBe(false);
   });
+
+  it('rejects optimal_policy.expected_total_value null AND wrong-type (required number)', () => {
+    // `expected_total_value` is a required `z.number()` — the headline value of
+    // the whole policy. A `null` or a stringified number must be refused, never
+    // coerced: a missing/malformed total is a producer failure, not a value.
+    const nul = seqValid();
+    (nul.optimal_policy as Record<string, unknown>).expected_total_value = null;
+    const str = seqValid();
+    (str.optimal_policy as Record<string, unknown>).expected_total_value = '126.06';
+    expect(SequentialAnalysisResponseSchema.safeParse(nul).success).toBe(false);
+    expect(SequentialAnalysisResponseSchema.safeParse(str).success).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -169,6 +181,24 @@ describe('Counterfactual — accept (dossier §3)', () => {
     expect(CounterfactualResponseSchema.safeParse(v).success).toBe(true);
   });
 
+  it('DOCTRINE PIN — accepts a CI where lower > upper (NO ordering refinement, by design)', () => {
+    // ⚠⚠ DELIBERATE: this schema carries NO `lower < upper` (nor
+    // optimistic/pessimistic ordering) refinement. The no-ordering-refinement
+    // doctrine (dossier §2) exists to protect the CORRECT degenerate-CI case
+    // above under full context, where the interval collapses and any ordering
+    // constraint would be arbitrary. A future "helpful" refinement that starts
+    // rejecting lower > upper MUST consciously break THIS test — it is the pin
+    // that makes that a deliberate doctrine change, not an unnoticed tightening.
+    const v = cfValid();
+    (v.prediction as Record<string, unknown>).confidence_interval = { lower: 30, upper: 10 };
+    expect(CounterfactualResponseSchema.safeParse(v).success).toBe(true);
+    const s = cfValid();
+    (s.prediction as Record<string, unknown>).sensitivity_range = {
+      optimistic: 5, pessimistic: 50, explanation: 'inverted, still accepted',
+    };
+    expect(CounterfactualResponseSchema.safeParse(s).success).toBe(true);
+  });
+
   it("accepts unwitnessed enum members: overall 'medium', confidence 'high', score 'robust'", () => {
     const v = cfValid();
     (v.uncertainty as Record<string, unknown>).overall = 'medium';
@@ -212,6 +242,15 @@ describe('Counterfactual — reject (dossier §3)', () => {
     const noScen = cfValid(); delete noScen.scenario;
     expect(CounterfactualResponseSchema.safeParse(noPred).success).toBe(false);
     expect(CounterfactualResponseSchema.safeParse(noScen).success).toBe(false);
+  });
+
+  it('rejects prediction with point_estimate deleted (required — the headline number)', () => {
+    // point_estimate is the prediction's headline value; it is required, not
+    // optional. A prediction object present but MISSING its point estimate is a
+    // producer failure and must be refused, never read as an absent value.
+    const v = cfValid();
+    delete (v.prediction as Record<string, unknown>).point_estimate;
+    expect(CounterfactualResponseSchema.safeParse(v).success).toBe(false);
   });
 });
 
@@ -314,6 +353,20 @@ describe('Optimise — reject (dossier §3 + the killed-bands honesty guarantee)
     const missing = { ...POSTFIX_RESP_A } as Record<string, unknown>;
     delete missing.action_semantics;
     expect(OptimiseResponseSchema.safeParse(missing).success).toBe(false);
+  });
+
+  it("rejects an EMPTY method '' (a present-but-empty marker discloses nothing — .min(1))", () => {
+    // An empty honesty marker satisfies "field present" while disclosing
+    // nothing — exactly the dead-marker class the schema exists to refuse.
+    // Reverting the `.min(1)` on `method` turns this RED.
+    const v = { ...POSTFIX_RESP_A, method: '' };
+    expect(OptimiseResponseSchema.safeParse(v).success).toBe(false);
+  });
+
+  it("rejects an EMPTY action_semantics '' (present-but-empty marker — .min(1))", () => {
+    // Reverting the `.min(1)` on `action_semantics` turns this RED.
+    const v = { ...POSTFIX_RESP_A, action_semantics: '' };
+    expect(OptimiseResponseSchema.safeParse(v).success).toBe(false);
   });
 
   it('rejects explanations[].marginal_gain as a string (type)', () => {

@@ -27,7 +27,7 @@ import { GraphV3Schema } from '../graph.js';
 // would NOT move the hash and the analysis would read FRESH after the user
 // changed a constraint (S1 §D bottom / §F.1). The corrected floor below adopts
 // CEE's analysis-affecting whitelist. The classification-completeness test
-// (tests/boundary/graph-hash-contract.test.ts) DERIVES the graph-side field
+// (tests/boundary/s1-graph-hash.test.ts) DERIVES the graph-side field
 // set from `GraphV3Schema` so a NEW graph field fails the build until it is
 // consciously classified hashed-or-excluded — the drift never reads as green.
 // ============================================================================

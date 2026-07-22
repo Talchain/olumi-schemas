@@ -227,3 +227,17 @@ describe('typed feedback event (decision ⑥ — WIRE)', () => {
     expect(kinds).toContain('feedback');
   });
 });
+
+describe('SystemEventKind ↔ SystemEventSchema parity (trap-12: fail loud on drift)', () => {
+  // The `SystemEventKind` enum in enums.ts is a HAND-MAINTAINED MIRROR of the
+  // `kind` literals in the SystemEventSchema union — exactly the drift-prone
+  // pattern trap-12 warns about (a list a human must remember to sync WILL
+  // drift, and the drift reads as green). This one-line set-equality test makes
+  // the mirror FAIL LOUD: add a union member without its enum entry (or vice
+  // versa) and this goes RED at the next run instead of silently diverging.
+  it('SystemEventKind.options == the set of union members\' kind literals', () => {
+    const unionKinds = (SystemEventSchema.options as z.ZodDiscriminatedUnionOption<'kind'>[])
+      .map((o) => (o.shape.kind as z.ZodLiteral<string>).value);
+    expect([...SystemEventKind.options].sort()).toStrictEqual([...unionKinds].sort());
+  });
+});

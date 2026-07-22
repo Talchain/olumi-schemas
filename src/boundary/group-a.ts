@@ -285,7 +285,11 @@ export const OptimiseResponseSchema = z.object({
   // evaluation, NOT guaranteed globally optimal (synergies & diminishing
   // returns ignored). Consumers MUST surface this caveat — a value shown
   // without the greedy caveat misrepresents the result.
-  method: z.string().describe(
+  // `.min(1)`: an EMPTY marker is not honest disclosure — a producer that
+  // ships `method: ''` would satisfy "field present" while disclosing nothing,
+  // exactly the dead-marker class this schema exists to refuse. The marker must
+  // carry content or the response is rejected (dossier §2 honesty guarantee).
+  method: z.string().min(1).describe(
     "MANDATORY disclosure marker. 'greedy_independent_v1' = greedy 0/1-knapsack " +
       'over per-action marginal gains measured INDEPENDENTLY against the baseline ' +
       'graph; additive/independent, no joint evaluation, not guaranteed globally ' +
@@ -296,7 +300,9 @@ export const OptimiseResponseSchema = z.object({
   // `node_id` by `set_to`. NOT a Pearl do-operator (node values not set,
   // incoming edges not cut); a node with no outgoing edges is a silent no-op.
   // Consumers MUST NOT present optimise actions as causal interventions.
-  action_semantics: z.string().describe(
+  // `.min(1)`: same honesty guard as `method` — an empty semantics marker
+  // discloses nothing while reading as present, so it is refused (dossier §2).
+  action_semantics: z.string().min(1).describe(
     "MANDATORY disclosure marker. 'edge_weight_scaling' = an action multiplies " +
       'the OUTGOING edge weights of its node by set_to. NOT a Pearl do-operator. ' +
       'Consumers MUST NOT present optimise actions as causal interventions.',
