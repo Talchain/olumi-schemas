@@ -84,6 +84,26 @@ export type FeatureStatusType = z.infer<typeof FeatureStatus>;
 // Name SIGNED OFF by the UI workstream (20 Jul 2026), with a scope rule:
 // this value covers the READINESS-CLASS sparks only — a spark whose honest
 // intent differs stays gated dark rather than borrowing this literal.
+//
+// 0.21.0 addition: `what_changed` — the typed door for the "What changed?"
+// pill (F2 CHANGE B). Today that pill is a device-local canvas diff
+// (`WhatChangedChip.tsx` computes a localStorage graph diff and only pulses
+// the canvas) that NEVER reaches CEE, while CEE's real two-run comparison
+// (`compareRuns` → `RunDelta`, `run-comparison-gate.ts`) is reachable only via
+// free-text typed in chat. This value lets the UI declare the intent on the
+// wire (`chip.action_type`) so CEE answers it from the real `RunDelta`. As
+// shipped (the accept-half, CEE PR #620), a confirmed-fresh compared delta is
+// answered by the DETERMINISTIC `composeComparison` (0-LLM); freshness stays
+// fail-closed. Coach-narration of that delta is DEFERRED — an architectural
+// fold with its own review — its precondition being `what_changed` registered
+// as a PINNED explanation-class handler + the `RunDelta` threaded as ground
+// truth, with `composeComparison` kept as the fallback. Like
+// `what_would_flip`/`analysis_readiness` it names an INTENT,
+// not an imperative graph operation. Name chosen for END-TO-END parity with
+// CEE's existing intent literal `'what_changed'` (`classifyAnalyticalIntent` /
+// `run-comparison-gate.ts`) so the typed pill and the free-text path answer to
+// ONE name — the whole point of the typed door (derive intent, don't re-name
+// it at a boundary).
 export const ActionType = z.enum([
   'run_analysis',
   'set_factor_value',
@@ -96,6 +116,7 @@ export const ActionType = z.enum([
   'compare_options',
   'what_would_flip',
   'analysis_readiness',
+  'what_changed',
 ]);
 export type ActionTypeLiteral = z.infer<typeof ActionType>;
 
