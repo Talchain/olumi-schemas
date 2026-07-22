@@ -40,7 +40,11 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('ActionType analysis_readiness (0.20.0, item 1)', () => {
-  it('the enum is exactly the nine pre-0.20.0 values plus analysis_readiness (removal = breaking)', () => {
+  it('the enum is exactly the nine pre-0.20.0 values plus analysis_readiness and (0.21.0) what_changed (removal = breaking)', () => {
+    // 0.21.0 (F2 CHANGE B) appended `what_changed` — additive. This exact-set
+    // pin is the mirror that says removing any value is a BREAKING change; a
+    // new additive value is expected to update this list in lockstep with the
+    // enum (that lockstep is the point — an unlisted addition goes RED here).
     expect(ActionType.options).toEqual([
       'run_analysis',
       'set_factor_value',
@@ -52,6 +56,7 @@ describe('ActionType analysis_readiness (0.20.0, item 1)', () => {
       'compare_options',
       'what_would_flip',
       'analysis_readiness',
+      'what_changed',
     ]);
   });
 
