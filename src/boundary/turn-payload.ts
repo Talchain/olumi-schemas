@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { TurnClass, Stage, ActionType, Intent, TurnSource } from './enums.js';
+import { GraphV3Schema } from '../graph.js';
 
 // UUIDv4 pattern — keep loose; CEE also re-checks.
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -65,6 +66,20 @@ const MAX_SELECTED_ELEMENTS = 20;
 // without sending a turn) is NOT this field's job — that is
 // `selection_change` (below).
 //
+// `graph_state` — optional (0.23.0). The FULL inbound GraphV3 the client holds
+// on its canvas at send time (nodes + edges — the same shape draft_graph emits,
+// NOT a hash ref: on a guest first-touch there is no server model to fetch, so
+// the whole graph must ride inbound). Additive + `.strict()`-safe: a turn
+// WITHOUT it still parses (fail-safe — every pre-0.23.0 payload is unaffected).
+//
+// PURPOSE (A2 guest-template train — ROADMAP 1.188 / A1-DECISIONS D-24): on a
+// FIRST-TOUCH turn a guest scenario has NO server-authored model, so CEE is
+// model-blind. This carries the graph inbound so CEE can adopt-on-first-touch
+// and coach/analyse against it. Ingress hazard (0.22-class landing sequence):
+// an older strict CEE 422s a turn carrying an unknown field, so the UI MUST NOT
+// populate `graph_state` until CEE has re-vendored ≥ 0.23.0 and accepts it.
+// Order: this package publishes → CEE re-vendors (accepts + adopts) → UI sends.
+//
 // Cross-field refinements are applied on the discriminated-union wrapper
 // below (z.discriminatedUnion requires plain ZodObject members).
 export const MessageTurnPayloadSchema = z.object({
@@ -91,6 +106,7 @@ export const MessageTurnPayloadSchema = z.object({
   generate_model: z.boolean().optional(),
   explicit_generate: z.boolean().optional(),
   selected_elements: z.array(SelectedElementRefSchema).max(MAX_SELECTED_ELEMENTS).optional(),
+  graph_state: GraphV3Schema.optional(),
 }).strict();
 
 // kind: 'system_event' — UI-initiated event with no free text.
@@ -106,14 +122,31 @@ const PatchDismissedEvent = z.object({
 }).strict();
 
 // `direct_graph_edit` — a manual canvas edit reported to CEE.
-// 0.22.0 (S2, decision ②): the singular `{target_id, operation}` shape stays
-// REQUIRED (back-compat: a consumer on an older pin requires them, so a new
-// producer keeps sending a representative singular pair), and the UI's REAL
-// debounced BATCH emitter (`useGraphEditEvents.ts`) is accommodated additively
-// by the optional batch fields below. Before this, the singular-only `.strict()`
-// shape REFUSED the batch (build → null → the turn was never sent), so CEE was
-// blind to manual edits. Chosen over a new `graph_edited` event (decision ②
-// rec: additive fields on the existing member) to keep one event, one owner.
+//
+// 0.22.0 (S2, decision ②): `target_id` + `operation` are REQUIRED singulars; the
+// optional `changed_*` / `operations` / `fields_changed` / `summary` fields are
+// additive batch CONTEXT. Chosen over a new `graph_edited` event (decision ② rec)
+// to keep one event, one owner. Before this the singular-only `.strict()` shape
+// REFUSED a multi-edit payload (build → null → the turn was never sent), so CEE
+// was blind to manual edits.
+//
+// ⚠ HONEST WIRE CONVENTION (F6, ROADMAP 1.188a — corrected 0.23.0). This schema
+// does NOT itself decompose a batch: `target_id`/`operation` carry a
+// REPRESENTATIVE SINGULAR, and the raw multi-edit → representative reduction is
+// performed UPSTREAM by the UI's `graphEditBatchAdapter` (DecisionGuideAI,
+// merged #436; pinned by `graphEditBatchAdapter.spec.ts`), NOT by anything in
+// this package. The adapter's convention — stated so a consumer knows what the
+// singulars MEAN: `target_id` = explicit target → else the first changed node id
+// (ascending) → else the first changed edge id (ascending); `operation` =
+// explicit → else `operations[0]` (ascending); `fields_changed` = the batch's
+// per-field map flattened to a sorted, de-duped `string[]` UNION. The
+// `changed_*`/`operations` arrays ride alongside as full context; an edit whose
+// id set is empty is rejected client-side as a retryable `unencodable_graph_edit`
+// rather than sent. (The prior 0.22.0 comment claimed the schema "accommodated"
+// the UI's debounced batch emitter directly — it does not; that accommodation is
+// the adapter's, and the wire carries the representative singular described here.
+// trap-14: describe the convention the wire actually uses, not one that only
+// holds via the adapter.)
 const DirectGraphEditEvent = z.object({
   kind: z.literal('direct_graph_edit'),
   target_id: z.string().min(1),

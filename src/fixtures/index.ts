@@ -1377,6 +1377,9 @@ export const maximalMessageTurnPayloadChip = deepFreeze({
   generate_model: true,
   explicit_generate: true,
   selected_elements: [maximalSelectedElementRef],
+  // 0.23.0 — full inbound GraphV3 for guest first-touch (A2 guest-template
+  // train). Populated here so the maximality walker exercises the optional field.
+  graph_state: maximalGraphV3,
 });
 
 export const maximalMessageTurnPayloadRetry = deepFreeze({

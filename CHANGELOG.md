@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-07-23
+
+The A2 guest-template-train gating batch (ROADMAP 1.188). **Strictly additive:**
+no field removed, no enum member removed, no required field added to an existing
+object — every pre-0.23.0 payload still parses (proven by a full `dist/**/*.d.ts`
+surface diff vs `v0.22.0`: additions only). Minor per the README semver policy.
+Maximal-fixture registry unchanged at **113** (the one new field rides an
+existing `MessageTurnPayloadSchema` fixture; no new registry entry).
+
+**⚠ LANDING SEQUENCE (dominant risk R-1, same 0.22.0-class strict-consumer
+hazard).** `MessageTurnPayloadSchema` is `.strict()`: an older CEE fail-closed
+ingress validator **422s** a turn carrying a field its pin does not know. Order:
+**this package publishes → CEE re-vendors ≥ 0.23.0 (accepts + adopts
+`graph_state`) → UI populates `graph_state`.** The UI MUST NOT send `graph_state`
+until CEE's deployed service accepts it.
+
+### Added — inbound `graph_state` on the message turn (ROADMAP 1.188c, A1-DECISIONS D-24)
+
+- **`graph_state?: GraphV3`** on `MessageTurnPayloadSchema`
+  (`boundary/turn-payload.ts`) — OPTIONAL, `.strict()`-safe, the FULL inbound
+  `GraphV3Schema` (nodes + edges) the client holds on its canvas at send time.
+  NOT a hash ref: on a guest first-touch there is no server-authored model to
+  fetch, so the whole graph must ride inbound. Lets CEE adopt-on-first-touch and
+  coach/analyse against a guest's model instead of behaving model-blind. Fail-safe:
+  a turn WITHOUT `graph_state` parses exactly as before. The maximal
+  `MessageTurnPayloadSchema#chip` fixture now populates it (registry stays 113).
+
+### Changed — F6 honesty comment (ROADMAP 1.188a; trap-14, no behaviour change)
+
+- **`direct_graph_edit` doc-comment** rewritten to describe the ACTUAL
+  representative-singular convention the wire uses. The 0.22.0 comment claimed the
+  schema "accommodated" the UI's debounced batch emitter directly; it does not —
+  the batch → representative-singular reduction is performed UPSTREAM by the UI's
+  `graphEditBatchAdapter` (DecisionGuideAI #436). The comment now states that
+  convention verbatim (target = explicit → first changed node asc → first changed
+  edge asc; operation = explicit → `operations[0]` asc; `fields_changed` = the
+  batch field-map flattened to a sorted de-duped `string[]` union; empty id set →
+  retryable `unencodable_graph_edit`). **No schema/field/type change** — comment
+  only.
+
+### Verified present (0.22.0 identity handshake — no re-add)
+
+- **`graph_hash`** — `OlumiResponseSchema` (`boundary/olumi-response.ts:191`),
+  `z.string().min(1).optional()`. Present since 0.22.0.
+- **`computed_against_hash`** — `AnalysisResultBlockSchema`
+  (`boundary/blocks.ts:68`), `z.string().min(1).optional()`. Present since 0.22.0.
+
+### ⚠ NOT in this package — `model_graph_hash` (byte-corrected 0.23.0)
+
+- **`model_graph_hash` is ABSENT** from the entire contract at `v0.22.0` (grep:
+  zero occurrences in `src/`). The Arch-Review-2 / A1-DECISIONS-D-27 assertion that
+  "0.22 already SHIPPED `graph_hash`/`computed_against_hash`/`model_graph_hash`" is
+  **byte-false for the third field** — only the first two shipped. **Deliberately
+  NOT added here:** its shape is spec'd only in a CEE-ask proposal
+  (`GUEST-TEMPLATE-CEE-ASK … §5.2/§6`) and it may be redundant with the existing
+  `graph_hash` — baking a possibly-duplicate field into a publish-once contract is
+  the exact "a wrong field forces a re-publish" hazard. The successor CEE
+  adopt-on-first-touch lane must confirm whether it needs a NEW distinct field or
+  can echo `graph_hash`; if distinct, it rides a later additive batch.
+
+### Deferred riders (named — not blockers)
+
+- **schemas #16** (A3 F6 constraint-margin / scale-provenance) — OPEN + `isDraft:
+  true`, authored against a pre-0.22.0 base (its registry note says 106→108 vs
+  current 113); A3 left the version/merge call to the orchestrator. Needs A3's
+  rebase + de-draft before folding; not merged here.
+- **ISL DownsideV2** (CVAR) — Neil-pending doctrine; explicitly out of scope.
+- **Canonical graph-hash serialization-input builder** (ROADMAP 1.188b) — a second
+  hashing implementation here is the "two same-named hash twins" defect
+  `graph-hash-contract.ts` exists to prevent; not built.
+- **typed `feedback` event** and **Group-A response types** — already shipped in
+  0.22.0 (`FeedbackEvent` in `turn-payload.ts`; `boundary/group-a.ts`); nothing to
+  add.
+
 ## [0.22.0] — 2026-07-22 — ⚠ HELD (A1-sequenced landing train; NOT yet published)
 
 The S2+S3 Phase-1 batch (ROADMAP 1.179) riding the row-1.181 absorption batch.
