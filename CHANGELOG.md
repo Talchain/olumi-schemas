@@ -81,7 +81,7 @@ until CEE's deployed service accepts it.
   0.22.0 (`FeedbackEvent` in `turn-payload.ts`; `boundary/group-a.ts`); nothing to
   add.
 
-## [0.22.0] — 2026-07-22 — ⚠ HELD (A1-sequenced landing train; NOT yet published)
+## [0.22.0] — 2026-07-22 (PUBLISHED 2026-07-22: tagged `v0.22.0` = `e04b900`, published to GitHub Packages + merged to `main` — the Publish run's `Publish to GitHub Packages` + `Create release tag` steps are green; only the known-benign `Trigger propagation` step is red (missing PAT, per platform trap-7). The "⚠ HELD (A1-sequenced landing train; NOT yet published)" status this heading carried was written pre-landing and is corrected here (ROADMAP 1.188a). The consumer re-vendor ORDER below remains the live guidance.)
 
 The S2+S3 Phase-1 batch (ROADMAP 1.179) riding the row-1.181 absorption batch.
 `0.21.0` was published off `release/0.21.0-additive` as the additive `what_changed`
