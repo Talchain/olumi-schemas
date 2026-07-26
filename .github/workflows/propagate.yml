@@ -1,3 +1,29 @@
+# ⚠ DORMANT AND OBSOLETE — READ BEFORE YOU RUN OR "FIX" THIS. ROADMAP 1.216.
+#
+# DORMANT: the only trigger is a `schema-published` repository_dispatch, and the
+# single sender is publish.yml's `Trigger propagation` step, which has never
+# succeeded (no `OLUMI_SCHEMAS_PAT` secret exists — see the comment block on
+# that step). This workflow has therefore never run. Its `update-consumers` job
+# is unproven code, not working code.
+#
+# OBSOLETE: `npm install @talchain/schemas@<version> --save-exact` below assumes
+# consumers pin a REGISTRY version. None of them do. Measured 2026-07-26 at each
+# repo's staging tip, all three vendor a checked-in tarball:
+#   DecisionGuideAI        "@talchain/schemas": "file:./vendor/talchain-schemas-0.22.0.tgz"
+#   plot-lite-service      "@talchain/schemas": "file:./vendor/talchain-schemas-0.22.0.tgz"
+#   olumi-assistants-service "@talchain/schemas": "file:./vendor/talchain-schemas-0.25.0.tgz"
+# Running this matrix against any of them REWRITES the `file:` pin, and against
+# CEE it additionally trips the tarball-sha guard its pre-push hook enforces.
+# DO NOT run it.
+#
+# The real adoption path today is a RE-VENDOR PR in the consumer's own repo,
+# following that repo's `vendor/README.md` (npm pack the published version, swap
+# the tarball, rewrite the .sha256 manifest, update the `file:` reference).
+#
+# A correct rework would dispatch a re-vendor PR rather than an npm install, and
+# needs the PAT to exist first. Tracked as ROADMAP 1.216 — deliberately not
+# attempted in the change that added this comment.
+
 name: Propagate Schema Update
 
 on:
