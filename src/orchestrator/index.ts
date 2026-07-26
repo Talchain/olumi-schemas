@@ -105,6 +105,9 @@ export {
   EditGraphAffectedEntitySchema,
   ExplainAnswerSourceSchema,
   ExplainFallbackReasonSchema,
+  // 0.25.0 — T1 claim safety (RunAnalysisResult.constraint_verdict)
+  ConstraintVerdictSchema,
+  ConstraintVerdictStateSchema,
 } from './handler-results.js';
 export type {
   RunAnalysisResult,
@@ -122,6 +125,8 @@ export type {
   EditGraphAffectedEntity,
   ExplainAnswerSource,
   ExplainFallbackReason,
+  ConstraintVerdict,
+  ConstraintVerdictState,
 } from './handler-results.js';
 
 // HandlerFact discriminated union (widened from A1's z.never() stub)

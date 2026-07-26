@@ -2112,6 +2112,10 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   'orchestrator/AdjustEdgeStrengthResultSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/EditGraphResultSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/EditGraphAffectedEntitySchema': ORCHESTRATOR_INTERNAL,
+  // 0.25.0 — T1 claim safety. Nested inside RunAnalysisResultSchema, which is
+  // itself excluded on the same grounds: CEE-internal fact persistence, not a
+  // cross-service wire format.
+  'orchestrator/ConstraintVerdictSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainFallbackReasonSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/RunAnalysisHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainResultHandlerFactSchema': ORCHESTRATOR_INTERNAL,

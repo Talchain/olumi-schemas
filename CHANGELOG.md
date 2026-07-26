@@ -7,6 +7,110 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] — 2026-07-26
+
+**Arch step 2 — the first CONTRACT FOR A FACT, and the retirement of a live
+interim.** Strictly additive: one new optional field on an existing schema, two
+new exported schemas, no field removed, no enum member removed, no required
+field added to an existing object. Minor per the README semver policy.
+Maximal-fixture registry unchanged at **114** (the new schema is nested inside
+`RunAnalysisResultSchema`, which is already an `ORCHESTRATOR_INTERNAL`
+fixture-coverage exclusion; the new one is recorded the same way).
+
+**⚠ VERSION NOTE FOR THE S1 LANE.** The 0.24.0 entry below told S1 its
+generated types would land as `0.25.0`. This release has taken `0.25.0`, so
+**S1's types land as `0.26.0`**. Nothing else about the adoption order changes.
+That note was an expectation recorded in a changelog, not a reservation any
+tooling enforces — re-read `package.json` at the tip you are on rather than
+trusting either note.
+
+### Added — `RunAnalysisResult.constraint_verdict` (T1 claim safety, G-CEE-1)
+
+- **`constraint_verdict?: ConstraintVerdict`** on `RunAnalysisResultSchema`
+  (`orchestrator/handler-results.ts`) — OPTIONAL, and it stays optional. The
+  fact about an analysis that answers "given the hard constraints the user
+  ratified, and what the producer was able to score, may a leading option be
+  NAMED as the answer?".
+- **`ConstraintVerdictSchema` / `ConstraintVerdict`** — `.strict()`, two
+  members, mirroring CEE's `PersistedClaimSafety` interface verbatim:
+  `may_name_leading_option: boolean` and
+  `constraint_verdict_state: ConstraintVerdictState`.
+- **`ConstraintVerdictStateSchema` / `ConstraintVerdictState`** — the closed
+  five-state vocabulary: `not_applicable`, `evaluated_feasible`,
+  `evaluated_infeasible`, `unevaluated`, `identity_unresolved`. Five and not a
+  boolean because "we could not tell" is a third answer, and collapsing it
+  either way states something false to the user.
+
+### Why this exists — it replaces an interim that is live today
+
+CEE PR #710 (merged, `cee@staging` 39fa4eeb) needed to persist this verdict on
+the run_analysis fact and could not: `RunAnalysisResultSchema` is `.strict()`,
+and adding the field needed a package release that was blocked behind V5-CI-01.
+It stamped the value into the fact's untyped `enrichment` record under a
+CEE-namespaced key, `__cee_claim_safety`, and left a TARGET note naming exactly
+this field. This release is that unblock.
+
+The defect being closed is not hypothetical. On staging `1c078f0` the same HTTP
+response printed *"no option can be put forward yet"* directly above *"The
+MacBook Pro leads by a margin of about 52 percentage points"* — the withhold and
+the claim disagreeing inside one payload, because two surfaces derived the
+verdict independently from different inputs.
+
+### Skew analysis — zero blast radius on publish
+
+All three consumers vendor `@talchain/schemas` as `file:` tarball pins, so
+nothing auto-bumps and no consumer sees this field until it re-vendors
+deliberately. The field is optional, so a producer on 0.22/0.23 that never
+writes it still validates, and every fact persisted before this release parses
+unchanged (asserted, not asserted-about, in
+`tests/orchestrator/constraint-verdict-0.25.test.ts`).
+
+**Follow-through is owned by the CEE lane**, not by this package: re-vendor
+0.25.0, write the verdict to `result.constraint_verdict`, point the readers at
+it, and delete `CEE_CLAIM_SAFETY_ENRICHMENT_KEY` with its two helpers and the
+§6b clause of `scripts/validate-handler-ownership.sh`. **An open question ships
+with it:** facts already persisted carry the interim key and not the typed
+field. The interim reader fails CLOSED on absence, so those rows stay correct
+(they lose leader-presuming cards) — but whether to keep that reader for
+historic rows or migrate them is a CEE decision, deliberately not taken here.
+
+### Deliberate non-guarantees (pinned by tests so they are not added by reflex)
+
+- **The two members are not cross-validated.** `may_name_leading_option` always
+  equals the producer's frozen `MAY_NAME_LEADING_OPTION[state]` lookup, so this
+  package could enforce coherence. It does not: that table is CEE doctrine, and
+  a copy here would be a rule requiring simultaneous change in two repos, where
+  a skewed pin would reject verdicts a newer CEE legitimately emits — the
+  hand-maintained-mirror defect class.
+- **The producer's `codes`, `constraints` and `leaderInfeasibility` are not
+  declared.** The producer deliberately does not persist them. Declaring them
+  would be contract for a producer that writes nothing into it.
+
+### Contracts
+
+- **Adoption manifest row** (`contracts/adoption-manifest.json`), state
+  **`declared`**, removal date 2026-09-30. Deliberately not `produced_dark`: a
+  producer and a consumer are both live in `cee@staging`, but they read and
+  write the interim key, so nothing produces or consumes
+  `result.constraint_verdict` itself yet and any stronger state would be a false
+  claim. `contracts/manifest.sha256` and `src/contracts/generated-constants.ts`
+  regenerated (`CONTRACT_MANIFEST_SHA`, plus `SCHEMA_SHA` /
+  `SCHEMA_PACKAGE_VERSION` for the version bump).
+
+### Tests
+
+- `tests/orchestrator/constraint-verdict-0.25.test.ts` (25 tests) — RED-first
+  against 0.24.0, where `.strict()` rejected the field outright. Fourteen
+  **negative fixtures** (unknown state, wrong casing, stringly-typed and numeric
+  booleans, missing members, an extra member, camelCase members, null, array,
+  bare string) each proven to be REJECTED, with a **positive control** asserting
+  the same fixture minus the malformation is accepted — without it every
+  rejection would have passed vacuously on 0.24.0, which is exactly what the
+  RED run showed. Plus a path-precision assertion, union-level rejection, and
+  the optionality and interim-coexistence proofs.
+- `tests/orchestrator/__fixtures__/handler-fact-fixtures.ts` — the canonical
+  `run_analysis` regression fixture now exercises the field.
+
 ## [0.24.0] — 2026-07-26
 
 **Arch step 2, sub-step S0 — the enforcement scaffolding, shipped BEFORE the fields

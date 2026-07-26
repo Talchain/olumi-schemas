@@ -20,6 +20,7 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
     // handler-fact variants (7), union (1) = 36.
     // 0.12.0 adds: edit-graph result (1) + edit-graph sub-enums (3) +
     // edit-graph handler-fact variant (1) = 41 total.
+    // 0.25.0 adds: constraint-verdict object (1) + its state enum (1) = 43.
     expect(exported).toEqual(
       [
         // A1
@@ -80,6 +81,9 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         'EditGraphImpactSchema',
         'EditGraphAffectedEntitySchema',
         'EditGraphHandlerFactSchema',
+        // 0.25.0 — T1 claim safety (additive)
+        'ConstraintVerdictSchema',
+        'ConstraintVerdictStateSchema',
       ].sort(),
     );
   });
