@@ -36,6 +36,13 @@ export const HANDLER_FACT_FIXTURES: Record<string, HandlerFact> = {
       win_probabilities: { opt_a: 0.64, opt_b: 0.36 },
       graph_hash_at_run: 'abcdef0123456789',
       computed_at: '2026-05-09T10:00:00.000Z',
+      // 0.25.0 — T1 claim safety. `evaluated_feasible` is the state that
+      // licenses the `leading_option_id` above being named as the answer, so
+      // this fixture is internally consistent as well as maximal.
+      constraint_verdict: {
+        may_name_leading_option: true,
+        constraint_verdict_state: 'evaluated_feasible',
+      },
     },
   },
   explain_result: {

@@ -12,6 +12,73 @@ import { NodeKind } from '../graph.js';
 
 // ---- D2 / C2: analysis-family results ----
 
+// 0.25.0 — T1 claim safety. The constraint verdict is a FACT ABOUT THE
+// ANALYSIS: "given the hard constraints the user ratified, and what the
+// producer was able to score, may a leading option be NAMED as the answer?".
+//
+// Owned and derived in exactly one place — CEE's `deriveConstraintVerdict`
+// (src/orchestrator/context/constraint-feasibility.ts). Every other CEE
+// surface READS the persisted value rather than re-deriving it, because two
+// derivations can see different inputs and produce a response that withholds
+// the recommendation in words while asserting it in prose. That is not
+// hypothetical: it is the G-CEE-1 defect observed live on staging `1c078f0`,
+// where "no option can be put forward yet" printed directly above "The MacBook
+// Pro leads by a margin of about 52 percentage points".
+
+/**
+ * The five answers the producer's evidence can select. Transcribed from CEE's
+ * `ConstraintVerdictState` union; the doc comments below are compressed from
+ * the same source.
+ *
+ * Note there is no correct BOOLEAN here — "we could not tell" is a third
+ * answer, and collapsing it either way states something false.
+ */
+export const ConstraintVerdictStateSchema = z.enum([
+  /** No ratified hard constraints and no producer reason to hold the leader back. */
+  'not_applicable',
+  /** Every ratified constraint was scored under a recognised id and the leader clears it. */
+  'evaluated_feasible',
+  /** Constraints were scored and the leading option breaks one. */
+  'evaluated_infeasible',
+  /** At least one ratified constraint was not evaluated to decision grade, on
+   *  evidence that cannot be confused with a keying failure. */
+  'unevaluated',
+  /** Constraints were plainly evaluated, but not one returned id reconciles
+   *  with anything ratified — so "your condition went unchecked" and "a
+   *  different condition was checked" are indistinguishable, and neither is
+   *  assertable. */
+  'identity_unresolved',
+]);
+export type ConstraintVerdictState = z.infer<typeof ConstraintVerdictStateSchema>;
+
+/**
+ * The persisted projection of the verdict — the two members any consumer needs,
+ * mirroring CEE's `PersistedClaimSafety` interface verbatim (member names,
+ * types and order).
+ *
+ * DELIBERATELY NOT DECLARED: the producer's in-memory `ConstraintVerdict` also
+ * carries `codes`, `constraints` and `leaderInfeasibility`. It does not persist
+ * them — those hold user labels and producer detail, and "a second copy of a
+ * label is a second thing to drift". Declaring them here would be contract for
+ * a producer that writes nothing into it.
+ *
+ * ALSO DELIBERATELY NOT ENFORCED: `may_name_leading_option` always equals the
+ * producer's frozen `MAY_NAME_LEADING_OPTION[state]` lookup, so this schema
+ * COULD cross-validate the two members. It does not. That table is CEE
+ * doctrine; copying it here would create a rule that must be changed in two
+ * repos simultaneously, and a skewed pin would reject verdicts a newer CEE
+ * legitimately emits (CLAUDE.md trap 12 — the hand-maintained mirror). The
+ * contract owns the SHAPE; the meaning stays with `deriveConstraintVerdict`.
+ */
+export const ConstraintVerdictSchema = z.object({
+  /** May a leading option be NAMED as the answer on this turn? */
+  may_name_leading_option: z.boolean(),
+  /** Which of the five answers the producer evidence selected. Carried
+   *  alongside the boolean for telemetry and triage. */
+  constraint_verdict_state: ConstraintVerdictStateSchema,
+}).strict();
+export type ConstraintVerdict = z.infer<typeof ConstraintVerdictSchema>;
+
 export const RunAnalysisResultSchema = z.object({
   scenario_id: z.string().uuid(),
   leading_option_id: z.string().nullable(),
@@ -34,6 +101,19 @@ export const RunAnalysisResultSchema = z.object({
    *  time). Read by the freshness derivation so analysis_ready.computed_at
    *  reflects when the analysis ran, not when this turn finalised. */
   computed_at: z.string().optional(),
+  // 0.25.0 — T1 claim safety. CEE-owned (NOT pass-through from PLoT) and
+  // written here alongside `graph_hash_at_run` / `computed_at`, so the
+  // handler-ownership invariant ("enrichment is byte-for-byte PLoT") stays
+  // intact — which is the whole reason the interim had to hide in `enrichment`
+  // behind a `__cee_` namespace in the first place.
+  //
+  // OPTIONAL, and it stays optional: every fact persisted before this release
+  // is unstamped, and "unknown" is a different claim from "verified feasible".
+  // The producer's reader fails CLOSED on absence for exactly that reason, so
+  // requiring the field here would reject history to no benefit.
+  /** Whether a leading option may be named as the answer, and on what
+   *  evidence. See {@link ConstraintVerdictSchema}. */
+  constraint_verdict: ConstraintVerdictSchema.optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;
 
