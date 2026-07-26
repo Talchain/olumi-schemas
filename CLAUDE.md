@@ -1,0 +1,319 @@
+# @talchain/schemas — contract-evolution rules
+
+The shared Zod contract for the Olumi estate. Every claim below was derived from
+this repo's bytes (and, where it concerns a consumer, from that repo's own
+`staging` tip) on **2026-07-26 at `c938c8f`**. Universal working practice lives
+in `~/.claude/CLAUDE.md`; the estate map lives in the workspace-root
+`CLAUDE.md`.
+
+**Read the gate scripts and `package.json` at the tip you are on. This file is a
+hand-maintained mirror and will drift — that is the estate's dominant defect
+class, and a file describing gates is not exempt from it.**
+
+---
+
+## ⚠ Three hazards that are specific to this repo
+
+**1. `main` IS the integration branch, and there is no `staging`.** Every other
+repo in the estate integrates on `staging` and has a stale `main`. This one is
+inverted: `git ls-remote --heads` shows no `staging` branch at all, and
+`contracts/repo-map.json` records `main` as this repo's `authoritative_ref`.
+Any habit imported from the other four repos ("push to staging by default") is
+wrong here.
+
+**2. Merging to `main` AUTO-PUBLISHES.** `.github/workflows/publish.yml` runs on
+every push to `main` and publishes to GitHub Packages, tags the release, and
+fires a propagation dispatch. There is no manual release step. See
+[Publish model](#publish-model) for exactly what gates it.
+
+**3. `main` is UNPROTECTED.** `gh api repos/Talchain/olumi-schemas/branches/main/protection`
+returns HTTP 404 "Branch not protected" (measured 2026-07-26). Nothing stops a
+direct push, and a direct push to `main` *is* a release — publish.yml's own
+lint/build/test steps run **after** the push, so they cannot prevent it, only
+report on it. **Work on a branch and open a PR.** The PR workflow is the only
+pre-merge gate that exists.
+
+---
+
+## The gate
+
+Derived from `.github/workflows/pr.yml` and `package.json` at `c938c8f`.
+
+```bash
+npm ci
+npm run check:adoption                     # S0 · contracts/adoption-manifest.json
+npm run check:populations                  # S0 · contracts/population-registry.json
+npm run check:compat                       # S0 · compat/seams/**
+npm run generate:contract-constants:check  # S0 · src/contracts/generated-constants.ts is current
+npm run build                              # tsc (emits dist/)
+npm test                                   # check:contracts && build && vitest run
+```
+
+**`npm test` alone reproduces the whole PR gate.** `test` is
+`npm run check:contracts && npm run build && vitest run`, and `check:contracts`
+is `check:adoption && check:populations && check:compat &&
+generate:contract-constants:check`. The pr.yml steps above are that same set
+unrolled, run first so a contract break is reported as itself rather than as a
+downstream type error. Run the steps individually anyway when you want the
+failure attributed to one gate.
+
+**Baseline at `c938c8f`: 33 test files, 1161 tests, green.** Record your own
+baseline before you touch anything; do not inherit this number.
+
+### What the typecheck does NOT cover
+
+`npm run lint` is `tsc --noEmit` and `npm run build` is `tsc` — **the same
+`tsconfig.json`**, so lint adds no coverage over build. There is no second
+tsconfig. Note also that **pr.yml does not run `lint` at all**; publish.yml and
+`prepublishOnly` do.
+
+The load-bearing fact is what the config *excludes*:
+
+```jsonc
+"include": ["src/**/*"],
+"exclude": ["node_modules", "dist", "tests", "fixtures"]
+```
+
+`npx tsc --noEmit --listFilesOnly` loads **41 files, every one under `src/`**.
+**No test file is typechecked by any gate in this repo.** `tests/`,
+`contract-tests/` and `fixtures/` are transpiled by vitest (esbuild) with types
+stripped, never checked. A type error you introduce in a test is invisible to
+CI and will only show up as a runtime failure if a test happens to exercise it.
+Type-check test edits by hand (`npx tsc --noEmit <file>` with the right flags,
+or by reasoning) — do not assume the gate saw them.
+
+---
+
+## S0 conventions (arch step 2)
+
+Landed in 0.24.0 (PR #20). Design of record:
+`CONTRACT-INTENT-FACTS-DESIGN-2026-07-26.md`. Four mechanisms, three checker
+scripts, one exported schema.
+
+### Adoption manifest — `contracts/adoption-manifest.json`
+
+One row per contract field subject to adoption tracking. Enforced by
+`scripts/check-adoption-manifest.mjs`.
+
+The four states, quoted from the manifest's own `states` block — **read them
+there, not here, and set the state the definitions license, never the state a
+lane asserted**:
+
+| state | definition |
+|---|---|
+| `declared` | the field exists in the contract; no verified producer and no verified consumer |
+| `produced_dark` | a producer emits it behind a flag/dark, with a producer test; no verified consumer |
+| `consumed_dark` | a consumer reads it behind a flag/dark, with a consumer test; no verified producer |
+| `enforced` | both sides verified by named tests; the field may be made required |
+
+**The test-KIND distinction is the load-bearing rule, and it is what separates
+this manifest from a checkbox:**
+
+- A **producer test** must FAIL if the producer stops emitting the field. *A
+  test asserting the field is OPTIONAL on the wire is not a producer test.*
+- A **consumer test** must FAIL if the consumer stops USING the value. *A test
+  asserting the field survives parsing is a transport test* — it passes just as
+  happily when the value is parsed and thrown away. Transport-only evidence
+  goes in `notes`, never in `producer_test` / `consumer_test`.
+
+`assistant_text` is in the manifest as the **positive control** and is
+deliberately NOT `enforced` despite overwhelming adoption, precisely because
+neither available test is the right kind. Hold your own rows to that bar.
+
+Other rules the checker enforces: `E_STATE_WITHOUT_TESTS` (enforced without
+both refs) · `E_UNKNOWN_REPO` (a repo key absent from `contracts/repo-map.json`)
+· `E_BAD_TEST_REF` (a ref not shaped `<repo>:<path>::<test name>`; the path may
+not contain whitespace) · `E_DEADLINE_PASSED` (the dead-man's switch — a row in
+a dark state may not outlive its `n_minus_1_removal_date`; enforced rows are
+exempt) · `E_SCHEMA` · `E_MANIFEST_SHA_STALE`.
+
+**⚠ CI does not verify that a referenced test file exists.** File-existence
+checking only runs when `OLUMI_ESTATE_ROOT` is set, and pr.yml does not set it —
+the checker prints `test-file existence: SKIPPED` and passes. So an `enforced`
+row can name tests that do not exist. **Verify the refs yourself at a pinned
+consumer sha** (`gh api repos/Talchain/<repo>/contents/<path>?ref=<sha>`) **and
+record that sha in the row's `notes`.** Do not mutate
+`repo-map.json`'s `authoritative_ref_head_at_seed` to do it — that field is a
+seed-time record, as its name says; per-row evidence belongs in the row.
+
+**After ANY manifest edit, regenerate in this order** (the constants generator
+*reads* `contracts/manifest.sha256`, so running it first bakes the stale sha):
+
+```bash
+node scripts/check-adoption-manifest.mjs --write-sha   # rewrites contracts/manifest.sha256
+npm run generate:contract-constants                    # rewrites src/contracts/generated-constants.ts
+```
+
+### Population registry — `contracts/population-registry.json`
+
+`scripts/check-population-registry.mjs`. Namespaced+versioned ids, closed
+`stage` enum, `parent_id` / `transform_id` integrity. The anti-mirror rule is
+`wire_labels`: the mapping from the label a producer actually puts on the wire
+to the registry id is asserted **total and injective against the pinned ISL
+artifact in both directions**, so the day ISL adds a third label this repo's CI
+fails. `not_yet_emitted.populations` is deliberately empty — an id enters the
+registry in the same change train as the producer that emits it.
+
+### Health manifest — `src/contracts/health-manifest.ts`
+
+The four fields every Olumi service exposes at the **top level** of its health
+response: `schema_write_version`, `schema_read_versions`, `schema_sha`,
+`contract_manifest_sha`. Plus `releaseLine()`, `parseHealthManifest()`,
+`compareHealthManifest()`, and the generated `SCHEMA_SHA` /
+`CONTRACT_MANIFEST_SHA` / `SCHEMA_PACKAGE_VERSION`.
+
+`@talchain/schemas` is 0.x, so **MINOR is the breaking axis**:
+`releaseLine('0.24.1') === '0.24'`. `compareHealthManifest(reader, writer)` is
+fatal only when the reader has not declared the writer's release line — that is
+reader-first deploy ordering, mechanised.
+
+### Two-sided compat gate — `compat/`
+
+`scripts/check-compat-gate.mjs`. Request and response directions are diffed
+**separately** because their break rules are opposite (full matrix in
+`compat/README.md`). Both pins must be immutable commit shas (`E_MOVING_PIN`
+rejects `main` / `staging` / `HEAD` / tags), artifacts are credential-scanned
+(`E_UNSANITIZED`), and an empty seam set fails (`E_NO_SEAMS`) rather than
+passing vacuously. One seam is wired today — `isl-response-v2`. Three more are
+named with their blockers at the bottom of `compat/README.md`; each is additive
+(drop a directory under `compat/seams/`, no runner change).
+
+### Negative fixtures are mandatory
+
+`tests/contracts/s0-gates.test.ts` proves every rule twice: the real checked-in
+artifact passes, AND a deliberately-broken fixture in
+`tests/contracts/negative/` fails **with its specific error code**. A coverage
+test asserts no fixture on disk is unexercised. **If you add a rule to any of
+the three checker scripts, add its negative fixture in the same change — a rule
+with no negative fixture is an unproven rule.** Mutation-check it: delete the
+rule and watch the suite go red, in a throwaway worktree **outside** this repo
+root.
+
+### Maximal-fixture ratchet
+
+`tests/fixtures/completeness.test.ts` enumerates every Zod schema exported from
+the three entry points and fails unless each has a registered maximal fixture in
+`src/fixtures/index.ts` or an explicit documented exclusion in
+`FIXTURE_COVERAGE_EXCLUSIONS`. `src/fixtures/maximality.ts` goes further and
+fails on optional fields never populated anywhere, empty collections and
+unexercised union branches — this is what catches *the dominant drift shape*,
+a new optional field on an EXISTING schema. Scalar vocabularies (enum/literal)
+are auto-exempt. **Adding an exported schema without a fixture or a reasoned
+exclusion fails CI here, before any consumer can silently drop the field.**
+
+### Per-service wiring instructions are NOT in this repo
+
+If you are wiring the health manifest into a service, the concrete recipe —
+which file, which handler, which keys, per service — exists only in **the body
+of PR #20** (<https://github.com/Talchain/olumi-schemas/pull/20>). The repo
+holds the pieces, not the recipe: `contracts/repo-map.json` declares the repo
+keys and each repo's authoritative ref, `compat/README.md` is the compat spec
+plus the named follow-up seams, and `src/contracts/health-manifest.ts` documents
+what the four fields mean and how they compare. The 0.24.0 CHANGELOG entry says
+so explicitly: *"Per-service wiring is not in this package — see the PR body."*
+
+---
+
+## Publish model
+
+`.github/workflows/publish.yml`, on push to `main`: install → `lint` → `build`
+→ `test` → **Check if version exists** → publish → tag → trigger propagation.
+
+**The version check is the release switch.** It runs
+`npm view @talchain/schemas@$PACKAGE_VERSION`; if the version already exists in
+the registry, the publish, the tag AND the propagation dispatch are **all
+skipped** and the job is green. So:
+
+- **Bump the version in `package.json` ⇒ a release happens on merge.**
+- **Leave it ⇒ nothing is published**, and `main` carries content the published
+  tarball of that version does not have. That is fine for repo-only files
+  (`CLAUDE.md`, `.github/**`) and dangerous for anything under `files`
+  (`dist`, `json-schema`, `contracts`) — two different byte-sets under one
+  version string is the exact failure `schema_sha` / `contract_manifest_sha`
+  exist to catch.
+
+Confirmed empirically: run `30008998214` (a docs-only merge, no bump) is
+**success** with publish/tag/propagation all `skipped`; run `30217037375`
+(the 0.25.0 release) publishes and tags successfully and then fails.
+
+### ⚠ `Trigger propagation` is a KNOWN standing red — and its model is obsolete
+
+The final step of publish.yml **has never once succeeded.** Across all 29
+publish runs (measured 2026-07-26 via `gh run view`), `Trigger propagation` is
+**18 × `failure`, 6 × `skipped`** (the no-bump merges) and 5 × absent (very
+early runs that never reached it). It fails because
+`secrets.OLUMI_SCHEMAS_PAT` was never created — the repo has **no Actions
+secrets at all** (`gh api …/actions/secrets` → `total_count: 0`). The publish
+and the tag succeed *before* it. Every real release is therefore marked
+`failure` while having fully succeeded — the broken-alarm class: a red everyone
+learns to ignore is a red nobody will check. It now carries
+`continue-on-error: true` plus an honest comment naming the facts (ROADMAP
+1.216, minimal arm).
+
+Separately, and more importantly: **`propagate.yml`'s model is wrong for every
+consumer.** It runs `npm install @talchain/schemas@<version> --save-exact`, a
+registry-install model. **All three consumers vendor via `file:` tarballs**
+(measured 2026-07-26 at each repo's `staging` tip: UI `file:./vendor/talchain-schemas-0.22.0.tgz`,
+PLoT the same 0.22.0, CEE `file:./vendor/talchain-schemas-0.25.0.tgz`). Running
+the current matrix against CEE would **rewrite the `file:` pin** and trip CEE's
+tarball-sha guard. **Never run propagation as written.** Full rework is tracked
+as ROADMAP 1.216.
+
+### The adoption path is RE-VENDORING, not propagation
+
+Each consumer carries `vendor/README.md` with its own step-by-step procedure
+(`npm pack` the published version, drop the tarball in `vendor/`, rewrite the
+`.sha256` manifest, update the `file:` reference, reinstall, delete the old
+tarball, update that README). Follow the consumer's README, in the consumer's
+repo, as a separate PR in that repo's lane. **This repo publishes; it never
+edits a consumer.** And note the corollary: **a consumer's vendored tarball is
+sha256-pinned, so you must never hand-edit a file inside it** — a
+`contracts/adoption-manifest.json` correction is a PR *here* plus a re-vendor
+*there*, never an edit in place.
+
+---
+
+## Version discipline
+
+Semver policy table lives in `README.md`. On top of it:
+
+- **0.x ⇒ MINOR is the breaking axis** (see `releaseLine()`). A minor bump is
+  what consumers treat as a compatibility boundary; patch is same-line.
+- **Any version bump changes `SCHEMA_SHA`** — the generator hashes
+  `<name>@<version>` before the json-schema bytes. So every bump must be
+  followed by `npm run generate:contract-constants`, or
+  `generate:contract-constants:check` fails the PR gate.
+- Allocated so far, and it matters because a lane was told the wrong number
+  twice: **0.24.0 = S0 scaffolding**, **0.25.0 = `RunAnalysisResult.constraint_verdict`**.
+  The 0.24.0 CHANGELOG told the S1 lane its generated types would be `0.25.0`;
+  0.25.0 was then taken, so **S1's types land as `0.26.0`**. Those notes are
+  expectations recorded in a changelog, not reservations any tooling enforces —
+  **re-read `package.json` at the tip you are on** rather than trusting either
+  note, including this one.
+- Every release gets a CHANGELOG entry under its own heading, with the
+  additive/breaking analysis stated explicitly.
+
+## Adding or changing a field
+
+1. Edit or add the schema in `src/`. Match the **namespace's** unknown-key
+   policy — see the README's "Unknown-key policy"; it is not uniform, and
+   `/orchestrator` is 100% `.strict()`.
+2. Export it from the namespace `index.ts` and, if it is a new shape, register a
+   maximal fixture (or a documented exclusion) in `src/fixtures/index.ts`.
+3. Add tests in `tests/`. Remember they are **not typechecked**.
+4. Add an `contracts/adoption-manifest.json` row if the field is subject to
+   adoption tracking — with the state its evidence licenses today, which for a
+   brand-new field is `declared` or `produced_dark`, never `enforced`.
+5. Regenerate: `--write-sha`, then `npm run generate:contract-constants`.
+6. Bump `package.json` per the semver policy and write the CHANGELOG entry.
+7. `npm test` green, PR, and let the orchestrator merge. Merging publishes.
+8. Adoption in each consumer is a **re-vendor PR in that consumer's repo**.
+
+## Cross-boundary discipline
+
+The estate's dominant risk is schema-version skew: each repo pins its own
+version and a consumer on an older pin **silently drops** fields it does not
+know. As of 2026-07-26 the live pins are **UI 0.22.0, PLoT 0.22.0, CEE 0.25.0** —
+three different lines at once. Before changing any field that crosses a
+boundary, trace producer → validator → consumer, open the schema at each hop,
+and check each repo's `package.json` pin. Never assume parity.

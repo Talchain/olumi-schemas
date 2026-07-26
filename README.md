@@ -17,6 +17,15 @@ Then install:
 npm install @talchain/schemas
 ```
 
+**⚠ That is not how the Olumi services consume this package today.** All three
+(`DecisionGuideAI`, `plot-lite-service`, `olumi-assistants-service`) pin a
+checked-in tarball — `"@talchain/schemas": "file:./vendor/talchain-schemas-<v>.tgz"` —
+each with a `.tgz.sha256` manifest beside it (CEE and the UI additionally
+enforce that hash with a checked-in guard script). Upgrading one is a
+**re-vendor PR in that repo**, following its own `vendor/README.md`; a registry
+`npm install --save-exact` would rewrite the `file:` pin and, on CEE, trip the
+guard. See [`CLAUDE.md`](./CLAUDE.md) § Publish model.
+
 ## Usage
 
 ```typescript
@@ -96,23 +105,73 @@ Array indices are zero-based. Paths refer to the canonical graph structure.
 | Bug fixes, documentation, internal refactors | **Patch** | Fixing regex pattern |
 | Field removal, type changes, stricter validation | **Major** | Removing `.passthrough()`, renaming fields |
 
-All object schemas use `.passthrough()` for forward compatibility. Consumers should handle unknown fields gracefully.
+Note `@talchain/schemas` is **0.x**, so per semver-caret the breaking axis is the
+**minor**, not the major — `releaseLine('0.24.1') === '0.24'`
+(`src/contracts/health-manifest.ts`). Compatibility between two services is
+judged on release lines.
+
+## Unknown-key policy
+
+**This is not uniform, and assuming it is has cost time.** Each namespace makes
+the opposite trade-off, and a nested schema often differs from its parent. The
+counts below were derived at `0.25.x` by introspecting `_def.unknownKeys` on
+every object schema exported from each entry point — read the code, not this
+table, when it matters.
+
+| Entry point | Exported object schemas | Policy |
+|---|---|---|
+| `@talchain/schemas/orchestrator` | 40 strict · 0 passthrough · 0 strip | **100% `.strict()`.** |
+| `@talchain/schemas/boundary` | 45 strict · 27 passthrough · 0 strip | **Split by role** — see below. |
+| `@talchain/schemas` (root) | 9 strict · 17 passthrough · 9 strip | Mostly tolerant; the graph/analysis/warning wire types are `.passthrough()`. |
+
+- **`/orchestrator` is `.strict()` everywhere.** These are CEE-internal shapes —
+  handler args, handler results, the `HandlerFact` union, session rows — and
+  they describe the JSONB persisted in `handler_facts.payload`. Strictness is
+  the point: an unknown key on a persisted fact is a bug, not forward
+  compatibility. **Consequence: you cannot add a field to a handler result
+  without a package release**, and an old reader will *reject* a fact written by
+  a newer writer, which makes rolling deploys reader-first.
+- **`/boundary` splits by who owns the bytes.** Producer-owned envelopes and
+  block types are `.strict()` — `OlumiResponseSchema`, every `BlockSchema`
+  member, the turn payloads, `V2RunRequestSchema` / `V2RunResponseSchema`. The
+  PLoT enrichment family (`AnalysisEnrichmentSchema` plus its 19 exported
+  `Enrichment*` members) and the graph types (`GraphV3Schema`, `NodeV3Schema`, `EdgeV3Schema`)
+  are `.passthrough()`. A `.strict()` parent with a `.passthrough()` child is
+  normal here and deliberate.
+- **Root is mostly `.passthrough()`** for forward compatibility, with the
+  coaching / causal-claim / health-manifest families `.strict()`.
+
+Where a schema *is* `.passthrough()`, consumers should handle unknown fields
+gracefully. Where it is `.strict()`, they must not receive them at all.
 
 ## Adding new schemas
 
 1. Create or edit the relevant file in `src/`
-2. Define Zod schema with `.passthrough()` on objects
+2. Define the Zod schema, matching the **namespace's** unknown-key policy above
+   — `.strict()` under `/orchestrator`, `.strict()` or `.passthrough()` under
+   `/boundary` per the split described there
 3. Export inferred type via `z.infer<typeof Schema>`
-4. Add exports to `src/index.ts`
-5. Add tests in `tests/schemas.test.ts`
-6. Bump version in `package.json` per semver policy
-7. Push to `main` — CI publishes and opens PRs in consuming repos
+4. Add exports to the namespace's `index.ts`
+5. Register a maximal fixture in `src/fixtures/index.ts` (or a documented
+   exclusion) — the completeness ratchet fails otherwise
+6. Add tests in `tests/`
+7. Bump version in `package.json` per semver policy, add a CHANGELOG entry, and
+   run `npm run generate:contract-constants` (a version bump changes `SCHEMA_SHA`)
+8. Open a PR. Merging to `main` publishes; **adoption in each consumer is a
+   separate re-vendor PR in that consumer's repo** — all three consumers pin a
+   checked-in `file:` tarball, not a registry version, so nothing here updates
+   them automatically. See `CLAUDE.md` § Publish model.
 
 ## Development
 
 ```bash
-npm install       # Install dependencies
-npm run lint      # Type check
-npm test          # Run tests
-npm run build     # Compile to dist/
+npm ci            # Install dependencies
+npm test          # THE GATE — check:contracts && build && vitest run
+npm run build     # Compile to dist/ (tsc)
+npm run lint      # tsc --noEmit; same tsconfig as build, so no extra coverage
 ```
+
+`npm test` is a superset of what `.github/workflows/pr.yml` runs. `tsconfig.json`
+excludes `tests` and `fixtures`, so **no test file is typechecked by any gate**.
+Contract-evolution rules, the S0 conventions, the publish model and this repo's
+hazards are in [`CLAUDE.md`](./CLAUDE.md).

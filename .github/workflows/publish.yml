@@ -64,8 +64,46 @@ jobs:
           git tag "v${{ steps.check_version.outputs.version }}"
           git push origin "v${{ steps.check_version.outputs.version }}"
 
+      # ─────────────────────────────────────────────────────────────────────
+      # KNOWN STANDING RED — marked continue-on-error DELIBERATELY, and the
+      # reason is written down here rather than left for the next reader to
+      # rediscover. ROADMAP 1.216 (minimal arm). Three facts:
+      #
+      # 1. THIS STEP HAS NEVER SUCCEEDED. Measured 2026-07-26 across all 29
+      #    runs of this workflow: 18 x failure, 6 x skipped (the no-bump
+      #    merges), 5 x absent (early runs that never reached it). It fails
+      #    because `secrets.OLUMI_SCHEMAS_PAT` was never created — this repo
+      #    has no Actions secrets at all (actions/secrets -> total_count: 0).
+      #
+      # 2. THE PUBLISH ITSELF SUCCEEDS. Every step above this one — lint,
+      #    build, test, publish to GitHub Packages, create the release tag —
+      #    completes, and only then does this step fail the job. So every real
+      #    release has been reported as `failure` while having fully
+      #    succeeded. That is the broken-alarm class: a red everyone learns to
+      #    ignore is the red nobody will check. `continue-on-error` makes the
+      #    job's colour tell the truth about the release; it does NOT hide a
+      #    genuine failure, because there is nothing here that has ever worked.
+      #
+      # 3. THE MODEL BELOW IS OBSOLETE AND DANGEROUS FOR TODAY'S CONSUMERS.
+      #    propagate.yml (the workflow this dispatch triggers) runs
+      #    `npm install @talchain/schemas@<version> --save-exact` — a registry
+      #    -install model. All three consumers now vendor via `file:` tarballs
+      #    instead (measured at each repo's staging tip, 2026-07-26: UI
+      #    file:./vendor/talchain-schemas-0.22.0.tgz, PLoT the same 0.22.0,
+      #    CEE file:./vendor/talchain-schemas-0.25.0.tgz). Running the current
+      #    matrix against CEE would REWRITE the `file:` pin and trip CEE's
+      #    tarball-sha guard. DO NOT run propagation as written. The adoption
+      #    path today is a re-vendor PR in the consumer's own repo, per that
+      #    repo's vendor/README.md.
+      #
+      # Fixing this properly = either create OLUMI_SCHEMAS_PAT and rework
+      # propagate.yml for the vendoring model (a dispatch that opens a
+      # RE-VENDOR PR, not an npm install), or delete both. Tracked as ROADMAP
+      # 1.216; deliberately NOT attempted here.
+      # ─────────────────────────────────────────────────────────────────────
       - name: Trigger propagation
         if: steps.check_version.outputs.exists == 'false'
+        continue-on-error: true
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.OLUMI_SCHEMAS_PAT }}

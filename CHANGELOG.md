@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.1] — 2026-07-26
+
+**Hygiene and honesty. No schema, type, enum, or wire-field change of any kind** —
+`git diff --stat` touches no `src/**` file except the GENERATED
+`src/contracts/generated-constants.ts`. Maximal-fixture registry unchanged at
+**114**. ROADMAP 1.221 + the minimal arm of 1.216.
+
+**WHY A VERSION BUMP AT ALL, when nothing in the contract moved.**
+`contracts/adoption-manifest.json` is inside `files`, so it ships in the
+tarball, and its sha256 is exported as `CONTRACT_MANIFEST_SHA`. Landing the
+manifest correction without a bump would leave **two different byte-sets behind
+one version string** — the precise ambiguity `schema_sha` /
+`contract_manifest_sha` exist to detect (CEE's vendored `0.25.0` tarball is
+sha256-pinned at `5d7f5679…`; a re-pack from `main` would no longer match it).
+Per the README semver policy, contract metadata and documentation with no
+schema change is a **patch**.
+
+### Changed — `constraint_verdict` adoption row: `declared` → `enforced`
+
+CEE PR **#712** (merged + deployed, `cee@staging` `820f3e83b`) writes
+`result.constraint_verdict` from the single stamp site in the `run_analysis`
+handler and reads it through `mayNameLeadingOptionForFact` →
+`readMayNameLeadingOptionFromResult`, retiring the interim
+`enrichment.__cee_claim_safety` stamp. The row now carries a named producer
+test and a named consumer test.
+
+**The first row in this manifest to reach `enforced`**, and it was held to the
+bar that keeps `assistant_text` at `produced_dark`: both references are the
+right KIND of test, not transport pins. The consumer reference is deliberately
+the **positive control** (`evaluated_feasible` keeps the leader id, the
+enrichment blobs and the brief on the wire) — the reader fails CLOSED, so the
+withholding cases cannot discriminate and only the permitting case can.
+
+⚠ The referenced test files were verified by hand at `820f3e83b`; **CI does not
+check this** (pr.yml does not set `OLUMI_ESTATE_ROOT`, so the checker reports
+file existence as `SKIPPED`). Recorded in the row's `notes`.
+
+### Added — `CLAUDE.md`
+
+The workspace-root `CLAUDE.md` has pointed at `olumi-schemas/CLAUDE.md` as the
+home of the contract-evolution rules for months; the file did not exist, and
+the 0.25.0 lane had to re-derive the gate from `package.json` + `pr.yml`. It now
+exists, with every claim derived from the repo bytes: the real gate command
+sequence, what the typecheck **excludes**, the S0 conventions (adoption-manifest
+states and the producer/consumer test-KIND rule, population registry, health
+manifest, compat gate, negative-fixture and maximal-fixture requirements), the
+publish model, version discipline, and this repo's three hazards.
+
+### Fixed — stale README claims
+
+- **"All object schemas use `.passthrough()`" was false**, and most wrong
+  exactly where it mattered most. Replaced with a per-namespace
+  **Unknown-key policy** section derived by introspecting `_def.unknownKeys` on
+  every object schema reachable from each entry point: `/orchestrator` is
+  **100% `.strict()`** (40 exported object schemas, zero passthrough);
+  `/boundary` splits 45 strict / 27 passthrough by role (producer-owned
+  envelopes and block types strict, the PLoT enrichment family and the graph
+  types passthrough); root is 17 passthrough / 9 strict / 9 strip.
+- **"Push to `main` — CI publishes and opens PRs in consuming repos" was
+  false.** It has never opened a PR in a consuming repo — see below. Replaced
+  with the re-vendor path.
+- The install instructions now say what the three services actually do: pin a
+  checked-in `file:` tarball, not a registry version.
+- Development section names `npm test` as the gate and states that
+  `tsconfig.json` excludes `tests` and `fixtures`, so **no test file is
+  typechecked**.
+
+### Fixed — `Trigger propagation` is a standing red, now labelled as one
+
+`continue-on-error: true` on the `Trigger propagation` step of `publish.yml`,
+with a comment block naming the facts, plus an obsolescence header on
+`propagate.yml`. Measured across **all 29 runs** of the publish workflow: the
+step is **18 × `failure`, 6 × `skipped`, 5 × absent — it has never once
+succeeded**, because `secrets.OLUMI_SCHEMAS_PAT` was never created (the repo
+has **no Actions secrets at all**). Lint, build, test, publish and tag all
+succeed *before* it, so every real release has been reported as `failure` while
+having fully succeeded — the broken-alarm class.
+
+It is also **obsolete**: `propagate.yml` runs
+`npm install @talchain/schemas@<v> --save-exact`, but all three consumers vendor
+`file:` tarballs (UI 0.22.0, PLoT 0.22.0, CEE 0.25.0 at their staging tips), so
+running it would rewrite the `file:` pin and trip CEE's tarball-sha guard.
+**Rework is NOT attempted here** — tracked as ROADMAP 1.216.
+
 ## [0.25.0] — 2026-07-26
 
 **Arch step 2 — the first CONTRACT FOR A FACT, and the retirement of a live
@@ -96,6 +180,10 @@ historic rows or migrate them is a CEE decision, deliberately not taken here.
   claim. `contracts/manifest.sha256` and `src/contracts/generated-constants.ts`
   regenerated (`CONTRACT_MANIFEST_SHA`, plus `SCHEMA_SHA` /
   `SCHEMA_PACKAGE_VERSION` for the version bump).
+  **⚠ SUPERSEDED — that state was true at this release and is not current.** CEE
+  #712 adopted the field on 2026-07-26 and **0.25.1 moved the row to
+  `enforced`**. This bullet is left as the historical record; read
+  `contracts/adoption-manifest.json` at the tip for the live state.
 
 ### Tests
 
