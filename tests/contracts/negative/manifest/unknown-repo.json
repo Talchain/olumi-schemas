@@ -1,0 +1,16 @@
+{
+  "manifest_version": 1,
+  "fields": [
+    {
+      "field": "ok_field",
+      "producer": "cee",
+      "consumer": "ui",
+      "producer_test": "nosuchrepo:tests/a.test.ts::t",
+      "consumer_test": "ui:src/v5/__tests__/responseParser.declaredKeysReachStrict.spec.ts::a > b",
+      "deployment_flag": null,
+      "state": "produced_dark",
+      "n_minus_1_removal_date": "2099-01-01"
+    }
+  ],
+  "$comment": "NEGATIVE FIXTURE \u2014 must fail E_UNKNOWN_REPO. A test reference into a repo nobody declared cannot be checked by anyone."
+}

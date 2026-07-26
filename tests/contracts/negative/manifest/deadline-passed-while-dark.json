@@ -1,0 +1,16 @@
+{
+  "manifest_version": 1,
+  "fields": [
+    {
+      "field": "ok_field",
+      "producer": "cee",
+      "consumer": "ui",
+      "producer_test": "cee:tests/contract/cee-egress-wire-surface-pin.test.ts::x > y",
+      "consumer_test": "ui:src/v5/__tests__/responseParser.declaredKeysReachStrict.spec.ts::a > b",
+      "deployment_flag": null,
+      "state": "produced_dark",
+      "n_minus_1_removal_date": "2020-01-01"
+    }
+  ],
+  "$comment": "NEGATIVE FIXTURE \u2014 must fail E_DEADLINE_PASSED. The dead-man's switch: a dark field that outlived its own removal date."
+}

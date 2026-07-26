@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] — 2026-07-26
+
+**Arch step 2, sub-step S0 — the enforcement scaffolding, shipped BEFORE the fields
+it governs.** Strictly additive: one new exported schema (`HealthManifestSchema`),
+three generated constants, no field removed, no enum member removed, no required
+field added to an existing object. Maximal-fixture registry **113 → 114**
+(`root/HealthManifestSchema`).
+
+**⚠ VERSION-NUMBER NOTE FOR THE S1 LANE.** The design's adoption order says S1
+"publishes generated 0.24 types". S0 has taken `0.24.0`, so S1's types land as
+`0.25.0`. Nothing else about the ordering changes.
+
+### Added
+
+- **Adoption manifest** — `contracts/adoption-manifest.json` + `contracts/repo-map.json`,
+  enforced by `scripts/check-adoption-manifest.mjs` (`npm run check:adoption`).
+  One row per contract field subject to adoption tracking. Fails on: `enforced`
+  without both test references; a test reference into an undeclared repo; a
+  malformed reference; a removal date that has passed while the row is still dark;
+  a stale `contracts/manifest.sha256`.
+  Seeded with the estate's **already-failed** fields in their measured state —
+  `framing_question`, `framing_quality` and `decision_classification` are all
+  `declared` with **no producer**, verified 2026-07-26 against `cee@staging`.
+- **Population registry** — `contracts/population-registry.json`, enforced by
+  `scripts/check-population-registry.mjs` (`npm run check:populations`). Seeded
+  from what ISL actually ships at build `7d144c7`, not from the design's imagined
+  shape: ISL emits a closed two-value label enum (`model_only` / `noise_inflated`),
+  so each registry entry carries a `wire_labels` mapping that CI checks against the
+  pinned ISL artifact **in both directions**. A registry that drifts from its
+  producer fails here.
+- **Health manifest** — `HealthManifestSchema` / `HealthManifest`,
+  `HEALTH_MANIFEST_FIELDS`, `releaseLine()`, `parseHealthManifest()`,
+  `compareHealthManifest()`, plus generated `SCHEMA_SHA`, `CONTRACT_MANIFEST_SHA`
+  and `SCHEMA_PACKAGE_VERSION`. The four fields every service exposes on its health
+  endpoint. Per-service wiring is not in this package — see the PR body.
+- **Two-sided compat gate** — `compat/README.md` (spec) + `scripts/check-compat-gate.mjs`
+  (`npm run check:compat`), wired end-to-end over one real seam (`isl-response-v2`),
+  diffing **request and response directions separately** because their break rules
+  are opposite. Rejects pins that are not immutable commit shas, and unsanitized
+  artifacts. Three further seams named as follow-up in `compat/README.md`.
+- **RED-first proof** — `tests/contracts/s0-gates.test.ts` (35 tests): every rule has
+  a negative fixture that must fail with its specific error code, plus positive
+  controls so the checkers cannot pass by rejecting everything.
+
+### Changed
+
+- `npm test` and `prepublishOnly` now run `npm run check:contracts` first.
+- PR workflow runs the four S0 gates before build/test.
+
 ## [0.23.0] — 2026-07-23
 
 The A2 guest-template-train gating batch (ROADMAP 1.188). **Strictly additive:**

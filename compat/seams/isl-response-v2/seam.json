@@ -1,0 +1,40 @@
+{
+  "$comment": [
+    "Two-sided compat gate — seam definition (arch step 2, S0).",
+    "See compat/README.md for the spec this file instantiates.",
+    "",
+    "END-TO-END PROOF: this seam is seeded with a REAL, already-merged ISL change",
+    "replayed through the gate — baseline is the openapi.json at the merge-base of",
+    "Talchain/Inference-Service-Layer#114, candidate is the openapi.json live at",
+    "build 7d144c7 (ISL staging HEAD = the deployed sha, verified against",
+    "https://isl-staging.onrender.com/health on 2026-07-26).",
+    "The next lane repoints `baseline` at the then-current live pin and `candidate`",
+    "at its own PR build. Nothing about the gate changes."
+  ],
+  "seam_id": "isl-response-v2",
+  "description": "CEE/PLoT -> ISL robustness v2 compute seam.",
+  "writer": "isl",
+  "readers": ["plot", "cee"],
+  "operations": [
+    {
+      "path": "/api/v1/robustness/analyze/v2",
+      "method": "post",
+      "request_schema": "RobustnessRequestV2",
+      "response_schema": "ISLResponseV2"
+    }
+  ],
+  "baseline": {
+    "role": "what deployed readers/writers are currently pinned to",
+    "artifact": "baseline/openapi.pinned.json",
+    "pinned_ref": "3aea011c88ef25461c7ab99bba8b24964c14e943",
+    "pinned_ref_kind": "commit",
+    "provenance": "merge-base of Talchain/Inference-Service-Layer#114, fetched via GitHub contents API"
+  },
+  "candidate": {
+    "role": "the build proposed for deployment",
+    "artifact": "candidate/openapi.pinned.json",
+    "pinned_ref": "7d144c7fb24e42fc3b712a3d25eb637cb76116f6",
+    "pinned_ref_kind": "commit",
+    "provenance": "Talchain/Inference-Service-Layer staging HEAD; served live at https://isl-staging.onrender.com/openapi.json, /health reports build_full=7d144c7fb24e42fc3b712a3d25eb637cb76116f6"
+  }
+}

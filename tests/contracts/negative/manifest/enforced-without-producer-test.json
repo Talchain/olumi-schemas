@@ -1,0 +1,16 @@
+{
+  "manifest_version": 1,
+  "fields": [
+    {
+      "field": "ok_field",
+      "producer": "cee",
+      "consumer": "ui",
+      "producer_test": null,
+      "consumer_test": "ui:src/v5/__tests__/responseParser.declaredKeysReachStrict.spec.ts::a > b",
+      "deployment_flag": null,
+      "state": "enforced",
+      "n_minus_1_removal_date": "2099-01-01"
+    }
+  ],
+  "$comment": "NEGATIVE FIXTURE \u2014 must fail E_STATE_WITHOUT_TESTS. A field declared enforced with no producer test is the exact hole that let three meaning fields ship unproduced."
+}

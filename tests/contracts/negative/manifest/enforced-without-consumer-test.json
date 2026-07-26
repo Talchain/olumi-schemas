@@ -1,0 +1,16 @@
+{
+  "manifest_version": 1,
+  "fields": [
+    {
+      "field": "ok_field",
+      "producer": "cee",
+      "consumer": "ui",
+      "producer_test": "cee:tests/contract/cee-egress-wire-surface-pin.test.ts::x > y",
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "enforced",
+      "n_minus_1_removal_date": "2099-01-01"
+    }
+  ],
+  "$comment": "NEGATIVE FIXTURE \u2014 must fail E_STATE_WITHOUT_TESTS (consumer side)."
+}

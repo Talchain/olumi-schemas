@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { HealthManifestSchema } from '../contracts/health-manifest.js';
+import type { HealthManifest } from '../contracts/health-manifest.js';
 
 // ============================================================================
 // @talchain/schemas/fixtures — maximal-fixture contract library (W2E-1).
@@ -1702,6 +1704,18 @@ export const maximalOptimiseResponse = deepFreeze({
 // NOTE: shallow-frozen only — deep-freezing here would freeze the Zod schema
 // objects themselves (breaking Zod's internal `_cached`). Every fixture value
 // is already deep-frozen at its definition site above.
+// --- health manifest (0.24.0 — arch step 2, S0) -----------------------------
+// The four fields every service must expose on its health endpoint. Every field
+// is required, so the maximal fixture is simply a fully-populated manifest.
+// SHAs are syntactically valid digests, not the real ones — a fixture must never
+// be mistaken for a live attestation.
+export const maximalHealthManifest: HealthManifest = {
+  schema_write_version: '0.24.0',
+  schema_read_versions: ['0.23.0', '0.24.0'],
+  schema_sha: 'a'.repeat(64),
+  contract_manifest_sha: 'b'.repeat(64),
+};
+
 export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   // --- graph -----------------------------------------------------------------
   { family: 'root/ObservedStateSchema', schema: ObservedStateSchema, fixture: maximalObservedState },
@@ -2051,6 +2065,8 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalDecisionRecordOutcome,
   },
   { family: 'boundary/DecisionRecordSchema', schema: DecisionRecordSchema, fixture: maximalDecisionRecord },
+  // --- health manifest (0.24.0 — arch step 2, S0) ----------------------------
+  { family: 'root/HealthManifestSchema', schema: HealthManifestSchema, fixture: maximalHealthManifest },
 ]);
 
 // ----------------------------------------------------------------------------

@@ -141,7 +141,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   (ROADMAP 1.181) — boundary/SequentialAnalysisResponseSchema,
     //   boundary/CounterfactualResponseSchema, boundary/OptimiseResponseSchema,
     //   boundary/OptimiseUtilitySchema.
-    expect(MAXIMAL_FIXTURES.length).toBe(113);
+    // 0.24.0: 113 -> 114 (+1): arch step 2 S0 — root/HealthManifestSchema, the
+    //   four contract-identity fields every service exposes on its health endpoint.
+    expect(MAXIMAL_FIXTURES.length).toBe(114);
   });
 
   it('family keys are unique', () => {
