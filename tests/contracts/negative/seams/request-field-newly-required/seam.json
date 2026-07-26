@@ -1,0 +1,26 @@
+{
+  "$comment": "NEGATIVE FIXTURE \u2014 must fail E_REQUEST_FIELD_NEWLY_REQUIRED. THE OTHER DIRECTION: a response-only gate would call this change safe. It is not \u2014 every existing writer is now rejected.",
+  "seam_id": "request-field-newly-required",
+  "writer": "isl",
+  "readers": [
+    "cee"
+  ],
+  "operations": [
+    {
+      "path": "/x",
+      "method": "post",
+      "request_schema": "Req",
+      "response_schema": "Resp"
+    }
+  ],
+  "baseline": {
+    "artifact": "baseline/openapi.json",
+    "pinned_ref": "1111111111111111111111111111111111111111",
+    "pinned_ref_kind": "commit"
+  },
+  "candidate": {
+    "artifact": "candidate/openapi.json",
+    "pinned_ref": "2222222222222222222222222222222222222222",
+    "pinned_ref_kind": "commit"
+  }
+}

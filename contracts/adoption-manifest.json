@@ -1,0 +1,161 @@
+{
+  "$comment": [
+    "ADOPTION MANIFEST (arch step 2, S0) — CONTRACT-INTENT-FACTS-DESIGN-2026-07-26 §'The adoption rule'.",
+    "",
+    "THE RULE: no field ships without, in the same change train, a named producer with a",
+    "producer-verified test, a named consumer with a consumer-verified test, or an explicit",
+    "dark-state entry carrying a removal date.",
+    "",
+    "WHY: this estate already shipped three meaning fields with no producer at all. Nothing",
+    "failed, so nobody noticed across two minor versions. The rows below record that failure",
+    "as measured fact, not as a plan. Enforced by scripts/check-adoption-manifest.mjs.",
+    "",
+    "WHAT COUNTS AS A PRODUCER TEST: a test that FAILS if the producer stops emitting the",
+    "field. A test asserting the field is OPTIONAL on the wire is not a producer test.",
+    "WHAT COUNTS AS A CONSUMER TEST: a test that FAILS if the consumer stops USING the value.",
+    "A test asserting the field survives parsing is a transport test, not a consumer test —",
+    "it passes just as happily when the value is parsed and then thrown away. Transport-only",
+    "evidence goes in `notes`, never in `producer_test`/`consumer_test`. Conflating the two",
+    "is how a field reaches `enforced` while still being decorative.",
+    "",
+    "EVIDENCE BASIS: counted 2026-07-26 against each repo's authoritative_ref in repo-map.json",
+    "(staging for the four services, main for schemas), NOT against main. Positive control:",
+    "`assistant_text` = 543 files / 3815 lines in CEE staging, 117 files / 533 lines in UI",
+    "staging, so the counting method demonstrably finds producers when they exist."
+  ],
+  "manifest_version": 1,
+  "states": {
+    "declared": "the field exists in the contract; no verified producer and no verified consumer",
+    "produced_dark": "a producer emits it behind a flag/dark, with a producer test; no verified consumer",
+    "consumed_dark": "a consumer reads it behind a flag/dark, with a consumer test; no verified producer",
+    "enforced": "both sides verified by named tests; the field may be made required"
+  },
+  "fields": [
+    {
+      "field": "framing_question",
+      "declared_in": "schemas:src/boundary/olumi-response.ts::OlumiResponseSchema (0.19.0)",
+      "producer": null,
+      "consumer": "ui — DecisionGuideAI DecisionOverviewCard (currently DERIVES instead)",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-09-30",
+      "notes": [
+        "MEASURED 2026-07-26, cee@staging 1c078f09a: ZERO producer sites. Every CEE hit is",
+        "  tests/contract/cee-egress-wire-surface-pin.test.ts:95,116, which asserts the field is",
+        "  OPTIONAL — a test that passes precisely because nothing emits it.",
+        "UI still derives: src/components/results/decision-overview/DecisionOverviewCard.tsx:127",
+        "  and :142 both read 'Remove when CEE provides an explicit framing_question field.'",
+        "  Same debt row as UI-SEM-078 in DecisionGuideAI CLAUDE.md:245.",
+        "TRANSPORT-ONLY evidence (NOT a consumer test): ui:src/v5/__tests__/responseParser.declaredKeysReachStrict.spec.ts",
+        "  proves the key survives strict parsing. It would pass unchanged if the UI parsed the",
+        "  value and dropped it on the floor, which is what happens today."
+      ]
+    },
+    {
+      "field": "decision_classification",
+      "declared_in": "schemas:src/boundary/olumi-response.ts::OlumiResponseSchema (0.19.0)",
+      "producer": null,
+      "consumer": "ui — DecisionGuideAI DecisionOverviewCard classification pills (currently FAIL CLOSED to 'not set')",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-09-30",
+      "notes": [
+        "MEASURED 2026-07-26, cee@staging 1c078f09a: ZERO producer sites. Only CEE hit is the",
+        "  optionality pin at tests/contract/cee-egress-wire-surface-pin.test.ts:87,117.",
+        "UI debt: DecisionOverviewCard.tsx:324 and CLAUDE.md:244 (UI-SEM-077) —",
+        "  'Remove when CEE provides decision_classification {stakes, reversibility, horizon, risk}'.",
+        "Honest current behaviour: only the horizon pill is populated (from the decision node's",
+        "  brief timeframe); stakes/reversibility/risk render an explicit 'not set'. Values are",
+        "  never fabricated, so this is a gap, not a lie — but it is still a gap with no owner."
+      ]
+    },
+    {
+      "field": "framing_quality",
+      "declared_in": "schemas:src/boundary/olumi-response.ts::OlumiResponseSchema (0.20.0), enum FramingQuality",
+      "producer": null,
+      "consumer": "ui — DecisionGuideAI brief-quality bar (currently DERIVES)",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-09-30",
+      "notes": [
+        "MEASURED 2026-07-26, cee@staging 1c078f09a: ZERO producer sites for the CONTRACT field.",
+        "NAME COLLISION — two unrelated fields share this name and must not be conflated:",
+        "  (a) THIS contract field: enum FramingQuality on OlumiResponseSchema. No producer.",
+        "  (b) a NUMERIC framing_quality produced by PLoT at src/coaching/readiness-signals.ts,",
+        "      nested at m1_coaching.readiness_signals.dimensions.framing_quality, forwarded by",
+        "      CEE as an opaque blob and read by the UI at",
+        "      src/components/results/useResultsSectionData.ts:1818 as `raw.clarity ?? raw.framing_quality`.",
+        "  Grepping the bare name finds (b) and reads as adoption of (a). It is not. Row for (b)",
+        "  is tracked separately below under its full path.",
+        "UI debt for (a): DecisionOverviewCard.tsx:286 — 'Remove when CEE/PLoT provide a producer",
+        "  framing_quality signal'; CLAUDE.md:246 (UI-SEM-079). The v6 'conflict'/'unverified'",
+        "  states render ONLY via fixture stateOverride — there is no live producer signal at all."
+      ]
+    },
+    {
+      "field": "m1_coaching.readiness_signals.dimensions.framing_quality",
+      "declared_in": "plot:src/coaching/types.ts (numeric; NOT in @talchain/schemas)",
+      "producer": "plot — plot-lite-service readiness-signals",
+      "consumer": "ui — useResultsSectionData clarity fallback",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-09-30",
+      "notes": [
+        "The colliding numeric twin of the row above. It IS produced and IS read, but it is",
+        "governed by NO shared contract — it reaches the UI through an untyped passthrough blob.",
+        "Recorded so the collision is visible rather than discovered again by the next lane.",
+        "Neither side has a test that fails if it disappears; state stays `declared` until one does."
+      ]
+    },
+    {
+      "field": "sample_population_provenance.metric_populations",
+      "declared_in": "isl:src/models/response_v2.py::SamplePopulationProvenanceV2 (Talchain/Inference-Service-Layer#114)",
+      "producer": "isl — response_builder.set_auto_noise_applied",
+      "consumer": null,
+      "producer_test": "isl:tests/unit/test_arch_step1_claims.py::TestNoiseProvenanceDisclosure::test_provenance_names_the_pre_noise_metrics",
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "produced_dark",
+      "n_minus_1_removal_date": "2026-10-31",
+      "notes": [
+        "The one field in this manifest with a REAL producer test. Merged in ISL#114 2026-07-26,",
+        "live at build 7d144c7 (isl staging HEAD == the sha /health reports).",
+        "No consumer yet: neither CEE nor PLoT reads it, so today it is disclosure nobody acts on.",
+        "This is the correct shape for a new field — produced, tested, honestly marked dark, with",
+        "a date by which a consumer must exist or the field goes.",
+        "Its label vocabulary is registered in contracts/population-registry.json and CI-checked",
+        "against the pinned live artifact in both directions."
+      ]
+    },
+    {
+      "field": "assistant_text",
+      "declared_in": "schemas:src/boundary/olumi-response.ts::OlumiResponseSchema",
+      "producer": "cee — orchestrator response composition",
+      "consumer": "ui — chat transcript render",
+      "producer_test": "cee:tests/contract/cee-egress-wire-surface-pin.test.ts::egress wire-surface pin (@talchain/schemas 0.13.0) > pins the top-level OlumiResponseSchema surface (strict)",
+      "consumer_test": "ui:src/v5/__tests__/responseParser.declaredKeysReachStrict.spec.ts::C1: every key OlumiResponseSchema DECLARES reaches strict validation > the sample map covers every declared key (fail-loud drift guard on the one mirror)",
+      "deployment_flag": null,
+      "state": "produced_dark",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "THE POSITIVE CONTROL ROW, and deliberately NOT marked `enforced`.",
+        "Adoption is not in doubt — 543 files / 3815 lines in cee@staging, 117 / 533 in ui@staging.",
+        "But by this manifest's own definitions neither reference above is the right KIND of test:",
+        "the CEE one pins the wire SURFACE and the UI one proves the key reaches strict validation.",
+        "Both would pass if the text were emitted empty and never rendered.",
+        "Marking it `enforced` on that evidence is exactly the sloppiness S0 exists to stop, so it",
+        "stays `produced_dark` until someone writes the two tests that actually fail on regression.",
+        "It is in the manifest to prove the checker runs against real references that resolve on",
+        "disk — run with OLUMI_ESTATE_ROOT set and both paths are verified to exist."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "synthetic seam",
+    "version": "0"
+  },
+  "paths": {
+    "/x": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Req"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resp"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Req": {
+        "type": "object",
+        "properties": {
+          "graph_id": {
+            "type": "string"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "full"
+            ]
+          }
+        },
+        "required": [
+          "graph_id"
+        ]
+      },
+      "Resp": {
+        "type": "object",
+        "properties": {
+          "win_probability": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "blocked"
+            ]
+          }
+        },
+        "required": [
+          "win_probability"
+        ]
+      }
+    }
+  }
+}

@@ -199,3 +199,16 @@ export type {
 export type {
   PlotRequestIdChain,
 } from './request-chain.js';
+
+// Health manifest (0.24.0 — arch step 2, S0)
+// The four fields every Olumi service must expose on its health endpoint, plus
+// the two SHAs that fill them. See ./contracts/health-manifest.ts.
+export {
+  HealthManifestSchema,
+  HEALTH_MANIFEST_FIELDS,
+  releaseLine,
+  parseHealthManifest,
+  compareHealthManifest,
+} from './contracts/health-manifest.js';
+export type { HealthManifest, HealthManifestVerdict } from './contracts/health-manifest.js';
+export { SCHEMA_SHA, CONTRACT_MANIFEST_SHA, SCHEMA_PACKAGE_VERSION } from './contracts/generated-constants.js';

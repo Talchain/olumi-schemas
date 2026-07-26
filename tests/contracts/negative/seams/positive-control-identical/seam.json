@@ -1,0 +1,26 @@
+{
+  "$comment": "POSITIVE CONTROL \u2014 must PASS (exit 0). Proves the gate is not simply failing everything it is shown.",
+  "seam_id": "positive-control-identical",
+  "writer": "isl",
+  "readers": [
+    "cee"
+  ],
+  "operations": [
+    {
+      "path": "/x",
+      "method": "post",
+      "request_schema": "Req",
+      "response_schema": "Resp"
+    }
+  ],
+  "baseline": {
+    "artifact": "baseline/openapi.json",
+    "pinned_ref": "1111111111111111111111111111111111111111",
+    "pinned_ref_kind": "commit"
+  },
+  "candidate": {
+    "artifact": "candidate/openapi.json",
+    "pinned_ref": "2222222222222222222222222222222222222222",
+    "pinned_ref_kind": "commit"
+  }
+}

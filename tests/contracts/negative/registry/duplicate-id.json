@@ -1,0 +1,74 @@
+{
+  "$comment": "NEGATIVE FIXTURE \u2014 must fail E_DUP_ID.",
+  "registry_version": 1,
+  "stages": [
+    "raw",
+    "transformed",
+    "conditioned",
+    "intervened"
+  ],
+  "wire_label_sources": [
+    {
+      "source_id": "isl.metric_populations",
+      "seam": "isl-response-v2",
+      "pinned_artifact": "compat/seams/isl-response-v2/candidate/openapi.pinned.json",
+      "json_pointer": "/components/schemas/SamplePopulationProvenanceV2/properties/metric_populations/additionalProperties/enum",
+      "note": "Every value at this pointer must map to exactly one population id below, and every id declaring a label for this source must appear at the pointer."
+    }
+  ],
+  "transforms": [
+    {
+      "id": "olumi.transform.auto_scaled_noise@1",
+      "description": "Adds 1.0x the model std per outcome/risk sample (~sqrt(2) spread inflation). Independent draw PER OPTION, which is why it breaks Common-Random-Numbers alignment for joint metrics. Default-OFF since 2026-07-26 (ISL ENABLE_AUTO_SCALED_NOISE).",
+      "calibration_status": "uncalibrated_poc_heuristic",
+      "owner_repo": "isl"
+    }
+  ],
+  "populations": [
+    {
+      "id": "olumi.mc.model_only@1",
+      "stage": "raw",
+      "description": "Monte-Carlo samples drawn from the structural model alone, with no post-hoc noise term. Common-Random-Numbers aligned across options.",
+      "wire_labels": {
+        "isl.metric_populations": "model_only"
+      },
+      "isl_metrics_always": [
+        "expected_regret",
+        "win_probability",
+        "factor_evppi",
+        "factor_evpc",
+        "decision_evpi"
+      ],
+      "note": "The five metrics above are ALWAYS on this population regardless of the noise flag (ISL PRE_NOISE_METRICS). When auto_scaled_noise_applied is false the POST_NOISE_METRICS land here too."
+    },
+    {
+      "id": "olumi.mc.model_only@1",
+      "stage": "transformed",
+      "parent_id": "olumi.mc.model_only@1",
+      "transform_id": "olumi.transform.auto_scaled_noise@1",
+      "description": "Model-only samples with the auto-scaled noise term added. Marginal distribution metrics only \u2014 never the joint CRN metrics.",
+      "wire_labels": {
+        "isl.metric_populations": "noise_inflated"
+      },
+      "isl_metrics_when_applied": [
+        "p05",
+        "p10",
+        "p50",
+        "p90",
+        "mean",
+        "cvar_10",
+        "probability_of_goal"
+      ],
+      "note": "ISL POST_NOISE_METRICS. Labelled noise_inflated only when auto_scaled_noise_applied is true; otherwise these metrics report olumi.mc.model_only@1."
+    }
+  ],
+  "not_yet_emitted": {
+    "$comment": [
+      "Deliberately EMPTY. The design's `conditioned` and `intervened` stages have no",
+      "producer today. Pre-registering ids nobody emits is exactly the non-adoption",
+      "failure this scaffolding exists to prevent \u2014 an id enters this registry in the",
+      "same change train as the producer that emits it, with an adoption-manifest row."
+    ],
+    "populations": []
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "$comment": "NEGATIVE FIXTURE \u2014 must fail E_ENUM_NARROWED. A value existing writers still send is no longer accepted.",
+  "seam_id": "request-enum-narrowed",
+  "writer": "isl",
+  "readers": [
+    "cee"
+  ],
+  "operations": [
+    {
+      "path": "/x",
+      "method": "post",
+      "request_schema": "Req",
+      "response_schema": "Resp"
+    }
+  ],
+  "baseline": {
+    "artifact": "baseline/openapi.json",
+    "pinned_ref": "1111111111111111111111111111111111111111",
+    "pinned_ref_kind": "commit"
+  },
+  "candidate": {
+    "artifact": "candidate/openapi.json",
+    "pinned_ref": "2222222222222222222222222222222222222222",
+    "pinned_ref_kind": "commit"
+  }
+}

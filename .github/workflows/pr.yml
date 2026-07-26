@@ -22,6 +22,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # S0 contract-enforcement gates (arch step 2). Run BEFORE build/test so a
+      # manifest, registry or compat break is reported as itself rather than as
+      # a downstream type error.
+      - name: Adoption manifest
+        run: npm run check:adoption
+
+      - name: Population registry
+        run: npm run check:populations
+
+      - name: Two-sided compat gate
+        run: npm run check:compat
+
+      - name: Generated contract constants are current
+        run: npm run generate:contract-constants:check
+
       - name: Build
         run: npm run build
 

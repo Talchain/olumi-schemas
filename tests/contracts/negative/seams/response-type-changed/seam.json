@@ -1,0 +1,26 @@
+{
+  "$comment": "NEGATIVE FIXTURE \u2014 must fail E_TYPE_CHANGED.",
+  "seam_id": "response-type-changed",
+  "writer": "isl",
+  "readers": [
+    "cee"
+  ],
+  "operations": [
+    {
+      "path": "/x",
+      "method": "post",
+      "request_schema": "Req",
+      "response_schema": "Resp"
+    }
+  ],
+  "baseline": {
+    "artifact": "baseline/openapi.json",
+    "pinned_ref": "1111111111111111111111111111111111111111",
+    "pinned_ref_kind": "commit"
+  },
+  "candidate": {
+    "artifact": "candidate/openapi.json",
+    "pinned_ref": "2222222222222222222222222222222222222222",
+    "pinned_ref_kind": "commit"
+  }
+}
