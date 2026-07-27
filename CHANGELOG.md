@@ -7,6 +7,135 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.0] — 2026-07-27
+
+**`EnrichmentRobustnessEdgeSchema.switch_probability` becomes OPTIONAL.** The
+contract forbade an honest omission, so a producer fabricated a number instead.
+One field, one `.optional()`, plus the absence semantics attached to the field
+itself. Unblocks `plot-lite-service#278`.
+
+### The defect this unblocks
+
+`switch_probability` is P(flipping this edge switches the recommended option) —
+**higher means MORE fragile**. `classifyEdgeSeverity` (>0.7 `critical`, >0.5
+`error`) and the doctrine-013 `visible` gate both derive from it monotonically.
+
+ISL emits `robust_edges` as bare `"from->to"` **strings**, which carry no
+measurement at all. Because this schema declared `switch_probability:
+z.number()` **required** — and it types **both** `fragile_edges[]` and
+`robust_edges[]` — PLoT's `normalizeRobustEdge` had only two dishonest options,
+and took the first: `switch_probability: 1`, commented *"Robust edges have 100%
+stability"*. On this scale, a `1` is the **maximum of the fragility scale**. An
+edge ISL called *robust* shipped as maximally fragile, under a name whose
+intended reading (`stability`) is the inverse of what the field means.
+
+plot-lite-service#278 implemented the honest fix — omit rather than invent —
+and **measured the consequence**: every `/v2/run` response then failed its own
+egress contract, stamping `enrichment_contract_ok: false` plus a user-visible
+`ENRICHMENT_CONTRACT_MISMATCH` warning on the wire (4 issue paths on the golden
+fixture). It correctly refused both quietly fabricating and unilaterally
+relaxing a shared contract from a consumer repo, reverted, and reported the
+blocker with the honest assertion present and `it.skip`ped.
+
+### The required-ness was never a live invariant
+
+It was a **latent disagreement**, and it only bit the day a producer became
+honest. Verified at the bytes, plot-lite-service `dd144f77`:
+
+- `src/integrations/isl/types/plot-types.ts` → `NormalizedEdgeInfoV3.switch_probability?: number`,
+  documented *"OPTIONAL: omitted when the source edge carries no
+  switch_probability (absent ≠ 0). When omitted, `severity` and `visible` are
+  omitted too."* — PLoT has **published it as optional all along**.
+- `robustness-analysis.ts` `normalizeFragileEdge` **already omits** it when ISL
+  sends no finite value, and the legacy string arm of `normalizeFragileEdges`
+  omits it too. So a legacy-format *fragile* edge would have tripped the
+  identical guard — the divergence was live for fragile edges before anyone
+  touched robust edges.
+- In **this very file**, `EnrichmentM1CoachingSchema.top_fragile_edge.switch_probability`
+  has been `z.number().optional()`. The same quantity was optional one schema
+  away and required here.
+
+### Changed
+
+- **`EnrichmentRobustnessEdgeSchema.switch_probability`: `z.number()` →
+  `z.number().optional().describe(…)`.** One schema types both
+  `robustness.fragile_edges[]` and `robustness.robust_edges[]`, so both arrays
+  are unblocked by the single change.
+- **The absence rule is attached with `.describe()`, not left in a comment** —
+  the same mechanism as `ABSENCE_FAIL_CLOSED_RULE` (F6). A doc comment cannot
+  reach a consumer; a `.description` ships in `dist/` **and** lands in
+  `json-schema/EnrichmentRobustnessEdgeSchema.json`, which is the artifact ISL's
+  drift check consumes. The sentence names **both** wrong readings, because this
+  field has been fabricated in each direction:
+
+  > Absence means NOT COMPUTED — never 0 and never 1. A measured 0 is a real
+  > measurement and must be preserved. Higher means MORE fragile, so reading
+  > absence as 1 fabricates the maximum of the scale. Consumers MUST branch on
+  > presence, never coalesce, and MUST omit anything derived from it.
+
+- `severity`'s doc now states it is absent **together with** `switch_probability`
+  — a severity derived from a substituted probability is a fabricated verdict.
+
+### Not changed, deliberately
+
+- **`edge_id` / `from_id` / `to_id` stay REQUIRED.** They are edge *identity*,
+  derivable by the producer from the edge id in every arm (`parseEdgeId`), and
+  PLoT sets all three unconditionally in both the string and the object arm.
+  "Absent because not computed" is not a real state for them. Pinned by a test
+  so the relaxation cannot creep.
+- **No range or finiteness constraint added.** `z.number()` accepts `±Infinity`
+  (JSON cannot carry it, so it is wire-unreachable) and the schema has never
+  constrained `switch_probability` to `[0,1]`. Adding either would be *stricter*
+  validation — the breaking axis — and is out of scope for an unblock. Named
+  here rather than left for a later grep.
+- **Nothing else in the family was relaxed.** The complete derived manifest of
+  every remaining REQUIRED field in the enrichment module, and why each is left,
+  is in the PR body. The one worth a follow-up is
+  `EnrichmentOutcomeStatsSchema.mean/p10/p50/p90` (all required `z.number()`)
+  against plot-lite-service `dd144f77`
+  `intervention-normaliser.ts:964-967`, which writes `mean: dn(...) ?? null` —
+  **`null`, not omission**, which this schema rejects. Whether those bytes reach
+  `option_comparison[].outcome` on the enrichment wire is **UNVERIFIED here**,
+  and the fix shape would be `.nullable()` not `.optional()`, so it is queued
+  rather than guessed.
+
+### Additive/breaking analysis
+
+**Additive for every producer; potentially breaking for a consumer that assumed
+presence — which is why this is a MINOR (the breaking axis at 0.x), not a patch.**
+
+- **Runtime, as a validator:** strictly more permissive. Every payload that
+  parsed under 0.27.0 still parses. Nothing that was rejected is now rejected
+  differently.
+- **Runtime, as a reader:** a consumer still on an OLD pin that validates a
+  payload from a producer that has started omitting will **reject** it. That is
+  the real compatibility boundary, and it is ordering-sensitive: **every
+  validator on the path must re-vendor BEFORE the producer deletes its
+  fabrication.** A patch bump would have told `compareHealthManifest` that
+  0.27.0 and 0.27.1 share a release line and are compatible — precisely the
+  claim that is false here.
+- **Compile time:** `EnrichmentRobustnessEdge['switch_probability']` becomes
+  `number | undefined`. Any consumer that imports the type and does unguarded
+  arithmetic on it gets a `tsc` error on re-vendor. That is the type system
+  doing its job — the error marks exactly the sites that would have read a
+  fabricated number.
+- **Nothing auto-adopts.** All three TS consumers pin a checked-in `file:`
+  tarball, so this release changes no consumer until that consumer opens its own
+  re-vendor PR.
+
+### Adoption manifest
+
+**No row added, and the reason is the row's own definitions.** The manifest
+tracks whether a field has a verified producer and consumer; its four states
+describe *adoption of a field's presence*. This change **removes** a presence
+obligation from a field that has had real producers and consumers since 0.14.0.
+`enforced` literally reads *"the field may be made required"* — recording that
+against a field being made optional would be a false entry, and `declared`
+("no verified producer and no verified consumer") is simply untrue. The checker
+has no completeness rule that would require a row
+(`scripts/check-adoption-manifest.mjs` validates only the rows present). A
+mis-stated row is worse than no row.
+
 ## [0.27.0] — 2026-07-27
 
 **`AnalysisFactSchema` — the dishonest state, made unrepresentable.** A

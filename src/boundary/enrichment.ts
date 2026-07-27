@@ -290,8 +290,25 @@ export type EnrichmentFactorSensitivityEntry =
 // ----------------------------------------------------------------------------
 
 /**
+ * The absence rule for `switch_probability` (0.28.0). Hoisted to ONE const and
+ * attached with `.describe()` — the same mechanism as
+ * `ABSENCE_FAIL_CLOSED_RULE` above — so it ships in `dist/`, appears in the
+ * generated `json-schema/EnrichmentRobustnessEdgeSchema.json`, and is
+ * machine-asserted rather than living only in a comment a consumer never sees.
+ * A doc comment cannot reach a consumer at runtime; a `.description` can.
+ *
+ * DO NOT reword: the point of the sentence is that it names BOTH wrong
+ * readings, because this field was fabricated in each direction.
+ */
+const SWITCH_PROBABILITY_ABSENCE_RULE =
+  'Absence means NOT COMPUTED — never 0 and never 1. A measured 0 is a real ' +
+  'measurement and must be preserved. Higher means MORE fragile, so reading ' +
+  'absence as 1 fabricates the maximum of the scale. Consumers MUST branch on ' +
+  'presence, never coalesce, and MUST omit anything derived from it.';
+
+/**
  * Normalised edge info for robustness (fragile_edges / robust_edges
- * entries). [F1][F2] NormalizedEdgeInfoV3.
+ * entries). [F1][F2] NormalizedEdgeInfoV3. ONE schema types BOTH arrays.
  */
 export const EnrichmentRobustnessEdgeSchema = z.object({
   edge_id: z.string().min(1),
@@ -299,8 +316,46 @@ export const EnrichmentRobustnessEdgeSchema = z.object({
   to_id: z.string(),
   from_label: z.string().optional(),
   to_label: z.string().optional(),
-  switch_probability: z.number(),
-  /** Present on fragile_edges (>0.7 critical, >0.5 error, else warning) [F2]. */
+  /**
+   * P(flipping this edge switches the recommended option).
+   *
+   * ⚠ SCALE: HIGHER MEANS MORE FRAGILE. It is not a stability score. The
+   * producer derives `severity` (>0.7 critical, >0.5 error, else warning) and
+   * the doctrine-013 `visible` gate from this one number, both monotonically
+   * increasing in it, so a substituted `1` reads as the MAXIMUM of the
+   * fragility scale — which is what a "100% stable" reading of the name would
+   * have meant to invert.
+   *
+   * OPTIONAL, and ABSENT MEANS **NOT COMPUTED** — never zero, and never
+   * one. `0` is a genuine measurement ("flipping this edge changes nothing")
+   * and must be preserved as such; absence is the distinct state "no
+   * measurement exists for this edge". A consumer that reads absence as `0`
+   * fabricates the safest possible verdict; one that reads it as `1`
+   * fabricates the most alarming. Consumers MUST branch on presence
+   * (`typeof x === 'number'`), never coalesce (`?? 0`, `|| 0`, `?? 1`), and
+   * must omit any value derived from it (severity, visible, ranking position)
+   * rather than derive one from a substitute.
+   *
+   * WHY IT IS OPTIONAL (0.28.0): ISL emits `robust_edges` as bare
+   * `"from->to"` STRINGS, which carry no measurement at all, and legacy
+   * string-format `fragile_edges` likewise. `z.number()` REQUIRED left the
+   * producer only two dishonest options — invent a number, or fail its own
+   * egress contract — and PLoT took the first (`switch_probability: 1`
+   * hardcoded in `normalizeRobustEdge`, measured and reported in
+   * plot-lite-service#278). This declaration was ALREADY the odd one out:
+   * PLoT's own published `NormalizedEdgeInfoV3.switch_probability?: number`
+   * has been optional, `normalizeFragileEdge` has omitted it on that basis,
+   * and `EnrichmentM1CoachingSchema.top_fragile_edge.switch_probability` in
+   * this same file is optional. The required-ness was a latent disagreement,
+   * not an invariant anyone honoured.
+   */
+  switch_probability: z.number().optional().describe(SWITCH_PROBABILITY_ABSENCE_RULE),
+  /**
+   * Present on fragile_edges (>0.7 critical, >0.5 error, else warning) [F2].
+   * ABSENT when `switch_probability` is absent — a severity derived from a
+   * substituted probability is a fabricated verdict, so the producer omits
+   * both together.
+   */
   severity: z.string().optional(),
   marginal_switch_probability: z.number().optional(),
   alternative_winner_id: z.string().nullable().optional(),

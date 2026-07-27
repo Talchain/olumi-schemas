@@ -195,6 +195,31 @@ describe('json-schema artifacts — validation positive controls', () => {
     expect(validate(broken)).toBe(false);
   });
 
+  it('OPTIONALITY reaches the PUBLISHED artifact — robust/fragile edge without switch_probability validates, a non-number still does not (0.28.0)', () => {
+    // Asserted on the generated document, not on the Zod object: this file is
+    // what ISL's Pydantic drift check consumes, so the relaxation is only
+    // delivered if it lands in these bytes. The `required` assertion is the
+    // discriminating one — a document that merely *validates* the omission
+    // could do so because ajv never saw the constraint.
+    const doc = JSON.parse(
+      readFileSync(join(artifactDir, 'EnrichmentRobustnessEdgeSchema.json'), 'utf8'),
+    ) as { definitions: Record<string, { required: string[]; properties: Record<string, { description?: string }> }> };
+    const def = doc.definitions.EnrichmentRobustnessEdgeSchema;
+    expect(def.required).not.toContain('switch_probability');
+    // Identity fields are still required — the relaxation is scoped.
+    expect(def.required).toEqual(['edge_id', 'from_id', 'to_id']);
+    // The absence rule travels with the published document, not just the source.
+    expect(def.properties.switch_probability.description).toContain('Absence means NOT COMPUTED');
+
+    const validate = compileDocument('EnrichmentRobustnessEdgeSchema');
+    const good = getMaximalFixture('boundary/EnrichmentRobustnessEdgeSchema')!.fixture as Record<string, unknown>;
+    expect(validate(good)).toBe(true); // positive control — the instrument can see a PASS
+    const { switch_probability: _omitted, severity: _derived, ...withoutMeasurement } = good;
+    expect(validate(withoutMeasurement)).toBe(true);
+    expect(validate({ ...good, switch_probability: '0.42' })).toBe(false);
+    expect(validate({ ...good, switch_probability: null })).toBe(false);
+  });
+
   it('REJECTION: envelope-level shape violation — factor_sensitivity as object', () => {
     const validate = compileDocument('AnalysisEnrichmentSchema');
     const good = getMaximalFixture('boundary/AnalysisEnrichmentSchema')!.fixture as Record<string, unknown>;

@@ -31,6 +31,7 @@ import {
   EnrichmentConstraintMarginSchema,
   EnrichmentScaleProvenanceSchema,
   EnrichmentConstraintResultSchema,
+  EnrichmentRobustnessEdgeSchema,
 } from '../../src/boundary/enrichment.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -391,5 +392,189 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
     for (const key of CEE_UI_ENRICHMENT_KEEP_LIST) {
       expect(Object.prototype.hasOwnProperty.call(shape, key), `missing ${key}`).toBe(true);
     }
+  });
+});
+
+// ============================================================================
+// 0.28.0 — robustness edge `switch_probability` is OPTIONAL.
+//
+// WHY THIS EXISTS. `z.number()` REQUIRED offered a producer only two dishonest
+// options when no measurement exists, and PLoT took one of them: ISL emits
+// `robust_edges` as bare "from->to" STRINGS, so `normalizeRobustEdge`
+// hardcoded `switch_probability: 1` — absent data rendered as the MAXIMUM of an
+// INVERTED scale (higher = more fragile; `classifyEdgeSeverity` >0.7 →
+// 'critical', and the doctrine-013 `visible` gate, both derive from it).
+// plot-lite-service#278 implemented the honest omission, MEASURED that every
+// /v2/run response then failed its own egress contract
+// (`enrichment_contract_ok: false` + a user-visible ENRICHMENT_CONTRACT_MISMATCH
+// on the wire), and reverted rather than trade a wrong number for a standing
+// false alarm. This block is the schema side of that unblock.
+//
+// The required-ness was never a live invariant: PLoT's own published
+// `NormalizedEdgeInfoV3.switch_probability?: number` is optional,
+// `normalizeFragileEdge` already omits, and
+// `EnrichmentM1CoachingSchema.top_fragile_edge.switch_probability` in this very
+// file is optional. It was a latent disagreement that only bit when a producer
+// became honest.
+//
+// The three arms below are deliberately distinct claims:
+//   UNBLOCK  — omission now parses (this is what was RED before 0.28.0);
+//   POSITIVE — a present value still round-trips, and a measured 0 is NOT
+//              confused with absence (the two states must stay separable);
+//   NEGATIVE — optional did NOT become unvalidated: null, NaN, strings and
+//              other non-numbers are still rejected, at the bare schema AND
+//              through the envelope a consumer actually parses.
+// ============================================================================
+describe('EnrichmentRobustnessEdgeSchema.switch_probability — optional, absent ≠ 0 (0.28.0)', () => {
+  const baseEdge = {
+    edge_id: 'fac_demand->goal_revenue',
+    from_id: 'fac_demand',
+    to_id: 'goal_revenue',
+  } as const;
+
+  /** The bytes a consumer actually parses: the whole enrichment envelope. */
+  function envelopeWith(edges: {
+    fragile?: Record<string, unknown>[];
+    robust?: Record<string, unknown>[];
+  }) {
+    return {
+      robustness: {
+        ...(edges.fragile ? { fragile_edges: edges.fragile } : {}),
+        ...(edges.robust ? { robust_edges: edges.robust } : {}),
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------- UNBLOCK
+  it('THE UNBLOCK: an edge that OMITS switch_probability parses', () => {
+    const result = EnrichmentRobustnessEdgeSchema.safeParse(baseEdge);
+    if (!result.success) {
+      throw new Error(`omission must parse: ${result.error.message}`);
+    }
+    expect(result.success).toBe(true);
+  });
+
+  it('THE UNBLOCK at the boundary: robust_edges AND fragile_edges carrying no switch_probability parse through the envelope', () => {
+    // ONE schema types both arrays, so the unblock must hold on both. The
+    // robust arm is the live PLoT case (ISL sends bare strings); the fragile
+    // arm is the LATENT skew that existed before this change — PLoT's
+    // normalizeFragileEdge already omits, so a legacy string-format fragile
+    // edge would have tripped the identical guard.
+    const result = AnalysisEnrichmentSchema.safeParse(
+      envelopeWith({ fragile: [{ ...baseEdge }], robust: [{ ...baseEdge, edge_id: 'a->b' }] }),
+    );
+    if (!result.success) {
+      throw new Error(`envelope omission must parse: ${result.error.message}`);
+    }
+    const robustness = result.data.robustness as Record<string, unknown>;
+    expect((robustness.fragile_edges as unknown[])).toHaveLength(1);
+    expect((robustness.robust_edges as unknown[])).toHaveLength(1);
+  });
+
+  it('absence survives parsing AS ABSENCE — no default is injected', () => {
+    // The defect this unblocks is "a consumer reads absence as a number".
+    // Parsing must not do that job for it: the key must not exist on the way
+    // out, so a `'switch_probability' in edge` reader stays correct.
+    const parsed = EnrichmentRobustnessEdgeSchema.parse(baseEdge);
+    expect(Object.prototype.hasOwnProperty.call(parsed, 'switch_probability')).toBe(false);
+    expect(parsed.switch_probability).toBeUndefined();
+  });
+
+  // --------------------------------------------------------------- POSITIVE
+  it('POSITIVE: a measured value round-trips verbatim through the envelope', () => {
+    const parsed = AnalysisEnrichmentSchema.parse(
+      envelopeWith({ fragile: [{ ...baseEdge, switch_probability: 0.42, severity: 'warning' }] }),
+    );
+    const edge = (parsed.robustness as Record<string, unknown[]>)
+      .fragile_edges[0] as Record<string, unknown>;
+    expect(edge.switch_probability).toBe(0.42);
+    expect(edge.severity).toBe('warning');
+  });
+
+  it('POSITIVE CONTROL: a measured ZERO is a measurement and stays distinguishable from absence', () => {
+    // The whole point of the optionality. If these two collapsed into one
+    // state the relaxation would have made things worse, not better.
+    const measuredZero = EnrichmentRobustnessEdgeSchema.parse({
+      ...baseEdge,
+      switch_probability: 0,
+    });
+    const absent = EnrichmentRobustnessEdgeSchema.parse(baseEdge);
+    expect(measuredZero.switch_probability).toBe(0);
+    expect(Object.prototype.hasOwnProperty.call(measuredZero, 'switch_probability')).toBe(true);
+    expect(Object.prototype.hasOwnProperty.call(absent, 'switch_probability')).toBe(false);
+  });
+
+  // --------------------------------------------------------------- NEGATIVE
+  // An optional field must not become an UNVALIDATED field. Each case is a
+  // shape this estate has actually produced or could produce on the wire.
+  const rejected: Array<[string, unknown]> = [
+    ['an explicit null (optional is NOT nullable — PLoT writes `?? null` on sibling stat fields)', null],
+    ['NaN (the shape a `0/0` or a parsed-empty-string produces)', Number.NaN],
+    ['a numeric STRING (the shape a JSON producer emits when it stringifies)', '0.42'],
+    ['a boolean', true],
+    ['an object', { value: 0.42 }],
+  ];
+
+  for (const [label, value] of rejected) {
+    it(`NEGATIVE: still rejects ${label}`, () => {
+      expect(
+        EnrichmentRobustnessEdgeSchema.safeParse({ ...baseEdge, switch_probability: value }).success,
+        `bare schema accepted ${JSON.stringify(value)}`,
+      ).toBe(false);
+      // ...and at the boundary the consumer parses, on BOTH arrays.
+      expect(
+        AnalysisEnrichmentSchema.safeParse(
+          envelopeWith({ fragile: [{ ...baseEdge, switch_probability: value }] }),
+        ).success,
+        `fragile_edges accepted ${JSON.stringify(value)}`,
+      ).toBe(false);
+      expect(
+        AnalysisEnrichmentSchema.safeParse(
+          envelopeWith({ robust: [{ ...baseEdge, switch_probability: value }] }),
+        ).success,
+        `robust_edges accepted ${JSON.stringify(value)}`,
+      ).toBe(false);
+    });
+  }
+
+  it('VACUITY GUARD: the negative arm above is not passing because the envelope shape is wrong', () => {
+    // Trap 13 — an absence/rejection assertion must first prove it can see a
+    // PRESENCE. The exact same envelope builder, with a legal value, passes on
+    // both arrays. Without this, a typo in `envelopeWith` would make every
+    // rejection above vacuous.
+    expect(
+      AnalysisEnrichmentSchema.safeParse(
+        envelopeWith({ fragile: [{ ...baseEdge, switch_probability: 0.42 }] }),
+      ).success,
+    ).toBe(true);
+    expect(
+      AnalysisEnrichmentSchema.safeParse(
+        envelopeWith({ robust: [{ ...baseEdge, switch_probability: 0.42 }] }),
+      ).success,
+    ).toBe(true);
+  });
+
+  it('the identity fields stay REQUIRED — relaxing the measurement did not relax the edge identity', () => {
+    // Scope pin. `edge_id`/`from_id`/`to_id` are derivable from the edge id by
+    // the producer in EVERY arm (parseEdgeId), so "absent because not computed"
+    // is not a real state for them and they are deliberately untouched.
+    expect(EnrichmentRobustnessEdgeSchema.safeParse({ from_id: 'a', to_id: 'b' }).success).toBe(false);
+    expect(EnrichmentRobustnessEdgeSchema.safeParse({ edge_id: '', from_id: 'a', to_id: 'b' }).success).toBe(false);
+    expect(EnrichmentRobustnessEdgeSchema.safeParse({ edge_id: 'a->b', to_id: 'b' }).success).toBe(false);
+  });
+
+  // ---------------------------------------------------- DOCUMENTATION DUTY
+  it('the absence semantics travel WITH the field (.describe(), not a comment)', () => {
+    // An optional field that means "not computed" must SAY so where a consumer
+    // can read it. A JSDoc comment is stripped at the boundary; a Zod
+    // `.description` ships in dist/ and lands in the generated
+    // json-schema/ document that ISL's drift check consumes.
+    const shape = EnrichmentRobustnessEdgeSchema._def.shape();
+    const description = shape.switch_probability.description ?? '';
+    expect(description).toContain('Absence means NOT COMPUTED');
+    expect(description).toContain('never 0 and never 1');
+    expect(description).toContain('measured 0 is a real measurement');
+    expect(description).toContain('Higher means MORE fragile');
+    expect(description).toContain('never coalesce');
   });
 });
