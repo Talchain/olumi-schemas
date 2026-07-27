@@ -21,7 +21,8 @@
           "type": "string"
         },
         "switch_probability": {
-          "type": "number"
+          "type": "number",
+          "description": "Absence means NOT COMPUTED — never 0 and never 1. A measured 0 is a real measurement and must be preserved. Higher means MORE fragile, so reading absence as 1 fabricates the maximum of the scale. Consumers MUST branch on presence, never coalesce, and MUST omit anything derived from it."
         },
         "severity": {
           "type": "string"
@@ -45,8 +46,7 @@
       "required": [
         "edge_id",
         "from_id",
-        "to_id",
-        "switch_probability"
+        "to_id"
       ],
       "additionalProperties": true
     }

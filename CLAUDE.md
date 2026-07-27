@@ -64,9 +64,11 @@ unrolled, run first so a contract break is reported as itself rather than as a
 downstream type error. Run the steps individually anyway when you want the
 failure attributed to one gate.
 
-**Baseline at `bc995b22` (before 1.226): 35 test files, 1269 tests, green.**
-Record your own baseline before you touch anything; do not inherit this number —
-the one this file carried before (`33 / 1161`) was two releases stale.
+**Baseline at `5766fc9` (main, 2026-07-27): 36 test files, 1274 tests, green** —
+measured in a fresh blobless clone before any edit. Record your own baseline
+before you touch anything; do not inherit this number. The one this file carried
+before it (`35 / 1269` at `bc995b22`) was one release stale within a day, and the
+one before that (`33 / 1161`) was two.
 
 ### The two tsconfigs, and which one covers what
 
@@ -394,18 +396,22 @@ Semver policy table lives in `README.md`. On top of it:
   followed by `npm run generate:contract-constants`, or
   `generate:contract-constants:check` fails the PR gate.
 - Allocated so far, and it matters because a lane has now been told the wrong
-  number four times: **0.24.0 = S0 scaffolding**, **0.25.0 =
+  number **five** times: **0.24.0 = S0 scaffolding**, **0.25.0 =
   `RunAnalysisResult.constraint_verdict`**, **0.26.0 = `PopulationRefSchema`
-  (Codex F4)**, **0.27.0 = `AnalysisFactSchema` (Codex F3)**. The 0.24.0
-  CHANGELOG told the S1 lane its generated types would be `0.25.0`; 0.25.0 was
-  taken, the note was corrected to `0.26.0`, 0.26.0 was taken and the note moved
-  to `0.27.0`, and **0.27.0 has now been taken too — S1's types land at `0.28.0`
-  or later.** Before taking it, the 0.27.0 lane derived that nothing had claimed
-  it: no remote branch matches `s1` or `0.27`, and the only two open PRs (#15,
-  #16) are stale drafts still on 0.21.0 / 0.20.0. **That derivation is the
-  procedure — these notes are expectations recorded in a changelog, not
-  reservations any tooling enforces.** Re-read `package.json` at the tip you are
-  on, and check the open PRs, rather than trusting any note including this one.
+  (Codex F4)**, **0.27.0 = `AnalysisFactSchema` (Codex F3)**, **0.28.0 =
+  `EnrichmentRobustnessEdgeSchema.switch_probability` optional (PLoT #278
+  unblock)**. The 0.24.0 CHANGELOG told the S1 lane its generated types would be
+  `0.25.0`; 0.25.0 was taken, the note was corrected to `0.26.0`, 0.26.0 was
+  taken and the note moved to `0.27.0`, 0.27.0 was taken and it moved to
+  `0.28.0`, and **0.28.0 has now been taken too — S1's types land at `0.29.0`
+  or later.** Before taking it, the 0.28.0 lane derived that nothing had claimed
+  it (2026-07-27, at `5766fc9`): `git ls-remote --heads` shows no branch matching
+  `s1` or `0.28`, the newest tag is `v0.27.0`, and the only two open PRs (#15,
+  #16) are still the same stale drafts on 0.21.0 / 0.20.0. **That derivation is
+  the procedure — these notes are expectations recorded in a changelog, not
+  reservations any tooling enforces, and this bullet has now been wrong five
+  times running.** Re-read `package.json` at the tip you are on, and check the
+  open PRs, rather than trusting any note including this one.
 - Every release gets a CHANGELOG entry under its own heading, with the
   additive/breaking analysis stated explicitly.
 
@@ -435,3 +441,10 @@ know. As of 2026-07-26 the live pins are **UI 0.22.0, PLoT 0.22.0, CEE 0.25.0** 
 three different lines at once. Before changing any field that crosses a
 boundary, trace producer → validator → consumer, open the schema at each hop,
 and check each repo's `package.json` pin. Never assume parity.
+
+**Re-measured 2026-07-27** at each repo's own `staging` tip (the pins had not
+moved, the shas had): UI `201f1075` → **0.22.0**, PLoT `dd144f77` → **0.22.0**,
+CEE `6cfb0e57` → **0.25.0**. ⚠ And note what a pin does NOT tell you: PLoT
+`main` carries a *registry* pin `"@talchain/schemas": "0.1.0"` with no `vendor/`
+directory at all. `main` is a divergent production branch here, not a descendant
+of what is deployed on staging — **name the branch when you quote a pin.**
