@@ -32,9 +32,10 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "npm run check:contracts && npm run build && vitest run",
+    "test": "npm run check:contracts && npm run build && npm run typecheck:tests && vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
     "generate:json-schema": "npm run build && node scripts/generate-json-schema.mjs",
     "prepublishOnly": "npm run lint && npm run check:contracts && npm run build && npm run test",
     "check:adoption": "node scripts/check-adoption-manifest.mjs",

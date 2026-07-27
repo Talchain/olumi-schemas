@@ -448,7 +448,12 @@ describe('Edit-graph sub-schema exports', () => {
 
 describe('EditGraphHandlerFact — inferred type', () => {
   it('compiles when assigning a fixture to the inferred type', () => {
-    const fact: EditGraphHandlerFact = HANDLER_FACT_FIXTURES.edit_graph as EditGraphHandlerFact;
+    // No `as EditGraphHandlerFact` cast here, deliberately: a cast makes this
+    // assertion vacuous — it compiles whatever the fixture's type is, so the
+    // test named "compiles when assigning a fixture to the inferred type" would
+    // prove nothing. The `satisfies` in the fixtures module is what lets the
+    // bare assignment typecheck, and this line is what pins that.
+    const fact: EditGraphHandlerFact = HANDLER_FACT_FIXTURES.edit_graph;
     expect(fact.fact_type).toBe('edit_graph');
   });
 });

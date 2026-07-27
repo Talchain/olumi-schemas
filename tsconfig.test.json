@@ -1,0 +1,45 @@
+// Typecheck config for EVERYTHING the build config leaves out.
+//
+// `tsconfig.json` is the BUILD config: `include: ["src/**/*"]`, and it excludes
+// `tests` and `fixtures`. `npm run lint` and `npm run build` both use it, so
+// until this file existed **no test file was typechecked by any gate** — a type
+// error in a test was invisible to CI and surfaced, if at all, as a runtime
+// failure. (Same hole that produced CEE PR #710's red ratchet: a production type
+// change broke 36 test call sites while the author's local gate was green.)
+//
+// ── The include list is DERIVED, not mirrored ──────────────────────────────
+// It is `**/*` by extension, not a hand-listed set of directories. A new test
+// directory — `tests-integration/`, `e2e/`, anything — is covered the moment it
+// exists, with nobody having to remember to add it here. A per-directory list is
+// the estate's dominant defect class (a mirror a human must sync, whose drift
+// always reads as green), and a gate that can silently stop covering things is
+// the exact defect this config exists to close.
+//
+// `tests/contracts/test-typecheck-coverage.test.ts` asserts that every test file
+// on disk is in this program, so narrowing `include` or widening `exclude` fails
+// the suite rather than quietly shrinking the gate. That assertion lives in the
+// TEST SUITE, not in the workflow, so it survives a `.github/workflows/` edit.
+//
+// `allowJs` is here to TYPE `scripts/*.mjs` (which `tests/json-schema.test.ts`
+// imports), not to check it: without it that import is implicitly `any` and
+// everything derived from it is unchecked. `checkJs` stays off, so the .mjs
+// files themselves are inferred from, never type-checked.
+//
+// `dist` is excluded from the include globs but still resolvable by import —
+// tests that import `../dist/**` typecheck against the built `.d.ts`, so this
+// config requires `npm run build` to have run first. `npm test` orders it that
+// way (`check:contracts && build && typecheck:tests && vitest run`).
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "allowJs": true,
+    "checkJs": false
+  },
+  "include": ["**/*.ts", "**/*.mts", "**/*.cts", "**/*.mjs"],
+  "exclude": ["node_modules", "dist"]
+}

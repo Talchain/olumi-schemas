@@ -2,7 +2,10 @@
 
 The shared Zod contract for the Olumi estate. Every claim below was derived from
 this repo's bytes (and, where it concerns a consumer, from that repo's own
-`staging` tip) on **2026-07-26 at `c938c8f`**. Universal working practice lives
+`staging` tip) on **2026-07-26 at `c938c8f`**, and the gate / publish-model
+sections were re-derived on **2026-07-27 at `bc995b22`** (ROADMAP 1.226 — two of
+this file's own numbers had already gone stale by then; see "The gate").
+Universal working practice lives
 in `~/.claude/CLAUDE.md`; the estate map lives in the workspace-root
 `CLAUDE.md`.
 
@@ -27,17 +30,19 @@ fires a propagation dispatch. There is no manual release step. See
 [Publish model](#publish-model) for exactly what gates it.
 
 **3. `main` is UNPROTECTED.** `gh api repos/Talchain/olumi-schemas/branches/main/protection`
-returns HTTP 404 "Branch not protected" (measured 2026-07-26). Nothing stops a
+returns HTTP 404 "Branch not protected" (re-measured 2026-07-27). Nothing stops a
 direct push, and a direct push to `main` *is* a release — publish.yml's own
 lint/build/test steps run **after** the push, so they cannot prevent it, only
 report on it. **Work on a branch and open a PR.** The PR workflow is the only
-pre-merge gate that exists.
+pre-merge gate that exists. The one-line fix is drafted and waiting for Paul —
+see [Closing hazard 3](#closing-hazard-3--branch-protection-pauls-call).
 
 ---
 
 ## The gate
 
-Derived from `.github/workflows/pr.yml` and `package.json` at `c938c8f`.
+Derived from `.github/workflows/pr.yml` and `package.json` at `bc995b22` + the
+1.226 branch.
 
 ```bash
 npm ci
@@ -47,41 +52,68 @@ npm run check:compat                       # S0 · compat/seams/**
 npm run generate:contract-constants:check  # S0 · src/contracts/generated-constants.ts is current
 npm run generate:population-ref:check      # S0 · src/contracts/generated-population-ref.ts matches the registry
 npm run build                              # tsc (emits dist/)
-npm test                                   # check:contracts && build && vitest run
+npm run typecheck:tests                    # tsc -p tsconfig.test.json (the TEST tree — see below)
+npm test                                   # check:contracts && build && typecheck:tests && vitest run
 ```
 
 **`npm test` alone reproduces the whole PR gate.** `test` is
-`npm run check:contracts && npm run build && vitest run`, and `check:contracts`
-is `check:adoption && check:populations && check:compat &&
+`npm run check:contracts && npm run build && npm run typecheck:tests && vitest run`,
+and `check:contracts` is `check:adoption && check:populations && check:compat &&
 generate:contract-constants:check && generate:population-ref:check`. The pr.yml steps above are that same set
 unrolled, run first so a contract break is reported as itself rather than as a
 downstream type error. Run the steps individually anyway when you want the
 failure attributed to one gate.
 
-**Baseline at `c938c8f`: 33 test files, 1161 tests, green.** Record your own
-baseline before you touch anything; do not inherit this number.
+**Baseline at `bc995b22` (before 1.226): 35 test files, 1269 tests, green.**
+Record your own baseline before you touch anything; do not inherit this number —
+the one this file carried before (`33 / 1161`) was two releases stale.
 
-### What the typecheck does NOT cover
+### The two tsconfigs, and which one covers what
 
-`npm run lint` is `tsc --noEmit` and `npm run build` is `tsc` — **the same
-`tsconfig.json`**, so lint adds no coverage over build. There is no second
-tsconfig. Note also that **pr.yml does not run `lint` at all**; publish.yml and
-`prepublishOnly` do.
+| config | script | covers |
+|---|---|---|
+| `tsconfig.json` | `build`, `lint` | `src/**` only — 43 files, `rootDir: ./src`, emits `dist/` |
+| `tsconfig.test.json` | `typecheck:tests` | everything else: `tests/`, `contract-tests/`, `fixtures/`, `scripts/*.mjs`, `vitest.config.ts` |
 
-The load-bearing fact is what the config *excludes*:
+`npm run lint` is `tsc --noEmit` against the **build** config, so it adds no
+coverage over `build`, and **pr.yml still does not run `lint`** (publish.yml and
+`prepublishOnly` do). The build config's `exclude` is the load-bearing part:
 
 ```jsonc
 "include": ["src/**/*"],
 "exclude": ["node_modules", "dist", "tests", "fixtures"]
 ```
 
-`npx tsc --noEmit --listFilesOnly` loads **41 files, every one under `src/`**.
-**No test file is typechecked by any gate in this repo.** `tests/`,
-`contract-tests/` and `fixtures/` are transpiled by vitest (esbuild) with types
-stripped, never checked. A type error you introduce in a test is invisible to
-CI and will only show up as a runtime failure if a test happens to exercise it.
-Type-check test edits by hand (`npx tsc --noEmit <file>` with the right flags,
-or by reasoning) — do not assume the gate saw them.
+**Until ROADMAP 1.226 (2026-07-27) that was the whole story, and it meant no test
+file was typechecked by anything.** `tsc --listFilesOnly` loaded 43 files, every
+one under `src/`; `tests/`, `contract-tests/` and `fixtures/` were transpiled by
+vitest (esbuild) with types stripped and never checked. Measured cost of that
+blind spot when it was finally opened: **14 type errors across 3 test files**,
+one of which had made a test's own stated purpose vacuous. This is the same hole
+that produced CEE PR #710's red ratchet — a production type change broke 36 test
+call sites while the author's local gate was honestly green, because CEE's build
+tsconfig also excludes tests.
+
+`tsconfig.test.json` closes it. Two design points, both deliberate:
+
+- **Its `include` is derived, not mirrored** — `["**/*.ts", "**/*.mts", "**/*.cts", "**/*.mjs"]`,
+  not a hand-listed set of directories. A new `e2e/` or `tests-integration/` is
+  covered the moment it exists. A per-directory list is the estate's dominant
+  defect class and its drift would read as green.
+- **`tests/contracts/test-typecheck-coverage.test.ts` proves the coverage**, and
+  it lives in the **test suite**, not the workflow. Narrowing `include`, widening
+  `exclude`, or deleting the pr.yml step turns `npm test` red. It carries a
+  positive control (trap 13): the set-difference must demonstrate it can see a
+  missing file before its clean result counts. It also refuses JavaScript test
+  files, which vitest would run and `checkJs: false` would never check.
+
+`allowJs: true` is there to **type** `scripts/*.mjs` (imported by
+`tests/json-schema.test.ts`), not to check it — `checkJs` stays off. Without it
+that import is implicitly `any` and everything derived from it is unchecked.
+
+`typecheck:tests` needs `dist/` to exist, because a few tests import `../dist/**`
+and typecheck against the built `.d.ts`. `npm test` and pr.yml both order `build`
+before it. **Run `npm run build` first if you invoke it on its own.**
 
 ---
 
@@ -271,6 +303,49 @@ Confirmed empirically: run `30008998214` (a docs-only merge, no bump) is
 **success** with publish/tag/propagation all `skipped`; run `30217037375`
 (the 0.25.0 release) publishes and tags successfully and then fails.
 
+### Closing hazard 3 — branch protection, PAUL'S CALL
+
+**Not applied. This is written down so it is one line when he wants it, and so
+no lane applies it on his behalf.** Nothing below has been executed against the
+live repo; `main` is still unprotected as of 2026-07-27.
+
+The check context to require is **`build-and-test`** — derived, not assumed: the
+job id in `.github/workflows/pr.yml` carries no `name:`, and the check-run
+reported on the head commits of PRs #22, #23 and #24 is literally
+`name=build-and-test`.
+
+```bash
+gh api -X PUT repos/Talchain/olumi-schemas/branches/main/protection \
+  --input - <<'JSON'
+{
+  "required_status_checks": { "strict": true, "contexts": ["build-and-test"] },
+  "enforce_admins": true,
+  "required_pull_request_reviews": null,
+  "restrictions": null
+}
+JSON
+```
+
+To undo, one line: `gh api -X DELETE repos/Talchain/olumi-schemas/branches/main/protection`.
+
+**Rationale, and the tradeoff it buys.** In every other repo in the estate a
+push to the integration branch is just a push; here `publish.yml` fires on push
+to `main`, so **a direct push IS a release** — it publishes to GitHub Packages,
+tags it, and (once ROADMAP 1.216 is done) propagates it. publish.yml's own
+lint/build/test steps run *after* the push has already landed, so they can only
+report on a bad release, never prevent one. Requiring `build-and-test` moves the
+only real gate this repo has to *before* the thing it is meant to gate. Three
+choices inside the command are deliberate and are the part worth a second's
+thought: `enforce_admins: true` is what actually closes the hazard — with it
+`false`, an admin (which is everyone who can push here) can still push straight
+to `main` and publish, so the protection would be decorative; the cost is that an
+emergency release means running the `DELETE` above first, which is the intended
+friction. `required_pull_request_reviews: null` because a single-human programme
+cannot approve its own PRs and requiring reviews would deadlock releases outright.
+`strict: true` requires a branch to be current with `main` before merging, which
+costs a rebase on a stale PR and buys the guarantee that the green tick was
+earned against the bytes that will actually be published.
+
 ### ⚠ `Trigger propagation` is a KNOWN standing red — and its model is obsolete
 
 The final step of publish.yml **has never once succeeded.** Across all 29
@@ -341,7 +416,9 @@ Semver policy table lives in `README.md`. On top of it:
    `/orchestrator` is 100% `.strict()`.
 2. Export it from the namespace `index.ts` and, if it is a new shape, register a
    maximal fixture (or a documented exclusion) in `src/fixtures/index.ts`.
-3. Add tests in `tests/`. Remember they are **not typechecked**.
+3. Add tests in `tests/`. They **are** typechecked as of 1.226 — run
+   `npm run build && npm run typecheck:tests`, and note that `noUnusedLocals`
+   applies there too (it is inherited from the build config, deliberately).
 4. Add an `contracts/adoption-manifest.json` row if the field is subject to
    adoption tracking — with the state its evidence licenses today, which for a
    brand-new field is `declared` or `produced_dark`, never `enforced`.
