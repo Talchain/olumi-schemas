@@ -24,7 +24,15 @@ import type { HandlerFact } from '../../../src/orchestrator/handler-fact.js';
 
 const SCENARIO_UUID = '11111111-1111-4111-8111-111111111111';
 
-export const HANDLER_FACT_FIXTURES: Record<string, HandlerFact> = {
+// `satisfies`, NOT `: Record<string, HandlerFact>`. The annotation form checks
+// each fixture against the union (which is what we want) and then WIDENS every
+// entry to the whole union, so `HANDLER_FACT_FIXTURES.edit_graph.result` loses
+// its `edit_kind` / `graph_hash_before` / `graph_hash_after` fields at the type
+// level and consumers reach for `as` casts. `satisfies` keeps the same check and
+// preserves per-key narrowing. Only visible once the test tree is typechecked
+// (tsconfig.test.json) — under the old build-only config the widening cost
+// nothing because nothing looked.
+export const HANDLER_FACT_FIXTURES = {
   run_analysis: {
     fact_type: 'run_analysis',
     fact_version: 1,
@@ -178,7 +186,7 @@ export const HANDLER_FACT_FIXTURES: Record<string, HandlerFact> = {
       rerun_recommended: false,
     },
   },
-};
+} satisfies Record<string, HandlerFact>;
 
 /**
  * Sentinel list mirroring the discriminated-union members. A new

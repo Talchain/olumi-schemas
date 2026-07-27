@@ -46,5 +46,14 @@ jobs:
       - name: Build
         run: npm run build
 
+      # The build config (`tsconfig.json`) excludes `tests` and `fixtures`, and
+      # `lint` uses that same config — so until tsconfig.test.json existed, NO
+      # test file was typechecked by anything here. Runs after Build because
+      # tests that import `../dist/**` typecheck against the built .d.ts.
+      # `npm test` runs this too; the separate step exists so the failure is
+      # attributed to the typecheck rather than to the suite.
+      - name: Typecheck tests, fixtures and scripts
+        run: npm run typecheck:tests
+
       - name: Test
         run: npm test

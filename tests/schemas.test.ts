@@ -2,13 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { ZodError } from 'zod';
 import {
   // Graph
-  NODE_ID_PATTERN,
   NodeKind,
   FactorCategory,
   ObservedStateSchema,
-  StateSpaceSchema,
   NodeV3Schema,
-  StrengthSchema,
   EdgeV3Schema,
   GraphV3Schema,
   // Analysis
@@ -63,15 +60,13 @@ import {
   // New v0.2.0 exports
   ConfidenceLevel,
   EffectDirection,
-  EdgeType,
   CIL_THRESHOLDS,
-  SensitivityDirection,
   FactorSensitivitySchema,
   FragileEdgeSchema,
   isFactorSensitivity,
   isFragileEdge,
   isFullyReady,
-} from '../src';
+} from '../src/index.js';
 import type {
   ValidationBlocker,
   ValidationResult,
@@ -84,7 +79,7 @@ import type {
   SensitivityDirectionType,
   FactorSensitivity,
   FragileEdge,
-} from '../src';
+} from '../src/index.js';
 
 // Fixtures
 import happyPath from '../fixtures/happy-path.json';

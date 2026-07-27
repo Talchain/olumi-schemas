@@ -27,7 +27,13 @@ import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync }
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import Ajv from 'ajv';
+// Named import, not the default. ajv 8 is CJS with `export default Ajv` in its
+// .d.ts; under `moduleResolution: Node16` a default import from an ESM file
+// resolves to the module namespace, which has no construct signature — `new
+// Ajv()` fails to typecheck (TS2351) while working under vitest's esbuild
+// transform. `exports.Ajv` is a real runtime export (verified against node's own
+// ESM loader), so the named form is correct in both worlds.
+import { Ajv } from 'ajv';
 
 import {
   generateJsonSchemaDocuments,
