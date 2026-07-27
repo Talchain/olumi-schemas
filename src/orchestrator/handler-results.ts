@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { NodeKind } from '../graph.js';
+import { AnalysisFactSchema } from '../contracts/analysis-fact.js';
 
 // Per-handler result schemas. These validate the in-memory body a handler
 // returns; they also describe the JSONB payload persisted in the
@@ -114,6 +115,30 @@ export const RunAnalysisResultSchema = z.object({
   /** Whether a leading option may be named as the answer, and on what
    *  evidence. See {@link ConstraintVerdictSchema}. */
   constraint_verdict: ConstraintVerdictSchema.optional(),
+  // 0.27.0 — arch step 2 slice 4, Codex F3. The subject-scoped, status-
+  // discriminated replacement for `win_probabilities` and every other
+  // option-keyed value map on this shape.
+  //
+  // WHY IT IS A UNION AND NOT A `status` FIELD: a flat status beside a separate
+  // value map lets `status:'suppressed'` and a still-present plausible number
+  // BOTH parse — nothing relates the two. Here a suppressed or unavailable fact
+  // does not DECLARE `value` and the branch is `.strict()`, so carrying a number
+  // is a parse error. See ../contracts/analysis-fact.ts.
+  //
+  // NOTHING IS REMOVED BY THIS SLICE. `win_probabilities` above is RETAINED for
+  // the compatibility window; the maps and the facts coexist until a consumer
+  // is verified on the facts. Removal is a later change train with its own
+  // evidence, per the adoption manifest row.
+  //
+  // OPTIONAL, and optional is the whole reason this is safe to ship alone:
+  // every fact persisted before this release has none, nothing produces them
+  // today, and this schema never crosses the UI wire (it is the CEE-internal
+  // persisted handler-fact payload, an ORCHESTRATOR_INTERNAL fixture-coverage
+  // exclusion). An empty array is a legitimate, DIFFERENT claim from absence —
+  // "this producer emitted no facts" vs "this row predates the field" — so no
+  // `.min(1)`.
+  /** Subject-scoped analysis facts. See {@link AnalysisFactSchema}. */
+  analysis_facts: z.array(AnalysisFactSchema).optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;
 

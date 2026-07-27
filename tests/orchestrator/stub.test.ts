@@ -21,6 +21,16 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
     // 0.12.0 adds: edit-graph result (1) + edit-graph sub-enums (3) +
     // edit-graph handler-fact variant (1) = 41 total.
     // 0.25.0 adds: constraint-verdict object (1) + its state enum (1) = 43.
+    // 0.27.0 adds 10 — arch step 2 slice 4, Codex F3: the AnalysisFact union
+    // re-exported from ../contracts/analysis-fact.ts. The union (1) + its three
+    // branch schemas (3) + the two nested shapes (2) + the two scalar
+    // vocabularies (2) + the two `as const` vocabulary arrays (2) = 53.
+    // They live on the ROOT entry point as well — same schema objects — but the
+    // attachment point (RunAnalysisResult.analysis_facts) is in THIS namespace,
+    // and a producer building a fact should not have to know which file it was
+    // declared in. This pin is a hand-maintained mirror by design: it exists so
+    // that a surface change is a deliberate edit here, with its reason, rather
+    // than a silent widening.
     expect(exported).toEqual(
       [
         // A1
@@ -84,6 +94,17 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         // 0.25.0 — T1 claim safety (additive)
         'ConstraintVerdictSchema',
         'ConstraintVerdictStateSchema',
+        // 0.27.0 — subject-scoped AnalysisFact union (additive; Codex F3)
+        'AnalysisFactSchema',
+        'ComputedFactSchema',
+        'UnavailableFactSchema',
+        'SuppressedFactSchema',
+        'SuppressionGuardSchema',
+        'AnalysisFactSubjectSchema',
+        'AnalysisFactSubjectKindSchema',
+        'MetricStatusSchema',
+        'ANALYSIS_FACT_SUBJECT_KINDS',
+        'ANALYSIS_FACT_STATUSES',
       ].sort(),
     );
   });

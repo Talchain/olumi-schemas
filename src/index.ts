@@ -223,3 +223,31 @@ export {
   POPULATION_STAGES,
 } from './contracts/generated-population-ref.js';
 export type { PopulationRef, PopulationId, PopulationStage } from './contracts/generated-population-ref.js';
+
+// Analysis facts (0.27.0 — arch step 2 slice 4; Codex F3)
+// Subject-scoped, status-discriminated. `ComputedFact` REQUIRES `value`;
+// `UnavailableFact` / `SuppressedFact` do not declare it and are `.strict()`,
+// so a withheld metric carrying a number FAILS TO PARSE.
+// See ./contracts/analysis-fact.ts.
+export {
+  AnalysisFactSchema,
+  ComputedFactSchema,
+  UnavailableFactSchema,
+  SuppressedFactSchema,
+  SuppressionGuardSchema,
+  AnalysisFactSubjectSchema,
+  AnalysisFactSubjectKindSchema,
+  MetricStatusSchema,
+  ANALYSIS_FACT_SUBJECT_KINDS,
+  ANALYSIS_FACT_STATUSES,
+} from './contracts/analysis-fact.js';
+export type {
+  AnalysisFact,
+  ComputedFact,
+  UnavailableFact,
+  SuppressedFact,
+  SuppressionGuard,
+  AnalysisFactSubject,
+  AnalysisFactSubjectKind,
+  MetricStatus,
+} from './contracts/analysis-fact.js';

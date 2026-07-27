@@ -166,6 +166,29 @@ validator that passes everything). `generate:population-ref:check` is a
 without a regeneration fail identically. **Edit the registry, then run
 `npm run generate:population-ref` — never edit the generated file.**
 
+### Analysis facts — `src/contracts/analysis-fact.ts` (0.27.0)
+
+`AnalysisFactSchema`, a `z.discriminatedUnion('status', …)` on `computed |
+unavailable | suppressed`, attached optionally as
+`RunAnalysisResult.analysis_facts?`. **The rule it encodes, and the reason to
+copy the pattern:** `ComputedFact` requires `value`; `UnavailableFact` and
+`SuppressedFact` **do not declare `value` at all** and every branch is
+`.strict()`, so a withheld metric carrying a number is an unrecognized key and
+fails to parse. A flat `status` field beside an optional `value` (or beside a
+separate value map, which is what `win_probabilities` is) parses the
+contradiction happily. **Where a rule can live in the type system, it must not
+live in producer discipline.**
+
+`population` on the computed branch is the **0.26.0 generated
+`PopulationRefSchema`, imported** — pinned by an object-IDENTITY assertion in
+`tests/contracts/analysis-fact.test.ts`, because a hand-written twin would pass
+every behavioural test that used only valid values.
+
+**Nothing is removed by 0.27.0** — the legacy maps are retained for the
+compatibility window, and the test file asserts the resulting gap
+(`DISCLOSED LIMIT — the legacy map can still contradict a suppressed fact`)
+rather than letting a reader assume it closed.
+
 ### Health manifest — `src/contracts/health-manifest.ts`
 
 The four fields every Olumi service exposes at the **top level** of its health
@@ -296,14 +319,18 @@ Semver policy table lives in `README.md`. On top of it:
   followed by `npm run generate:contract-constants`, or
   `generate:contract-constants:check` fails the PR gate.
 - Allocated so far, and it matters because a lane has now been told the wrong
-  number three times: **0.24.0 = S0 scaffolding**, **0.25.0 =
+  number four times: **0.24.0 = S0 scaffolding**, **0.25.0 =
   `RunAnalysisResult.constraint_verdict`**, **0.26.0 = `PopulationRefSchema`
-  (Codex F4)**. The 0.24.0 CHANGELOG told the S1 lane its generated types would
-  be `0.25.0`; 0.25.0 was taken, the note was corrected to `0.26.0`, and 0.26.0
-  has now been taken too — **S1's types land at `0.27.0` or later**. Those notes are
-  expectations recorded in a changelog, not reservations any tooling enforces —
-  **re-read `package.json` at the tip you are on** rather than trusting either
-  note, including this one.
+  (Codex F4)**, **0.27.0 = `AnalysisFactSchema` (Codex F3)**. The 0.24.0
+  CHANGELOG told the S1 lane its generated types would be `0.25.0`; 0.25.0 was
+  taken, the note was corrected to `0.26.0`, 0.26.0 was taken and the note moved
+  to `0.27.0`, and **0.27.0 has now been taken too — S1's types land at `0.28.0`
+  or later.** Before taking it, the 0.27.0 lane derived that nothing had claimed
+  it: no remote branch matches `s1` or `0.27`, and the only two open PRs (#15,
+  #16) are stale drafts still on 0.21.0 / 0.20.0. **That derivation is the
+  procedure — these notes are expectations recorded in a changelog, not
+  reservations any tooling enforces.** Re-read `package.json` at the tip you are
+  on, and check the open PRs, rather than trusting any note including this one.
 - Every release gets a CHANGELOG entry under its own heading, with the
   additive/breaking analysis stated explicitly.
 

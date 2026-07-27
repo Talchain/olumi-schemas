@@ -7,6 +7,126 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.0] — 2026-07-27
+
+**`AnalysisFactSchema` — the dishonest state, made unrepresentable.** A
+subject-scoped discriminated union replacing the flat-`status`-beside-a-value-map
+shape. Closes Codex contract step-2 finding **F3** (P1). Maximal-fixture registry
+**116 → 124**. **Additive, optional, CEE-internal; nothing is removed.**
+
+### The defect, in one line
+
+A flat `status` field plus a separate option-keyed value map cannot enforce
+status/value honesty: `status: 'suppressed'` and a still-present plausible number
+in `win_probabilities` **both parse**, because nothing in the type system relates
+the two. A guard withholds a metric in one field while the number it withheld
+rides along in another, and a consumer reads the number and states it. No
+producer discipline closes that — the contract cannot see it.
+
+### Added
+
+- **`root/AnalysisFactSchema`** (also re-exported from `/orchestrator`) — a
+  `z.discriminatedUnion('status', …)` over three `.strict()` branches:
+  - **`ComputedFactSchema`** — `value` **required** (`z.number().finite()`,
+    because `NaN`/`Infinity` is a failed computation wearing a `computed`
+    label), plus `units`, `method_id` and `population` **required**. A number
+    whose unit, method and sample population are unstated is the shape that
+    produced the 1.52 sign-inversion class and the pre/post-noise mixing.
+  - **`UnavailableFactSchema`** — `reason_code` required; **`value` is not
+    declared at all**.
+  - **`SuppressedFactSchema`** — `guard {id, version, reason_code,
+    evidence_fact_ids[]}` required; **`value` is not declared at all**.
+
+  Because the withholding branches do not declare `value` **and** are
+  `.strict()`, a suppressed or unavailable fact carrying a number is an
+  **unrecognized key** and fails to parse. That mutual exclusion is the entire
+  point of the shape: not a convention a producer must remember, a parse error.
+- **Identity on every branch, required**: `fact_id`, `analysis_id`, `metric_id`
+  and `subject {kind, id}` over the closed vocabulary
+  `option | node | edge | goal | scenario`. `fact_id` is **producer-owned and
+  minted before commit — it is NOT a database row id**; `storage_fact_row_id` is
+  a separate optional slot so the two identities can never be conflated. (Why it
+  cannot be the row id, at CEE `820f3e83`: `supabase-store.ts:565`'s select list
+  omits `v5_handler_facts.id`, `append_turn_atomic` returns the TURN row id,
+  claims are composed before those ids exist, and one handler row carries many
+  metrics.)
+- **`population` is the 0.26.0 GENERATED `PopulationRefSchema`, imported** — not
+  a second hand-written population shape. Asserted by **object identity**
+  (`ComputedFactSchema.shape.population === PopulationRefSchema`), because a
+  twin would pass every behavioural test that used only valid values and would
+  silently re-open F4 inside the fact.
+- **`RunAnalysisResult.analysis_facts?: AnalysisFact[]`** — the attachment point.
+  Optional in its entirety; an empty array is a legitimate, *different* claim
+  from absence.
+- `tests/contracts/analysis-fact.test.ts` (66 tests) — 17 discriminating
+  negatives, 2 honestly non-discriminating, 2 with no counterpart in the old
+  shape, positive controls per branch, and a permanent **BLIND CONTROL**
+  reconstruction of the flat shape asserting it accepts what the union rejects.
+- Two `contracts/adoption-manifest.json` rows, both **`declared`** —
+  `analysis_facts` and `analysis_facts[].population`. The second is the row
+  0.26.0's changelog said it owed to "S1's `ComputedFact`".
+
+### What is NOT in this change
+
+- **Nothing is removed.** `win_probabilities` and every other legacy map on
+  `RunAnalysisResultSchema` is **RETAINED** for the compatibility window.
+  **Disclosed limit, pinned by a test rather than glossed:** the union makes the
+  dishonest state unrepresentable *within a fact*; it does not delete the map, so
+  a producer emitting both can still contradict a suppressed fact via the map.
+  Removing the maps is a later change train, gated on a verified consumer.
+- **No UI-wire placement.** The union goes nowhere near `OlumiResponseSchema` in
+  this release. When it does, it goes at a **NEW TOP-LEVEL key**: at UI tip
+  `6d3f4611`, `responseParser.ts` quarantines unknown TOP-LEVEL keys into a
+  `__additive__` sidecar *before* strict validation (safe against an
+  un-re-vendored 0.22.0 UI), whereas an unknown key inside an existing strict
+  NESTED object is a `schema_mismatch` **hard fail**. That slice carries the UI
+  re-vendor in its train.
+- **No `identity_unresolved` member** — it is a property of the *attempt*, not of
+  a metric (design of record §2), and belongs on an `AnalysisAttempt`.
+- **No `assumptions` / `provenance{build, schema_hash, trace_id, seed,
+  sample_count}`** — no producer today. Declaring contract for a producer that
+  writes nothing is precisely the non-adoption failure the adoption manifest
+  exists to record.
+- **No closed enum for `metric_id` / `reason_code` / guard `id`.** Those
+  vocabularies live with the producers (ISL/PLoT/CEE); a closed enum here would
+  be a hand-maintained mirror of a registry this package does not own, and would
+  reject codes a newer producer legitimately emits. Contrast `population`, whose
+  registry **is** checked in here and therefore **is** enforced — the difference
+  is ownership, and it is stated at each member.
+
+### Why MINOR, and the skew analysis
+
+Per the semver policy table in `README.md`, **a new schema plus a new optional
+field is a MINOR**. 0.x means minor is also the breaking axis, so this moves the
+release line `0.26` → `0.27` and readers must declare `0.27` before a writer on
+it is promoted — ordinary reader-first ordering, not a break.
+
+**It carries no break, by construction rather than by survey.** Measured at
+`e048e353` and across all 23 remote branch tips,
+`git grep -nE 'AnalysisFact|analysis_facts|SuppressedFact|UnavailableFact|ComputedFact'`
+returns exactly **one** hit and it is prose (`CHANGELOG.md:64`, 0.26.0's own note
+about the row it owed). Nothing declares these shapes, nothing produces them,
+nothing consumes them. The one existing schema touched — `RunAnalysisResultSchema`
+— gains one **optional** member and loses nothing, and it never crosses the UI
+wire: it is the CEE-internal persisted handler-fact payload, an
+`ORCHESTRATOR_INTERNAL` fixture-coverage exclusion.
+
+**All three consumers vendor `file:` tarballs, so nothing auto-adopts 0.27.0.**
+Adoption is a re-vendor PR in each consumer's own lane, per that repo's
+`vendor/README.md`.
+
+### Maximal-fixture registry 116 → 124 (+8), and why the count is structural
+
+`AnalysisFactSchema` needs **one fixture per branch** for the maximality walker to
+see all three, and the three branch schemas are exported in their own right — a
+fixture registered against `ComputedFactSchema` does not exercise the *union's*
+branch coverage, because they are different schema objects. So: 3 union branches
++ 3 branch schemas + `SuppressionGuardSchema` + `AnalysisFactSubjectSchema`. The
+fixture **values** are shared between the union entries and the branch entries —
+eight registry rows, five fixture objects. The reason is recorded in
+`tests/fixtures/completeness.test.ts`'s ledger alongside the previous entries.
+**No baseline was bumped to make anything pass.**
+
 ## [0.26.0] — 2026-07-27
 
 **`PopulationRefSchema` — generated from `contracts/population-registry.json`, so
