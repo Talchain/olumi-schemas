@@ -110,13 +110,17 @@ presence — which is why this is a MINOR (the breaking axis at 0.x), not a patc
 - **Runtime, as a validator:** strictly more permissive. Every payload that
   parsed under 0.27.0 still parses. Nothing that was rejected is now rejected
   differently.
-- **Runtime, as a reader:** a consumer still on an OLD pin that validates a
-  payload from a producer that has started omitting will **reject** it. That is
-  the real compatibility boundary, and it is ordering-sensitive: **every
-  validator on the path must re-vendor BEFORE the producer deletes its
-  fabrication.** A patch bump would have told `compareHealthManifest` that
-  0.27.0 and 0.27.1 share a release line and are compatible — precisely the
-  claim that is false here.
+- **Runtime, as a reader:** the accept-set moves in a direction an **older
+  reader cannot follow**. A 0.27.0-or-earlier validator handed a payload that
+  omits the field rejects it, by construction. That is the compatibility
+  boundary, and it is what MINOR exists to declare — a patch bump would have
+  told `compareHealthManifest` that 0.27.0 and 0.27.1 share a release line and
+  are compatible, which is precisely the claim that is false.
+  **Measured caveat, stated because it cuts against the argument:** *no
+  validator on the live path fail-closes today* (see the pin table), so nothing
+  actually rejects at current pins. The version must describe the **contract**,
+  not the current leniency of its readers — especially when CEE's stated plan is
+  to move its shadow validator to `enforce`.
 - **Compile time:** `EnrichmentRobustnessEdge['switch_probability']` becomes
   `number | undefined`. Any consumer that imports the type and does unguarded
   arithmetic on it gets a `tsc` error on re-vendor. That is the type system
@@ -131,12 +135,28 @@ presence — which is why this is a MINOR (the breaking axis at 0.x), not a patc
 | Consumer | tip | pin | Must re-vendor to benefit? |
 |---|---|---|---|
 | PLoT `plot-lite-service` | `dd144f77` | `file:./vendor/talchain-schemas-0.22.0.tgz` | **Yes — this is the blocked producer.** |
-| CEE `olumi-assistants-service` | `6cfb0e57` | `file:./vendor/talchain-schemas-0.25.0.tgz` | **Yes, and BEFORE PLoT deletes its fabrication** — CEE shadow-validates the same body. |
+| CEE `olumi-assistants-service` | `6cfb0e57` | `file:./vendor/talchain-schemas-0.25.0.tgz` | Not to avoid a break — **but see the shadow-validation window below.** |
 | UI `DecisionGuideAI` | `201f1075` | `file:./vendor/talchain-schemas-0.22.0.tgz` | No. Verified negative: the UI imports none of the enrichment schemas and its own local fragile-edge types already declare the field optional. |
 | ISL `Inference-Service-Layer` | `1716f9bb` | n/a — not a `@talchain/schemas` consumer | No. Its Pydantic model is **already** `switch_probability: Optional[float]`, so this moves the two contracts *into* agreement. |
 
 Three different release lines live at once (0.22.0 / 0.25.0 / 0.22.0) — the
 standing skew hazard, unchanged by this release.
+
+**No validator on the path fail-closes today**, which is worth stating plainly
+rather than leaving as an unexamined worry: PLoT's egress guard is fail-open by
+design, CEE's `validateEnrichmentShadow` is default-`off`/shadow-only/swallowing
+(`enforce` is not implemented), and the UI never parses the enrichment with this
+schema at all. So an omitting producer causes **no rejection anywhere** at
+today's pins.
+
+**The one real ordering effect is CEE's enforcement-readiness window.** If
+`CEE_ENRICHMENT_VALIDATION=shadow` is live on staging while CEE is still on
+0.25.0 and PLoT has started omitting, CEE emits a
+`v5.enrichment.schema_mismatch` event per analysis — which is exactly the metric
+gating its stage-3 move to `enforce` (its own criterion: 7 consecutive days /
+200 staging analyses at a zero mismatch rate). Omission mid-window resets that
+clock. **Check that env var on staging before PLoT deletes the fabrication**; if
+shadow is on, re-vendor CEE first.
 
 **Note for whoever re-vendors PLoT:** the `vendor/` + egress-guard apparatus
 exists on PLoT **`staging`**, which is where #278 landed. PLoT `main` is a
