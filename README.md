@@ -146,6 +146,15 @@ gracefully. Where it is `.strict()`, they must not receive them at all.
 
 ## Adding new schemas
 
+**First check whether the vocabulary already exists as a checked-in artefact
+under `contracts/`. If it does, GENERATE the schema from it rather than
+hand-writing one that restates it.** `src/contracts/generated-population-ref.ts`
+is the worked example: `PopulationRefSchema` is built from
+`contracts/population-registry.json` by `scripts/generate-population-ref.mjs`, and
+`npm run generate:population-ref:check` (in the PR gate) fails if the artefact and
+the registry ever disagree. A hand-written mirror of a vocabulary this repo
+already owns will drift, and the drift reads as green.
+
 1. Create or edit the relevant file in `src/`
 2. Define the Zod schema, matching the **namespace's** unknown-key policy above
    — `.strict()` under `/orchestrator`, `.strict()` or `.passthrough()` under

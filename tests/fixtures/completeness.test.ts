@@ -143,7 +143,13 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   boundary/OptimiseUtilitySchema.
     // 0.24.0: 113 -> 114 (+1): arch step 2 S0 — root/HealthManifestSchema, the
     //   four contract-identity fields every service exposes on its health endpoint.
-    expect(MAXIMAL_FIXTURES.length).toBe(114);
+    // 0.26.0: 114 -> 116 (+2): arch step 2 S0, Codex F4 — root/PopulationRefSchema
+    //   is a discriminated union generated from contracts/population-registry.json,
+    //   so it needs ONE FIXTURE PER BRANCH for the maximality guard to see every
+    //   branch: #model_only (root population, no lineage fields) and
+    //   #auto_noise_sqrt2 (derived, both lineage fields populated). Two entries,
+    //   one schema identity.
+    expect(MAXIMAL_FIXTURES.length).toBe(116);
   });
 
   it('family keys are unique', () => {
