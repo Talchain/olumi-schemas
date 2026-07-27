@@ -32,8 +32,13 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(fileURLToPath(new URL('../../', import.meta.url)));
 const TSC = join(ROOT, 'node_modules', 'typescript', 'bin', 'tsc');
 
-/** Directories that hold no source of ours. `dist` is BUILD OUTPUT of `src`. */
-const SKIP_DIRS = new Set(['node_modules', 'dist', '.git', '.github']);
+/**
+ * Directories that hold no test source of ours: dependencies, and `dist` which
+ * is BUILD OUTPUT of `src`. Dot-directories (`.git`, `.github`, …) are skipped
+ * by the walk itself. Deliberately SHORT — every name here is a place this test
+ * agrees not to look, so the list is a liability and stays minimal.
+ */
+const SKIP_DIRS = new Set(['node_modules', 'dist']);
 
 /**
  * Vitest's default include is `**\/*.{test,spec}.?(c|m)[jt]s?(x)`. These are the
@@ -49,7 +54,7 @@ const JS_TEST = /\.(test|spec)\.(c|m)?jsx?$/;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.') && entry.name !== '.github') continue;
+    if (entry.name.startsWith('.')) continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
       if (SKIP_DIRS.has(entry.name)) continue;
