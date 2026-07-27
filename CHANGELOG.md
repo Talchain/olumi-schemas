@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0] — 2026-07-27
+
+**`PopulationRefSchema` — generated from `contracts/population-registry.json`, so
+the registry it claims to enforce is the registry it actually enforces.**
+Closes Codex contract step-2 finding **F4** (P1, ACCEPTANCE). Maximal-fixture
+registry **114 → 116**.
+
+### Added
+
+- **`root/PopulationRefSchema`** (+ `POPULATION_IDS`, `POPULATION_STAGES`, and the
+  `PopulationRef` / `PopulationId` / `PopulationStage` types) — a discriminated
+  union on `id`, **generated** into `src/contracts/generated-population-ref.ts` by
+  `scripts/generate-population-ref.mjs`. Each registry id is pinned to the stage,
+  parent and transform **the registry gives it**, so the accepted `(id, stage)`
+  pairs are exactly the registry's. `parent_id` / `transform_id` stay optional —
+  the registry already owns the lineage — but are literal-pinned, so a producer
+  need not restate them and may not restate them wrong.
+- **`npm run generate:population-ref` / `:check`**, the latter wired into
+  `check:contracts` and added as its own `pr.yml` step. It is a
+  **regeneration-diff check**: the artefact must be byte-identical to what the
+  generator produces from the registry, so a hand-edit **or** a registry change
+  without a regeneration fails loud (`E_STALE`). The generator also refuses to
+  emit an empty union (`E_NO_POPULATIONS`), a malformed id (`E_BAD_ID`), an
+  out-of-enum stage (`E_BAD_STAGE`), or any string it cannot safely place in a TS
+  literal (`E_UNSAFE_LITERAL` — the id grammar does not cover `stages`).
+- `tests/contracts/population-ref.test.ts` (32 tests) and four negative registry
+  fixtures under `tests/contracts/negative/population-ref/`, one per generator
+  rule, per the S0 "a rule with no negative fixture is an unproven rule" bar.
+
+### Why this is a bump at all, and why MINOR
+
+Per the semver policy table above, **a new schema is a MINOR**. The 0.x breaking
+axis is also the minor, so this moves the release line `0.25` → `0.26` and
+readers must declare `0.26` before a writer on it is promoted — ordinary
+reader-first ordering, not a break.
+
+**It carries no break.** A schema tightening is breaking for any producer already
+emitting a mismatched pair; there can be none, because **`PopulationRefSchema`
+did not exist in any published version** — no consumer could import it, so no
+producer was ever validated by the loose shape this replaces. Nothing on the wire
+emits a `{id, stage}` population reference today either: the pinned ISL artifact
+emits `metric_populations` as the two-value label enum `{model_only,
+noise_inflated}`, which is exactly what the registry's `wire_labels` mapping
+exists to translate. Blast radius is nil by construction rather than by survey.
+
+### Not in this change, deliberately
+
+- **No wire-label → ref helper.** ISL emits labels, not ids, so a translation
+  helper is real work — but it belongs in the change train of the producer that
+  needs it, per the registry's own rule that an id enters with its producer.
+  Shipping it now would be the non-adoption failure this scaffolding exists to
+  prevent.
+- **No `contracts/adoption-manifest.json` row.** This declares a *vocabulary*, not
+  a wire field. The row belongs to the `population` field itself, which lands with
+  S1's `ComputedFact`.
+- `not_yet_emitted.populations` is excluded from the union by design: those ids
+  have no producer, so licensing them on the wire would license a value nothing
+  is allowed to emit.
+
 ## [0.25.1] — 2026-07-26
 
 **Hygiene and honesty. No schema, type, enum, or wire-field change of any kind** —

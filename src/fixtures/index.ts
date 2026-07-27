@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { HealthManifestSchema } from '../contracts/health-manifest.js';
 import type { HealthManifest } from '../contracts/health-manifest.js';
+import { PopulationRefSchema } from '../contracts/generated-population-ref.js';
+import type { PopulationRef } from '../contracts/generated-population-ref.js';
 
 // ============================================================================
 // @talchain/schemas/fixtures — maximal-fixture contract library (W2E-1).
@@ -1716,6 +1718,25 @@ export const maximalHealthManifest: HealthManifest = {
   contract_manifest_sha: 'b'.repeat(64),
 };
 
+// --- population ref (0.26.0 — arch step 2, S0; Codex F4) --------------------
+// UNLIKE every other fixture in this file, these carry REAL ids and stages, and
+// they must: the schema is a discriminated union generated from
+// contracts/population-registry.json, so a `fixture_`-prefixed synthetic id is
+// not merely unrealistic, it is UNPARSEABLE. That is the point of the fix.
+// One fixture per union branch, so the maximality guard sees every branch and
+// every optional field populated.
+export const maximalPopulationRefModelOnly: PopulationRef = {
+  id: 'olumi.mc.model_only@1',
+  stage: 'raw',
+};
+
+export const maximalPopulationRefAutoNoise: PopulationRef = {
+  id: 'olumi.mc.auto_noise_sqrt2@1',
+  stage: 'transformed',
+  parent_id: 'olumi.mc.model_only@1',
+  transform_id: 'olumi.transform.auto_scaled_noise@1',
+};
+
 export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   // --- graph -----------------------------------------------------------------
   { family: 'root/ObservedStateSchema', schema: ObservedStateSchema, fixture: maximalObservedState },
@@ -2067,6 +2088,21 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'boundary/DecisionRecordSchema', schema: DecisionRecordSchema, fixture: maximalDecisionRecord },
   // --- health manifest (0.24.0 — arch step 2, S0) ----------------------------
   { family: 'root/HealthManifestSchema', schema: HealthManifestSchema, fixture: maximalHealthManifest },
+  // --- population ref (0.26.0 — arch step 2, S0; Codex F4) -------------------
+  {
+    family: 'root/PopulationRefSchema#model_only',
+    schema: PopulationRefSchema,
+    fixture: maximalPopulationRefModelOnly,
+    notes:
+      'Registry entry olumi.mc.model_only@1 has no parent and no transform, so this branch has no optional fields to populate — it is maximal at two keys.',
+  },
+  {
+    family: 'root/PopulationRefSchema#auto_noise_sqrt2',
+    schema: PopulationRefSchema,
+    fixture: maximalPopulationRefAutoNoise,
+    notes:
+      "The derived branch, with both optional lineage fields populated. Their values are literal-pinned to the registry's, so this is the ONLY maximal fixture this branch can have.",
+  },
 ]);
 
 // ----------------------------------------------------------------------------

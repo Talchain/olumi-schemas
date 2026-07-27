@@ -45,6 +45,7 @@ npm run check:adoption                     # S0 · contracts/adoption-manifest.j
 npm run check:populations                  # S0 · contracts/population-registry.json
 npm run check:compat                       # S0 · compat/seams/**
 npm run generate:contract-constants:check  # S0 · src/contracts/generated-constants.ts is current
+npm run generate:population-ref:check      # S0 · src/contracts/generated-population-ref.ts matches the registry
 npm run build                              # tsc (emits dist/)
 npm test                                   # check:contracts && build && vitest run
 ```
@@ -52,7 +53,7 @@ npm test                                   # check:contracts && build && vitest 
 **`npm test` alone reproduces the whole PR gate.** `test` is
 `npm run check:contracts && npm run build && vitest run`, and `check:contracts`
 is `check:adoption && check:populations && check:compat &&
-generate:contract-constants:check`. The pr.yml steps above are that same set
+generate:contract-constants:check && generate:population-ref:check`. The pr.yml steps above are that same set
 unrolled, run first so a contract break is reported as itself rather than as a
 downstream type error. Run the steps individually anyway when you want the
 failure attributed to one gate.
@@ -153,6 +154,17 @@ to the registry id is asserted **total and injective against the pinned ISL
 artifact in both directions**, so the day ISL adds a third label this repo's CI
 fails. `not_yet_emitted.populations` is deliberately empty — an id enters the
 registry in the same change train as the producer that emits it.
+
+**The registry has a second consumer as of 0.26.0: it GENERATES the wire schema.**
+`scripts/generate-population-ref.mjs` turns each entry into a `z.literal` id
+paired with its registry-owned literal stage/parent/transform, assembled into the
+discriminated `PopulationRefSchema` in `src/contracts/generated-population-ref.ts`
+(Codex F4 — the hand-written alternative, a free-string `id` beside an
+independent `stage` enum, accepts a REAL id with the WRONG stage, which is a
+validator that passes everything). `generate:population-ref:check` is a
+**regeneration-diff** check, so a hand-edit of the artefact and a registry change
+without a regeneration fail identically. **Edit the registry, then run
+`npm run generate:population-ref` — never edit the generated file.**
 
 ### Health manifest — `src/contracts/health-manifest.ts`
 
@@ -283,10 +295,12 @@ Semver policy table lives in `README.md`. On top of it:
   `<name>@<version>` before the json-schema bytes. So every bump must be
   followed by `npm run generate:contract-constants`, or
   `generate:contract-constants:check` fails the PR gate.
-- Allocated so far, and it matters because a lane was told the wrong number
-  twice: **0.24.0 = S0 scaffolding**, **0.25.0 = `RunAnalysisResult.constraint_verdict`**.
-  The 0.24.0 CHANGELOG told the S1 lane its generated types would be `0.25.0`;
-  0.25.0 was then taken, so **S1's types land as `0.26.0`**. Those notes are
+- Allocated so far, and it matters because a lane has now been told the wrong
+  number three times: **0.24.0 = S0 scaffolding**, **0.25.0 =
+  `RunAnalysisResult.constraint_verdict`**, **0.26.0 = `PopulationRefSchema`
+  (Codex F4)**. The 0.24.0 CHANGELOG told the S1 lane its generated types would
+  be `0.25.0`; 0.25.0 was taken, the note was corrected to `0.26.0`, and 0.26.0
+  has now been taken too — **S1's types land at `0.27.0` or later**. Those notes are
   expectations recorded in a changelog, not reservations any tooling enforces —
   **re-read `package.json` at the tip you are on** rather than trusting either
   note, including this one.

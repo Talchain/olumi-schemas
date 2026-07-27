@@ -37,6 +37,12 @@ jobs:
       - name: Generated contract constants are current
         run: npm run generate:contract-constants:check
 
+      # Regeneration-diff check: src/contracts/generated-population-ref.ts must
+      # be byte-identical to what the generator produces from the registry, so a
+      # hand-edit OR a registry change without a regeneration fails loud.
+      - name: Generated population ref matches the registry
+        run: npm run generate:population-ref:check
+
       - name: Build
         run: npm run build
 

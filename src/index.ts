@@ -212,3 +212,14 @@ export {
 } from './contracts/health-manifest.js';
 export type { HealthManifest, HealthManifestVerdict } from './contracts/health-manifest.js';
 export { SCHEMA_SHA, CONTRACT_MANIFEST_SHA, SCHEMA_PACKAGE_VERSION } from './contracts/generated-constants.js';
+
+// Population reference (0.26.0 — arch step 2, S0; Codex F4)
+// GENERATED from contracts/population-registry.json — each id is pinned to the
+// stage/parent/transform the registry gives it, so a real id carrying the wrong
+// stage is rejected. See ./contracts/generated-population-ref.ts.
+export {
+  PopulationRefSchema,
+  POPULATION_IDS,
+  POPULATION_STAGES,
+} from './contracts/generated-population-ref.js';
+export type { PopulationRef, PopulationId, PopulationStage } from './contracts/generated-population-ref.js';

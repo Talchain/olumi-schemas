@@ -1,6 +1,6 @@
 {
   "name": "@talchain/schemas",
-  "version": "0.25.1",
+  "version": "0.26.0",
   "description": "Shared TypeScript schemas and runtime validation for Olumi services",
   "type": "module",
   "main": "dist/index.js",
@@ -40,9 +40,11 @@
     "check:adoption": "node scripts/check-adoption-manifest.mjs",
     "check:populations": "node scripts/check-population-registry.mjs",
     "check:compat": "node scripts/check-compat-gate.mjs",
-    "check:contracts": "npm run check:adoption && npm run check:populations && npm run check:compat && npm run generate:contract-constants:check",
+    "check:contracts": "npm run check:adoption && npm run check:populations && npm run check:compat && npm run generate:contract-constants:check && npm run generate:population-ref:check",
     "generate:contract-constants": "node scripts/generate-contract-constants.mjs --write",
-    "generate:contract-constants:check": "node scripts/generate-contract-constants.mjs"
+    "generate:contract-constants:check": "node scripts/generate-contract-constants.mjs",
+    "generate:population-ref": "node scripts/generate-population-ref.mjs --write",
+    "generate:population-ref:check": "node scripts/generate-population-ref.mjs"
   },
   "keywords": [
     "olumi",

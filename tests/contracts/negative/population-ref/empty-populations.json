@@ -1,0 +1,31 @@
+{
+  "$comment": [
+    "NEGATIVE FIXTURE for scripts/generate-population-ref.mjs — populations is empty: a zero-branch union discriminates nothing, so the generator must refuse rather than emit it."
+  ],
+  "registry_version": 1,
+  "stages": [
+    "raw",
+    "transformed",
+    "conditioned",
+    "intervened"
+  ],
+  "wire_label_sources": [],
+  "transforms": [
+    {
+      "id": "olumi.transform.auto_scaled_noise@1",
+      "description": "Adds 1.0x the model std per outcome/risk sample (~sqrt(2) spread inflation). Independent draw PER OPTION, which is why it breaks Common-Random-Numbers alignment for joint metrics. Default-OFF since 2026-07-26 (ISL ENABLE_AUTO_SCALED_NOISE).",
+      "calibration_status": "uncalibrated_poc_heuristic",
+      "owner_repo": "isl"
+    }
+  ],
+  "populations": [],
+  "not_yet_emitted": {
+    "$comment": [
+      "Deliberately EMPTY. The design's `conditioned` and `intervened` stages have no",
+      "producer today. Pre-registering ids nobody emits is exactly the non-adoption",
+      "failure this scaffolding exists to prevent — an id enters this registry in the",
+      "same change train as the producer that emits it, with an adoption-manifest row."
+    ],
+    "populations": []
+  }
+}
