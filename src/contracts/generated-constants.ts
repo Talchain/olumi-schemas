@@ -4,7 +4,7 @@
 // See ./health-manifest.ts for what these are and where they go.
 
 /** sha256 of the published wire contract (package name+version + every json-schema/*.json). */
-export const SCHEMA_SHA = 'e1cb720ca72d3ffe4cfc9ec1e88e188b47ac89b830fe7f98579f66f4d7acb6ff';
+export const SCHEMA_SHA = '60df5a31fc6338764fcfc39857c2dcbf62b9d5b068583f2959745ef4d7f91c7a';
 
 /** sha256 of contracts/adoption-manifest.json. */
 export const CONTRACT_MANIFEST_SHA = '54608966b17eb8638a6385627303f93f490d0de8038c64ce37cadc58cdd3d078';

@@ -85,8 +85,13 @@ export function generateJsonSchemaDocuments() {
     $comment: GENERATED_COMMENT,
     description:
       'Machine-readable JSON-Schema (draft-07) for the compute-seam analysis ' +
-      'types, derived from the Zod contract. Consumers (ISL Pydantic drift ' +
-      'check) validate/diff against these documents instead of hand-mirroring.',
+      'types, derived from the Zod contract, so a consumer can validate/diff ' +
+      'against these documents instead of hand-mirroring them. NOTE (corrected ' +
+      '2026-07-27): these documents currently have NO confirmed consumer. The ' +
+      'intended one, ISL\'s contract-drift check, re-derives its own artifact ' +
+      'from this repo at a PINNED COMMIT instead (see PIN.json in ' +
+      'Inference-Service-Layer tests/fixtures/contract-schema/). Do not read ' +
+      'this description as evidence that anything downstream reads these files.',
     source: SOURCE_MODULE,
     target: 'jsonSchema7',
     generator: 'zod-to-json-schema',

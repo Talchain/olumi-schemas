@@ -2,8 +2,29 @@
 // JSON-Schema artifact tests (A3 drift-check lane).
 //
 // Guards the published json-schema/ directory — the machine-readable
-// draft-07 derivation of src/boundary/enrichment.ts that ISL's Pydantic
-// drift check consumes (derive-don't-mirror).
+// draft-07 derivation of src/boundary/enrichment.ts (derive-don't-mirror).
+//
+// ⚠ CORRECTED 2026-07-27 (0.28.0 lane). This header used to say the directory
+// is what "ISL's Pydantic drift check consumes". **That is not true today**,
+// and it was not true when it was written. Measured at
+// Inference-Service-Layer@staging `1716f9bb`:
+// tests/fixtures/contract-schema/PIN.json says in its own words that the
+// INTENDED upstream was the artifact "being built on olumi-schemas branch
+// 'a3-json-schema-publish'", that the branch "did not exist on the remote when
+// this check was built (verified 2026-07-20)", and that the fallback is to
+// GENERATE the artifact locally from the schemas repo at a pinned commit
+// (`ref: 1b936ecaf9…`, package version 0.20.0) via
+// scripts/contract_schema/generate_contract_schema.mjs. So ISL re-derives from
+// the Zod source at a FIXED commit and never reads these documents.
+//
+// The consequence matters in both directions: (1) a change to json-schema/
+// cannot turn ISL CI red — only a deliberate PIN.json `ref` bump can, so this
+// directory is published-but-unconsumed and its drift guard protects an
+// artifact with no reader yet; (2) an aspirational consumer written down as a
+// present-tense fact is how this estate ends up trusting a mechanism that never
+// ran. Corrected rather than left, per the trap-14 rule: an honest label must
+// not be overwritten by a flattering one, and that includes overwriting "will
+// consume" with "consumes".
 //
 // Three properties, each with its own positive control:
 //   1. DRIFT GUARD: regenerating in-memory is byte-identical to the
@@ -196,9 +217,11 @@ describe('json-schema artifacts — validation positive controls', () => {
   });
 
   it('OPTIONALITY reaches the PUBLISHED artifact — robust/fragile edge without switch_probability validates, a non-number still does not (0.28.0)', () => {
-    // Asserted on the generated document, not on the Zod object: this file is
-    // what ISL's Pydantic drift check consumes, so the relaxation is only
-    // delivered if it lands in these bytes. The `required` assertion is the
+    // Asserted on the generated document, not on the Zod object: these are the
+    // PUBLISHED bytes (package.json `files` ships json-schema/), so the
+    // relaxation is only delivered to a document-reading consumer if it lands
+    // here. See the header for who does and does not read them. The `required`
+    // assertion is the
     // discriminating one — a document that merely *validates* the omission
     // could do so because ajv never saw the constraint.
     const doc = JSON.parse(

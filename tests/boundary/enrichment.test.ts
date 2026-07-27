@@ -567,8 +567,10 @@ describe('EnrichmentRobustnessEdgeSchema.switch_probability — optional, absent
   it('the absence semantics travel WITH the field (.describe(), not a comment)', () => {
     // An optional field that means "not computed" must SAY so where a consumer
     // can read it. A JSDoc comment is stripped at the boundary; a Zod
-    // `.description` ships in dist/ and lands in the generated
-    // json-schema/ document that ISL's drift check consumes.
+    // `.description` ships in dist/ AND lands in the published
+    // json-schema/ document. (On who actually reads json-schema/ today — not
+    // ISL, despite what this repo used to claim — see the header of
+    // tests/json-schema.test.ts.)
     const shape = EnrichmentRobustnessEdgeSchema._def.shape();
     const description = shape.switch_probability.description ?? '';
     expect(description).toContain('Absence means NOT COMPUTED');

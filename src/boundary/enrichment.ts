@@ -293,7 +293,7 @@ export type EnrichmentFactorSensitivityEntry =
  * The absence rule for `switch_probability` (0.28.0). Hoisted to ONE const and
  * attached with `.describe()` — the same mechanism as
  * `ABSENCE_FAIL_CLOSED_RULE` above — so it ships in `dist/`, appears in the
- * generated `json-schema/EnrichmentRobustnessEdgeSchema.json`, and is
+ * published `json-schema/EnrichmentRobustnessEdgeSchema.json`, and is
  * machine-asserted rather than living only in a comment a consumer never sees.
  * A doc comment cannot reach a consumer at runtime; a `.description` can.
  *
