@@ -129,6 +129,35 @@ export type {
   ConstraintVerdictState,
 } from './handler-results.js';
 
+// Analysis facts (0.27.0 — arch step 2 slice 4; Codex F3).
+// Re-exported from ../contracts/analysis-fact.ts (also on the root entry point;
+// same schema objects, so one maximal fixture covers both keys) because the
+// attachment point — RunAnalysisResult.analysis_facts — lives in THIS
+// namespace, and a producer constructing a fact should not have to know the
+// file it was declared in.
+export {
+  AnalysisFactSchema,
+  ComputedFactSchema,
+  UnavailableFactSchema,
+  SuppressedFactSchema,
+  SuppressionGuardSchema,
+  AnalysisFactSubjectSchema,
+  AnalysisFactSubjectKindSchema,
+  MetricStatusSchema,
+  ANALYSIS_FACT_SUBJECT_KINDS,
+  ANALYSIS_FACT_STATUSES,
+} from '../contracts/analysis-fact.js';
+export type {
+  AnalysisFact,
+  ComputedFact,
+  UnavailableFact,
+  SuppressedFact,
+  SuppressionGuard,
+  AnalysisFactSubject,
+  AnalysisFactSubjectKind,
+  MetricStatus,
+} from '../contracts/analysis-fact.js';
+
 // HandlerFact discriminated union (widened from A1's z.never() stub)
 export {
   RunAnalysisHandlerFactSchema,

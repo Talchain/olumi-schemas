@@ -149,7 +149,20 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   branch: #model_only (root population, no lineage fields) and
     //   #auto_noise_sqrt2 (derived, both lineage fields populated). Two entries,
     //   one schema identity.
-    expect(MAXIMAL_FIXTURES.length).toBe(116);
+    // 0.27.0: 116 -> 124 (+8): arch step 2 slice 4, Codex F3 — the
+    //   subject-scoped discriminated AnalysisFact union. The count is
+    //   STRUCTURAL, not generous: the union (root/AnalysisFactSchema) needs one
+    //   entry PER BRANCH for the maximality walker to see all three, and the
+    //   three branch schemas are exported in their own right — a fixture
+    //   registered against ComputedFactSchema does not exercise the UNION's
+    //   branch coverage, because they are different schema objects. So:
+    //   3 union branches + root/ComputedFactSchema + root/UnavailableFactSchema
+    //   + root/SuppressedFactSchema + root/SuppressionGuardSchema +
+    //   root/AnalysisFactSubjectSchema. The fixture VALUES are shared between
+    //   the union entries and the branch entries — eight registry rows, five
+    //   fixture objects. The orchestrator re-exports are identity-matched by
+    //   the ratchet and need no further entries.
+    expect(MAXIMAL_FIXTURES.length).toBe(124);
   });
 
   it('family keys are unique', () => {

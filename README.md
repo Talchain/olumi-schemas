@@ -155,6 +155,16 @@ is the worked example: `PopulationRefSchema` is built from
 the registry ever disagree. A hand-written mirror of a vocabulary this repo
 already owns will drift, and the drift reads as green.
 
+**Second, if the shape has states where a member is meaningless, make it a
+DISCRIMINATED UNION rather than a flat status field beside an optional member.**
+`src/contracts/analysis-fact.ts` is the worked example (0.27.0): `ComputedFact`
+requires `value`, while `UnavailableFact` and `SuppressedFact` **do not declare
+`value` at all** and are `.strict()` — so a withheld metric carrying a number
+fails to parse. The flat alternative (`status: 'suppressed'` beside an optional
+`value`, or beside a separate value map) parses the contradiction happily and
+leaves the invariant to producer discipline it cannot enforce. A rule the type
+system can hold should never be left to a convention.
+
 1. Create or edit the relevant file in `src/`
 2. Define the Zod schema, matching the **namespace's** unknown-key policy above
    — `.strict()` under `/orchestrator`, `.strict()` or `.passthrough()` under

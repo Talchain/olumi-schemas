@@ -3,6 +3,21 @@ import { HealthManifestSchema } from '../contracts/health-manifest.js';
 import type { HealthManifest } from '../contracts/health-manifest.js';
 import { PopulationRefSchema } from '../contracts/generated-population-ref.js';
 import type { PopulationRef } from '../contracts/generated-population-ref.js';
+import {
+  AnalysisFactSchema,
+  ComputedFactSchema,
+  UnavailableFactSchema,
+  SuppressedFactSchema,
+  SuppressionGuardSchema,
+  AnalysisFactSubjectSchema,
+} from '../contracts/analysis-fact.js';
+import type {
+  ComputedFact,
+  UnavailableFact,
+  SuppressedFact,
+  SuppressionGuard,
+  AnalysisFactSubject,
+} from '../contracts/analysis-fact.js';
 
 // ============================================================================
 // @talchain/schemas/fixtures — maximal-fixture contract library (W2E-1).
@@ -1737,6 +1752,67 @@ export const maximalPopulationRefAutoNoise: PopulationRef = {
   transform_id: 'olumi.transform.auto_scaled_noise@1',
 };
 
+// --- analysis facts (0.27.0 — arch step 2 slice 4; Codex F3) -----------------
+// NOTE ON REALISM: `population` carries a REAL registry id/stage/lineage, not a
+// `fixture_`-prefixed synthetic — the 0.26.0 generated schema literal-pins those
+// values, so a synthetic one is unparseable. Every other id keeps the prefix.
+
+const maximalAnalysisFactSubject: AnalysisFactSubject = {
+  kind: 'option',
+  id: 'fixture_option_a',
+};
+
+const maximalSuppressionGuard: SuppressionGuard = {
+  id: 'FIXTURE_G02',
+  version: '3',
+  reason_code: 'FIXTURE_insufficient_separation',
+  evidence_fact_ids: ['fixture_fact_win_probability_option_b', 'fixture_fact_evpi_scenario'],
+};
+
+const maximalComputedFact: ComputedFact = {
+  status: 'computed',
+  fact_id: 'fixture_fact_win_probability_option_a',
+  analysis_id: 'fixture_analysis_01J0FIXTURE0000000000000',
+  metric_id: 'win_probability',
+  subject: maximalAnalysisFactSubject,
+  storage_fact_row_id: 'fixture_row_0001',
+  value: 0.62,
+  units: 'probability',
+  method_id: 'isl.robustness.mc@2',
+  // Real registry values, with both optional lineage members populated.
+  population: {
+    id: 'olumi.mc.auto_noise_sqrt2@1',
+    stage: 'transformed',
+    parent_id: 'olumi.mc.model_only@1',
+    transform_id: 'olumi.transform.auto_scaled_noise@1',
+  },
+};
+
+const maximalUnavailableFact: UnavailableFact = {
+  status: 'unavailable',
+  fact_id: 'fixture_fact_evpi_option_a',
+  analysis_id: 'fixture_analysis_01J0FIXTURE0000000000000',
+  metric_id: 'evpi',
+  subject: { kind: 'goal', id: 'fixture_goal_1' },
+  storage_fact_row_id: 'fixture_row_0002',
+  reason_code: 'FIXTURE_solver_timeout',
+  // NO `value` — and it is not omitted for tidiness: the branch does not declare
+  // it and is `.strict()`, so adding one here would fail this fixture's own
+  // round-trip. That is the guarantee, visible in the fixture library.
+};
+
+const maximalSuppressedFact: SuppressedFact = {
+  status: 'suppressed',
+  fact_id: 'fixture_fact_win_probability_option_c',
+  analysis_id: 'fixture_analysis_01J0FIXTURE0000000000000',
+  metric_id: 'win_probability',
+  subject: { kind: 'option', id: 'fixture_option_c' },
+  storage_fact_row_id: 'fixture_row_0003',
+  guard: maximalSuppressionGuard,
+  // NO `value` — see above. This is the headline case: a number here is a parse
+  // error, which is exactly what the flat `status` shape could not achieve.
+};
+
 export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   // --- graph -----------------------------------------------------------------
   { family: 'root/ObservedStateSchema', schema: ObservedStateSchema, fixture: maximalObservedState },
@@ -2102,6 +2178,58 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalPopulationRefAutoNoise,
     notes:
       "The derived branch, with both optional lineage fields populated. Their values are literal-pinned to the registry's, so this is the ONLY maximal fixture this branch can have.",
+  },
+  // --- analysis facts (0.27.0 — arch step 2 slice 4; Codex F3) ---------------
+  // EIGHT entries for ONE family, and the count is structural rather than
+  // generous: the three branch schemas are exported in their own right (a
+  // producer building a SuppressedFact validates that branch, not the union),
+  // and the union is a SEPARATE schema object, so a fixture registered against
+  // a branch does not exercise the union's branch coverage. Three union
+  // entries + three branch entries + the two nested shapes. The fixture VALUES
+  // are shared, so there is one description of each fact, used twice.
+  {
+    family: 'root/AnalysisFactSubjectSchema',
+    schema: AnalysisFactSubjectSchema,
+    fixture: maximalAnalysisFactSubject,
+  },
+  {
+    family: 'root/SuppressionGuardSchema',
+    schema: SuppressionGuardSchema,
+    fixture: maximalSuppressionGuard,
+    notes:
+      'evidence_fact_ids carries TWO entries: the array is not .min(1) (a structural guard may cite nothing), so a one-element fixture would leave the multi-evidence case unexercised.',
+  },
+  { family: 'root/ComputedFactSchema', schema: ComputedFactSchema, fixture: maximalComputedFact },
+  {
+    family: 'root/UnavailableFactSchema',
+    schema: UnavailableFactSchema,
+    fixture: maximalUnavailableFact,
+  },
+  {
+    family: 'root/SuppressedFactSchema',
+    schema: SuppressedFactSchema,
+    fixture: maximalSuppressedFact,
+  },
+  {
+    family: 'root/AnalysisFactSchema#computed',
+    schema: AnalysisFactSchema,
+    fixture: maximalComputedFact,
+    notes:
+      'The only branch that may carry a number, with every provenance member populated.',
+  },
+  {
+    family: 'root/AnalysisFactSchema#unavailable',
+    schema: AnalysisFactSchema,
+    fixture: maximalUnavailableFact,
+    notes:
+      'Maximal WITHOUT `value`: the branch does not declare it and is .strict(), so this fixture is maximal precisely because the number is absent.',
+  },
+  {
+    family: 'root/AnalysisFactSchema#suppressed',
+    schema: AnalysisFactSchema,
+    fixture: maximalSuppressedFact,
+    notes:
+      'Same, plus the guard identity. The headline honesty case: adding `value: 0.78` here would fail the round-trip, which is the guarantee.',
   },
 ]);
 
