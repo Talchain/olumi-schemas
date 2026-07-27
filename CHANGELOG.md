@@ -63,10 +63,13 @@ honest. Verified at the bytes, plot-lite-service `dd144f77`:
   are unblocked by the single change.
 - **The absence rule is attached with `.describe()`, not left in a comment** —
   the same mechanism as `ABSENCE_FAIL_CLOSED_RULE` (F6). A doc comment cannot
-  reach a consumer; a `.description` ships in `dist/` **and** lands in
-  `json-schema/EnrichmentRobustnessEdgeSchema.json`, which is the artifact ISL's
-  drift check consumes. The sentence names **both** wrong readings, because this
-  field has been fabricated in each direction:
+  reach a consumer; a `.description` ships in `dist/` **and** lands in the
+  published `json-schema/EnrichmentRobustnessEdgeSchema.json`. (This release
+  also **corrects** this repo's standing claim that those documents are "what
+  ISL's Pydantic drift check consumes" — they are not; ISL re-derives its own
+  artifact from this repo at a pinned commit. See the second commit on this
+  branch.) The sentence names **both** wrong readings, because this field has
+  been fabricated in each direction:
 
   > Absence means NOT COMPUTED — never 0 and never 1. A measured 0 is a real
   > measurement and must be preserved. Higher means MORE fragile, so reading
@@ -122,6 +125,24 @@ presence — which is why this is a MINOR (the breaking axis at 0.x), not a patc
 - **Nothing auto-adopts.** All three TS consumers pin a checked-in `file:`
   tarball, so this release changes no consumer until that consumer opens its own
   re-vendor PR.
+
+### Consumer pins, measured 2026-07-27 at each repo's own `staging` tip
+
+| Consumer | tip | pin | Must re-vendor to benefit? |
+|---|---|---|---|
+| PLoT `plot-lite-service` | `dd144f77` | `file:./vendor/talchain-schemas-0.22.0.tgz` | **Yes — this is the blocked producer.** |
+| CEE `olumi-assistants-service` | `6cfb0e57` | `file:./vendor/talchain-schemas-0.25.0.tgz` | **Yes, and BEFORE PLoT deletes its fabrication** — CEE shadow-validates the same body. |
+| UI `DecisionGuideAI` | `201f1075` | `file:./vendor/talchain-schemas-0.22.0.tgz` | No. Verified negative: the UI imports none of the enrichment schemas and its own local fragile-edge types already declare the field optional. |
+| ISL `Inference-Service-Layer` | `1716f9bb` | n/a — not a `@talchain/schemas` consumer | No. Its Pydantic model is **already** `switch_probability: Optional[float]`, so this moves the two contracts *into* agreement. |
+
+Three different release lines live at once (0.22.0 / 0.25.0 / 0.22.0) — the
+standing skew hazard, unchanged by this release.
+
+**Note for whoever re-vendors PLoT:** the `vendor/` + egress-guard apparatus
+exists on PLoT **`staging`**, which is where #278 landed. PLoT `main` is a
+divergent production branch still carrying a registry pin
+(`"@talchain/schemas": "0.1.0"`) and no `vendor/` directory. The re-vendor
+targets `staging`.
 
 ### Adoption manifest
 

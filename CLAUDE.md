@@ -441,3 +441,10 @@ know. As of 2026-07-26 the live pins are **UI 0.22.0, PLoT 0.22.0, CEE 0.25.0** 
 three different lines at once. Before changing any field that crosses a
 boundary, trace producer → validator → consumer, open the schema at each hop,
 and check each repo's `package.json` pin. Never assume parity.
+
+**Re-measured 2026-07-27** at each repo's own `staging` tip (the pins had not
+moved, the shas had): UI `201f1075` → **0.22.0**, PLoT `dd144f77` → **0.22.0**,
+CEE `6cfb0e57` → **0.25.0**. ⚠ And note what a pin does NOT tell you: PLoT
+`main` carries a *registry* pin `"@talchain/schemas": "0.1.0"` with no `vendor/`
+directory at all. `main` is a divergent production branch here, not a descendant
+of what is deployed on staging — **name the branch when you quote a pin.**
