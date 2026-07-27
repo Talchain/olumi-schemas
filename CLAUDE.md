@@ -270,6 +270,71 @@ a new optional field on an EXISTING schema. Scalar vocabularies (enum/literal)
 are auto-exempt. **Adding an exported schema without a fixture or a reasoned
 exclusion fails CI here, before any consumer can silently drop the field.**
 
+### Absence-semantics census — `tests/contracts/absence-semantics/`
+
+The two-states-one-byte gate. **A field whose ABSENCE and whose DEFAULT/EMPTY
+value carry different meanings, with no discriminator, is two states encoded in
+one byte** — the consumer cannot tell them apart, so it picks one, invisibly.
+One review wave found SIX independent instances across all four consumer
+services; each was found by hand, fixed by hand, and left no instrument behind.
+Three files:
+
+| file | role |
+|---|---|
+| `absence-walk.ts` | **derivation** — walks the exported Zod graph via `_def` and enumerates every field admitting absence, with markers `optional` · `nullable` · `default` · `catch` · `null-in-union` · `undefined-in-union` · `any-or-unknown` |
+| `census.json` | **the answers** — one row per derived field: `distinct` · `same` · `unresolved` |
+| `absence-census.test.ts` | **the gate** — diffs the two, both directions |
+
+**A new optional field with no census row turns the suite RED**, with a
+paste-ready row and the question spelled out. So does a **marker change on an
+existing field** — adding `.default()` to an optional field changes its absence
+semantics completely (the *validator* starts fabricating, so no consumer can
+ever observe absence again) while the name, the type and every existing test
+stay identical. That is the single most valuable thing the table catches.
+
+Four rules worth knowing before you touch it:
+
+- **`unresolved` is allowed, counted and PINNED** (`counts.unresolved`). It is a
+  shrink-only debt list, the same shape as the house typecheck ratchet. Raising
+  it to clear a red is the one abuse the design cannot detect — the number
+  travels downward.
+- **NEVER GUESS a verdict.** `distinct` / `same` are seeded only where a seed
+  instance or the schema's **own comment / `.describe()`** makes it
+  unambiguous — 24 of 389 rows at 0.28.0. A `distinct` row requires a `ref`; an
+  unevidenced verdict is worse than `unresolved` because it stops the next
+  reader looking. **A `distinct` row is DEBT, not a fix** — the fix rides its
+  own train, in the schema, with a CHANGELOG entry.
+- **Nothing in it is hand-listed.** Entry points come from `package.json`
+  `exports` (a new one fails loud), schemas from the namespace objects, fields
+  from Zod. Keys anchor at the nearest *exported* ancestor and keep the smallest
+  path over every route, so adding an export cannot churn unrelated rows — an
+  order-independence control proves it.
+- **No silent omission, by construction.** The walker's terminal set is an
+  ALLOWLIST: an unrecognised construct becomes an `UNPARSEABLE` row and REDs the
+  gate rather than being treated as a harmless leaf. Marker classification is
+  ALSO cross-checked against Zod's own `isOptional()` / `isNullable()`, and a
+  disagreement is itself `UNPARSEABLE` — that is what catches the walker rotting
+  into a no-op after a zod bump. Three positive controls (trap 13) prove it can
+  see a presence before its absences count.
+
+**Scope, stated honestly because the value depends on it:** the census covers
+**optionality-bearing fields only**. Seed instance #1 (CEE
+`may_name_leading_option` — a `true` from *permitted* vs a `true` from *blind*)
+is a **required** boolean and is invisible here **by construction**. 4 of the 6
+instances are schema-visible, one partially; `census.json` `seed_instances`
+records which, and the gate asserts that record can never quietly become 6/6.
+`open_objects` separately pins the `.passthrough()` / catchall objects (77 when
+seeded — **read the file, not this line**), where undeclared keys mean the
+census cannot be complete **by construction** —
+workspace hazard 2 measured object by object. `/orchestrator` is `.strict()`
+throughout and contributes none of them.
+
+It lives entirely under `tests/`, deliberately: `files` is `[dist, json-schema,
+contracts]`, so a walker in `src/` would land in `dist/` and a table in
+`contracts/` would ship. **This way the published tarball is byte-identical and
+the gate needs no version bump.** It needs no `pr.yml` step either — `npm test`
+already runs vitest.
+
 ### Per-service wiring instructions are NOT in this repo
 
 If you are wiring the health manifest into a service, the concrete recipe —

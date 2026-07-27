@@ -1,0 +1,2591 @@
+{
+  "_doc": [
+    "ABSENCE-SEMANTICS CENSUS — the annotation half of the two-states-one-byte gate.",
+    "",
+    "ONE QUESTION PER ROW: does the ABSENCE of this field mean something DIFFERENT from its",
+    "default / empty / null value? If yes the wire needs a discriminator (or the field needs to",
+    "be required), because absence and default are otherwise the same byte to a consumer.",
+    "",
+    "  distinct   — absence carries a meaning no value can express. NEEDS a discriminator or",
+    "               required-ness. `ref` must point at the evidence (schema comment, seed",
+    "               instance, PR/row reference). This is a DEBT ROW, not a resolved one: the",
+    "               fix rides its own train (most ride 0.28 adoption).",
+    "  same       — absence is equivalent to the default/empty value. Harmless. `note` must say",
+    "               why, quoting the contract where it says so.",
+    "  unresolved — nobody has answered yet. ALLOWED, COUNTED, and pinned by `unresolved_count`",
+    "               so the debt can shrink but not silently grow.",
+    "",
+    "NEVER GUESS. `distinct` and `same` are seeded ONLY where one of the six seed instances or the",
+    "schema's own comment / .describe() makes the answer unambiguous. A plausible-sounding verdict",
+    "with no evidence is worse than `unresolved`, because it stops the next reader looking.",
+    "",
+    "THE `fields` KEYS AND `markers` ARE DERIVED, NOT AUTHORED. tests/contracts/absence-semantics/",
+    "absence-walk.ts walks the exported Zod graph; the gate diffs this table against that walk and",
+    "REDs on any difference in either direction. Editing a key or a marker by hand only breaks the",
+    "gate — including changing `optional` to `optional`+`default` on an existing field, which is a",
+    "SILENT ABSENCE-SEMANTICS CHANGE and the single most valuable thing this table catches."
+  ],
+  "seed_instances": {
+    "_doc": [
+      "The six hand-found instances from the review wave that motivated this gate. Recorded so a",
+      "row can cite one, and so the instrument's COVERAGE can be stated precisely rather than",
+      "claimed. Four are visible to a schema-side census; two are not, and saying so is the point."
+    ],
+    "1_cee_may_name_leading_option_provenance": {
+      "shape": "a `true` from \"permitted\" and a `true` from \"blind\" are one wire byte",
+      "visible_to_this_gate": false,
+      "why": "ConstraintVerdictSchema.may_name_leading_option is a REQUIRED z.boolean() — no optionality marker, so it is outside this census by construction. The provenance distinction lives in CEE doctrine (MAY_NAME_LEADING_OPTION[state]), which src/orchestrator/handler-results.ts deliberately does not mirror. A required-field-provenance census is a DIFFERENT instrument."
+    },
+    "2_cee_fail_closed_uninterpretable": {
+      "shape": "fail-closed marker whose absence and whose false are not the same claim",
+      "visible_to_this_gate": false,
+      "why": "No field of this name exists in @talchain/schemas at 0.28.0 (grepped). It is CEE-internal, so no schema-side instrument in THIS repo can see it. The same SHAPE is visible here and IS caught — see the ABSENCE_FAIL_CLOSED_RULE rows, which are exactly this pattern typed into the contract."
+    },
+    "3_plot_meta_constraint_sources": {
+      "shape": "present-but-empty vs absent are different claims, no discriminator",
+      "visible_to_this_gate": true,
+      "why": "Every optional array/record in the contract has this shape. Caught as a row; the resolved example is boundary/DraftGraphBlockSchema.goal_constraints (verdict `same`, because the contract says so out loud), the open example is EnrichmentOptionComparisonEntrySchema.constraint_probabilities."
+    },
+    "4_plot_fabricate_on_absence": {
+      "shape": "`?? 0` — absence coalesced into a real-looking measurement",
+      "visible_to_this_gate": true,
+      "why": "Two forms are visible: an optional numeric field a consumer may coalesce (EnrichmentConstraintMarginSchema.failure_margin_median, EnrichmentRobustnessEdgeSchema.switch_probability), and the contract-side twin where the VALIDATOR does the coalescing — a `.default()`, which no consumer can even detect. The census marks the latter with the `default` marker; there is exactly one in the contract today."
+    },
+    "5_plot_denormalise_absence_in_absence_out": {
+      "shape": "a transform that passes absence through, so the output shape is not the input shape",
+      "visible_to_this_gate": "partially",
+      "why": "The transform itself is PLoT code. Its schema-side signature — a `.transform()` between a declaration and its shape, where the OUTPUT a consumer receives is not derivable from the input schema — is detected by the walker as UNPARSEABLE kind `effects-transform`. There are ZERO such constructs in the contract at 0.28.0, which is itself the finding: the contract never transforms, so every absence it declares reaches the consumer as absence."
+    },
+    "6_ui_leading_option_id_null": {
+      "shape": "null treated as the entire withheld contract",
+      "visible_to_this_gate": true,
+      "why": "Caught as two rows (the block field and its persisted twin), both `nullable` with the key required, so `null` is the sole channel for every withholding reason. Seeded `distinct`."
+    }
+  },
+  "counts": {
+    "_doc": [
+      "PINNED, and derived from `fields` — the gate recomputes all three and REDs on any mismatch.",
+      "`unresolved` is the RATCHET: a new optional field lands as `unresolved`, which forces this",
+      "number up IN THE DIFF where a reviewer sees it. It is meant to travel downward."
+    ],
+    "distinct": 22,
+    "same": 2,
+    "unresolved": 365
+  },
+  "open_objects": {
+    "_doc": [
+      "Objects that accept keys OUTSIDE their declared shape (`.passthrough()` or a catchall), so",
+      "the census CANNOT be complete over them by construction — an undeclared key is an",
+      "un-enumerable absence. This is workspace-CLAUDE.md hazard 2 (the untyped PLoT->CEE",
+      "enrichment seam) measured field by field. The set is PINNED: a new passthrough object is a",
+      "new hole in the census and REDs this gate. It shrinks as namespaces are tightened.",
+      "By contrast /orchestrator is 100% `.strict()` — every open object below is elsewhere."
+    ],
+    "keys": [
+      "boundary/AnalysisEnrichmentSchema",
+      "boundary/AnalysisEnrichmentSchema.decision_brief",
+      "boundary/BoundaryErrorSchema.details",
+      "boundary/CounterfactualResponseSchema",
+      "boundary/CounterfactualResponseSchema._metadata",
+      "boundary/CounterfactualResponseSchema.explanation",
+      "boundary/CounterfactualResponseSchema.prediction",
+      "boundary/CounterfactualResponseSchema.prediction.confidence_interval",
+      "boundary/CounterfactualResponseSchema.prediction.sensitivity_range",
+      "boundary/CounterfactualResponseSchema.robustness",
+      "boundary/CounterfactualResponseSchema.robustness.critical_assumptions[]",
+      "boundary/CounterfactualResponseSchema.scenario",
+      "boundary/CounterfactualResponseSchema.uncertainty",
+      "boundary/CounterfactualResponseSchema.uncertainty.sources[]",
+      "boundary/DraftGoalConstraintSchema",
+      "boundary/DraftGoalConstraintSchema.deadline_metadata",
+      "boundary/DraftGoalConstraintSchema.provenance_unit_normalised",
+      "boundary/EdgeV3Schema",
+      "boundary/EnrichmentConditionalProbabilitySchema",
+      "boundary/EnrichmentConfidenceProvenanceSchema",
+      "boundary/EnrichmentConstraintMarginSchema",
+      "boundary/EnrichmentConstraintResultSchema",
+      "boundary/EnrichmentCritiqueSchema",
+      "boundary/EnrichmentDecisionReviewSchema",
+      "boundary/EnrichmentEdgeEValueSchema",
+      "boundary/EnrichmentEdgeEValueSchema.stability",
+      "boundary/EnrichmentFactorSensitivityEntrySchema",
+      "boundary/EnrichmentFactorSensitivityEntrySchema.confidence_components",
+      "boundary/EnrichmentFlipThresholdSchema",
+      "boundary/EnrichmentFlipThresholdSchema.margin_sensitivity",
+      "boundary/EnrichmentGoalFitBasisSchema",
+      "boundary/EnrichmentInferenceWarningSchema",
+      "boundary/EnrichmentM1CoachingSchema",
+      "boundary/EnrichmentM1CoachingSchema.evidence_gaps[]",
+      "boundary/EnrichmentM1CoachingSchema.model_critiques[]",
+      "boundary/EnrichmentM1CoachingSchema.next_actions[]",
+      "boundary/EnrichmentM1CoachingSchema.top_fragile_edge",
+      "boundary/EnrichmentNearTieSchema",
+      "boundary/EnrichmentOptionComparisonEntrySchema",
+      "boundary/EnrichmentOutcomeStatsSchema",
+      "boundary/EnrichmentRobustnessEdgeSchema",
+      "boundary/EnrichmentRobustnessSchema",
+      "boundary/EnrichmentRobustnessSchema.normalization_errors[]",
+      "boundary/EnrichmentScaleProvenanceSchema",
+      "boundary/ErrorBlockSchema.details",
+      "boundary/GraphV3Schema",
+      "boundary/NodeV3Schema",
+      "boundary/OlumiResponseSchema.analysis_ready",
+      "boundary/OptimiseResponseSchema",
+      "boundary/OptimiseResponseSchema.explanations[]",
+      "boundary/OptimiseResponseSchema.meta",
+      "boundary/OptimiseResponseSchema.meta.constraints_resolved.*",
+      "boundary/SequentialAnalysisResponseSchema",
+      "boundary/SequentialAnalysisResponseSchema.optimal_policy",
+      "boundary/SequentialAnalysisResponseSchema.optimal_policy.stages[]",
+      "boundary/SequentialAnalysisResponseSchema.optimal_policy.stages[].decision_rule",
+      "boundary/SequentialAnalysisResponseSchema.optimal_policy.stages[].decision_rule.conditional_actions[]",
+      "boundary/SequentialAnalysisResponseSchema.optimal_policy.value_distribution",
+      "boundary/SequentialAnalysisResponseSchema.stage_analyses[]",
+      "boundary/SequentialAnalysisResponseSchema.stage_analyses[].options_at_stage[]",
+      "boundary/V2RunErrorSchema.details",
+      "boundary/ValidatePatchRequestSchema.patch[]",
+      "root/AnalysisReadyV3Schema",
+      "root/CeeBudgetErrorSchema",
+      "root/CeeErrorRecoverySchema",
+      "root/CeeTimeoutErrorSchema",
+      "root/CeeTypedErrorSchema",
+      "root/CeeUpstreamLlmErrorSchema",
+      "root/FactorSensitivitySchema",
+      "root/FragileEdgeSchema",
+      "root/ObservedStateSchema",
+      "root/OptionForAnalysisSchema",
+      "root/PriorSchema",
+      "root/ResponseMetaSchema",
+      "root/ResponseMetaSchema.request_id_chain",
+      "root/StateSpaceSchema",
+      "root/ValidationWarningSchema"
+    ]
+  },
+  "unparseable": {
+    "_doc": [
+      "Constructs the walker CANNOT introspect: unknown-type, depth-limit,",
+      "classification-disagreement, unresolvable-lazy, effects-transform. Each one is a hole in",
+      "the census's completeness claim and must be documented here or the gate REDs.",
+      "EMPTY AT 0.28.0, and that emptiness is a measured result, not an assumption: 1001 field",
+      "sites were visited, and on every one the structural marker classification and Zod's own",
+      "isOptional()/isNullable() agreed."
+    ],
+    "entries": {}
+  },
+  "fields": {
+    "boundary/ActionSchema.action_type": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ActionSchema.detail": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.analysis_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.conditional_probabilities": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.confidence_tier": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.constraint_results": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.constraints_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.critiques": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.decision_brief": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.decision_review": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.drivers_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.edge_e_values": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.factor_sensitivity": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.flip_thresholds": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.inference_warnings": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.m1_coaching": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.option_comparison": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.option_comparison_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.results": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.robustness": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.robustness_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.status_reason": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisResultBlockSchema.computed_against_hash": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: \"Optional so pinned consumers are unaffected until re-vendored; absent = no computed-against assertion.\" Absence means NO CLAIM WAS MADE, which is not the same as any hash value — the freshness check must branch on presence, never compare against a fabricated one.",
+      "ref": "src/boundary/blocks.ts — AnalysisResultBlockSchema.computed_against_hash comment (0.22.0 S1)"
+    },
+    "boundary/AnalysisResultBlockSchema.enrichment": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisResultBlockSchema.leading_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "SEED INSTANCE #6 (UI). `z.string().nullable()` — the key is REQUIRED, so `null` is the only channel for every withholding reason at once: a genuine tie, a constraint verdict that forbids naming a leader, and \"no analysis ran\" are one byte. The discriminator that resolves it already exists on the same wire (ConstraintVerdictSchema.constraint_verdict_state, 0.25.0), but nothing in the contract ties the two together.",
+      "ref": "src/boundary/blocks.ts:58 — AnalysisResultBlockSchema.leading_option_id; seed instance #6; discriminator candidate: src/orchestrator/handler-results.ts ConstraintVerdictSchema"
+    },
+    "boundary/AnalysisResultBlockSchema.win_probabilities": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=evidence.action_intent": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=evidence.action_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=evidence.category": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=evidence.priority": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=evidence.signal": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=evidence.signal_code": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ChipSchema.action": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CoachingBlockSchema.action_intent": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CoachingBlockSchema.action_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CoachingBlockSchema.category": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CoachingBlockSchema.graph_hash_at_generation": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CoachingBlockSchema.priority": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CoachingBlockSchema.signal": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CoachingBlockSchema.signal_code": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ComparisonBlockSchema.narrative": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ComparisonBlockSchema.options[].attributes": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ComparisonBlockSchema.options[].win_probability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CounterfactualResponseSchema._metadata": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CounterfactualResponseSchema.explanation.learn_more_url": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CounterfactualResponseSchema.explanation.simple_explanation": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CounterfactualResponseSchema.explanation.visual_type": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CounterfactualResponseSchema.prediction.confidence_interval.confidence_level": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CounterfactualResponseSchema.scenario.context": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionClassificationSchema.horizon": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Same block comment as stakes: \"absence is never defaulted\". Horizon is the user's OWN wording, so an empty string and an unassessed horizon are different claims about the user.",
+      "ref": "src/boundary/olumi-response.ts — DecisionClassificationSchema block comment"
+    },
+    "boundary/DecisionClassificationSchema.reversibility": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Same block comment as stakes: \"absence is never defaulted\". A defaulted `reversible` on an unassessed decision is a fabricated safety claim.",
+      "ref": "src/boundary/olumi-response.ts — DecisionClassificationSchema block comment"
+    },
+    "boundary/DecisionClassificationSchema.risk": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Same block comment as stakes: \"absence is never defaulted\". Defaulting risk appetite to `balanced` asserts a user stance nobody elicited.",
+      "ref": "src/boundary/olumi-response.ts — DecisionClassificationSchema block comment"
+    },
+    "boundary/DecisionClassificationSchema.stakes": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Block comment on DecisionClassificationSchema: \"a producer states only what it actually assessed, and a consumer renders 'not set' for absent dimensions — partial classification is honest, absence is never defaulted.\" Per-dimension absence is a first-class state.",
+      "ref": "src/boundary/olumi-response.ts — DecisionClassificationSchema block comment"
+    },
+    "boundary/DecisionRecordAnalysisSummarySchema.goal_fit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordAnalysisSummarySchema.leading_option": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordAnalysisSummarySchema.robustness_band": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordAnalysisSummarySchema.win_probability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordDecisionSchema.analysis_summary": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordDecisionSchema.committed_by_user": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: \"Optional; absent means the record predates the commit action (or was auto-captured) — a disclosed inference, never a fabricated value.\" Absence is explicitly NOT equal to `false`: false asserts ambient capture, absence asserts we cannot tell.",
+      "ref": "src/boundary/decision-record.ts — DecisionRecordDecisionSchema.committed_by_user comment (0.16.0 lane 3a)"
+    },
+    "boundary/DecisionRecordOutcomeSchema.brier_component": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordOutcomeSchema.notes": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordPredictionSchema.confidence": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordPredictionSchema.confidence_source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordPredictionSchema.probability_of_goal": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: \"Both optional-forward: absent whenever no goal target existed at capture.\" Absence means NO GOAL EXISTED; 0 means the option was measured to miss it. Coalescing the two corrupts every calibration score computed off this record.",
+      "ref": "src/boundary/decision-record.ts — DecisionRecordPredictionSchema block comment (0.16.0, D-N Option-B)"
+    },
+    "boundary/DecisionRecordPredictionSchema.probability_of_joint_goal": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Same comment as probability_of_goal: \"absent whenever no goal target existed at capture.\" Absence is a statement about the DECISION, not about the probability.",
+      "ref": "src/boundary/decision-record.ts — DecisionRecordPredictionSchema block comment (0.16.0, D-N Option-B)"
+    },
+    "boundary/DecisionRecordSchema.outcome": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.confidence": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.deadline_metadata": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.deadline_metadata.assumed_reference_date": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.deadline_metadata.deadline_date": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.deadline_metadata.reference_date": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.provenance": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.provenance_unit_normalised": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.source_quote": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/DraftGraphBlockSchema.goal_constraints": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Schema comment is explicit and leaves nothing to infer: \"Absent when the brief carried none; consumers must treat absence and `[]` as equivalent.\" This is the SAME SHAPE as seed instance #3 (PLoT `_meta.constraint_sources` present-empty vs absent) — and it is the resolved case: the contract answers the question rather than leaving the consumer to guess.",
+      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_constraints doc comment (0.18.0)"
+    },
+    "boundary/EdgeV3Schema.edge_type": {
+      "markers": [
+        "optional",
+        "default"
+      ],
+      "verdict": "unresolved",
+      "note": "LEAD — the only `.default()` in the whole contract (src/graph.ts:67, `EdgeType.optional().default('directed')`). A default is `?? 0` promoted into the contract: the VALIDATOR materialises `directed` on absence, so no consumer can ever observe the difference between \"the producer modelled this edge as directed\" and \"the producer said nothing about direction\". Whether that difference MATTERS is the unanswered question — record the answer here, do not guess it."
+    },
+    "boundary/EdgeV3Schema.effect_direction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EdgeV3Schema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentConditionalProbabilitySchema.effective_sample_size": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentConstraintMarginSchema.failure_margin_median": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema block comment: \"Absent margin fields are OMITTED, never zeroed — missing != zero (a fabricated 0 read by a live consumer was the exact defect PLoT's producer-honesty gate closed).\" This is the contract-side twin of seed instance #4 (PLoT `?? 0` fabricate-on-absence).",
+      "ref": "src/boundary/enrichment.ts — EnrichmentConstraintMarginSchema block comment; seed instance #4 (PLoT `?? 0`)"
+    },
+    "boundary/EnrichmentConstraintMarginSchema.margin_precision": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"Absent means precision is unknown; consumers MUST NOT assume exactness.\" Absence names a third state the enum cannot express — the vocabulary is {exact, lower_bound} and \"unknown\" exists only as key-absence.",
+      "ref": "src/boundary/enrichment.ts — EnrichmentConstraintMarginSchema.margin_precision .describe()"
+    },
+    "boundary/EnrichmentConstraintMarginSchema.near_miss_fraction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Same block comment as failure_margin_median: \"Absent margin fields are OMITTED, never zeroed — missing != zero.\" A rate in [0,1] whose absence is indistinguishable from a measured 0 unless the consumer branches on key presence.",
+      "ref": "src/boundary/enrichment.ts — EnrichmentConstraintMarginSchema block comment; seed instance #4 (PLoT `?? 0`)"
+    },
+    "boundary/EnrichmentConstraintResultSchema.probability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentConstraintResultSchema.scale_provenance": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "The field carries the contract-frozen ABSENCE_FAIL_CLOSED_RULE .describe() text: \"Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy.\" Absence is therefore a TRUST VERDICT, not a missing convenience — and it is carried by the absence of a boolean whose only other state is `true`, so a consumer that defaults it reads untrusted data as trusted.",
+      "ref": "src/boundary/enrichment.ts — ABSENCE_FAIL_CLOSED_RULE .describe()"
+    },
+    "boundary/EnrichmentCritiqueSchema.affected_node_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentCritiqueSchema.affected_option_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentCritiqueSchema.blocks_analysis": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentCritiqueSchema.id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentCritiqueSchema.source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentCritiqueSchema.suggestion": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentCritiqueSchema.user_message": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentEdgeEValueSchema._normalised": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentEdgeEValueSchema.from_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentEdgeEValueSchema.stability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentEdgeEValueSchema.stability.band_max": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentEdgeEValueSchema.stability.band_median": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentEdgeEValueSchema.stability.band_min": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentEdgeEValueSchema.stability.band_width": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentEdgeEValueSchema.stability.seed_flip_means": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentEdgeEValueSchema.to_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema._normalised": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.attribution_stability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.confidence": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.confidence_components": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.confidence_components.sampling_stability": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.confidence_provenance": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.confidence_source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.direction": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.elasticity": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.elasticity_std": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.evpi_method": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.evpi_percentage_points": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.evpi_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.factor_label": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.flip_risk_category": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.importance_rank": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.influence_rank": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.influence_score": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.interpretation": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.range_derivation_source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.rank_flip_rate": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.sensitivity_score": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.stability_method": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.value_defaulted": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.value_extraction_type": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.value_of_information": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.value_source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorSensitivityEntrySchema.zero_reason": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFlipThresholdSchema.alternative_winner_id": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFlipThresholdSchema.alternative_winner_label": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFlipThresholdSchema.flip_value": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFlipThresholdSchema.iterations_used": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFlipThresholdSchema.margin_sensitivity": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFlipThresholdSchema.probes_used": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFlipThresholdSchema.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.coaching_version": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.computed_at": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.evidence_gaps": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.evidence_gaps[].evpi_method": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.evidence_gaps[].evpi_percentage_points": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.evidence_gaps[].influence": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.evidence_gaps[].suggestion": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.headline_type": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.model_critiques": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.model_critiques[].challenge_question": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.model_critiques[].suggested_action": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.model_critiques[].targets": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.next_actions": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.next_actions[].rationale": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.next_actions[].target_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.next_actions[].target_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.next_actions[].target_type": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.readiness": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.story_headlines": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.top_fragile_edge": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.top_fragile_edge.alternative_winner": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.top_fragile_edge.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentM1CoachingSchema.top_fragile_edge.switch_probability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentNearTieSchema.second_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.confidence_interval": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.constraint_margins": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.constraint_probabilities": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Same suppression rule as probability_of_joint_goal. Note the SECOND edge here: this is a record, so \"suppressed\" (absent) and \"evaluated, no constraints\" (present-and-empty) are two states — the shape of seed instance #3 (PLoT `_meta.constraint_sources` present-empty vs absent).",
+      "ref": "src/boundary/enrichment.ts — EnrichmentOptionComparisonEntrySchema block comment; seed instance #3"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.constraints_decision_grade": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "The field carries the contract-frozen ABSENCE_FAIL_CLOSED_RULE .describe() text: \"Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy.\" Absence is therefore a TRUST VERDICT, not a missing convenience — and it is carried by the absence of a boolean whose only other state is `true`, so a consumer that defaults it reads untrusted data as trusted.",
+      "ref": "src/boundary/enrichment.ts — ABSENCE_FAIL_CLOSED_RULE .describe()"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.expected_outcome": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.goal_fit_basis": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.option_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.outcome": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.probability_of_goal": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.probability_of_joint_goal": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema block comment: the field is \"SUPPRESSED (absent) when any constraint target is unreliable\". Absence is a SUPPRESSION SIGNAL carrying a trust verdict, not a missing number; a consumer defaulting it to 0 renders a suppressed metric as a confident zero.",
+      "ref": "src/boundary/enrichment.ts — EnrichmentOptionComparisonEntrySchema block comment (PR #204/#205)"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.status_reason": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.win_probability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOutcomeStatsSchema.n_samples": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOutcomeStatsSchema.n_valid_samples": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOutcomeStatsSchema.std": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOutcomeStatsSchema.validity_ratio": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessEdgeSchema.alternative_winner_id": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessEdgeSchema.alternative_winner_label": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessEdgeSchema.from_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessEdgeSchema.marginal_switch_probability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessEdgeSchema.severity": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessEdgeSchema.switch_probability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"Absence means NOT COMPUTED — never 0 and never 1. A measured 0 is a real measurement and must be preserved.\" Absence and the numeric 0 are DIFFERENT CLAIMS and the wire carries no discriminator between them beyond key presence — so any consumer coalescing with `?? 0` converts \"we did not compute this\" into \"we measured zero fragility\".",
+      "ref": "src/boundary/enrichment.ts — EnrichmentRobustnessEdgeSchema.switch_probability .describe(); shipped 0.28.0 (PR #26, PLoT #278)"
+    },
+    "boundary/EnrichmentRobustnessEdgeSchema.to_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.confidence": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.display_verdict": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.display_verdict_reason": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.explanation": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.fragile_edges": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.is_robust": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.level": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.near_tie": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.normalization_errors": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.normalization_errors[].raw_value": {
+      "markers": [
+        "optional",
+        "any-or-unknown"
+      ],
+      "verdict": "unresolved",
+      "note": "LEAD — `z.unknown().optional()` on a field named raw_value inside an error record. Two open questions, not one: (a) absence vs a present-but-undefined value, and (b) whether a raw upstream value belongs on this wire at all (cf. the R2 raw-value leak brief). Answer both before promoting this row out of unresolved."
+    },
+    "boundary/EnrichmentRobustnessSchema.recommendation_stability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.recommended_option_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.recommended_option_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.robust_edges": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRobustnessSchema.score": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentScaleProvenanceSchema.threshold_clamped": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ErrorBlockSchema.details": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.category": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.counter_case": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.failure_scenario": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.graph_hash_at_generation": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.mitigation": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.priority": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.reference_class": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.review_trigger": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.signal": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.signal_code": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.target_element_ref": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExerciseBlockSchema.warning_signs": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ExplanationBlockSchema.enrichment": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/FlipAnalysisBlockSchema.enrichment": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/FlipAnalysisBlockSchema.flip_scenarios[].current_value": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/FlipAnalysisBlockSchema.flip_scenarios[].flip_threshold": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/FlipAnalysisBlockSchema.flip_scenarios[].from_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/FlipAnalysisBlockSchema.flip_scenarios[].to_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/GraphPatchBlockSchema.after": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/GraphPatchBlockSchema.before": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/HeldProposalBlockSchema.decline_action_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.chip": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.chip.action_type": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.chip.id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.chip.intent": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.chip.parameters": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.explicit_generate": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.generate_model": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.graph_state": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.retry_of": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/MessageTurnPayloadSchema.selected_elements": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/NodeV3Schema.body": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/NodeV3Schema.categories": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/NodeV3Schema.category": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/NodeV3Schema.goal_threshold": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/NodeV3Schema.observed_state": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/NodeV3Schema.state_space": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/NodeV3Schema.type": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/OlumiResponseSchema.analysis_ready": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/OlumiResponseSchema.decision_classification": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: \"Absent until the producing turn has actually assessed the decision; consumers MUST NOT default absent dimensions.\" Absence = unassessed, distinct from any classification.",
+      "ref": "src/boundary/olumi-response.ts — OlumiResponseSchema.decision_classification comment (0.19.0, UI-SEM-077)"
+    },
+    "boundary/OlumiResponseSchema.draft_graph": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/OlumiResponseSchema.draft_graph.goal_constraints": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "The `.omit({type: true})` twin of DraftGraphBlockSchema.goal_constraints — a SEPARATE ZodObject identity (Zod `.omit()` clones the shape) reached through OlumiResponseSchema.draft_graph, carrying the same field declaration and therefore the same doctrine: absence and `[]` are equivalent. Listed separately because the census keys declaration SITES, and a future edit to one shape does not follow the other.",
+      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_constraints doc comment, reached via src/boundary/olumi-response.ts OlumiResponseSchema.draft_graph"
+    },
+    "boundary/OlumiResponseSchema.framing_quality": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: \"Absent until the producing turn has actually assessed the framing; consumers MUST NOT derive a verdict client-side when it is absent.\" Absence = not assessed, which is a different claim from every value in {ready, thin, conflict}.",
+      "ref": "src/boundary/olumi-response.ts — OlumiResponseSchema.framing_quality comment (0.20.0, UI-SEM-079)"
+    },
+    "boundary/OlumiResponseSchema.framing_question": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: \"when absent, the slot stays empty (fail closed — the UI's heuristic derivation retires rather than remaining as a fallback).\" Absence must NOT be filled by a client-side derivation; the whole point of the field is that a derived question was a measured leak.",
+      "ref": "src/boundary/olumi-response.ts — OlumiResponseSchema.framing_question comment (0.19.0, UI-SEM-078)"
+    },
+    "boundary/OlumiResponseSchema.graph_hash": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: \"Optional so pinned consumers are unaffected until they re-vendor 0.22.0; absent = no handshake asserted.\" Absence disables the GRAPH_DIVERGED check entirely; a defaulted value would silently assert a handshake the producer never made.",
+      "ref": "src/boundary/olumi-response.ts — OlumiResponseSchema.graph_hash comment (0.22.0 S1)"
+    },
+    "boundary/OlumiResponseSchema.reasoning": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/OptimiseResponseSchema.meta.constraints_resolved.*.value": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ReviewCardBlockSchema.action_intent": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ReviewCardBlockSchema.action_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ReviewCardBlockSchema.category": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ReviewCardBlockSchema.priority": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ReviewCardBlockSchema.signal": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ReviewCardBlockSchema.signal_code": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SelectedElementRefSchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SequentialAnalysisResponseSchema._metadata": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SequentialAnalysisResponseSchema.optimal_policy.stages[].contingent_on": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SequentialAnalysisResponseSchema.optimal_policy.stages[].decision_rule.conditional_actions": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SequentialAnalysisResponseSchema.schema_version": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SequentialAnalysisResponseSchema.stage_analyses[].optimal_waiting_value": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/StrengthenItemSchema.bias_category": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=direct_graph_edit.changed_edge_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=direct_graph_edit.changed_node_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=direct_graph_edit.fields_changed": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=direct_graph_edit.operations": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=direct_graph_edit.summary": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=feedback.comment": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=selection_change.cleared": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/UiDirectiveBlockSchema.duration_ms": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/UiDirectiveBlockSchema.note": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/V2OptionSchema.description": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/V2RunErrorSchema.details": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/V2RunRequestSchema.seed": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/V2RunResponseSchema.error": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/ValidatePatchResponseSchema.issues": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/AddConstraintArgsSchema.lower": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/AddConstraintArgsSchema.upper": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/AddConstraintResultSchema.after": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/AddConstraintResultSchema.before": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/CompareOptionsArgsSchema.option_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/CompareOptionsResultSchema.narrative": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/CompareOptionsResultSchema.options[].attributes": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/CompareOptionsResultSchema.options[].win_probability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ComputedFactSchema.storage_fact_row_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/DecisionContextSchema.domain_anchors.timeline": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/DecisionContextSchema.goal_translation.user_scale_metric": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/DecisionContextSchema.goal_translation.user_scale_target": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/EditGraphResultSchema.graph_hash_after": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/EditGraphResultSchema.graph_hash_before": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/EntityRegistrySchema.goal_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ExplainFromStructureResultSchema.answer_source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ExplainFromStructureResultSchema.answer_text_length": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ExplainFromStructureResultSchema.fallback_reason": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ExplainResultArgsSchema.focus_option_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ExplainResultResultSchema.enrichment": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ExplainResultsResultSchema.answer_source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ExplainResultsResultSchema.answer_text_length": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ExplainResultsResultSchema.fallback_reason": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/ExplainResultsResultSchema.staleness_prefixed": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/LLMAdapterRequestSchema.max_tokens": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/LLMAdapterRequestSchema.temperature": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/LLMAdapterResponseSchema.tokens_used": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/RunAnalysisArgsSchema.seed": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/RunAnalysisResultSchema.analysis_facts": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/RunAnalysisResultSchema.computed_at": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/RunAnalysisResultSchema.constraint_verdict": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/RunAnalysisResultSchema.enrichment": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/RunAnalysisResultSchema.graph_hash_at_run": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/RunAnalysisResultSchema.leading_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "SEED INSTANCE #6 (UI), the persisted twin of the block field. Same `z.string().nullable()` shape and the same collapse of every withholding reason into one `null`. Listed separately because it is a SEPARATE declaration site: fixing the block field does not fix this one.",
+      "ref": "src/orchestrator/handler-results.ts:85 — RunAnalysisResultSchema.leading_option_id; seed instance #6"
+    },
+    "orchestrator/RunAnalysisResultSchema.win_probabilities": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/SessionCacheEntrySchema.handler_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/SessionCacheEntrySchema.stale_reason": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/SessionCacheEntrySchema.user_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/SessionTurnSchema.handler_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/SessionTurnSchema.user_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/SuppressedFactSchema.storage_fact_row_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/UnavailableFactSchema.storage_fact_row_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipArgsSchema.focus_factor_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.answer_source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.answer_text_length": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.enrichment": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.fallback_reason": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.flip_scenarios": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.flip_scenarios[].current_value": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.flip_scenarios[].flip_threshold": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.flip_scenarios[].from_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.flip_scenarios[].to_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.narrative": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "orchestrator/WhatWouldFlipResultSchema.staleness_prefixed": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/AnalysisReadyV3Schema.goal_node_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/AnalysisRequestIdChainSchema.forwarded_to_isl": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/AnalysisRequestIdChainSchema.isl_echoed": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/AnalysisRequestIdChainSchema.plot_received": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/AnalysisRequestIdChainSchema.ui_sent": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeBudgetErrorSchema.elapsed_ms": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeBudgetErrorSchema.recovery": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeBudgetErrorSchema.recovery_suggestion": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeBudgetErrorSchema.request_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeBudgetErrorSchema.stage": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeErrorRecoverySchema.example": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeTimeoutErrorSchema.elapsed_ms": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeTimeoutErrorSchema.model": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeTimeoutErrorSchema.recovery": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeTimeoutErrorSchema.recovery_suggestion": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeTimeoutErrorSchema.request_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeTypedErrorSchema.elapsed_ms": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeTypedErrorSchema.recovery": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeTypedErrorSchema.recovery_suggestion": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeTypedErrorSchema.request_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeUpstreamLlmErrorSchema.elapsed_ms": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeUpstreamLlmErrorSchema.provider": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeUpstreamLlmErrorSchema.recovery": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeUpstreamLlmErrorSchema.recovery_suggestion": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeUpstreamLlmErrorSchema.request_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeUpstreamLlmErrorSchema.upstream_body_preview": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeUpstreamLlmErrorSchema.upstream_content_type": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/CeeUpstreamLlmErrorSchema.upstream_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/DraftGraphTraceSchema.cee_trace": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/FactorSensitivitySchema.confidence": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/FactorSensitivitySchema.confidence_components": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/FactorSensitivitySchema.confidence_components.sampling_stability": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ObservedStateSchema.baseline": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ObservedStateSchema.source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ObservedStateSchema.std": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ObservedStateSchema.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/OptionForAnalysisSchema.description": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/OptionForAnalysisSchema.raw_interventions": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/PlotCeeUpstreamEnvelopeSchema.elapsed_ms": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/PlotCeeUpstreamEnvelopeSchema.request_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/PlotCeeUpstreamEnvelopeSchema.upstream_body_preview": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/PlotCeeUpstreamEnvelopeSchema.upstream_content_type": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/PopulationRefSchema|object#1.parent_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/PopulationRefSchema|object#1.transform_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/RepairEntrySchema.after": {
+      "markers": [
+        "any-or-unknown"
+      ],
+      "verdict": "unresolved",
+      "note": "LEAD — `z.unknown()` with NO `.optional()` anywhere, yet Zod accepts `undefined` for it, so the inferred type is `after?: unknown`. A repair that DELETED a value and a repair whose result was dropped in serialisation are the same bytes. The optionality here is invisible at the declaration site — nothing in `z.unknown()` reads as optional."
+    },
+    "root/RepairEntrySchema.before": {
+      "markers": [
+        "nullable",
+        "any-or-unknown"
+      ],
+      "verdict": "unresolved",
+      "note": "LEAD — `z.unknown().nullable()`. THREE states share one channel: key absent, `null`, and a real value. For a repair log specifically, \"there was no prior value\" and \"the prior value was null\" are different repairs. Compounded by JSON: `JSON.stringify` DROPS an `undefined` property, so absence is not even reliably authored by the producer."
+    },
+    "root/ResponseMetaSchema.build": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ResponseMetaSchema.computed_at": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ResponseMetaSchema.processing_time_ms": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ResponseMetaSchema.request_id_chain": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ResponseMetaSchema.request_id_chain.analysis_chain": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ResponseMetaSchema.request_id_chain.draft_trace": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ResponseMetaSchema.response_hash": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/StateSpaceSchema.range": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "root/ValidationWarningSchema.details": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    }
+  }
+}
