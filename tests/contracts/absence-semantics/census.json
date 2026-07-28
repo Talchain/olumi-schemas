@@ -68,8 +68,8 @@
       "`unresolved` is the RATCHET: a new optional field lands as `unresolved`, which forces this",
       "number up IN THE DIFF where a reviewer sees it. It is meant to travel downward."
     ],
-    "distinct": 22,
-    "same": 2,
+    "distinct": 24,
+    "same": 3,
     "unresolved": 365
   },
   "open_objects": {
@@ -1869,6 +1869,30 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=factor_value_edit.field": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "TRIVIALLY the same, and enforced by the TYPE rather than promised by prose: the field is z.literal('value'), so 'value' is the only value it can take, and absence is therefore equivalent to the only possible presence. It was z.string().min(1) in review, where this verdict rested on a doc-comment promise that only ONE reader (CEE's dispatch) actually kept — a permissive string would have let a future producer emit field:'baseline' that PARSES at every pin >=0.29.0 with the verdict differing per consumer version. Tightening to a literal moved the guarantee from prose into the wire; adding a second field later is a loud versioned widening, not a silent divergence.",
+      "ref": "src/boundary/turn-payload.ts — FactorValueEditEvent.field .describe() (0.29.0, ROADMAP 1.346)"
+    },
+    "boundary/SystemEventSchema|kind=factor_value_edit.raw_value": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means \"the client did not state a user-unit magnitude\", which no numeric value can express — and specifically it is NOT 0, because 0 is a legitimate edit (the live probe's second trial set a factor 0 -> 7500). The server must branch on PRESENCE: present => use it as the user-unit input to normaliseFactorValue; absent => derive one from `value` and the server's own stored cap. DEBT, recorded as such: the honest fix is a discriminated input mode (\"user typed a magnitude\" vs \"client computed a model ratio\") rather than two optional numbers whose relationship is a convention. That fix rides its own train; this row is the marker.",
+      "ref": "src/boundary/turn-payload.ts — FactorValueEditEvent.raw_value .describe() (0.29.0); scale contract at src/orchestrator-v5/tools/handlers/d1-shared/normalise-factor-value.ts:14-18 in olumi-assistants-service"
+    },
+    "boundary/SystemEventSchema|kind=factor_value_edit.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence is not \"no unit\" — it is \"the client did not say\", and the two produce DIFFERENT server outcomes. A stated unit makes the number unit-bearing (inputHasUnit=true) and it is range-checked as `value_exceeds_cap`; an omitted unit makes the same number a BARE number, which against a capped factor is treated as ambiguous and can be refused outright as `bare_number_outside_cap`. Same digits, different verdict, decided purely by presence — so a consumer that substituted a default unit for absence would silently change which guard fires.",
+      "ref": "src/boundary/turn-payload.ts — FactorValueEditEvent.unit .describe() (0.29.0); the two-guard split at src/orchestrator-v5/tools/handlers/d1-shared/evaluate-factor-value-proposal.ts:61-62 in olumi-assistants-service"
     },
     "boundary/SystemEventSchema|kind=feedback.comment": {
       "markers": [

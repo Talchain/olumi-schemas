@@ -1429,6 +1429,18 @@ const eventDirectGraphEdit = deepFreeze({
   fields_changed: ['value', 'strength'],
   summary: 'FIXTURE batched canvas edit: 2 nodes, 1 edge.',
 });
+// 0.29.0 (ROADMAP 1.346) — the VALUE-CARRYING inspector edit. Every optional
+// populated so the maximality walker exercises the full shape. The numbers are
+// internally consistent on purpose: raw_value 30000 against a factor capped at
+// 100000 normalises to value 0.3, which is exactly the cross-check CEE runs.
+const eventFactorValueEdit = deepFreeze({
+  kind: 'factor_value_edit',
+  target_id: ID_FACTOR,
+  value: 0.3,
+  raw_value: 30000,
+  unit: '£',
+  field: 'value',
+});
 const eventChipClick = deepFreeze({ kind: 'chip_click', chip_id: 'fixture_chip_1' });
 const eventUndo = deepFreeze({ kind: 'undo' });
 const eventRedo = deepFreeze({ kind: 'redo' });
@@ -2046,6 +2058,7 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'boundary/SystemEventSchema#patch_accepted', schema: SystemEventSchema, fixture: eventPatchAccepted },
   { family: 'boundary/SystemEventSchema#patch_dismissed', schema: SystemEventSchema, fixture: eventPatchDismissed },
   { family: 'boundary/SystemEventSchema#direct_graph_edit', schema: SystemEventSchema, fixture: eventDirectGraphEdit },
+  { family: 'boundary/SystemEventSchema#factor_value_edit', schema: SystemEventSchema, fixture: eventFactorValueEdit },
   { family: 'boundary/SystemEventSchema#chip_click', schema: SystemEventSchema, fixture: eventChipClick },
   { family: 'boundary/SystemEventSchema#undo', schema: SystemEventSchema, fixture: eventUndo },
   { family: 'boundary/SystemEventSchema#redo', schema: SystemEventSchema, fixture: eventRedo },

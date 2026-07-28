@@ -7,6 +7,147 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.29.0] — 2026-07-28
+
+**`SystemEventSchema` gains `factor_value_edit` — the inspector value edit, carrying the
+value.** Maximal-fixture registry **124 → 125**. **Additive, new union member, nothing is
+removed or changed.** This is the contract half of ROADMAP 1.346 (core-loop integrity); the
+CEE reader and the UI emitter are separate, ORDERED trains — see the sequencing section,
+which is a hard constraint, not advice.
+
+### The defect this closes — measured, not inferred
+
+A live probe on 2026-07-28 (UI `92f5406f`, CEE `cb54320e`) made two inspector value edits on
+two factors of a drafted graph and captured every request. **Neither edit produced a single
+network request, and CEE's `graph_hash` did not move on either** (`c9eacbc8538cc254` →
+`c9eacbc8538cc254`). A chat edit on the *same* factor, as a positive control, moved it
+(→ `677ca064fa393a81`) and moved every downstream number. The user was shown "Model changed
+since this analysis. Re-run to update.", reran, and got byte-identical results under a green
+"Analysis reflects the current model." strip.
+
+The reason is on the wire, in this package. The only event that reported a canvas edit was
+`direct_graph_edit`, and it carries **field NAMES only** (`fields_changed: string[]`) — never
+a value. So even a mounted, working emitter could only have told CEE that *something called
+`observedState` changed*, never what it changed to.
+
+### Why a NEW member and not a `value` field on `direct_graph_edit`
+
+`direct_graph_edit`'s own doc comment (0.23.0, F6) states that its `target_id` is a
+**REPRESENTATIVE SINGULAR**: "explicit target → else the first changed node id (ascending) →
+else the first changed edge id". It is a BATCH NOTIFICATION whose singular fields are a
+reduction performed upstream by the UI's `graphEditBatchAdapter`. Keying a **mutation** on a
+representative id would mutate whichever node happened to sort first in a batch rather than
+the one the user edited — a defect by construction, not a risk. Its consumers are
+notification-shaped to match (CEE silent-acks it; the orchestrator prompt family says
+"acknowledge changes, note implications").
+
+So the value-carrying edit gets its own member, and `direct_graph_edit` is **byte-identical**
+to 0.28.0. That is pinned, not merely asserted:
+`tests/boundary/turn-payload-0.29.test.ts::'direct_graph_edit still REFUSES a value'`.
+
+### Added
+
+- **`factor_value_edit`** on `SystemEventSchema` (`src/boundary/turn-payload.ts`), `.strict()`
+  like every sibling:
+  - `target_id: z.string().min(1)` — **required, ID-ADDRESSED.** Never a label; a label match
+    silently retargets on a duplicate or renamed label.
+  - `value: z.number().finite()` — **required**, on the **MODEL scale** (for a capped factor,
+    `raw_value / cap`). An edit with no value is a `direct_graph_edit` notification, not this
+    event. The server re-derives the persisted model value from its own stored cap and never
+    persists this number verbatim.
+  - `raw_value?: z.number().finite()` — the **USER-UNIT** magnitude as typed (30000 for
+    £30,000).
+  - `unit?: z.string().min(1)` — unit symbol for `raw_value`.
+  - `field?: z.literal('value')` — which `observed_state` field was edited. **A LITERAL, not
+    a string, and the difference is a skew seam.** A permissive string would let a future
+    producer emit `field: 'baseline'` that PARSES at every pin ≥0.29.0, with the verdict
+    (refuse / coerce / apply as a value edit) decided by whichever version each consumer is
+    on — hazard 1 in a single field. As a literal the WIRE refuses it, and adding a second
+    field later becomes a loud versioned widening. Pinned by a reject test.
+- `'factor_value_edit'` in the `SystemEventKind` convenience enum (`src/boundary/enums.ts`).
+  That enum is a hand-maintained mirror of the union — trap-12 — and the existing
+  set-equality gate in `tests/boundary/turn-payload-0.22.test.ts` is what makes it fail loud.
+- Maximal fixture `boundary/SystemEventSchema#factor_value_edit`, every optional populated.
+  The numbers are internally consistent on purpose (`raw_value: 30000`, cap 100000 →
+  `value: 0.3`) because that ratio is exactly the cross-check CEE runs.
+- `contracts/adoption-manifest.json` row, state **`declared`** — no producer, no consumer,
+  both test references `null`. It cannot honestly be more: the CEE reader and the UI emitter
+  are unmerged, and a row naming a test nobody can run is the drift the manifest exists to
+  catch.
+
+### The scale vocabulary is BORROWED, not invented
+
+`value` / `raw_value` / `unit` are taken verbatim from CEE's `ObservedStateV3` and
+`normaliseFactorValue` (`raw_value` = user-unit magnitude, `value` = `raw_value / cap`). The
+same probe found the live UI writing a display magnitude (300000) straight into the 0–1 model
+field, which is precisely the confusion that arises when a boundary invents parallel names.
+The `.describe()` text on each field states the rule so it ships in `dist/` rather than living
+in a comment no consumer can read.
+
+### Not added, deliberately
+
+- **No `cap`.** A cap is the factor's SCALE, and changing it rescales every option
+  intervention on that factor. Accepting a client-supplied cap would let an inspector edit
+  extend a scale with no consent step; extending a scale keeps going through the existing
+  consented "extend the scale" chip flow. Enforced by a reject test, so re-adding it is a
+  conscious act with a RED to justify.
+- **No `operator`.** An inspector edit is always an absolute set. Deltas stay in the NL lane.
+- **No batch shape.** One event, one factor. Batching a value-carrying mutation reintroduces
+  the representative-target ambiguity that motivated the split.
+
+### ⚠ Sequencing — READER-FIRST IS MANDATORY
+
+Every member of this union is `.strict()` and the union is a `discriminatedUnion` on `kind`.
+**A consumer pinned below 0.29.0 that receives this member fails the discriminator and
+REJECTS THE WHOLE TURN** — not just the unknown field. Consumer pins measured 2026-07-28 at
+each repo's own `staging` tip: **UI 0.22.0, CEE 0.25.0, PLoT 0.22.0** (PLoT never sees turns).
+
+Required order, and shipping it out of order 400s every inspector edit:
+
+1. Publish `0.29.0` (merge to `main` here).
+2. CEE re-vendors + **deploys** the reader.
+3. **Only then** the UI emitter ships.
+
+### Absence semantics — all three new optionals ANSWERED
+
+`counts.unresolved` is **unchanged at 365**: the debt ratchet did not move, because no new
+field landed as `unresolved`.
+
+- `factor_value_edit.field` → **`same`**. Absence == `"value"`, and now trivially so: the
+  field is `z.literal('value')`, so `"value"` is the ONLY value it can take. The equivalence
+  is enforced by the type rather than promised by a doc comment — absence cannot absorb a
+  future `"baseline"` edit because the wire will not carry one.
+- `factor_value_edit.raw_value` → **`distinct`**. Absent is not `0`; `0` is a legitimate edit
+  (the probe's second trial set a factor `0 → 7500`). Recorded as DEBT: the honest fix is a
+  discriminated input mode rather than two optional numbers related by convention.
+- `factor_value_edit.unit` → **`distinct`**. Absence flips *which guard fires* on the same
+  digits — a stated unit range-checks as `value_exceeds_cap`, a bare number as
+  `bare_number_outside_cap`. A consumer defaulting a unit for absence would silently change
+  the verdict.
+
+### Additive/breaking analysis
+
+- **Runtime, as a validator:** additive. Every payload valid under 0.28.0 is valid under
+  0.29.0 — a new union member widens what parses and narrows nothing.
+- **Runtime, as a reader:** **NOT transparent, and this is the one to read.** Unlike an
+  optional field on an existing member, a new member is only inert while nobody emits it. The
+  moment a producer does, every consumer below 0.29.0 hard-rejects the turn. The mitigation is
+  ordering, not the schema.
+- **Compile-time: NOTHING GOES RED, and an earlier draft of this entry claimed otherwise.**
+  `SystemEvent` and `SystemEventKindLiteral` both widen. It is *true* that an exhaustive
+  `switch` over `event.kind` without a `default` would become a compile error on re-vendor —
+  but **CEE has no such switch**, so no such error fires. Measured, not assumed: re-vendoring
+  0.29.0 into CEE with no code change gives `pnpm typecheck` **0 errors**. (This package's own
+  0.21.0 entry recorded the same finding for a different union — "zero `assertNever` / `: never`
+  exhaustiveness checks" in CEE — so the absence is long-standing, not new.)
+  **A new kind therefore falls SILENTLY through to the generic acknowledgement path** in
+  `dispatch.ts` — which is exactly the failure this release exists to fix, one kind later.
+  CEE closes it on its side in the same train with a derived exhaustiveness guard over
+  `SystemEventKind.options`; a consumer that re-vendors without one inherits the silent
+  fallthrough. **Do not read a widened union as a self-announcing change.**
+- **Nothing auto-adopts.** All three TS consumers pin checked-in `file:` tarballs; adoption is
+  a re-vendor PR in each consumer's repo.
+
 ## [0.28.0] — 2026-07-27
 
 **`EnrichmentRobustnessEdgeSchema.switch_probability` becomes OPTIONAL.** The
