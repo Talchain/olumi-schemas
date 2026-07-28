@@ -161,6 +161,71 @@ const DirectGraphEditEvent = z.object({
   summary: z.string().min(1).max(2000).optional(),
 }).strict();
 
+// `factor_value_edit` (0.29.0) — an inspector value edit, CARRYING THE VALUE.
+//
+// WHY A NEW MEMBER RATHER THAN A VALUE ON `direct_graph_edit` (ROADMAP 1.346).
+// `direct_graph_edit` is a BATCH NOTIFICATION whose `target_id` is documented
+// above as a REPRESENTATIVE SINGULAR — "explicit target → else the first changed
+// node id (ascending)". Keying a MUTATION on a representative id would mutate
+// whichever node happened to sort first in a batch rather than the one the user
+// edited: a defect by construction. Its consumers are notification-shaped too
+// (CEE silent-acks it; the orchestrator prompt family says "acknowledge changes,
+// note implications"). So the value-carrying edit gets its OWN member and
+// `direct_graph_edit` keeps its existing semantics byte-identically.
+//
+// ⚠ SEQUENCING — READER-FIRST IS MANDATORY, NOT A PREFERENCE. Every member of
+// this union is `.strict()` and the union itself is a `discriminatedUnion` on
+// `kind`. A consumer pinned to 0.28.0 or earlier that receives this member fails
+// the discriminator and REJECTS THE WHOLE TURN — not just this field. The UI must
+// therefore NOT emit `factor_value_edit` until CEE's pin includes it. Measured
+// 2026-07-28: UI 0.22.0, CEE 0.25.0. Order: publish → CEE re-vendors → CEE deploys
+// → only then the UI emitter ships.
+//
+// SCALE CONTRACT — the field names and meanings are taken verbatim from
+// `ObservedStateV3` / `normaliseFactorValue` (CEE), NOT invented here:
+//   `value`     — MODEL scale. For a capped factor this is `raw_value / cap`.
+//   `raw_value` — the USER-UNIT magnitude the user actually typed ("30000").
+// These are NOT interchangeable, and conflating them is a live defect this
+// member exists to make impossible to express silently.
+//
+// NO `cap` FIELD, DELIBERATELY. A cap is the factor's SCALE; changing it rescales
+// every option intervention on that factor. Accepting a client-supplied cap here
+// would let an inspector edit extend the scale with no consent step. Extending a
+// scale keeps going through the existing consented "extend the scale" chip flow.
+// NO `operator` FIELD either: an inspector edit is always an absolute set.
+const FactorValueEditEvent = z.object({
+  kind: z.literal('factor_value_edit'),
+  // The factor node being edited. ID-ADDRESSED — never a label. A label match
+  // would silently retarget on any duplicate or renamed label.
+  target_id: z.string().min(1),
+  value: z.number().finite().describe(
+    'The edited value on the MODEL scale (for a capped factor, raw_value / cap). ' +
+      'Required: an edit with no value is a `direct_graph_edit` notification, not this ' +
+      'event. The server RE-DERIVES the persisted model value from `raw_value` and its ' +
+      'own stored cap and never persists this number verbatim — it is the client\'s ' +
+      'statement of intent, cross-checked against `raw_value`, not a trusted input.',
+  ),
+  raw_value: z.number().finite().optional().describe(
+    'The USER-UNIT magnitude as typed (e.g. 30000 for £30,000). ABSENCE IS DISTINCT ' +
+      'from any value: it means the client did not state a user-unit magnitude, and the ' +
+      'server must derive one from `value` and its own stored cap. It does NOT mean zero. ' +
+      'Send this whenever the user typed a magnitude — it is the honest record of the ' +
+      'input, and the server prefers it over `value`.',
+  ),
+  unit: z.string().min(1).optional().describe(
+    'Unit symbol for `raw_value` (e.g. "£", "%"). ABSENCE IS DISTINCT from any value: ' +
+      'a unit-less number is treated as an AMBIGUOUS bare number against a capped factor ' +
+      'and may be refused, whereas a stated unit is validated against the factor\'s own ' +
+      'unit. Absence never means "no unit" — it means "the client did not say".',
+  ),
+  field: z.string().min(1).optional().describe(
+    'Which `observed_state` field was edited. ABSENCE IS THE SAME as "value" — the only ' +
+      'field this event has ever carried — so a client that omits it is treated as ' +
+      'editing the value. Present-and-not-"value" is REFUSED rather than coerced, so a ' +
+      'future field (e.g. "baseline") cannot be silently applied as a value edit.',
+  ),
+}).strict();
+
 const ChipClickEvent = z.object({
   kind: z.literal('chip_click'),
   chip_id: z.string().min(1),
@@ -243,6 +308,7 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
   DirectGraphEditEvent,
+  FactorValueEditEvent,
   ChipClickEvent,
   UndoEvent,
   RedoEvent,

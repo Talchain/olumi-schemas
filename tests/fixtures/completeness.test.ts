@@ -162,7 +162,12 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   the union entries and the branch entries — eight registry rows, five
     //   fixture objects. The orchestrator re-exports are identity-matched by
     //   the ratchet and need no further entries.
-    expect(MAXIMAL_FIXTURES.length).toBe(124);
+    // 0.29.0: 124 -> 125 (+1): ROADMAP 1.346 — boundary/SystemEventSchema#
+    //   factor_value_edit, the value-carrying inspector edit. One new BRANCH on
+    //   an already-registered union, so exactly one row: the union needs an
+    //   entry per branch or the maximality walker reports
+    //   `unexercised-union-branch` for it.
+    expect(MAXIMAL_FIXTURES.length).toBe(125);
   });
 
   it('family keys are unique', () => {

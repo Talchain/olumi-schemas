@@ -304,6 +304,37 @@
         "It is in the manifest to prove the checker runs against real references that resolve on",
         "disk — run with OLUMI_ESTATE_ROOT set and both paths are verified to exist."
       ]
+    },
+    {
+      "field": "system_event.event[kind=factor_value_edit]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::FactorValueEditEvent (0.29.0) — the value-carrying inspector edit, a new member of SystemEventSchema (ROADMAP 1.346)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED, and it cannot honestly be anything else yet: this member is READER-FIRST by",
+        "  construction. Nothing produces it — the UI emitter is a deliberately SEPARATE, LATER",
+        "  train, and the CEE reader lands in its own HELD PR against olumi-assistants-service",
+        "  staging. A producer_test/consumer_test naming an unmerged branch would not resolve on",
+        "  disk, and a row naming a test nobody can run is the drift this manifest exists to",
+        "  catch. Both references land when those PRs land.",
+        "THE SEQUENCING IS A HARD CONSTRAINT, NOT A PREFERENCE, and it is why this row starts",
+        "  empty. Every SystemEventSchema member is .strict() and the union discriminates on",
+        "  'kind', so a consumer pinned below 0.29.0 that receives this member fails the",
+        "  discriminator and REJECTS THE WHOLE TURN — not just the unknown field. Pins measured",
+        "  2026-07-28 at each repo's own staging tip: UI 0.22.0, CEE 0.25.0. Order: publish",
+        "  0.29.0 -> CEE re-vendors AND deploys -> only then the UI emitter ships. Writer-first",
+        "  400s every inspector edit.",
+        "THE DEFECT IT CLOSES, measured not inferred: a live probe 2026-07-28 (UI 92f5406f, CEE",
+        "  cb54320e) made two inspector value edits on two factors; CEE graph_hash did not move",
+        "  on either (c9eacbc8538cc254 -> c9eacbc8538cc254), while a chat edit on the SAME factor",
+        "  moved it (-> 677ca064fa393a81). The inspector edit had no wire channel carrying the",
+        "  value. This member is that channel."
+      ]
     }
   ]
 }

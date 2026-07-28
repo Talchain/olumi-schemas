@@ -196,10 +196,16 @@ export type IntentLiteral = z.infer<typeof Intent>;
 // 0.22.0: `feedback` added — the typed thumbs-rating event (Paul ruled WIRE,
 // design decision ⑥). Mirrors the `feedback` member added to the
 // `SystemEventSchema` union in turn-payload.ts; kept in parity here.
+// 0.29.0: `factor_value_edit` added — the VALUE-CARRYING inspector edit
+// (ROADMAP 1.346). Mirrors the member added to the `SystemEventSchema` union in
+// turn-payload.ts; kept in parity here. The parity is not left to memory —
+// `tests/boundary/turn-payload-0.22.test.ts` asserts set-equality between this
+// enum and the union's `kind` literals, so this mirror fails loud on drift.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
   'direct_graph_edit',
+  'factor_value_edit',
   'chip_click',
   'undo',
   'redo',
