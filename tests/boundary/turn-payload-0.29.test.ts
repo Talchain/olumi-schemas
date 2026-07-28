@@ -88,6 +88,23 @@ describe('factor_value_edit — the value-carrying inspector edit', () => {
     expect(SystemEventSchema.safeParse({ ...minimal, operator: 'increase' }).success).toBe(false);
   });
 
+  // THE SKEW GUARD. `field` is a LITERAL, not a string, so the WIRE refuses an
+  // unknown field rather than leaving each consumer to decide. With a permissive
+  // string, `field: 'baseline'` would parse at every pin >= 0.29.0 and the
+  // verdict (refuse / coerce / apply as a value edit) would depend on which
+  // version each reader happened to be on — hazard 1, in one field. Widening to
+  // a union later is then a loud versioned release, not a silent divergence.
+  it('REJECTS an unknown field — the WIRE refuses it, not just one reader', () => {
+    expect(SystemEventSchema.safeParse({ ...minimal, field: 'baseline' }).success).toBe(false);
+    expect(SystemEventSchema.safeParse({ ...minimal, field: 'raw_value' }).success).toBe(false);
+    expect(SystemEventSchema.safeParse({ ...minimal, field: '' }).success).toBe(false);
+  });
+
+  it('accepts field:"value" and accepts its absence — the two are equivalent', () => {
+    expect(SystemEventSchema.safeParse({ ...minimal, field: 'value' }).success).toBe(true);
+    expect(SystemEventSchema.safeParse(minimal).success).toBe(true);
+  });
+
   // ---- the notification member stays unpolluted -----------------------------
   //
   // The design claim that justified a NEW member rather than a value on

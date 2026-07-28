@@ -218,11 +218,27 @@ const FactorValueEditEvent = z.object({
       'and may be refused, whereas a stated unit is validated against the factor\'s own ' +
       'unit. Absence never means "no unit" — it means "the client did not say".',
   ),
-  field: z.string().min(1).optional().describe(
-    'Which `observed_state` field was edited. ABSENCE IS THE SAME as "value" — the only ' +
-      'field this event has ever carried — so a client that omits it is treated as ' +
-      'editing the value. Present-and-not-"value" is REFUSED rather than coerced, so a ' +
-      'future field (e.g. "baseline") cannot be silently applied as a value edit.',
+  // A LITERAL, NOT A STRING, AND THE DIFFERENCE IS THE SKEW SEAM.
+  //
+  // This started as `z.string().min(1)` with a doc comment promising that
+  // "present-and-not-'value' is REFUSED rather than coerced". That promise lived
+  // only in ONE reader (CEE's dispatch). A permissive string means a future
+  // producer can emit `field: 'baseline'` and have it PARSE at every pin ≥0.29.0,
+  // with the verdict — refuse, coerce, or silently apply as a value edit —
+  // decided by whichever version each consumer happens to be on. That is hazard 1
+  // exactly: the contract validates, and the behaviour diverges downstream.
+  //
+  // As a literal, the wire itself refuses it. Adding `'baseline'` later becomes a
+  // LOUD, VERSIONED WIDENING (a union member, a minor bump, a re-vendor per
+  // consumer) instead of a value that quietly parses everywhere and means
+  // different things in different places.
+  field: z.literal('value').optional().describe(
+    'Which `observed_state` field was edited. The ONLY accepted value is "value", and ' +
+      'ABSENCE IS THE SAME as passing it — so a client may omit it entirely. It exists to ' +
+      'make the edited field EXPLICIT on the wire, not to offer a choice: a future field ' +
+      '(e.g. "baseline") requires widening this literal to a union in a versioned release, ' +
+      'which is deliberately louder than accepting an arbitrary string here and leaving each ' +
+      'consumer to decide what to do with it.',
   ),
 }).strict();
 

@@ -1875,7 +1875,7 @@
         "optional"
       ],
       "verdict": "same",
-      "note": "The field's own .describe() answers it outright: \"ABSENCE IS THE SAME as 'value' — the only field this event has ever carried — so a client that omits it is treated as editing the value.\" The equivalence is safe to state because the alternative reading is closed off in the same sentence: present-and-not-'value' is REFUSED rather than coerced, so treating absence as 'value' can never absorb a future 'baseline' edit by accident.",
+      "note": "TRIVIALLY the same, and enforced by the TYPE rather than promised by prose: the field is z.literal('value'), so 'value' is the only value it can take, and absence is therefore equivalent to the only possible presence. It was z.string().min(1) in review, where this verdict rested on a doc-comment promise that only ONE reader (CEE's dispatch) actually kept — a permissive string would have let a future producer emit field:'baseline' that PARSES at every pin >=0.29.0 with the verdict differing per consumer version. Tightening to a literal moved the guarantee from prose into the wire; adding a second field later is a loud versioned widening, not a silent divergence.",
       "ref": "src/boundary/turn-payload.ts — FactorValueEditEvent.field .describe() (0.29.0, ROADMAP 1.346)"
     },
     "boundary/SystemEventSchema|kind=factor_value_edit.raw_value": {

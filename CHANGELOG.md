@@ -58,7 +58,12 @@ to 0.28.0. That is pinned, not merely asserted:
   - `raw_value?: z.number().finite()` — the **USER-UNIT** magnitude as typed (30000 for
     £30,000).
   - `unit?: z.string().min(1)` — unit symbol for `raw_value`.
-  - `field?: z.string().min(1)` — which `observed_state` field was edited.
+  - `field?: z.literal('value')` — which `observed_state` field was edited. **A LITERAL, not
+    a string, and the difference is a skew seam.** A permissive string would let a future
+    producer emit `field: 'baseline'` that PARSES at every pin ≥0.29.0, with the verdict
+    (refuse / coerce / apply as a value edit) decided by whichever version each consumer is
+    on — hazard 1 in a single field. As a literal the WIRE refuses it, and adding a second
+    field later becomes a loud versioned widening. Pinned by a reject test.
 - `'factor_value_edit'` in the `SystemEventKind` convenience enum (`src/boundary/enums.ts`).
   That enum is a hand-maintained mirror of the union — trap-12 — and the existing
   set-equality gate in `tests/boundary/turn-payload-0.22.test.ts` is what makes it fail loud.
@@ -108,9 +113,10 @@ Required order, and shipping it out of order 400s every inspector edit:
 `counts.unresolved` is **unchanged at 365**: the debt ratchet did not move, because no new
 field landed as `unresolved`.
 
-- `factor_value_edit.field` → **`same`**. Absence == `"value"`. Safe to state because the
-  alternative reading is closed off in the same breath: present-and-not-`"value"` is REFUSED
-  rather than coerced, so absence can never absorb a future `"baseline"` edit.
+- `factor_value_edit.field` → **`same`**. Absence == `"value"`, and now trivially so: the
+  field is `z.literal('value')`, so `"value"` is the ONLY value it can take. The equivalence
+  is enforced by the type rather than promised by a doc comment — absence cannot absorb a
+  future `"baseline"` edit because the wire will not carry one.
 - `factor_value_edit.raw_value` → **`distinct`**. Absent is not `0`; `0` is a legitimate edit
   (the probe's second trial set a factor `0 → 7500`). Recorded as DEBT: the honest fix is a
   discriminated input mode rather than two optional numbers related by convention.
@@ -127,9 +133,18 @@ field landed as `unresolved`.
   optional field on an existing member, a new member is only inert while nobody emits it. The
   moment a producer does, every consumer below 0.29.0 hard-rejects the turn. The mitigation is
   ordering, not the schema.
-- **Compile-time:** `SystemEvent` and `SystemEventKindLiteral` both widen. An exhaustive
-  `switch` over `event.kind` without a `default` becomes a compile error on re-vendor — which
-  is the intended loud signal, and how CEE's own dispatch surfaces the new kind.
+- **Compile-time: NOTHING GOES RED, and an earlier draft of this entry claimed otherwise.**
+  `SystemEvent` and `SystemEventKindLiteral` both widen. It is *true* that an exhaustive
+  `switch` over `event.kind` without a `default` would become a compile error on re-vendor —
+  but **CEE has no such switch**, so no such error fires. Measured, not assumed: re-vendoring
+  0.29.0 into CEE with no code change gives `pnpm typecheck` **0 errors**. (This package's own
+  0.21.0 entry recorded the same finding for a different union — "zero `assertNever` / `: never`
+  exhaustiveness checks" in CEE — so the absence is long-standing, not new.)
+  **A new kind therefore falls SILENTLY through to the generic acknowledgement path** in
+  `dispatch.ts` — which is exactly the failure this release exists to fix, one kind later.
+  CEE closes it on its side in the same train with a derived exhaustiveness guard over
+  `SystemEventKind.options`; a consumer that re-vendors without one inherits the silent
+  fallthrough. **Do not read a widened union as a self-announcing change.**
 - **Nothing auto-adopts.** All three TS consumers pin checked-in `file:` tarballs; adoption is
   a re-vendor PR in each consumer's repo.
 
