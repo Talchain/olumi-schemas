@@ -125,6 +125,8 @@ export {
   EnrichmentOptionComparisonEntrySchema,
   EnrichmentConfidenceProvenanceSchema,
   EnrichmentFactorSensitivityEntrySchema,
+  // 0.30.0 — the VOI family joins the CEE→UI keep-list (V7-C slice 1a)
+  EnrichmentFactorEvppiEntrySchema,
   EnrichmentRobustnessEdgeSchema,
   EnrichmentNearTieSchema,
   EnrichmentRobustnessSchema,
@@ -155,6 +157,7 @@ export type {
   EnrichmentOptionComparisonEntry,
   EnrichmentConfidenceProvenance,
   EnrichmentFactorSensitivityEntry,
+  EnrichmentFactorEvppiEntry,
   EnrichmentRobustnessEdge,
   EnrichmentNearTie,
   EnrichmentRobustness,
