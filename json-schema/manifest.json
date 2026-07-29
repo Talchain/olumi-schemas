@@ -62,6 +62,11 @@
       "definition": "#/definitions/EnrichmentEdgeEValueStabilitySchema"
     },
     {
+      "export": "EnrichmentFactorEvppiEntrySchema",
+      "file": "EnrichmentFactorEvppiEntrySchema.json",
+      "definition": "#/definitions/EnrichmentFactorEvppiEntrySchema"
+    },
+    {
       "export": "EnrichmentFactorSensitivityEntrySchema",
       "file": "EnrichmentFactorSensitivityEntrySchema.json",
       "definition": "#/definitions/EnrichmentFactorSensitivityEntrySchema"

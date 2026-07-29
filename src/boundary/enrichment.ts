@@ -25,7 +25,15 @@ import { z } from 'zod';
 //   [F5] CEE repo, src/orchestrator-v5/coaching/types.ts @ staging e122f16 —
 //        DecisionReviewOutput (CEE-attached, LLM-emitted open shape).
 //   [F6] CEE repo, src/orchestrator-v5/compose.ts @ staging e122f16 —
-//        P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP (the 11-key CEE→UI projection).
+//        P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP (the 11-key CEE→UI projection);
+//        re-derived @ staging 86b0e006 for 0.30.0 (12 keys before this bump).
+//   [F7] ISL repo, src/models/response_v2.py @ staging 1716f9bb — ISLResponseV2
+//        top level: factor_evppi (FactorEvppiEntryV2), decision_evpi,
+//        p_win_sensitivity, correlation_model; emission + lever suppression +
+//        noise-floor status in src/analysis/robustness_analyzer_v2.py.
+//   [F8] PLoT repo, src/routes/v2/run-contract-keys.ts @ staging 3d13e0ac —
+//        ISL_TOPLEVEL_ENRICHMENT_KEYS, forwarded verbatim as top-level keys of
+//        the /v2/run response (spread in src/routes/v2/run.ts).
 //
 // DESIGN STANCE — transport-tolerant typing:
 //   * The envelope and every nested object use `.passthrough()`: producers
@@ -50,12 +58,15 @@ import { z } from 'zod';
 //   * PLoT → CEE (`/v2/run` response, persisted verbatim by run_analysis):
 //     the full envelope below.
 //   * CEE → UI (`analysis_result` block enrichment): reduced to the [F6]
-//     keep-list — option_comparison, factor_sensitivity, results, robustness,
-//     decision_review, option_comparison_status, conditional_probabilities,
-//     edge_e_values, inference_warnings, confidence_tier, flip_thresholds —
-//     with internal carriers (`_meta`, `meta`, `downstream_calls`, graph
-//     hashes, ...) deep-stripped. `AnalysisEnrichmentSchema` parses both
+//     keep-list, with internal carriers (`_meta`, `meta`, `downstream_calls`,
+//     graph hashes, ...) deep-stripped. `AnalysisEnrichmentSchema` parses both
 //     projections (all fields optional).
+//     READ THE KEYS FROM `CEE_UI_ENRICHMENT_KEEP_LIST` AT THE BOTTOM OF THIS
+//     FILE — not from a comment. This sentence used to enumerate them and was
+//     stale within one release (it never gained `decision_brief`, 0.19.0); a
+//     hand-maintained mirror of a constant that lives 700 lines below it is
+//     the estate's dominant defect class, and a provenance header is not
+//     exempt from it.
 // ============================================================================
 
 // ----------------------------------------------------------------------------
@@ -284,6 +295,86 @@ export const EnrichmentFactorSensitivityEntrySchema = z.object({
 }).passthrough();
 export type EnrichmentFactorSensitivityEntry =
   z.infer<typeof EnrichmentFactorSensitivityEntrySchema>;
+
+// ----------------------------------------------------------------------------
+// factor_evppi — the VOI family (0.30.0). [F7] ISL ISLResponseV2, [F8] PLoT
+// verbatim top-level forwarding.
+// ----------------------------------------------------------------------------
+
+/**
+ * The absence rule for a `factor_evppi` ROW (0.30.0). Hoisted and attached
+ * with `.describe()` for the same reason as `SWITCH_PROBABILITY_ABSENCE_RULE`:
+ * a doc comment cannot reach a consumer at runtime, a `.description` ships in
+ * `dist/` and in the published json-schema.
+ *
+ * This is the rule the surface lane must not "helpfully" repair. ISL OMITS a
+ * factor entirely when any option intervenes on it (a lever), and omits a row
+ * whose estimator failed [F7]. Imputing `{evppi: 0}` for a graph factor that is
+ * absent from the array converts "deliberately not assessed" into "measured to
+ * be worthless" — the absent≠zero class, on a ranking surface where a
+ * fabricated 0 would be RENDERED as a rank.
+ */
+const FACTOR_EVPPI_ABSENCE_RULE =
+  'A factor ABSENT from this array was not assessed — a lever an option ' +
+  'intervenes on, or a row whose estimator failed (disclosed as ' +
+  'FACTOR_EVPPI_PARTIAL on inference_warnings). Absent is NEVER zero and ' +
+  'MUST NOT be imputed, ranked, or rendered as "no value".';
+
+/**
+ * Per-factor EVPPI entry — Strong–Oakley regression EVPPI, one row per
+ * non-lever uncertain factor. [F7] ISL `FactorEvppiEntryV2`
+ * (`src/models/response_v2.py`), emitted on the robustness response and
+ * forwarded VERBATIM as a top-level key by PLoT [F8]
+ * (`ISL_TOPLEVEL_ENRICHMENT_KEYS`, `src/routes/v2/run-contract-keys.ts`).
+ *
+ * PRODUCER RANK ORDER IS THE CONTRACT. Rows arrive sorted by `evppi`
+ * DESCENDING. A consumer renders them in wire order and never re-sorts: a
+ * consumer that "fixes" the order is a consumer that can invert it, and the
+ * order is the only thing this surface is licensed to show.
+ *
+ * UNITS ARE WHY MAGNITUDES ARE NOT SHOWN. `units: 'outcome'` — `evppi` and
+ * `decision_evpi` are in the decision's OUTCOME units, not probability points
+ * and not a currency. The licensed surface is a RANKING plus the
+ * `below_resolution` band; rendering the number itself needs a goal-unit
+ * ruling that does not exist. See V7C-EVPPI-RANKING-DESIGN-2026-07-30 §4.
+ *
+ * `status: 'below_resolution'` means `evppi <= noise_floor` (the permutation
+ * null) — indistinguishable from noise AT THIS RUN'S RESOLUTION. It is NOT
+ * "zero value" and NOT "not worth resolving"; it is a demotion, never a rank.
+ *
+ * Only `factor_id` is required — the shape is typed OPEN and every other field
+ * optional so a producer build that omits an audit leg cannot make a real
+ * persisted fact fail to parse. `factor_label` is NOT on the wire: the row
+ * carries an id, and a consumer that cannot resolve it to a canvas label must
+ * drop the row rather than render an id-shaped name.
+ */
+export const EnrichmentFactorEvppiEntrySchema = z.object({
+  factor_id: z.string().min(1),
+  /** Strong–Oakley regression EVPPI, OUTCOME units, >= 0, capped at decision_evpi. */
+  evppi: z.number().optional(),
+  /** Pre-clamp audit value; may be negative (regression noise). Never displayed. */
+  evppi_raw: z.number().optional(),
+  baseline_max_expected_utility: z.number().optional(),
+  conditional_max_expected_utility: z.number().optional(),
+  /** 'outcome' [F7]. Typed OPEN — a new unit vocabulary must not fail transport. */
+  units: z.string().optional(),
+  /** Estimator version tag, e.g. 'regression_evppi_v1' [F7]. */
+  method: z.string().optional(),
+  regression_degree: z.number().optional(),
+  n_samples: z.number().optional(),
+  /** Howard dead-man's-switch: raw < 0 clamped to 0 (always also below_resolution). */
+  clamped_low: z.boolean().optional(),
+  /** The per-factor <= total-EVPI cap fired. Audit only; order is unaffected. */
+  clamped_high: z.boolean().optional(),
+  /** Permutation-null floor (max of K shuffles) — the below_resolution threshold. */
+  noise_floor: z.number().optional(),
+  /** 'resolved' | 'below_resolution' [F7]. Typed OPEN; an unknown status is a row a consumer drops, not a parse failure. */
+  status: z.string().optional(),
+  /** Disclosure only — EVPPI stays EMITTED under active correlation (it is honest there; p_win_sensitivity is what gets suppressed). */
+  correlation_active: z.boolean().optional(),
+}).passthrough().describe(FACTOR_EVPPI_ABSENCE_RULE);
+export type EnrichmentFactorEvppiEntry =
+  z.infer<typeof EnrichmentFactorEvppiEntrySchema>;
 
 // ----------------------------------------------------------------------------
 // robustness — [F1], [F2] RobustnessAssessmentV3 (+ display_verdict, lane W5)
@@ -790,6 +881,53 @@ export const AnalysisEnrichmentSchema = z.object({
   critiques: z.array(EnrichmentCritiqueSchema).optional(),
   confidence_tier: EnrichmentConfidenceTier.optional(),
 
+  // --- value of information (0.30.0) --------------------------------------
+  // The VOI family. ISL emits all four on the robustness response [F7]; PLoT
+  // forwards them verbatim as top-level keys [F8]; 0.30.0 puts the family on
+  // the CEE→UI keep-list below so a consumer can read them at all. Transport
+  // is claim-inert — the claim cage is the READER, and only `factor_evppi`
+  // has a licensed surface in this train (a ranking; no magnitudes).
+  /**
+   * Per-factor EVPPI rows, sorted by `evppi` DESCENDING by the producer.
+   * Absent / `null` / `[]` all mean the same thing — no ranking was produced
+   * for this run — and a consumer renders the honest gate for all three
+   * rather than an empty list. A factor MISSING FROM a present array is the
+   * different and dangerous case: see `FACTOR_EVPPI_ABSENCE_RULE`.
+   */
+  factor_evppi: z.array(EnrichmentFactorEvppiEntrySchema).nullable().optional(),
+  /**
+   * Whole-decision EVPI, OUTCOME units, `>= 0` at the producer [F7]. Typed as
+   * a plain number here deliberately: this envelope's additive guarantee is
+   * that the ONLY new rejections are malformed known keys, and a float that
+   * lands at -1e-17 is a real persisted fact, not a malformed one. Transport
+   * only in 0.30.0 — displaying the magnitude needs the goal-unit ruling.
+   */
+  decision_evpi: z.number().nullable().optional().describe(
+    'Absence means NOT COMPUTED — never 0. A measured 0 is a real result ' +
+    '(nothing about this decision is worth learning) and must be preserved. ' +
+    'The wire carries no discriminator between the two beyond key presence, ' +
+    'so a consumer coalescing with `?? 0` converts "we did not compute this" ' +
+    'into "we measured that information is worthless here".',
+  ),
+  /**
+   * Percentage-point-of-win OAT deltas. Typed OPEN (shape owned by ISL, which
+   * declares `List[dict]`). ABSENT UNDER ACTIVE CORRELATION BY DESIGN — ISL
+   * suppresses it and names it in `correlation_model.suppressed_attributions`
+   * ("absent from the response, not null") while `factor_evppi` stays
+   * emitted. So absence here is a SUPPRESSION VERDICT, not a missing
+   * convenience. Transport only — pp display is barred by PP_TOKEN doctrine.
+   */
+  p_win_sensitivity: z.array(z.record(z.string(), z.unknown())).nullable().optional(),
+  /**
+   * ISL's correlation disclosure — typed OPEN (shape owned by ISL; observed
+   * member: `suppressed_attributions`). It is the DISCRIMINATOR that makes an
+   * absent `p_win_sensitivity` readable as suppression rather than as
+   * "not computed", which is why the family travels together: transporting
+   * the suppressed field's explanation without the explanation is the
+   * two-states-one-byte defect by construction.
+   */
+  correlation_model: z.object({}).passthrough().nullable().optional(),
+
   // --- constraints (PR #203/#204/#205 vocabulary) --------------------------
   constraint_results: z.array(EnrichmentConstraintResultSchema).optional(),
   conditional_probabilities: z.array(EnrichmentConditionalProbabilitySchema).optional(),
@@ -842,6 +980,24 @@ export const CEE_UI_ENRICHMENT_KEEP_LIST = [
   // key does not reopen the lineage leak the original omission was
   // guarding against.
   'decision_brief',
+  // 0.30.0 (V7-C slice 1a): the VOI family. All four are emitted by ISL and
+  // forwarded verbatim by PLoT, and all four were stripped HERE — one hop
+  // before the browser. Any prior claim that "the envelope reaches the UI"
+  // for these keys was false on the live path, and no UI-side surface for
+  // them could ever have fired. The family travels together because
+  // `correlation_model` is the DISCRIMINATOR for an absent
+  // `p_win_sensitivity` (suppressed-under-correlation vs never-computed);
+  // transporting a suppressed field without its suppression disclosure is
+  // the two-states-one-byte defect by construction.
+  // Claim-safety: a `factor_evppi` row names a factor id and numbers only —
+  // no option identity anywhere in any of these shapes — so nothing here is
+  // leading-option-adjacent, and CEE's withheld-claim projection correctly
+  // passes them through a withheld turn unchanged.
+  // Design of record: V7C-EVPPI-RANKING-DESIGN-2026-07-30.
+  'factor_evppi',
+  'decision_evpi',
+  'p_win_sensitivity',
+  'correlation_model',
 ] as const;
 export type CeeUiEnrichmentKeepKey = (typeof CEE_UI_ENRICHMENT_KEEP_LIST)[number];
 

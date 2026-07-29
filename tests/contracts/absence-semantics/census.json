@@ -63,14 +63,9 @@
     }
   },
   "counts": {
-    "_doc": [
-      "PINNED, and derived from `fields` — the gate recomputes all three and REDs on any mismatch.",
-      "`unresolved` is the RATCHET: a new optional field lands as `unresolved`, which forces this",
-      "number up IN THE DIFF where a reviewer sees it. It is meant to travel downward."
-    ],
-    "distinct": 24,
-    "same": 3,
-    "unresolved": 365
+    "distinct": 26,
+    "same": 4,
+    "unresolved": 379
   },
   "open_objects": {
     "_doc": [
@@ -83,6 +78,7 @@
     ],
     "keys": [
       "boundary/AnalysisEnrichmentSchema",
+      "boundary/AnalysisEnrichmentSchema.correlation_model",
       "boundary/AnalysisEnrichmentSchema.decision_brief",
       "boundary/BoundaryErrorSchema.details",
       "boundary/CounterfactualResponseSchema",
@@ -108,6 +104,7 @@
       "boundary/EnrichmentDecisionReviewSchema",
       "boundary/EnrichmentEdgeEValueSchema",
       "boundary/EnrichmentEdgeEValueSchema.stability",
+      "boundary/EnrichmentFactorEvppiEntrySchema",
       "boundary/EnrichmentFactorSensitivityEntrySchema",
       "boundary/EnrichmentFactorSensitivityEntrySchema.confidence_components",
       "boundary/EnrichmentFlipThresholdSchema",
@@ -215,6 +212,14 @@
       ],
       "verdict": "unresolved"
     },
+    "boundary/AnalysisEnrichmentSchema.correlation_model": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "unresolved",
+      "note": "Absent vs present-and-empty is unestablished. ISL owns the shape and the only member evidenced at 0.30.0 is `suppressed_attributions`; nothing states whether an emitted-but-empty disclosure differs from no disclosure. Load-bearing because this object is the DISCRIMINATOR for p_win_sensitivity's absence (see that row) — if `{}` and absent mean different things, the discriminator itself has the defect it resolves."
+    },
     "boundary/AnalysisEnrichmentSchema.critiques": {
       "markers": [
         "optional"
@@ -227,6 +232,15 @@
         "nullable"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.decision_evpi": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"Absence means NOT COMPUTED - never 0. A measured 0 is a real result (nothing about this decision is worth learning) and must be preserved.\" Same shape as EnrichmentRobustnessEdgeSchema.switch_probability (0.28.0): a magnitude whose absence and whose 0 are different claims, with key presence as the only discriminator. DEBT is limited here because 0.30.0 transports the field without displaying it - the `?? 0` risk arrives with the consumer, and the rule now ships in dist/ and in the published json-schema where that consumer can read it.",
+      "ref": "src/boundary/enrichment.ts - AnalysisEnrichmentSchema.decision_evpi .describe() (0.30.0, V7-C slice 1a)"
     },
     "boundary/AnalysisEnrichmentSchema.decision_review": {
       "markers": [
@@ -246,6 +260,15 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.factor_evppi": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The field's own comment is explicit and leaves nothing to infer: \"Absent / null / [] all mean the same thing - no ranking was produced for this run - and a consumer renders the honest gate for all three rather than an empty list.\" ISL emits null/absent when no row survived, and the rendering rule collapses all three states onto one gate. CAVEAT, AND IT IS THE DANGEROUS HALF: this row is about the ARRAY. The question that actually matters here is about MEMBERSHIP - a factor MISSING FROM a present array - and the census cannot see it by construction (it enumerates optionality-bearing FIELDS, not array elements). That question IS answered, in the type system rather than in prose: FACTOR_EVPPI_ABSENCE_RULE ships as the entry schema's .describe(). Absent-from-the-array means a lever, or a failed estimator, and imputing {evppi: 0} would render a RANK for a factor nobody assessed.",
+      "ref": "src/boundary/enrichment.ts - AnalysisEnrichmentSchema.factor_evppi comment + FACTOR_EVPPI_ABSENCE_RULE .describe() (0.30.0)"
     },
     "boundary/AnalysisEnrichmentSchema.factor_sensitivity": {
       "markers": [
@@ -283,6 +306,15 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.p_win_sensitivity": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "Absence is a SUPPRESSION VERDICT, not a missing convenience. ISL suppresses this attribution entirely under active correlation and says so in its own docs - \"Absent from the response, not null\" - while factor_evppi stays emitted because EVPPI is honest under correlation. So absent (suppressed) and [] (computed, nothing to report) are different claims about whether the estimator RAN. Unusually for a distinct row, the DISCRIMINATOR EXISTS ON THE WIRE and lands in this same train: correlation_model.suppressed_attributions names the suppressed field. The residual debt is that nothing in the contract TIES the two together - a consumer must know to look - and that correlation_model's own absence semantics are themselves unresolved (see its row).",
+      "ref": "src/boundary/enrichment.ts - AnalysisEnrichmentSchema.p_win_sensitivity comment (0.30.0); isl:src/models/response_v2.py CorrelationModel.suppressed_attributions + src/analysis/robustness_analyzer_v2.py suppression site"
     },
     "boundary/AnalysisEnrichmentSchema.results": {
       "markers": [
@@ -823,6 +855,110 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.baseline_max_expected_utility": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.clamped_high": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.clamped_low": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.conditional_max_expected_utility": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.correlation_active": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.evppi": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.evppi_raw": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.method": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.n_samples": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.noise_floor": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.regression_degree": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+    },
+    "boundary/EnrichmentFactorEvppiEntrySchema.units": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorSensitivityEntrySchema._normalised": {
       "markers": [

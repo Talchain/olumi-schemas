@@ -139,6 +139,7 @@ import {
   EnrichmentOptionComparisonEntrySchema,
   EnrichmentConfidenceProvenanceSchema,
   EnrichmentFactorSensitivityEntrySchema,
+  EnrichmentFactorEvppiEntrySchema,
   EnrichmentRobustnessEdgeSchema,
   EnrichmentNearTieSchema,
   EnrichmentRobustnessSchema,
@@ -761,6 +762,27 @@ export const maximalEnrichmentFactorSensitivityEntry = deepFreeze({
   [PROBE]: true,
 });
 
+// 0.30.0 — factor_evppi row (V7-C slice 1a). `status: 'resolved'` here because
+// the maximal fixture must be a row a consumer RANKS; the below-resolution and
+// clamped variants are consumer-side test fixtures, not contract maximality.
+export const maximalEnrichmentFactorEvppiEntry = deepFreeze({
+  factor_id: ID_FACTOR,
+  evppi: 0.34,
+  evppi_raw: 0.341982,
+  baseline_max_expected_utility: 12.5,
+  conditional_max_expected_utility: 12.84,
+  units: 'outcome',
+  method: 'regression_evppi_v1',
+  regression_degree: 2,
+  n_samples: 4000,
+  clamped_low: false,
+  clamped_high: false,
+  noise_floor: 0.02,
+  status: 'resolved',
+  correlation_active: false,
+  [PROBE]: true,
+});
+
 export const maximalEnrichmentRobustnessEdge = deepFreeze({
   edge_id: ID_EDGE,
   from_id: ID_FACTOR,
@@ -999,6 +1021,14 @@ export const maximalAnalysisEnrichment = deepFreeze({
   inference_warnings: [maximalEnrichmentInferenceWarning],
   critiques: [maximalEnrichmentCritique],
   confidence_tier: 'fair',
+  // 0.30.0 — the VOI family (V7-C slice 1a). All four now transport CEE→UI.
+  factor_evppi: [maximalEnrichmentFactorEvppiEntry],
+  decision_evpi: 0.91,
+  p_win_sensitivity: [{ FIXTURE_pp_delta_key: 'FIXTURE_pp_delta_value' }],
+  correlation_model: {
+    suppressed_attributions: ['p_win_sensitivity'],
+    [PROBE]: true,
+  },
   constraint_results: [maximalEnrichmentConstraintResult],
   conditional_probabilities: [maximalEnrichmentConditionalProbability],
   m1_coaching: maximalEnrichmentM1Coaching,
@@ -2029,6 +2059,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/EnrichmentConditionalProbabilitySchema',
     schema: EnrichmentConditionalProbabilitySchema,
     fixture: maximalEnrichmentConditionalProbability,
+  },
+  {
+    family: 'boundary/EnrichmentFactorEvppiEntrySchema',
+    schema: EnrichmentFactorEvppiEntrySchema,
+    fixture: maximalEnrichmentFactorEvppiEntry,
+    notes:
+      'ISL emits rows sorted by `evppi` DESCENDING and OMITS levers entirely — absent is never zero. The fixture is a `resolved` row because that is the only kind a consumer may rank; `below_resolution` is a demotion band, not a maximal shape.',
   },
   {
     family: 'boundary/AnalysisEnrichmentSchema',

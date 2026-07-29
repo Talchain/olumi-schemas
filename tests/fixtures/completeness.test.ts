@@ -167,7 +167,13 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   an already-registered union, so exactly one row: the union needs an
     //   entry per branch or the maximality walker reports
     //   `unexercised-union-branch` for it.
-    expect(MAXIMAL_FIXTURES.length).toBe(125);
+    // 0.30.0: 125 -> 126 (+1): V7-C slice 1a — boundary/
+    //   EnrichmentFactorEvppiEntrySchema, the per-factor EVPPI row that joins
+    //   the CEE→UI keep-list. Exactly one row: the four VOI envelope keys are
+    //   FIELDS on the already-registered AnalysisEnrichmentSchema (their
+    //   coverage rides that fixture, which now populates all four), and only
+    //   the entry shape is a newly-exported schema of its own.
+    expect(MAXIMAL_FIXTURES.length).toBe(126);
   });
 
   it('family keys are unique', () => {

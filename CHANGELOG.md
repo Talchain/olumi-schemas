@@ -7,6 +7,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.0] — 2026-07-29
+
+**The VOI family joins `CEE_UI_ENRICHMENT_KEEP_LIST` — `factor_evppi`, `decision_evpi`,
+`p_win_sensitivity`, `correlation_model`.** Keep-list **12 → 16 keys**. New exported schema
+`EnrichmentFactorEvppiEntrySchema`; maximal-fixture registry **125 → 126**. **Purely
+additive: no existing key is renamed, reordered out, or dropped, and no existing field's
+type changes.** This is slice 1a of V7-C; design of record
+`V7C-EVPPI-RANKING-DESIGN-2026-07-30.md`.
+
+### The defect this closes — the chain broke at the last link
+
+ISL computes Strong–Oakley regression EVPPI per non-lever uncertain factor and emits it at
+the top level of `ISLResponseV2` (`factor_evppi`, plus `decision_evpi`, `p_win_sensitivity`
+and `correlation_model`). PLoT forwards all four **verbatim** as top-level keys of the
+`/v2/run` response and always requests them (`include_voi: true`). CEE stores the PLoT
+envelope byte-for-byte on the `run_analysis` fact. **And then CEE's transport keep-list
+stripped all four, one hop before the browser** — so a consumer could not read them at any
+pin, and no UI surface for them could ever have fired.
+
+That last clause is the point worth keeping. A producer-side probe at ISL, at PLoT, or at
+CEE's persisted fact would have found the field present at every hop it looked at, and a
+prior review recorded exactly that conclusion — *"envelope reaches the UI"* — which was
+false on the live path. **A chain that is whole everywhere except its last link reads as
+whole from every vantage point except the consumer's.** The keep-list is that last link,
+which is why it lives here, exported, rather than as a constant in one service.
+
+### Why the whole family and not `factor_evppi` alone
+
+`p_win_sensitivity` is **suppressed — absent, not null — under active correlation**, and the
+thing that says so is `correlation_model.suppressed_attributions`. Transporting a field whose
+absence carries a verdict *without* transporting the verdict is the two-states-one-byte defect
+by construction: the consumer sees a missing key and cannot tell "suppressed for a reason" from
+"never computed". `decision_evpi` travels for the same class of reason — it is the cap the
+per-factor values are clamped against, and the only unit-safe band candidate
+(`evppi / decision_evpi` is dimensionless) lives in a later slice. One train, not three.
+
+Transport is **claim-inert**: the claim cage is the READER. Only `factor_evppi` has a licensed
+surface in this train, and only as a **ranking with a below-resolution band — no magnitudes**.
+`evppi` and `decision_evpi` are in OUTCOME units (`units: 'outcome'`), which is exactly why
+rendering the number needs a goal-unit ruling that does not exist yet; pp figures from
+`p_win_sensitivity` stay barred by the PP_TOKEN doctrine.
+
+### The absence rule, in the type system rather than in prose
+
+`EnrichmentFactorEvppiEntrySchema` carries `FACTOR_EVPPI_ABSENCE_RULE` as a `.describe()`, so
+it ships in `dist/` and in the published `json-schema/` artifact instead of living in a comment
+no consumer can reach at runtime — the same mechanism as `SWITCH_PROBABILITY_ABSENCE_RULE`
+(0.28.0) and `ABSENCE_FAIL_CLOSED_RULE`:
+
+> A factor ABSENT from this array was not assessed — a lever an option intervenes on, or a row
+> whose estimator failed (disclosed as `FACTOR_EVPPI_PARTIAL` on `inference_warnings`). Absent
+> is NEVER zero and MUST NOT be imputed, ranked, or rendered as "no value".
+
+ISL **omits levers entirely**. On a ranking surface, imputing `{evppi: 0}` for a graph factor
+missing from the array does not produce a harmless zero — it produces a **rendered rank** for a
+factor nobody assessed. `status: 'below_resolution'` (`evppi <= noise_floor`, the permutation
+null) is the separate, real state: *indistinguishable from noise at this run's resolution*,
+which is a demotion, never "zero value" and never "not worth resolving".
+
+### Typing choices, and what each one buys
+
+- Only `factor_id` is **required** on a row. Every other field is optional and the object is
+  `.passthrough()`, so a producer build that omits an audit leg cannot make a real persisted
+  fact fail to parse. There is **no `factor_label` on the wire** — a consumer that cannot
+  resolve `factor_id` to a canvas label must drop the row, not render an id-shaped name.
+- `decision_evpi` is a plain `z.number()` even though ISL declares `ge=0`. This envelope's
+  additive guarantee is that the only NEW rejections are malformed *known* keys; a float that
+  lands at `-1e-17` is a real persisted fact, not a malformed one. The producer constraint is
+  documented on the field, not enforced as a transport gate.
+- `status` and `units` are typed OPEN (`z.string()`), not enums. An unknown status is a row a
+  consumer drops — a display decision — never a parse failure that takes the whole envelope
+  with it.
+- `p_win_sensitivity` and `correlation_model` are typed OPEN (`z.record` array / passthrough
+  object) because their shapes are owned by ISL and are not yet evidenced field-by-field.
+  Typing them tighter would invent fields no producer emits.
+
+### Tests
+
+- `tests/boundary/enrichment.test.ts` — the 16-key drift pin, **plus a new purely-additive
+  assertion** that names the pre-0.30.0 twelve and the added four as sets, so a future bump
+  cannot smuggle a removal through a re-sorted literal.
+- `contract-tests/cee-to-ui.contract.test.ts` — the family transports verbatim in producer
+  order, parses, survives the deep internal-key strip, and **carries no option identity**
+  (walked over the real values, with a positive control proving the walker can see one). That
+  last test is the derived basis for CEE passing these keys through a **withheld-claim** turn
+  unchanged: the leading-option egress guard has nothing to catch.
+- A **trap-13 positive control**: the same input projected at the 0.19.0–0.29.0 keep-list is
+  asserted to strip all four. Without it, "the keys arrive" is an assertion that cannot see the
+  absence it claims to have fixed.
+- **Provenance stated in the test file, deliberately:** the checked-in staging capture
+  (2025-12) predates the VOI family and carries none of these keys, so the overlay is
+  **synthesised from ISL's typed model**. These are SHAPE pins, not live-wire pins. The
+  live-wire claim belongs to a staging probe, and nothing here should be read as evidence the
+  bytes arrived.
+
+### Sequencing
+
+Enrichment transport is `z.record(z.string(), z.unknown())` at the block level and the typed
+envelope is `.passthrough()` throughout, so **additive enrichment keys pass every pinned
+validator**: there is no outage window and no forced landing order between CEE and the UI. The
+CEE half (the same four keys added to `P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP`) and the UI reader
+can land in either order after this publishes. Changing this list here does **not** change CEE
+behaviour — CEE's own contract test is what binds the two constants.
+
+### Also in this release
+
+The `enrichment.ts` provenance header stopped enumerating the keep-list keys. That sentence was
+a hand-maintained mirror of a constant 700 lines below it, and it had been stale since 0.19.0
+(it never gained `decision_brief`). It now points at the constant. A provenance header is not
+exempt from the estate's dominant defect class.
+
 ## [0.29.0] — 2026-07-28
 
 **`SystemEventSchema` gains `factor_value_edit` — the inspector value edit, carrying the

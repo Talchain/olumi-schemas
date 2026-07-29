@@ -364,26 +364,69 @@ describe('F6 (schemas #16) — constraint margins + scale/decision-grade provena
 });
 
 describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
-  it('matches the CEE compose.ts P0B keep-list exactly (12 keys)', () => {
+  it('matches the CEE compose.ts P0B keep-list exactly (16 keys)', () => {
     // Mirrored from olumi-assistants-service
     // src/orchestrator-v5/compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP.
     // The CEE-side contract test asserts the same list against its own
     // constant; if CEE changes the list, BOTH tests must move in the same
     // PR pair. 0.19.0 adds `decision_brief` (wave-2 ask 3) — the paired
     // CEE change lands in the CEE re-vendor PR of the same wave.
+    // 0.30.0 adds the VOI family (V7-C slice 1a); the paired CEE change is
+    // the 0.30.0 re-vendor PR.
     expect([...CEE_UI_ENRICHMENT_KEEP_LIST].sort()).toEqual([
       'conditional_probabilities',
       'confidence_tier',
+      'correlation_model',
       'decision_brief',
+      'decision_evpi',
       'decision_review',
       'edge_e_values',
+      'factor_evppi',
       'factor_sensitivity',
       'flip_thresholds',
       'inference_warnings',
       'option_comparison',
       'option_comparison_status',
+      'p_win_sensitivity',
       'results',
       'robustness',
+    ]);
+  });
+
+  // 0.30.0 — the additive assertion, stated as its own claim rather than left
+  // to a reader diffing two sorted literals. HAZARD 1 (skew) is exactly this:
+  // a consumer on an older pin silently drops what it does not know, so the
+  // ONLY safe shape for a keep-list change is pure addition. This test fails
+  // if any pre-0.30.0 key was renamed, reordered out, or dropped, and it
+  // states the delta as a set so a future bump cannot smuggle a removal
+  // through a re-sorted literal.
+  it('0.30.0 is PURELY ADDITIVE over the 0.19.0 list (no key changed or lost)', () => {
+    const PRE_0_30_0 = [
+      'option_comparison',
+      'factor_sensitivity',
+      'results',
+      'robustness',
+      'decision_review',
+      'option_comparison_status',
+      'conditional_probabilities',
+      'edge_e_values',
+      'inference_warnings',
+      'confidence_tier',
+      'flip_thresholds',
+      'decision_brief',
+    ] as const;
+    const current = new Set<string>(CEE_UI_ENRICHMENT_KEEP_LIST);
+    for (const key of PRE_0_30_0) {
+      expect(current.has(key), `0.30.0 must not drop ${key}`).toBe(true);
+    }
+    const added = [...current].filter(
+      (key) => !(PRE_0_30_0 as readonly string[]).includes(key),
+    );
+    expect(added.sort()).toEqual([
+      'correlation_model',
+      'decision_evpi',
+      'factor_evppi',
+      'p_win_sensitivity',
     ]);
   });
 

@@ -818,6 +818,102 @@
             "needs_work"
           ]
         },
+        "factor_evppi": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "factor_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evppi": {
+                    "type": "number"
+                  },
+                  "evppi_raw": {
+                    "type": "number"
+                  },
+                  "baseline_max_expected_utility": {
+                    "type": "number"
+                  },
+                  "conditional_max_expected_utility": {
+                    "type": "number"
+                  },
+                  "units": {
+                    "type": "string"
+                  },
+                  "method": {
+                    "type": "string"
+                  },
+                  "regression_degree": {
+                    "type": "number"
+                  },
+                  "n_samples": {
+                    "type": "number"
+                  },
+                  "clamped_low": {
+                    "type": "boolean"
+                  },
+                  "clamped_high": {
+                    "type": "boolean"
+                  },
+                  "noise_floor": {
+                    "type": "number"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "correlation_active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "factor_id"
+                ],
+                "additionalProperties": true,
+                "description": "A factor ABSENT from this array was not assessed — a lever an option intervenes on, or a row whose estimator failed (disclosed as FACTOR_EVPPI_PARTIAL on inference_warnings). Absent is NEVER zero and MUST NOT be imputed, ranked, or rendered as \"no value\"."
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "decision_evpi": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Absence means NOT COMPUTED — never 0. A measured 0 is a real result (nothing about this decision is worth learning) and must be preserved. The wire carries no discriminator between the two beyond key presence, so a consumer coalescing with `?? 0` converts \"we did not compute this\" into \"we measured that information is worthless here\"."
+        },
+        "p_win_sensitivity": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "correlation_model": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "constraint_results": {
           "type": "array",
           "items": {

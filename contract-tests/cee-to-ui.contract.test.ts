@@ -161,7 +161,154 @@ describe('CEE→UI: keep-list membership pins', () => {
     expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('decision_brief');
   });
 
-  it('keep-list is exactly the CEE compose.ts P0B list (12 keys)', () => {
-    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(12);
+  it('keep-list is exactly the CEE compose.ts P0B list (16 keys)', () => {
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(16);
+  });
+});
+
+// ============================================================================
+// 0.30.0 — the VOI family joins the keep-list (V7-C slice 1a).
+//
+// WHY THIS BLOCK EXISTS. `factor_evppi`, `decision_evpi`, `p_win_sensitivity`
+// and `correlation_model` are emitted by ISL and forwarded verbatim by PLoT,
+// and were then stripped HERE — one hop before the browser. The chain was
+// whole everywhere except at its last link, which is precisely the shape that
+// reads as "the field reaches the UI" in every producer-side probe.
+//
+// PROVENANCE, STATED HONESTLY: the checked-in staging capture
+// (plot-to-cee.run-analysis.staging.json, 2025-12) PREDATES the VOI family and
+// carries none of these keys — verified, and it is why the overlay below is
+// SYNTHESISED from ISL's typed model rather than captured. That makes this a
+// SHAPE pin, not a live-wire pin. The live-wire claim belongs to the staging
+// probe in the transport lane's slice 2, and this comment exists so nobody
+// reads a green tick here as evidence the bytes arrived.
+// ============================================================================
+
+/** Synthesised from ISL `FactorEvppiEntryV2` @ staging 1716f9bb — NOT a capture. */
+const VOI_OVERLAY = {
+  factor_evppi: [
+    {
+      factor_id: 'fac_market_receptivity',
+      evppi: 0.34,
+      evppi_raw: 0.341982,
+      units: 'outcome',
+      method: 'regression_evppi_v1',
+      noise_floor: 0.02,
+      status: 'resolved',
+      correlation_active: false,
+    },
+    {
+      factor_id: 'fac_hiring_pace',
+      evppi: 0,
+      evppi_raw: -0.0004,
+      units: 'outcome',
+      method: 'regression_evppi_v1',
+      clamped_low: true,
+      noise_floor: 0.02,
+      status: 'below_resolution',
+    },
+  ],
+  decision_evpi: 0.91,
+  p_win_sensitivity: [{ factor_id: 'fac_market_receptivity', delta_pp: 4.2 }],
+  correlation_model: { suppressed_attributions: ['p_win_sensitivity'] },
+} as const;
+
+describe('CEE→UI: the VOI family transports (0.30.0)', () => {
+  const withVoi = projectKeepList({ ...persisted, ...VOI_OVERLAY });
+
+  it('all four VOI keys are keep-listed', () => {
+    for (const key of ['factor_evppi', 'decision_evpi', 'p_win_sensitivity', 'correlation_model']) {
+      expect(CEE_UI_ENRICHMENT_KEEP_LIST, `${key} must transport`).toContain(key);
+    }
+  });
+
+  it('POSITIVE CONTROL: the same projection at the PRE-0.30.0 list strips all four', () => {
+    // Trap 13 — an "it arrives now" assertion is vacuous unless it can see the
+    // absence it claims to have fixed. This replays the exact keep-list that
+    // shipped in 0.19.0-0.29.0 against the same input.
+    const PRE_0_30_0 = [
+      'option_comparison', 'factor_sensitivity', 'results', 'robustness',
+      'decision_review', 'option_comparison_status', 'conditional_probabilities',
+      'edge_e_values', 'inference_warnings', 'confidence_tier', 'flip_thresholds',
+      'decision_brief',
+    ];
+    const source = { ...persisted, ...VOI_OVERLAY } as Record<string, unknown>;
+    const old: Record<string, unknown> = {};
+    for (const key of PRE_0_30_0) {
+      if (source[key] !== undefined) old[key] = source[key];
+    }
+    for (const key of ['factor_evppi', 'decision_evpi', 'p_win_sensitivity', 'correlation_model']) {
+      expect(old, `${key} was stripped before 0.30.0`).not.toHaveProperty(key);
+    }
+    // …and the same source, projected at the CURRENT list, carries them.
+    for (const key of ['factor_evppi', 'decision_evpi', 'p_win_sensitivity', 'correlation_model']) {
+      expect(withVoi, `${key} transports at 0.30.0`).toHaveProperty(key);
+    }
+  });
+
+  it('carries factor_evppi rows VERBATIM, in producer order, values untouched', () => {
+    const rows = withVoi.factor_evppi as Array<Record<string, unknown>>;
+    expect(rows).toEqual(VOI_OVERLAY.factor_evppi);
+    // Order is the contract: ISL sorts by evppi DESC and a consumer never re-sorts.
+    expect(rows.map((r) => r.factor_id)).toEqual([
+      'fac_market_receptivity',
+      'fac_hiring_pace',
+    ]);
+    // The below-resolution row keeps its clamped 0 AND its status — the two
+    // together are what stop a consumer reading 0 as "measured worthless".
+    expect(rows[1].evppi).toBe(0);
+    expect(rows[1].status).toBe('below_resolution');
+    expect(rows[1].clamped_low).toBe(true);
+  });
+
+  it('the projected VOI family parses against AnalysisEnrichmentSchema', () => {
+    const result = AnalysisEnrichmentSchema.safeParse(withVoi);
+    if (!result.success) throw new Error(result.error.message);
+    expect(result.success).toBe(true);
+  });
+
+  it('no VOI shape carries OPTION IDENTITY — the withheld-turn licence', () => {
+    // This is the derived basis for CEE passing these keys through a
+    // withheld-claim turn unchanged: the leading-option egress guard has
+    // nothing to catch because no field in any of these shapes names an
+    // option. Asserted by walking the real values, not by reading the types.
+    const OPTION_KEY = /(^|_)option(_|$)|option_id|leading_option/i;
+    const violations: string[] = [];
+    const walk = (value: unknown, path: string): void => {
+      if (Array.isArray(value)) {
+        value.forEach((v, i) => walk(v, `${path}[${i}]`));
+      } else if (value !== null && typeof value === 'object') {
+        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+          if (OPTION_KEY.test(k)) violations.push(`${path}.${k}`);
+          walk(v, `${path}.${k}`);
+        }
+      }
+    };
+    for (const key of ['factor_evppi', 'decision_evpi', 'p_win_sensitivity', 'correlation_model']) {
+      walk(withVoi[key], `$.${key}`);
+    }
+    expect(violations).toEqual([]);
+    // Positive control: the walker CAN see an option key when one is present.
+    const control: string[] = [];
+    const walkControl = (value: unknown, path: string): void => {
+      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+        for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+          if (OPTION_KEY.test(k)) control.push(`${path}.${k}`);
+          walkControl(v, `${path}.${k}`);
+        }
+      }
+    };
+    walkControl({ leading_option_id: 'opt_a' }, '$');
+    expect(control).toEqual(['$.leading_option_id']);
+  });
+
+  it('the VOI keys survive the deep internal-key strip untouched', () => {
+    // stripInternalKeysDeep removes {_meta, meta, seed, graph_hash, lineage, …}
+    // at any depth. Zero collisions with any VOI field name — pinned here so a
+    // future addition to INTERNAL_ENRICHMENT_KEYS that DID collide goes red.
+    for (const key of Object.keys(VOI_OVERLAY.factor_evppi[0])) {
+      expect(INTERNAL_KEYS.has(key), `${key} must not be an internal-strip key`).toBe(false);
+    }
+    expect(INTERNAL_KEYS.has('suppressed_attributions')).toBe(false);
   });
 });
