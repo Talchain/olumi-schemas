@@ -23,6 +23,9 @@
         "direction": {
           "type": "string"
         },
+        "no_flip_in_range": {
+          "type": "boolean"
+        },
         "unit": {
           "type": "string"
         },
@@ -58,7 +61,6 @@
         "factor_label",
         "current_value",
         "flip_value",
-        "direction",
         "flip_reason"
       ],
       "additionalProperties": true

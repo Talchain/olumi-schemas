@@ -364,7 +364,7 @@ describe('F6 (schemas #16) — constraint margins + scale/decision-grade provena
 });
 
 describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
-  it('matches the CEE compose.ts P0B keep-list exactly (16 keys)', () => {
+  it('matches the CEE compose.ts P0B keep-list exactly (17 keys)', () => {
     // Mirrored from olumi-assistants-service
     // src/orchestrator-v5/compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP.
     // The CEE-side contract test asserts the same list against its own
@@ -373,10 +373,16 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
     // CEE change lands in the CEE re-vendor PR of the same wave.
     // 0.30.0 adds the VOI family (V7-C slice 1a); the paired CEE change is
     // the 0.30.0 re-vendor PR.
+    // 0.31.0 adds `critiques` (M3 step 1); the paired CEE change is the
+    // 0.31.0 re-vendor PR, which adds it to
+    // P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP. UNTIL THAT LANDS THE TWO LISTS ARE
+    // DELIBERATELY OUT OF STEP, and the CEE-side parity test is what reports
+    // it — that RED is the intended signal, not a regression here.
     expect([...CEE_UI_ENRICHMENT_KEEP_LIST].sort()).toEqual([
       'conditional_probabilities',
       'confidence_tier',
       'correlation_model',
+      'critiques',
       'decision_brief',
       'decision_evpi',
       'decision_review',
@@ -400,34 +406,55 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
   // if any pre-0.30.0 key was renamed, reordered out, or dropped, and it
   // states the delta as a set so a future bump cannot smuggle a removal
   // through a re-sorted literal.
-  it('0.30.0 is PURELY ADDITIVE over the 0.19.0 list (no key changed or lost)', () => {
-    const PRE_0_30_0 = [
-      'option_comparison',
-      'factor_sensitivity',
-      'results',
-      'robustness',
-      'decision_review',
-      'option_comparison_status',
-      'conditional_probabilities',
-      'edge_e_values',
-      'inference_warnings',
-      'confidence_tier',
-      'flip_thresholds',
-      'decision_brief',
-    ] as const;
+  // 0.31.0 restructures this test into a PER-RELEASE LEDGER. The 0.30.0 form
+  // hard-coded one release's delta, so the next additive release could only be
+  // recorded by editing the previous release's claim away — which is how an
+  // additive ledger quietly becomes a snapshot that proves nothing about
+  // history. Appending a row per release keeps EVERY release's additive claim
+  // independently asserted, and the reconstruction check below is what makes
+  // the ledger fail loud if a key is ever dropped or renamed rather than added.
+  const PRE_0_30_0 = [
+    'option_comparison',
+    'factor_sensitivity',
+    'results',
+    'robustness',
+    'decision_review',
+    'option_comparison_status',
+    'conditional_probabilities',
+    'edge_e_values',
+    'inference_warnings',
+    'confidence_tier',
+    'flip_thresholds',
+    'decision_brief',
+  ] as const;
+  const ADDED_0_30_0 = [
+    'correlation_model',
+    'decision_evpi',
+    'factor_evppi',
+    'p_win_sensitivity',
+  ] as const;
+  // 0.31.0 — critiques transport (M3 step 1).
+  const ADDED_0_31_0 = ['critiques'] as const;
+
+  it('every release is PURELY ADDITIVE (no key ever changed or lost)', () => {
     const current = new Set<string>(CEE_UI_ENRICHMENT_KEEP_LIST);
-    for (const key of PRE_0_30_0) {
-      expect(current.has(key), `0.30.0 must not drop ${key}`).toBe(true);
+    for (const key of [...PRE_0_30_0, ...ADDED_0_30_0, ...ADDED_0_31_0]) {
+      expect(current.has(key), `a later release must not drop ${key}`).toBe(true);
     }
-    const added = [...current].filter(
-      (key) => !(PRE_0_30_0 as readonly string[]).includes(key),
+    // The reconstruction check: the ledger must account for the WHOLE list.
+    // Without this, a key added without a ledger row would sail through the
+    // loop above, and a removal disguised as a re-sort would too.
+    expect([...current].sort()).toEqual(
+      [...PRE_0_30_0, ...ADDED_0_30_0, ...ADDED_0_31_0].slice().sort(),
     );
-    expect(added.sort()).toEqual([
-      'correlation_model',
-      'decision_evpi',
-      'factor_evppi',
-      'p_win_sensitivity',
-    ]);
+  });
+
+  it('0.31.0 adds exactly `critiques` over the 0.30.0 list', () => {
+    const through_0_30_0 = new Set<string>([...PRE_0_30_0, ...ADDED_0_30_0]);
+    const added = [...CEE_UI_ENRICHMENT_KEEP_LIST].filter(
+      (key) => !through_0_30_0.has(key),
+    );
+    expect(added.sort()).toEqual(['critiques']);
   });
 
   it('every keep-list key is a typed field on the envelope', () => {

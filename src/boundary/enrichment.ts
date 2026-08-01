@@ -518,7 +518,63 @@ export const EnrichmentFlipThresholdSchema = z.object({
   factor_label: z.string(),
   current_value: z.number(),
   flip_value: z.number().nullable(),
-  direction: z.string(), // 'increase' | 'decrease' [F3]
+  /**
+   * 'increase' | 'decrease' [F3]. **OPTIONAL as of 0.31.0** — it was required.
+   *
+   * WHY IT WAS RELAXED. A row with no flip has no direction to report. Because
+   * this field was REQUIRED, PLoT (#300) must emit a `'none'` PLACEHOLDER to
+   * satisfy the schema — a value that means "not applicable" wearing the
+   * costume of a real direction. Any consumer that switches on this string
+   * has to know `'none'` is a sentinel, and one that does not will render a
+   * direction that was never computed.
+   *
+   * DEPRECATION PATH, EXPLICIT AND CONSUMER-PACED:
+   *   1. NOW (0.31.0) — the field becomes optional. Producers MAY omit it on
+   *      a no-flip row. Nothing is required to change: `'none'` still parses,
+   *      so no producer breaks on the day this ships.
+   *   2. NEXT — once every consumer reads `no_flip_in_range` (below) instead
+   *      of string-matching, PLoT stops emitting the `'none'` placeholder and
+   *      simply omits the key.
+   *   3. The placeholder retires AT THE CONSUMERS' PACE. It is NOT removed
+   *      from the vocabulary by this release and no consumer is obliged to
+   *      migrate on any schedule.
+   *
+   * CONSUMER RULE FROM TODAY: treat absence and `'none'` as the SAME state
+   * (no direction), and never let either reach a rendered surface as a
+   * direction. Absence is not "unknown direction" — pair it with
+   * `no_flip_in_range` / `flip_value: null` to know why.
+   */
+  direction: z.string().optional(),
+  /**
+   * 0.31.0 additive (ROADMAP 2.228). PRODUCER-ATTESTED "no flip exists inside
+   * the probed range" — `true` means the producer SEARCHED and found nothing.
+   *
+   * WHY THIS EXISTS. `flip_reason` is an OPEN `z.string()` whose vocabulary is
+   * producer-owned, so today a consumer wanting to know "was there simply no
+   * flip?" must STRING-MATCH tokens like `'no_effect_within_bounds'`. That is
+   * a hand-maintained mirror of a vocabulary this package does not own: the
+   * day a producer adds or renames a token, every matcher silently reclassifies
+   * a no-flip row as a flip row, and the drift reads as green. The 2.228 work
+   * added a new token to exactly this vocabulary, which is what surfaced the
+   * problem. This boolean gives the consumer ONE attested fact to branch on and
+   * lets `flip_reason` stay open and human-readable.
+   *
+   * PRODUCER: PLoT, on the enrichment flip-threshold rows.
+   * CONSUMERS: CEE's decision-review enricher and the UI's flip-threshold card.
+   *
+   * FAILURE SEMANTICS — FAIL CLOSED, AND NOTE THE ASYMMETRY. Absence means
+   * NOT ATTESTED, which is every row from a producer that has not re-vendored;
+   * it does NOT mean "a flip exists". A consumer MUST NOT read `!== true` as
+   * "there is a flip". Only `true` is a claim; absence and `false` both mean
+   * the consumer must fall back to whatever it does today (including reading
+   * `flip_value: null`) rather than asserting anything new.
+   *
+   * ADOPTION SEQUENCING (hazard 1): consumers may adopt BEFORE PLoT emits —
+   * absence is safe and is the current state of every row on the wire. String
+   * matching on `flip_reason` should be deleted only once a consumer has seen
+   * this field populated, never on the strength of the re-vendor alone.
+   */
+  no_flip_in_range: z.boolean().optional(),
   unit: z.string().optional(),
   alternative_winner_id: z.string().nullable().optional(),
   alternative_winner_label: z.string().nullable().optional(),
@@ -664,9 +720,16 @@ export type EnrichmentInferenceWarning =
 // ----------------------------------------------------------------------------
 
 /**
- * Analysis critique. [F1][F2]. PLoT→CEE only today: NOT in the CEE→UI
- * keep-list [F6]. `message` is internal/debug wording; `user_message` is the
- * display-safe copy.
+ * Analysis critique. [F1][F2]. `message` is internal/debug wording;
+ * `user_message` is the display-safe copy.
+ *
+ * ⚠ 0.31.0 — THE KEEP-LIST LINE THAT USED TO SIT HERE ("PLoT→CEE only today:
+ * NOT in the CEE→UI keep-list") IS NO LONGER TRUE. `critiques` joins
+ * `CEE_UI_ENRICHMENT_KEEP_LIST` in this release; see the entry there for the
+ * transport rules and the D-bucket obligation that rides with it. The SHAPE
+ * below is unchanged by 0.31.0 — it has been typed since before this release,
+ * and the only thing 0.31.0 changes about `critiques` is that CEE's projection
+ * is now licensed to carry it.
  */
 export const EnrichmentCritiqueSchema = z.object({
   id: z.string().optional(),
@@ -998,6 +1061,26 @@ export const CEE_UI_ENRICHMENT_KEEP_LIST = [
   'decision_evpi',
   'p_win_sensitivity',
   'correlation_model',
+  // 0.31.0 (critiques transport, M3 step 1): the model's own critiques of the
+  // run. The producer is real at BOTH ends and has been for months — PLoT
+  // emits populated rows (preflight warnings, normalisation info, ISL
+  // structured 422 blockers, temporal/constraint filters) and CEE already
+  // buckets them for real, with Paul-approved display copy dated 2026-04-30.
+  // The death was this one key's absence from the list: the strip loop dropped
+  // it silently, so a fully-built pipeline ended one hop before the browser.
+  //
+  // ⚠ TRANSPORT IS LICENSED HERE; SANITISATION IS NOT WAIVED. CEE's D-bucket
+  // suppression and its Tier-A/B ban scans MUST run BEFORE transport — the
+  // wire carries only sanitised buckets, never raw D-bucket content. Adding
+  // this key does not relax that, and the CEE-side change is required to pin
+  // it with a planted-D-bucket absence test WITH a positive control.
+  //
+  // Claim-safety: a critique names codes, display-safe copy and affected
+  // ids. `affected_option_ids` DOES carry option identity, so unlike the
+  // 0.30.0 VOI family this key is NOT trivially leading-option-inert — CEE's
+  // withheld-claim projection must be verified against a withheld turn rather
+  // than assumed. Flagged for the CEE lane, not resolved here.
+  'critiques',
 ] as const;
 export type CeeUiEnrichmentKeepKey = (typeof CEE_UI_ENRICHMENT_KEEP_LIST)[number];
 

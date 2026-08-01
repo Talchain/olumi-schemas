@@ -63,9 +63,9 @@
     }
   },
   "counts": {
-    "distinct": 26,
-    "same": 4,
-    "unresolved": 379
+    "distinct": 29,
+    "same": 5,
+    "unresolved": 380
   },
   "open_objects": {
     "_doc": [
@@ -418,6 +418,12 @@
       "verdict": "unresolved"
     },
     "boundary/CoachingBlockSchema.action_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/CoachingBlockSchema.action_prompt": {
       "markers": [
         "optional"
       ],
@@ -1154,6 +1160,14 @@
       ],
       "verdict": "unresolved"
     },
+    "boundary/EnrichmentFlipThresholdSchema.direction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Newly optional in 0.31.0 (it was required). The schema's own comment fixes the equivalence rather than leaving it to be inferred: 'treat absence and none as the SAME state (no direction)'. The 'none' placeholder PLoT #300 emits today is exactly the value absence replaces, so the two encodings are interchangeable BY CONTRACT - that is the point of the relaxation, and it is what makes the placeholder retirable at each consumer's own pace. NOTE the census surfaced this row only because the field became optionality-bearing; the relaxation is the reason it appears, not an oversight.",
+      "ref": "src/boundary/enrichment.ts - EnrichmentFlipThresholdSchema.direction doc comment, deprecation path step 3 (0.31.0, PLoT #300)"
+    },
     "boundary/EnrichmentFlipThresholdSchema.flip_value": {
       "markers": [
         "nullable"
@@ -1171,6 +1185,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/EnrichmentFlipThresholdSchema.no_flip_in_range": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "A tri-state in a boolean, and the schema's comment says so in terms: absence means NOT ATTESTED (every row from a producer that has not re-vendored), false means attested-that-a-flip-exists, and only true is a positive no-flip claim. The comment states the consumer rule that depends on the distinction - 'a consumer MUST NOT read !== true as there is a flip' - which is precisely the coalescing error this census exists to catch. DEBT is bounded and deliberate: absence is the safe state, and it retires when the producer ships.",
+      "ref": "src/boundary/enrichment.ts - EnrichmentFlipThresholdSchema.no_flip_in_range doc comment (0.31.0, ROADMAP 2.228)"
     },
     "boundary/EnrichmentFlipThresholdSchema.probes_used": {
       "markers": [
@@ -1813,6 +1835,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/NodeV3Schema.goal_threshold_frame": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means UNATTESTED, and no member of the enum can express it: 'level' and 'delta' are each a positive attestation of the frame. The schema's own comment makes the asymmetry explicit - consumers MUST FAIL CLOSED on absence (produce NO goal probability), which is a third behaviour neither value selects. The DEBT is that absence stays indistinguishable from a producer that simply has not re-vendored. The fix is to make the field required once every producer stamps it (ROADMAP 2.258's deploy-order gate), and it rides its own train - NOT this PR.",
+      "ref": "src/graph.ts - GoalThresholdFrame doc comment + NodeV3Schema.goal_threshold_frame (0.31.0, ROADMAP 2.258)"
     },
     "boundary/NodeV3Schema.observed_state": {
       "markers": [
@@ -2611,6 +2641,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "root/ObservedStateSchema.declared_scale": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means UNDECLARED - which is every graph drafted before 0.31.0 - and no member of the enum expresses it. The schema's comment states the rule that makes the two states behaviourally different: a consumer MUST NOT read absence as 'unit_interval' (that is the unsound current-value guess ROADMAP 2.193 exists to retire) and MUST fail OPEN to today's unbounded behaviour. So absence selects 'enforce nothing' while every value selects a bound. DEBT: pre-existing stored graphs stay permanently indistinguishable from undeclared new ones until a backfill decision, which 2.193 names as a separate stored-graphs train.",
+      "ref": "src/graph.ts - DeclaredScale doc comment + ObservedStateSchema.declared_scale (0.31.0, ROADMAP 2.193)"
     },
     "root/ObservedStateSchema.source": {
       "markers": [

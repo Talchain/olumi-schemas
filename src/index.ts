@@ -13,6 +13,11 @@ export {
   EdgeV3Schema,
   GraphV3Schema,
   TopologyPlanSchema,
+  // 0.31.0 additive — ROADMAP 2.258 (frame attestation) and 2.193 (declared
+  // scale + its authority bound).
+  GoalThresholdFrame,
+  DeclaredScale,
+  DECLARED_SCALE_BOUNDS,
 } from './graph.js';
 export type {
   NodeV3,
@@ -25,6 +30,9 @@ export type {
   EffectDirectionType,
   EdgeTypeType,
   TopologyPlan,
+  // 0.31.0 additive.
+  GoalThresholdFrameType,
+  DeclaredScaleType,
 } from './graph.js';
 
 // Coaching schemas (v0.11.0 — first-class coaching contract)
