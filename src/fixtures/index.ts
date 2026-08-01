@@ -266,6 +266,12 @@ export const maximalObservedState = deepFreeze({
   baseline: 40,
   unit: 'FIXTURE_units_per_month',
   source: 'FIXTURE_user_estimate',
+  // 0.31.0 (ROADMAP 2.193) — the DECLARED scale of `value`. `raw_count` is
+  // the internally consistent choice here: this fixture's `value` is 42.5
+  // against a `unit` of units-per-month, which is a raw magnitude, NOT a
+  // proportion. Declaring `unit_interval` would make the fixture assert a
+  // [0,1] bound that its own value violates.
+  declared_scale: 'raw_count',
   [PROBE]: true,
 });
 
@@ -293,6 +299,10 @@ export const maximalNodeV3 = deepFreeze({
   observed_state: maximalObservedState,
   state_space: maximalStateSpace,
   goal_threshold: 75,
+  // 0.31.0 (ROADMAP 2.258) — the frame `goal_threshold` is stated in. `level`
+  // is the frame CEE mints today, so it is the honest default for a fixture
+  // that models current production behaviour.
+  goal_threshold_frame: 'level',
   [PROBE]: true,
 });
 
@@ -858,6 +868,14 @@ export const maximalEnrichmentFlipThreshold = deepFreeze({
   alternative_winner_id: ID_OPTION_B,
   alternative_winner_label: LABEL_OPTION_B,
   flip_reason: 'FIXTURE_flip_found',
+  // 0.31.0 (ROADMAP 2.228) — producer-attested no-flip marker. `false` here,
+  // NOT `true`: this fixture carries a found flip (`flip_value: 48.2`,
+  // `flip_reason: 'FIXTURE_flip_found'`, `direction: 'decrease'`), so `true`
+  // would make the maximal fixture assert two contradictory facts about the
+  // same row. `false` populates the field for the maximality ratchet while
+  // staying internally consistent — the same discipline the rest of this file
+  // applies to cross-field invariants.
+  no_flip_in_range: false,
   iterations_used: 12,
   probes_used: 24,
   margin_sensitivity: { [PROBE]: true },
@@ -1225,6 +1243,10 @@ export const maximalCoachingBlock = deepFreeze({
   signal: 'FIXTURE synthetic per-item signal line.',
   action_intent: 'gather_evidence',
   action_label: 'FIXTURE gather evidence',
+  // 0.31.0 (ROADMAP 2.225) — the verbatim turn text the chip dispatches.
+  // Written as a first-person user utterance because that is what it becomes
+  // on the wire: it is SENT as the turn, not rendered as a caption.
+  action_prompt: 'FIXTURE help me gather evidence for this factor.',
 });
 
 /**

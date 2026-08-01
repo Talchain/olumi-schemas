@@ -418,6 +418,15 @@ const GUIDANCE_SIGNAL_LINE_MAX = 140;
 const PHASE3_TITLE_MAX = 80;
 const PHASE3_BODY_MAX = 300;
 const PHASE3_ACTION_LABEL_MAX = 40;
+// 0.31.0 — bound for `action_prompt` (see CoachingBlockSchema). DERIVED, not
+// picked: `action_label` is a BUTTON CAPTION and takes the caption bound (40),
+// whereas `action_prompt` is producer-authored PROSE that becomes a turn, so it
+// takes this file's existing bound for producer-authored prose on these same
+// blocks — PHASE3_BODY_MAX. It is written as its own named constant rather
+// than reusing `PHASE3_BODY_MAX` directly because the two are equal today by
+// derivation, not by definition: retuning body copy must not silently retune
+// what a chip is allowed to say.
+const PHASE3_ACTION_PROMPT_MAX = 300;
 
 // §1.1 — ReviewCardBlock. Produced by the decision_review enricher
 // (auto-invoked after run_analysis, once per fresh graph hash, persisted,
@@ -504,6 +513,45 @@ export const CoachingBlockSchema = z.object({
   signal: z.string().min(1).max(GUIDANCE_SIGNAL_LINE_MAX).optional(),
   action_intent: ActionIntent.optional(),
   action_label: z.string().min(1).max(PHASE3_ACTION_LABEL_MAX).optional(),
+  /**
+   * 0.31.0 additive (ROADMAP 2.225, 1 Aug design note). The PRODUCER-AUTHORED
+   * turn text a chip dispatches VERBATIM.
+   *
+   * WHY THIS EXISTS. `action_intent` names WHAT to do and `action_label` names
+   * what the BUTTON SAYS, but neither says what to SEND. So a UI that wants a
+   * remedy chip has to compose the turn itself — inventing an interpretation of
+   * a signal only the producer understood. The live bias coaching cards are the
+   * worked example: they are grounded and they quote the user's own brief, and
+   * the UI cannot restate that without paraphrasing evidence it did not
+   * generate. This field lets the producer hand over the exact sentence.
+   *
+   * VERBATIM MEANS VERBATIM. A consumer dispatches this string as the turn
+   * text UNMODIFIED — no templating, no interpolation, no appending context,
+   * no "improving" it. If a consumer needs to change the wording, the fix
+   * belongs at the producer. Rewriting it here re-creates exactly the invented
+   * interpretation the field exists to remove.
+   *
+   * PRODUCER: CEE's coaching pass, alongside `action_intent`/`action_label`.
+   * CONSUMER: the UI's coaching-card chip.
+   *
+   * FAILURE SEMANTICS — FAIL CLOSED, AND SILENTLY. Absence means the producer
+   * authored no prompt, and the consumer renders NO dispatching chip. It must
+   * not fall back to composing one from `action_intent` or `action_label`:
+   * that fallback IS the defect. A card with a label and no prompt is a
+   * non-interactive card, which is the honest degradation.
+   *
+   * ADOPTION SEQUENCING (hazard 1): reader-first is safe and is the intended
+   * order — a UI on an older pin drops the key and renders today's
+   * non-interactive card, and a UI that adopts before CEE emits simply never
+   * sees one. Neither side blocks the other.
+   *
+   * SCOPE NOTE, STATED SO THE ASYMMETRY IS NOT MISTAKEN FOR AN OVERSIGHT:
+   * `ReviewCardBlockSchema` and `EvidenceBlockSchema` also carry
+   * `action_intent`/`action_label` and deliberately do NOT get `action_prompt`
+   * in 0.31.0. The driving row is about coaching cards; extending it is
+   * additive and can ride a later release on evidence of a real producer.
+   */
+  action_prompt: z.string().min(1).max(PHASE3_ACTION_PROMPT_MAX).optional(),
 }).strict();
 export type CoachingBlock = z.infer<typeof CoachingBlockSchema>;
 

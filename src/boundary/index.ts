@@ -324,6 +324,12 @@ export {
   EdgeV3Schema,
   GraphV3Schema,
   TopologyPlanSchema,
+  // 0.31.0 additive — ROADMAP 2.258 (frame attestation) and 2.193 (declared
+  // scale + its authority bound). Re-exported here because the V5 boundary is
+  // where CEE stamps the frame and where the value-edit authority check runs.
+  GoalThresholdFrame,
+  DeclaredScale,
+  DECLARED_SCALE_BOUNDS,
 } from '../graph.js';
 export type {
   NodeV3,
@@ -332,6 +338,9 @@ export type {
   NodeKindType,
   FactorCategoryType,
   TopologyPlan,
+  // 0.31.0 additive.
+  GoalThresholdFrameType,
+  DeclaredScaleType,
 } from '../graph.js';
 
 // Coaching contract (v0.11.0 — per Boundary Contract v1.1 §2.1, MC-25)

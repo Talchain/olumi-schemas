@@ -7,6 +7,225 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0] — 2026-08-01
+
+**Five additive changes, five different rows, one release train.** Four new optional
+fields, one required→optional relaxation, and one keep-list entry. Keep-list **16 → 17
+keys**. No exported schema is added or removed; maximal-fixture registry unchanged at 126.
+**Purely additive: no field is removed, no type is narrowed, no required field is added.**
+
+The five are batched deliberately rather than shipped separately: all three TS consumers
+vendor this package as a **sha256-pinned tarball**, so every release costs a re-vendor PR
+in each consumer. Batching halves that churn (the explicit rationale in ROADMAP 2.258 and
+in the critiques-transport brief). **They are otherwise independent — no consumer needs to
+adopt more than the one it cares about, and absence of any of them is safe everywhere.**
+
+| # | change | driving row |
+|---|---|---|
+| 1 | `NodeV3Schema.goal_threshold_frame?: 'level' \| 'delta'` | ROADMAP 2.258 |
+| 2 | `'critiques'` joins `CEE_UI_ENRICHMENT_KEEP_LIST` | critiques-transport brief, step 1 |
+| 3 | `ObservedStateSchema.declared_scale?` + `DECLARED_SCALE_BOUNDS` | ROADMAP 2.193 |
+| 4 | `CoachingBlockSchema.action_prompt?: string` | ROADMAP 2.225 |
+| 5 | `EnrichmentFlipThresholdSchema.no_flip_in_range?` + `direction` relaxed | ROADMAP 2.228 / PLoT #300 |
+
+### 1. `goal_threshold_frame` — attesting the frame, because no value guard can test it
+
+ROADMAP 2.258: the goal probability has never been meaningful. CEE mints `goal_threshold`
+as an absolute **LEVEL**; ISL's goal samples are **CHANGES FROM BASELINE**. Nobody
+converts. The engine answers *"P(revenue CHANGE ≥ X)"* for a user who asked *"P(revenue
+LEVEL ≥ X)"* — and the answer is a **structural zero**: 0 in nine of ten live instances,
+every one `status: computed`, `n_valid_samples: 10000`, on decisions whose options
+separate cleanly at 58/32/9% win probability. **The zero was forced by construction, not
+discovered.**
+
+**Why this had to be a contract field rather than a guard.** The existing validator
+refuses `<= 0` and `>= 1`, and `0.8` is a perfectly sensible *value*. The defect lives in
+the threshold's **frame**, and a frame is not a property any value check can see. Two
+independent silences were each individually "correct", which is why nothing fired.
+
+Stamped by CEE at its single mint site as a **CODE CONSTANT** — never LLM-derivable, and
+never to be placed in a drafting prompt's output surface. Consumers **fail closed**: no
+frame, or no baseline for the conversion, means **no goal probability at all**. A missing
+number is honest; a confident wrong one is not, which is why PLoT #299 was reverted on
+staging rather than left serving *"< 1%"*.
+
+**The deploy order is the safety property, not a preference:** schemas 0.31.0 → ISL
+converter deploy-verified on staging → **only then** PLoT re-lands #299. Re-landing the
+plumbing first resurrects the untruth. CEE's stamp may land at any time — an older-pinned
+PLoT strips the key, which degrades to dark-but-honest, never to a wrong number.
+
+⚠ **PLoT does not forward this field, and will not by default.** Verified at PLoT tip
+`9beb4229`: `toISLNode` (`translator-v3.ts:233-242`) is a six-field constructor and
+`ISL_DECLARED_OBSERVED_STATE_FIELDS` is a ten-member allow-list — neither carries the key,
+and **neither fails loud when the contract gains a field**. PLoT must *add* forwarding
+(extend `toISLNode`, or carry a request-level scalar beside `goal_threshold`), which rides
+the 2.258 PLoT stint and is a precondition for the ISL converter being reachable at all.
+Until then a stamped frame is structurally deleted at the V3→ISL boundary — safe, because
+ISL fails closed, but not the same thing as arriving.
+
+Kept a **scalar enum on purpose**. ROADMAP 2.215 will want to record *how* the frame was
+established; that arrives as a new optional **sibling** key on this `.passthrough()` node,
+which is additive. Widening this field into an object would be breaking — the sibling path
+is what lets 2.215 land without a second contract train.
+
+### 2. `critiques` joins the CEE→UI keep-list — a pipeline killed at its last link
+
+**The shape was already typed.** `EnrichmentCritiqueSchema` and
+`AnalysisEnrichmentSchema.critiques` predate this release; **the only thing 0.31.0 changes
+is one keep-list entry.** (Stated plainly because "type `critiques` on the enrichment
+contract" was the brief's wording, and a reader could reasonably expect new fields here.)
+
+The producer is real at both ends and has been for months: PLoT emits populated rows and
+CEE buckets them with Paul-approved display copy dated 2026-04-30. The death was CEE's
+strip loop dropping the key silently, one hop before the browser — the same shape as
+0.30.0's VOI family.
+
+**Transport is licensed; sanitisation is not waived.** CEE's D-bucket suppression and its
+Tier-A/B ban scans must still run **before** transport, pinned by a planted-D-bucket
+absence test **with a positive control**. And unlike the 0.30.0 family, a critique carries
+`affected_option_ids` — **option identity** — so CEE's withheld-claim projection must be
+*verified* against a withheld turn rather than assumed inert.
+
+### 3. `declared_scale` — because no derivation from the current value can be sound
+
+ROADMAP 2.159 found normalised factors accepting out-of-range values end-to-end (a live
+`1.5` on a `[0,1]` factor). The #766 adversarial review then proved current-value
+classification **unsound in both directions**: a `0` or `1` is a legal raw count *and* a
+legal proportion, so the classifier cannot be built. 2.193 is the agreed fix path —
+**declare** the scale instead of guessing it.
+
+The vocabulary is **derived, not invented**: `unit_interval` / `ratio` / `raw_count` are
+the classes CEE's `SCALE_DISCIPLINE` prompt already distinguishes at draft time (bounded
+percentage · a ratio that may exceed 100% · a small unitless count left raw). That
+knowledge exists upstream today and is discarded before the wire.
+
+`DECLARED_SCALE_BOUNDS` ships beside it so the **bound is derived from the declaration in
+one place** rather than re-implemented in CEE's validator and again in the UI's input hint.
+Two hand-written copies of a server rule is the estate's dominant defect class, and
+avoiding it is the literal complaint 2.193 raised.
+
+Both ends are typed `number | null`, where `null` means unbounded on that side. `min` is
+nullable even though every member is `0` today: `ratio` is non-negative only under the
+**multiplier convention** this table assumes (1.0 = parity), and a signed-return convention
+(-0.2 for a 20% loss) is unbounded below. Widening the type now is free — the table has
+zero consumers; widening after publication would break every consumer that narrowed on it.
+The *values* still assert the multiplier convention, and a producer using signed returns
+must declare `raw_count`, not `ratio`.
+
+**This is the one field in the release whose absence fails OPEN**, and deliberately:
+absence means UNDECLARED, which is every stored graph. Reading absence as `unit_interval`
+would be the unsound guess 2.193 exists to retire *and* would refuse legal values on
+existing graphs. Backfill is a separate stored-graphs decision.
+
+**0.31.0 does not close 2.159.** It ships the declaration only; the enforcement is CEE's
+authority. A test in this release pins that the schema still accepts `1.5` on a declared
+`unit_interval`, so the release cannot be misread as having fixed the bound.
+
+### 4. `action_prompt` — the turn text, so the UI stops inventing one
+
+`action_intent` names *what* to do and `action_label` names *what the button says*; neither
+says *what to send*. So a UI wanting a remedy chip had to compose the turn itself,
+inventing an interpretation of a signal only the producer understood. The live bias
+coaching cards are the worked example — grounded, quoting the user's own brief, and
+impossible for the UI to restate without paraphrasing evidence it did not generate.
+
+**Verbatim means verbatim**: the consumer dispatches the string unmodified. Absence means
+the producer authored no prompt and the consumer renders **no dispatching chip** — it must
+not fall back to composing one, because that fallback *is* the defect.
+
+Bound: `min(1).max(300)`. **Derived, not picked** — `action_label` takes the caption bound
+(40) because it is a caption; `action_prompt` is producer-authored prose that becomes a
+turn, so it takes this file's existing bound for producer-authored prose on the same
+blocks (`PHASE3_BODY_MAX`). Declared as its own named constant because the two are equal
+by derivation, not by definition.
+
+**Scope: `CoachingBlockSchema` only.** `ReviewCardBlockSchema` and `EvidenceBlockSchema`
+also carry `action_intent`/`action_label` and deliberately do **not** get `action_prompt`
+here — extending it is additive and should ride evidence of a real producer, not symmetry.
+
+### 5. `no_flip_in_range`, and `direction` becomes optional
+
+**`no_flip_in_range` ends consumer string-matching.** `flip_reason` is an open,
+producer-owned `z.string()`, so a consumer asking "was there simply no flip?" had to match
+tokens like `no_effect_within_bounds` — a hand-maintained mirror of a vocabulary this
+package does not own. The day a producer renames or adds a token, every matcher silently
+reclassifies a no-flip row as a flip row, and **the drift reads as green**. The 2.228 work
+added a new token to exactly this vocabulary. `flip_reason` is **not** narrowed by this
+release and must not be: the boolean ends the *matching*, not the field.
+
+It is a **tri-state, and the asymmetry is load-bearing**: absence = NOT ATTESTED (every row
+on the wire today), `false` = attested that a flip exists, `true` = attested no flip in
+range. **A consumer must not read `!== true` as "there is a flip."**
+
+**`direction` relaxes from required to optional.** A row with no flip has no direction to
+report, but the field was required — so PLoT (#300) must emit a `'none'` **placeholder**, a
+value meaning "not applicable" wearing the costume of a real direction.
+
+The deprecation path is explicit and **consumer-paced**: (1) now, the field is optional and
+`'none'` still parses, so **no producer breaks on release day**; (2) once consumers read
+`no_flip_in_range` instead of string-matching, PLoT stops emitting the placeholder and omits
+the key; (3) the placeholder retires at the consumers' pace — it is **not** removed from the
+vocabulary by this release and no consumer is obliged to migrate on any schedule. From
+today: treat absence and `'none'` as the **same state**, and never let either reach a
+rendered surface as a direction.
+
+**PLoT #300 merged during review** (tip `9beb4229`): `no_flip_in_range` is already emitted,
+and `direction` is widened to `'increase' | 'decrease' | 'none'`. PLoT's own
+`m1-review-types.ts:301-325` names this release as what lets the `'none'` placeholder
+retire. So step 1 of the path above is already satisfied producer-side — this release is
+what unblocks step 2.
+
+### Additive analysis, stated at the bytes
+
+The published JSON-Schema artifacts changed in exactly two files, and the whole diff is:
+
+```
+EnrichmentFlipThresholdSchema.json   + "no_flip_in_range": { "type": "boolean" }
+                                     -   "direction"   (removed from required[])
+AnalysisEnrichmentSchema.json        same two changes, nested
+```
+
+One property added; one entry **removed from `required`**, which widens acceptance. Nothing
+was removed from `properties` and no type was narrowed. The other three fields
+(`goal_threshold_frame`, `declared_scale`, `action_prompt`) do not appear because the
+published `json-schema/` surface is the **enrichment family only** — `NodeV3Schema`,
+`ObservedStateSchema` and `CoachingBlockSchema` are not part of it.
+
+⚠ **The `check:compat` gate does not cover these changes.** Its single wired seam is
+`isl-response-v2`; it passes here having diffed a different contract entirely. Recording
+that rather than quoting a green tick as though it were proof — the additive evidence above
+is the artifact diff, the absence-parses tests, and the maximal-fixture ratchet.
+
+### Absence-semantics census
+
+Five new rows (`counts.unresolved` 379 → 380 — one genuinely new optional field, which is
+the sanctioned way that ratchet moves). Verdicts are seeded only where the schema's own
+comment makes them unambiguous:
+
+- **`distinct`** — `goal_threshold_frame`, `declared_scale`, `no_flip_in_range`. Each has
+  an absence that no value can express, and each is **DEBT, not a fix**: the resolution
+  rides its own train.
+- **`same`** — `direction`. The schema states the equivalence outright: absence and the
+  `'none'` placeholder are the same state, which is the whole point of the relaxation.
+- **`unresolved`** — `action_prompt`. Not guessed. `.min(1)` means no empty value is
+  representable, so neither `distinct` nor `same` is evidenced, and an unevidenced verdict
+  is worse than `unresolved` because it stops the next reader looking.
+
+The census **surfaced `direction` on its own** — the field became optionality-bearing, so
+the gate demanded a row. That is the instrument doing exactly what it was built for.
+
+### Adoption
+
+Five manifest rows, **all `declared`**, including `critiques`. `critiques` is *not*
+`produced_dark` despite PLoT genuinely emitting it: that state requires a named producer
+test that fails if the producer stops emitting, and no such test is named at a pinned sha
+here. The 4 populated rows in the staging capture are **transport evidence, not a producer
+test** — the distinction this manifest exists to enforce.
+
+**Lock-step obligation:** CEE's `P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP` must gain `critiques`
+in its re-vendor PR. Until it does, CEE's element-for-element parity test against this list
+is **deliberately out of step, and that RED is the intended signal.**
+
 ## [0.30.0] — 2026-07-29
 
 **The VOI family joins `CEE_UI_ENRICHMENT_KEEP_LIST` — `factor_evppi`, `decision_evpi`,
