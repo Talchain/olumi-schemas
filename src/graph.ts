@@ -66,10 +66,27 @@ export type DeclaredScaleType = z.infer<typeof DeclaredScale>;
  * of being re-implemented in CEE's validator and again in the UI's input hint.
  * Two hand-written copies of a server rule is the estate's dominant defect
  * class (trap 12) and is precisely what ROADMAP 2.193 refused to ship.
- * `max: null` means unbounded above — NOT "no maximum was computed".
+ *
+ * `null` means UNBOUNDED ON THAT SIDE — never "no bound was computed". Both
+ * ends are `number | null`.
+ *
+ * WHY `min` IS NULLABLE WHEN NO CURRENT MEMBER USES IT (adversarial-review
+ * amendment, and the reasoning is the useful part): every scale today has a
+ * floor of 0, so `min: number` would have been sufficient — but `ratio` is
+ * only non-negative under the MULTIPLIER convention this table assumes (1.0 =
+ * parity, 1.10 = 110%, matching SCALE_DISCIPLINE's NRR/growth/ROI examples).
+ * A signed-return convention (-0.2 for a 20% loss) is a perfectly ordinary way
+ * to state the same metrics and is unbounded below. Widening the TYPE now is
+ * free because the table has zero consumers; widening it after publication
+ * would be a breaking change to every consumer that had narrowed on it. The
+ * VALUES still assert the multiplier convention — that is a real claim, and a
+ * producer using signed returns must declare `raw_count`, not `ratio`.
  */
 export const DECLARED_SCALE_BOUNDS: Readonly<
-  Record<DeclaredScaleType, { readonly min: number; readonly max: number | null }>
+  Record<
+    DeclaredScaleType,
+    { readonly min: number | null; readonly max: number | null }
+  >
 > = Object.freeze({
   unit_interval: Object.freeze({ min: 0, max: 1 }),
   ratio: Object.freeze({ min: 0, max: null }),
@@ -141,9 +158,20 @@ export const StateSpaceSchema = z.object({
  * the minting arithmetic, not of the user's phrasing, and an LLM writing it
  * would be guessing at exactly the seam this field exists to make certain.
  *
- * CONSUMERS: PLoT forwards it verbatim (`translator-v3.ts`); ISL owns the
- * conversion at its single comparison site, because it alone knows its sample
- * frame and holds the `observed_state` baselines.
+ * CONSUMERS: ISL owns the conversion at its single comparison site, because it
+ * alone knows its sample frame and holds the `observed_state` baselines.
+ *
+ * ⚠ PLoT DOES NOT FORWARD THIS FIELD TODAY, AND WILL NOT BY DEFAULT. Verified
+ * at PLoT tip `9beb4229`: `toISLNode` (`translator-v3.ts:233-242`) is a
+ * SIX-FIELD CONSTRUCTOR and `ISL_DECLARED_OBSERVED_STATE_FIELDS` is a
+ * TEN-MEMBER ALLOW-LIST — neither carries this key, and neither fails loud
+ * when the contract gains a field. (`translator-v3.ts:534` is the
+ * `goal_threshold` SCALAR line, not a node-level passthrough — do not read it
+ * as one.) So PLoT must ADD forwarding, either by extending `toISLNode` or by
+ * carrying a request-level scalar beside `goal_threshold`; it rides the 2.258
+ * PLoT stint. Until it does, the frame stamped by CEE is STRUCTURALLY DELETED
+ * at the V3→ISL boundary — which is safe (ISL fails closed and renders no goal
+ * probability) but is NOT the same thing as "it arrives".
  *
  * FAILURE SEMANTICS — FAIL CLOSED. When the frame is absent, OR when the
  * frame is `level` and no baseline is available for the conversion, the

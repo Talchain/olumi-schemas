@@ -27,6 +27,7 @@ import {
 import { CoachingBlockSchema } from '../../src/boundary/blocks.js';
 import {
   EnrichmentFlipThresholdSchema,
+  EnrichmentCritiqueSchema,
   CEE_UI_ENRICHMENT_KEEP_LIST,
 } from '../../src/boundary/enrichment.js';
 
@@ -200,12 +201,26 @@ describe('0.31.0 · DECLARED_SCALE_BOUNDS is DERIVED from the vocabulary', () =>
     expect(DECLARED_SCALE_BOUNDS.raw_count.max).toBeNull();
   });
 
-  it('max: null means UNBOUNDED, and is distinguishable from a missing entry', () => {
-    // `null` and `undefined` must not be conflated: null is "no ceiling
-    // exists", undefined would be "this table forgot you".
+  it('null means UNBOUNDED, and is distinguishable from a missing entry', () => {
+    // `null` and `undefined` must not be conflated: null is "no bound exists
+    // on this side", undefined would be "this table forgot you". Checked on
+    // BOTH ends — `min` is nullable in the type even though no member uses it
+    // today, so a future unbounded-below scale needs no breaking change.
     for (const scale of DeclaredScale.options) {
       expect(DECLARED_SCALE_BOUNDS[scale]).toBeDefined();
       expect(DECLARED_SCALE_BOUNDS[scale].max).not.toBeUndefined();
+      expect(DECLARED_SCALE_BOUNDS[scale].min).not.toBeUndefined();
+    }
+  });
+
+  it('every member asserts the MULTIPLIER convention — min 0, including ratio', () => {
+    // The nullable `min` type does not weaken the claim the VALUES make: this
+    // table says every declared scale is non-negative, which for `ratio`
+    // presupposes the multiplier convention (1.0 = parity) rather than signed
+    // returns. Pinned so a producer emitting -0.2 as a `ratio` is a contract
+    // violation someone can point at, not an ambiguity.
+    for (const scale of DeclaredScale.options) {
+      expect(DECLARED_SCALE_BOUNDS[scale].min).toBe(0);
     }
   });
 });
@@ -355,8 +370,35 @@ describe('0.31.0 · critiques joins the CEE→UI keep-list (M3 step 1)', () => {
 
   it('the SHAPE was already typed before 0.31.0 — only the projection changed', () => {
     // Stated as a test so the CHANGELOG claim is checkable: this release adds
-    // no critique field. If someone later "completes" the typing here, this
+    // NO critique field. If someone later "completes" the typing here, this
     // pin is where the scope creep surfaces.
-    expect(CEE_UI_ENRICHMENT_KEEP_LIST.filter((k) => k === 'critiques')).toHaveLength(1);
+    //
+    // ⚠ The first version of this test asserted `CEE_UI_ENRICHMENT_KEEP_LIST`
+    // contained 'critiques' — a duplicate of the test directly above, and
+    // VACUOUS as a guard on the shape, because the keep-list cannot change
+    // when a field is added to the critique object. It could never have fired
+    // for the reason it named. Pinning the actual shape instead.
+    expect(Object.keys(EnrichmentCritiqueSchema._def.shape()).sort()).toEqual([
+      'affected_node_ids',
+      'affected_option_ids',
+      'blocks_analysis',
+      'code',
+      'id',
+      'message',
+      'severity',
+      'source',
+      'suggestion',
+      'user_message',
+    ]);
+  });
+
+  it('carries BOTH message and user_message — the projection duty is real', () => {
+    // The two exist so a producer can keep internal wording separate from
+    // display-safe copy. This pin is what makes "CEE must project, not
+    // forward whole" a checkable statement rather than a comment: if
+    // `message` ever disappeared, the duty would silently evaporate.
+    const shape = EnrichmentCritiqueSchema._def.shape();
+    expect(shape.message).toBeDefined();
+    expect(shape.user_message).toBeDefined();
   });
 });

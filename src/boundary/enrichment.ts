@@ -1080,6 +1080,13 @@ export const CEE_UI_ENRICHMENT_KEEP_LIST = [
   // 0.30.0 VOI family this key is NOT trivially leading-option-inert — CEE's
   // withheld-claim projection must be verified against a withheld turn rather
   // than assumed. Flagged for the CEE lane, not resolved here.
+  // ⚠ PROJECTION DUTY, NOT A PASSTHROUGH: keep-listing licenses the KEY, not
+  // the whole row. `message` is internal/debug wording (it carries raw node
+  // ids on the staging capture) and `user_message` is its display-safe twin,
+  // so CEE must project per-critique — ship `user_message`, withhold
+  // `message`, and gate `affected_option_ids` through the withheld-claim
+  // check. Forwarding the row verbatim would leak internal wording and
+  // leading-option identity in one step.
   'critiques',
 ] as const;
 export type CeeUiEnrichmentKeepKey = (typeof CEE_UI_ENRICHMENT_KEEP_LIST)[number];

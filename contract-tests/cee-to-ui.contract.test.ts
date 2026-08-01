@@ -129,6 +129,21 @@ describe('CEE→UI: keep-list projection', () => {
   // key that "must not ship" — the strip that silently killed a pipeline real
   // at both ends. Asserted against the staging capture, not a synthetic
   // object, so the shape is the producer's.
+  // ⚠ THIS TEST DELIBERATELY DOES NOT PIN THE WHOLE OBJECT, and the reason is
+  // the point. An earlier draft asserted `toEqual(persistedCritiques)` — a
+  // byte-for-byte transport pin. That is WRONG here, and actively harmful,
+  // because this file's header instructs the CEE lane to install it: CEE's
+  // adoption of `critiques` MUST project the rows, not forward them whole.
+  //   * `message` is internal/debug wording by the schema's own comment, and
+  //     on this very capture it carries raw node ids ("Node 'opt_hire_local'
+  //     has kind='option'"). `user_message` is the display-safe twin.
+  //   * `affected_option_ids` carries OPTION IDENTITY, which is
+  //     leading-option-adjacent and must pass CEE's withheld-claim gate.
+  // A whole-object equality pin would either go red the moment CEE projects
+  // correctly, or — far worse — stay green while ENCODING A REQUIREMENT THAT
+  // CEE MUST NOT PROJECT. So this asserts the transport guarantee the UI
+  // actually depends on (the display-safe copy arrives) and leaves the
+  // projection shape to the CEE lane.
   it('ships critiques (0.31.0) — with a positive control on the source', () => {
     // Positive control (trap 13): prove the source really carries populated
     // rows, or the presence assertion below could pass over an empty array.
@@ -139,7 +154,8 @@ describe('CEE→UI: keep-list projection', () => {
 
     const shipped = projected.critiques as Array<Record<string, unknown>>;
     expect(shipped).toBeDefined();
-    expect(shipped).toEqual(persistedCritiques);
+    expect(Array.isArray(shipped)).toBe(true);
+    expect(shipped.length).toBeGreaterThan(0);
     // The display-safe copy is what the UI renders; prove it survives the hop
     // rather than only proving the key does.
     expect(shipped.some((c) => typeof c.user_message === 'string')).toBe(true);

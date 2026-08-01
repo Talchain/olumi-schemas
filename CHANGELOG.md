@@ -54,6 +54,15 @@ converter deploy-verified on staging → **only then** PLoT re-lands #299. Re-la
 plumbing first resurrects the untruth. CEE's stamp may land at any time — an older-pinned
 PLoT strips the key, which degrades to dark-but-honest, never to a wrong number.
 
+⚠ **PLoT does not forward this field, and will not by default.** Verified at PLoT tip
+`9beb4229`: `toISLNode` (`translator-v3.ts:233-242`) is a six-field constructor and
+`ISL_DECLARED_OBSERVED_STATE_FIELDS` is a ten-member allow-list — neither carries the key,
+and **neither fails loud when the contract gains a field**. PLoT must *add* forwarding
+(extend `toISLNode`, or carry a request-level scalar beside `goal_threshold`), which rides
+the 2.258 PLoT stint and is a precondition for the ISL converter being reachable at all.
+Until then a stamped frame is structurally deleted at the V3→ISL boundary — safe, because
+ISL fails closed, but not the same thing as arriving.
+
 Kept a **scalar enum on purpose**. ROADMAP 2.215 will want to record *how* the frame was
 established; that arrives as a new optional **sibling** key on this `.passthrough()` node,
 which is additive. Widening this field into an object would be breaking — the sibling path
@@ -94,6 +103,14 @@ knowledge exists upstream today and is discarded before the wire.
 one place** rather than re-implemented in CEE's validator and again in the UI's input hint.
 Two hand-written copies of a server rule is the estate's dominant defect class, and
 avoiding it is the literal complaint 2.193 raised.
+
+Both ends are typed `number | null`, where `null` means unbounded on that side. `min` is
+nullable even though every member is `0` today: `ratio` is non-negative only under the
+**multiplier convention** this table assumes (1.0 = parity), and a signed-return convention
+(-0.2 for a 20% loss) is unbounded below. Widening the type now is free — the table has
+zero consumers; widening after publication would break every consumer that narrowed on it.
+The *values* still assert the multiplier convention, and a producer using signed returns
+must declare `raw_count`, not `ratio`.
 
 **This is the one field in the release whose absence fails OPEN**, and deliberately:
 absence means UNDECLARED, which is every stored graph. Reading absence as `unit_interval`
@@ -151,6 +168,12 @@ the key; (3) the placeholder retires at the consumers' pace — it is **not** re
 vocabulary by this release and no consumer is obliged to migrate on any schedule. From
 today: treat absence and `'none'` as the **same state**, and never let either reach a
 rendered surface as a direction.
+
+**PLoT #300 merged during review** (tip `9beb4229`): `no_flip_in_range` is already emitted,
+and `direction` is widened to `'increase' | 'decrease' | 'none'`. PLoT's own
+`m1-review-types.ts:301-325` names this release as what lets the `'none'` placeholder
+retire. So step 1 of the path above is already satisfied producer-side — this release is
+what unblocks step 2.
 
 ### Additive analysis, stated at the bytes
 
