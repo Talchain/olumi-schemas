@@ -125,6 +125,11 @@
       "export": "EnrichmentScaleProvenanceSchema",
       "file": "EnrichmentScaleProvenanceSchema.json",
       "definition": "#/definitions/EnrichmentScaleProvenanceSchema"
+    },
+    {
+      "export": "TransportedCritiqueSchema",
+      "file": "TransportedCritiqueSchema.json",
+      "definition": "#/definitions/TransportedCritiqueSchema"
     }
   ]
 }

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.33.0] — 2026-08-04
+
+**One additive change: seam-specific critique schemas (Lane 3 Car 2, ROADMAP 2.293 — the
+critique seam's typed-layer split).**
+
+### Added
+- `TransportedCritiqueSchema` / `TransportedCritique` (`boundary/enrichment.ts`): the CEE→UI
+  browser-transport critique row — `user_message` REQUIRED, `message` deliberately NOT declared,
+  matching CEE's `projectCritiquesForTransport` allow-list exactly. One schema was claiming two
+  intentionally-different projections: the inbound (PLoT→CEE) row requires `message`, the
+  projected (CEE→UI) row never carries it, so a surviving projected critique failed the very
+  envelope whose doc claims to parse "the reduced CEE→UI keep-list projection".
+- `AnalysisEnrichmentSchema.critiques` now accepts inbound OR transported rows
+  (`z.union([EnrichmentCritiqueSchema, TransportedCritiqueSchema])`, inbound tried first). The
+  inbound schema is byte-for-byte unchanged — the producer seam is NOT loosened, and nothing
+  from 0.32.0's `ui_directive`/`ui_target` work is touched.
+- Maximal fixture `maximalTransportedCritique` (no `message` key by design) + registry entry;
+  the envelope's maximal fixture now exercises both union arms.
+
 ## [0.32.0] — 2026-08-04
 
 **One additive change: `ui_directive` panel verbs (Lane 2, capability pillar P3 — UI

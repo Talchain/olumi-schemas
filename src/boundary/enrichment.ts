@@ -745,6 +745,38 @@ export const EnrichmentCritiqueSchema = z.object({
 }).passthrough();
 export type EnrichmentCritique = z.infer<typeof EnrichmentCritiqueSchema>;
 
+/**
+ * 0.33.0 (ROADMAP 2.293) — the BROWSER-TRANSPORT critique row, i.e. the
+ * output of CEE's `projectCritiquesForTransport` (the 0.31.0 keep-list
+ * entry's stated projection duty: "ship `user_message`, withhold
+ * `message`"). One schema was claiming two intentionally-different
+ * projections: the inbound (PLoT→CEE) row REQUIRES `message`, while the
+ * projected (CEE→UI) row NEVER carries it — so a surviving projected
+ * critique failed the very envelope whose doc claims to cover "the reduced
+ * CEE→UI keep-list projection". Seam-specific schemas end that: this one is
+ * the transport seam; `EnrichmentCritiqueSchema` above stays byte-for-byte
+ * unchanged as the inbound seam.
+ *
+ * Field set mirrors the projection's explicit allow-list (CEE
+ * sanitise-enrichment.ts @ d2cdd99b): `message` is deliberately NOT
+ * declared; `user_message` is REQUIRED (the projection always sets it —
+ * S-bucket rows carry the Paul-approved display copy); `severity` is
+ * optional (copied only when the producer sent one). Passthrough for
+ * additive tolerance, same as every enrichment row schema.
+ */
+export const TransportedCritiqueSchema = z.object({
+  id: z.string().optional(),
+  code: z.string().min(1),
+  severity: z.string().optional(), // 'info'|'warning'|'error'|'blocker' when present
+  user_message: z.string(),
+  source: z.string().optional(),
+  affected_option_ids: z.array(z.string()).optional(),
+  affected_node_ids: z.array(z.string()).optional(),
+  blocks_analysis: z.boolean().optional(),
+  suggestion: z.string().optional(),
+}).passthrough();
+export type TransportedCritique = z.infer<typeof TransportedCritiqueSchema>;
+
 // ----------------------------------------------------------------------------
 // m1_coaching — [F1], [F4] M1Coaching
 // ----------------------------------------------------------------------------
@@ -941,7 +973,15 @@ export const AnalysisEnrichmentSchema = z.object({
   flip_thresholds: z.array(EnrichmentFlipThresholdSchema).optional(),
   edge_e_values: z.array(EnrichmentEdgeEValueSchema).optional(),
   inference_warnings: z.array(EnrichmentInferenceWarningSchema).optional(),
-  critiques: z.array(EnrichmentCritiqueSchema).optional(),
+  // 0.33.0 (2.293): the envelope's own doc says it covers BOTH seams —
+  // inbound (PLoT→CEE, `message` required) and the CEE→UI keep-list
+  // projection (`message` withheld, `user_message` shipped). Until 0.33.0 it
+  // parsed only the first, so every surviving projected critique failed the
+  // envelope that claimed it. Inbound tried first; a row carrying both
+  // `message` and `user_message` is an inbound row.
+  critiques: z
+    .array(z.union([EnrichmentCritiqueSchema, TransportedCritiqueSchema]))
+    .optional(),
   confidence_tier: EnrichmentConfidenceTier.optional(),
 
   // --- value of information (0.30.0) --------------------------------------

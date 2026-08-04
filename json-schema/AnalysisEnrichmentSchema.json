@@ -764,52 +764,100 @@
         "critiques": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "severity": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  },
+                  "user_message": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "affected_option_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "affected_node_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "blocks_analysis": {
+                    "type": "boolean"
+                  },
+                  "suggestion": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "severity",
+                  "message"
+                ],
+                "additionalProperties": true
               },
-              "code": {
-                "type": "string",
-                "minLength": 1
-              },
-              "severity": {
-                "type": "string"
-              },
-              "message": {
-                "type": "string"
-              },
-              "user_message": {
-                "type": "string"
-              },
-              "source": {
-                "type": "string"
-              },
-              "affected_option_ids": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "affected_node_ids": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "blocks_analysis": {
-                "type": "boolean"
-              },
-              "suggestion": {
-                "type": "string"
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "severity": {
+                    "type": "string"
+                  },
+                  "user_message": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "affected_option_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "affected_node_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "blocks_analysis": {
+                    "type": "boolean"
+                  },
+                  "suggestion": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "user_message"
+                ],
+                "additionalProperties": true
               }
-            },
-            "required": [
-              "code",
-              "severity",
-              "message"
-            ],
-            "additionalProperties": true
+            ]
           }
         },
         "confidence_tier": {

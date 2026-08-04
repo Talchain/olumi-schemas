@@ -181,7 +181,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   schema identity, and the variants populate `ui_target` and exercise
     //   BOTH of its union branches. Plus boundary/UiDirectiveUiTargetSchema,
     //   a newly-exported schema of its own.
-    expect(MAXIMAL_FIXTURES.length).toBe(129);
+    // 0.33.0: 129 -> 130 (+1): TransportedCritiqueSchema (Lane 3 Car 2, 2.293
+    // seam split — the CEE→UI transported critique row).
+    expect(MAXIMAL_FIXTURES.length).toBe(130);
   });
 
   it('family keys are unique', () => {

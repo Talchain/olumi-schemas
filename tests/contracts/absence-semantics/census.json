@@ -65,7 +65,7 @@
   "counts": {
     "distinct": 30,
     "same": 5,
-    "unresolved": 380
+    "unresolved": 387
   },
   "open_objects": {
     "_doc": [
@@ -139,6 +139,7 @@
       "boundary/SequentialAnalysisResponseSchema.optimal_policy.value_distribution",
       "boundary/SequentialAnalysisResponseSchema.stage_analyses[]",
       "boundary/SequentialAnalysisResponseSchema.stage_analyses[].options_at_stage[]",
+      "boundary/TransportedCritiqueSchema",
       "boundary/V2RunErrorSchema.details",
       "boundary/ValidatePatchRequestSchema.patch[]",
       "root/AnalysisReadyV3Schema",
@@ -2087,6 +2088,48 @@
       "verdict": "unresolved"
     },
     "boundary/SystemEventSchema|kind=selection_change.cleared": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/TransportedCritiqueSchema.affected_node_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/TransportedCritiqueSchema.affected_option_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/TransportedCritiqueSchema.blocks_analysis": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/TransportedCritiqueSchema.id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/TransportedCritiqueSchema.severity": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/TransportedCritiqueSchema.source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/TransportedCritiqueSchema.suggestion": {
       "markers": [
         "optional"
       ],

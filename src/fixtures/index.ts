@@ -149,6 +149,7 @@ import {
   EnrichmentEdgeEValueStabilitySchema,
   EnrichmentInferenceWarningSchema,
   EnrichmentCritiqueSchema,
+  TransportedCritiqueSchema,
   EnrichmentM1CoachingSchema,
   EnrichmentDecisionReviewSchema,
   EnrichmentConstraintResultSchema,
@@ -934,6 +935,22 @@ export const maximalEnrichmentCritique = deepFreeze({
   [PROBE]: true,
 });
 
+// 0.33.0 (2.293) — the CEE→UI transported row: `message` DELIBERATELY ABSENT
+// (the projection withholds it), `user_message` required. A fixture carrying
+// `message` here would defeat the seam split's whole point.
+export const maximalTransportedCritique = deepFreeze({
+  id: 'fixture_critique_transported_1',
+  code: 'FIXTURE_CRITIQUE_CODE',
+  severity: 'warning',
+  user_message: 'FIXTURE synthetic display-safe transported critique wording.',
+  source: 'validation',
+  affected_option_ids: [ID_OPTION_A],
+  affected_node_ids: [ID_FACTOR],
+  blocks_analysis: false,
+  suggestion: 'FIXTURE synthetic critique suggestion.',
+  [PROBE]: true,
+});
+
 export const maximalEnrichmentM1Coaching = deepFreeze({
   story_headlines: { primary: 'FIXTURE_synthetic_headline' },
   evidence_gaps: [
@@ -1038,7 +1055,7 @@ export const maximalAnalysisEnrichment = deepFreeze({
   flip_thresholds: [maximalEnrichmentFlipThreshold],
   edge_e_values: [maximalEnrichmentEdgeEValue],
   inference_warnings: [maximalEnrichmentInferenceWarning],
-  critiques: [maximalEnrichmentCritique],
+  critiques: [maximalEnrichmentCritique, maximalTransportedCritique],
   confidence_tier: 'fair',
   // 0.30.0 — the VOI family (V7-C slice 1a). All four now transport CEE→UI.
   factor_evppi: [maximalEnrichmentFactorEvppiEntry],
@@ -2102,6 +2119,8 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalEnrichmentInferenceWarning,
   },
   { family: 'boundary/EnrichmentCritiqueSchema', schema: EnrichmentCritiqueSchema, fixture: maximalEnrichmentCritique },
+  // 0.33.0 (2.293) — the transported (CEE→UI) critique row.
+  { family: 'boundary/TransportedCritiqueSchema', schema: TransportedCritiqueSchema, fixture: maximalTransportedCritique },
   {
     family: 'boundary/EnrichmentM1CoachingSchema',
     schema: EnrichmentM1CoachingSchema,
