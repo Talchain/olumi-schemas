@@ -142,6 +142,9 @@ export {
   EnrichmentEdgeEValueStabilitySchema,
   EnrichmentInferenceWarningSchema,
   EnrichmentCritiqueSchema,
+  // 0.33.0 (2.293) — the CEE→UI transported critique row (user_message
+  // required, message withheld); the inbound schema above is unchanged.
+  TransportedCritiqueSchema,
   EnrichmentM1CoachingSchema,
   EnrichmentDecisionReviewSchema,
   EnrichmentConstraintResultSchema,
@@ -173,6 +176,8 @@ export type {
   EnrichmentEdgeEValueStability,
   EnrichmentInferenceWarning,
   EnrichmentCritique,
+  // 0.33.0 (2.293)
+  TransportedCritique,
   EnrichmentM1Coaching,
   EnrichmentDecisionReview,
   EnrichmentConstraintResult,
