@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 29,
+    "distinct": 30,
     "same": 5,
     "unresolved": 380
   },
@@ -404,6 +404,26 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=ui_directive.duration_ms": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=ui_directive.note": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=ui_directive.ui_target": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence carries a meaning no value can express: this directive is a GRAPH gesture (highlight/focus/open_inspector) whose target lives in `targets`; presence means a PANEL gesture (open_panel/open_section). Like p_win_sensitivity, the DISCRIMINATOR EXISTS ON THE WIRE - `verb` - and unlike that row it is TIED by the contract itself: applyUiDirectiveConsistencyRule (public schema AND BlockSchema union) makes ui_target REQUIRED with the verb-matching kind on panel verbs and FORBIDDEN on graph verbs, so a consumer can never observe an ambiguous absence. Residual debt: none - the enforcement ships in the same 0.32.0 train as the field.",
+      "ref": "src/boundary/blocks.ts - UiDirectiveBlockObjectSchema.ui_target doc comment + applyUiDirectiveConsistencyRule (0.32.0)"
     },
     "boundary/ChipSchema.action": {
       "markers": [
@@ -2067,18 +2087,6 @@
       "verdict": "unresolved"
     },
     "boundary/SystemEventSchema|kind=selection_change.cleared": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "unresolved"
-    },
-    "boundary/UiDirectiveBlockSchema.duration_ms": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "unresolved"
-    },
-    "boundary/UiDirectiveBlockSchema.note": {
       "markers": [
         "optional"
       ],

@@ -72,9 +72,12 @@ export {
   HeldProposalBlockSchema,
   HeldProposalMutationClass,
   HeldProposalReasonCode,
-  // UI directive (0.15.0 — seamlessness R4 keystone)
+  // UI directive (0.15.0 — seamlessness R4 keystone; 0.32.0 — panel verbs)
   UiDirectiveBlockSchema,
   UiDirectiveVerb,
+  UiDirectivePanelTabId,
+  UiDirectiveModelSectionId,
+  UiDirectiveUiTargetSchema,
   BlockSchema,
   ChipSchema,
 } from './blocks.js';
@@ -105,9 +108,12 @@ export type {
   HeldProposalBlock,
   HeldProposalMutationClassLiteral,
   HeldProposalReasonCodeLiteral,
-  // UI directive (0.15.0 — seamlessness R4 keystone)
+  // UI directive (0.15.0 — seamlessness R4 keystone; 0.32.0 — panel verbs)
   UiDirectiveBlock,
   UiDirectiveVerbLiteral,
+  UiDirectivePanelTabIdLiteral,
+  UiDirectiveModelSectionIdLiteral,
+  UiDirectiveUiTarget,
   Block,
   Chip,
 } from './blocks.js';

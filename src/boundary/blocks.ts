@@ -820,12 +820,16 @@ export type HeldProposalBlock = z.infer<typeof HeldProposalBlockSchema>;
 // that ignores every `ui_directive` block loses only presentation polish,
 // never correctness.
 //
-// Closed `verb` enum, v1: `highlight` | `focus` | `open_inspector`.
+// Closed `verb` enum. v1: `highlight` | `focus` | `open_inspector` (graph
+// verbs — point at a graph element via `targets`). 0.32.0 adds two PANEL
+// verbs: `open_panel` (activate an OutputsDock tab) and `open_section`
+// (focus + auto-expand a Model-tab section), each carrying its target in the
+// separate `ui_target` field — see the cross-field rule below.
 // `annotate` (attach a note to a graph element) and `start_tour` (multi-step
 // guided sequence) were considered and deliberately DEFERRED — both need
 // their own payload shape (annotate needs placement; start_tour needs an
 // ordered step list) that would either bloat this block or need a second
-// block kind; v1 stays minimal. Extend the enum additively when a verb's
+// block kind. Extend the enum additively when a verb's
 // shape is actually needed by a shipping consumer.
 //
 // Rate expectations: a single response should carry AT MOST ~3 of these
@@ -833,21 +837,84 @@ export type HeldProposalBlock = z.infer<typeof HeldProposalBlockSchema>;
 // composition, not wire validation, owns pacing) but documented here so a
 // future composer bug (e.g. one directive per target_ref emitted in a loop)
 // is recognisable as a bug against a stated expectation.
-export const UiDirectiveVerb = z.enum(['highlight', 'focus', 'open_inspector']);
+export const UiDirectiveVerb = z.enum([
+  'highlight',
+  'focus',
+  'open_inspector',
+  'open_panel',
+  'open_section',
+]);
 export type UiDirectiveVerbLiteral = z.infer<typeof UiDirectiveVerb>;
+
+// 0.32.0 — non-graph UI targets for the panel verbs. BOTH vocabularies are
+// CLOSED enums bound to surfaces with a live renderer at the UI tip the
+// change was derived against (DecisionGuideAI staging 6d5db185) — a
+// schema-legal target with no renderer is a dead end (the `constraint`
+// TargetRefKind defect class, ROADMAP 2.457(b)):
+//   - tab ids: `OutputTab` (uiStore.ts) = the five OutputsDock tabs. Tabs
+//     that are feature-gated in the UI (`compare`/`journey`/`olumi`) degrade
+//     INSIDE the dock to 'results' when disabled — a legal tab id can never
+//     dead-end.
+//   - model_section ids: the five ModelTabBody accordion sections
+//     (makeSectionProps call sites; consumed via requestModelTabSection).
+export const UiDirectivePanelTabId = z.enum([
+  'results',
+  'compare',
+  'diagnostics',
+  'journey',
+  'olumi',
+]);
+export type UiDirectivePanelTabIdLiteral = z.infer<typeof UiDirectivePanelTabId>;
+
+export const UiDirectiveModelSectionId = z.enum([
+  'options',
+  'factors',
+  'relationships',
+  'risks',
+  'modelcard',
+]);
+export type UiDirectiveModelSectionIdLiteral = z.infer<typeof UiDirectiveModelSectionId>;
+
+// Discriminated on `kind`; both branches `.strict()` — the channel's closure
+// is load-bearing (absence-on-wire was once PROVEN from this schema family
+// being strict throughout; no passthrough, no string escape hatches).
+export const UiDirectiveUiTargetSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('tab'), id: UiDirectivePanelTabId }).strict(),
+  z.object({ kind: z.literal('model_section'), id: UiDirectiveModelSectionId }).strict(),
+]);
+export type UiDirectiveUiTarget = z.infer<typeof UiDirectiveUiTargetSchema>;
 
 const UI_DIRECTIVE_DURATION_MIN_MS = 500;
 const UI_DIRECTIVE_DURATION_MAX_MS = 10_000;
 const UI_DIRECTIVE_NOTE_MAX = 140;
 
-export const UiDirectiveBlockSchema = z.object({
+// Internal bare-object schema — the BlockSchema discriminated union only
+// accepts ZodObject members (not ZodEffects), so the verb/ui_target
+// cross-field rule is applied at the union level AND on the public
+// `UiDirectiveBlockSchema` below. Same pattern as EvidenceBlockObjectSchema
+// (and, like it, deliberately NOT exported — the public surface is the
+// refined schema; keeping the bare object internal also keeps the absence
+// census anchored at the public name).
+const UiDirectiveBlockObjectSchema = z.object({
   type: z.literal('ui_directive'),
   verb: UiDirectiveVerb,
   // Reuses the existing TargetRefSchema shape (§0.1) rather than a
   // bespoke minimal {id, kind} — TargetRef's `label` is harmless-but-
   // unused here (dispatch keys off `id`/`kind` only) and reuse avoids a
   // second near-identical ref shape in the same package.
+  // For the panel verbs (`open_panel`/`open_section`) this MUST be `[]`
+  // (cross-field rule): panel gestures have no graph target, and the
+  // separation keeps graph dispatch (`targets`) and panel dispatch
+  // (`ui_target`) from ever contradicting each other in one block.
   targets: z.array(TargetRefSchema),
+  // 0.32.0 — REQUIRED (with the verb-matching kind) on `open_panel` /
+  // `open_section`; MUST BE ABSENT on the three graph verbs. Enforced by
+  // `applyUiDirectiveConsistencyRule` on the public schema and at the
+  // BlockSchema union. ABSENCE SEMANTICS (for the absence census): absence
+  // is fully determined by `verb` — absent on every graph-verb directive,
+  // never absent on a panel-verb directive; there is no default and no
+  // empty value, so absence never encodes a second meaning.
+  ui_target: UiDirectiveUiTargetSchema.optional(),
   duration_ms: z
     .number()
     .int()
@@ -861,7 +928,61 @@ export const UiDirectiveBlockSchema = z.object({
   // full card title).
   note: z.string().min(1).max(UI_DIRECTIVE_NOTE_MAX).optional(),
 }).strict();
-export type UiDirectiveBlock = z.infer<typeof UiDirectiveBlockSchema>;
+export type UiDirectiveBlock = z.infer<typeof UiDirectiveBlockObjectSchema>;
+
+/**
+ * 0.32.0 cross-field rule, applied on the public schema AND at the
+ * BlockSchema union (EvidenceBlock precedent):
+ *   - `open_panel`   ⇒ `ui_target` REQUIRED, kind `tab`;           `targets` = []
+ *   - `open_section` ⇒ `ui_target` REQUIRED, kind `model_section`; `targets` = []
+ *   - `highlight` / `focus` / `open_inspector` ⇒ `ui_target` ABSENT
+ * Both directions bite: a panel verb without its target fails closed, and a
+ * graph verb smuggling a panel target fails closed.
+ */
+function applyUiDirectiveConsistencyRule(
+  data: UiDirectiveBlock,
+  ctx: z.RefinementCtx,
+): void {
+  const isPanelVerb = data.verb === 'open_panel' || data.verb === 'open_section';
+  if (!isPanelVerb) {
+    if (data.ui_target !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['ui_target'],
+        message:
+          'ui_target is only valid on the panel verbs (open_panel/open_section); graph verbs (highlight/focus/open_inspector) carry their targets in `targets`.',
+      });
+    }
+    return;
+  }
+  const requiredKind = data.verb === 'open_panel' ? 'tab' : 'model_section';
+  if (data.ui_target === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['ui_target'],
+      message: `verb "${data.verb}" requires ui_target with kind "${requiredKind}".`,
+    });
+  } else if (data.ui_target.kind !== requiredKind) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['ui_target', 'kind'],
+      message: `verb "${data.verb}" requires ui_target kind "${requiredKind}", received "${data.ui_target.kind}".`,
+    });
+  }
+  if (data.targets.length !== 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['targets'],
+      message: `verb "${data.verb}" is a panel gesture; targets must be an empty array (the target lives in ui_target).`,
+    });
+  }
+}
+
+// Public schema — carries the cross-field rule. The BlockSchema union uses
+// the internal UiDirectiveBlockObjectSchema for the discriminated-union
+// construction and applies the same rule at the union level.
+export const UiDirectiveBlockSchema =
+  UiDirectiveBlockObjectSchema.superRefine(applyUiDirectiveConsistencyRule);
 
 // Discriminated union. Additive — new block types land in A1+ without breaking.
 // 0.5.0: handler-result blocks joined the union.
@@ -881,6 +1002,11 @@ export type UiDirectiveBlock = z.infer<typeof UiDirectiveBlockSchema>;
 //         (ROADMAP 1.120 residual, UI-SEM-085; same strict-consumer landing
 //         hazard as 0.19.0 — producers must not emit until every strict
 //         consumer has re-vendored ≥ 0.20.0).
+// 0.32.0: UiDirectiveBlock gained verbs `open_panel` + `open_section` and the
+//         optional `ui_target` (additive; block stays strict, so consumers on
+//         OLDER pins strict-fail a block carrying the new verbs/key — CEE
+//         must not emit them until UI + CEE have re-vendored ≥ 0.32.0; merge
+//         order schemas → UI → CEE).
 export const BlockSchema = z
   .discriminatedUnion('type', [
     TextBlockSchema,
@@ -896,19 +1022,22 @@ export const BlockSchema = z
     EvidenceBlockObjectSchema,
     ExerciseBlockSchema,
     HeldProposalBlockSchema,
-    UiDirectiveBlockSchema,
+    UiDirectiveBlockObjectSchema,
   ])
-  // Apply the §1.3 EvidenceBlock consistency rule at the union level so
-  // wire-level `BlockSchema.safeParse(x)` fails closed when an
-  // EvidenceBlock's `factor_ref` does not match the primary factor
-  // entry in `target_refs`. The union itself uses the internal
-  // `EvidenceBlockObjectSchema` (bare ZodObject) because
+  // Apply the §1.3 EvidenceBlock consistency rule and the 0.32.0
+  // UiDirective verb/ui_target rule at the union level so wire-level
+  // `BlockSchema.safeParse(x)` fails closed on a contradictory block. The
+  // union itself uses the internal bare ZodObjects
+  // (`EvidenceBlockObjectSchema` / `UiDirectiveBlockObjectSchema`) because
   // `z.discriminatedUnion` only accepts `ZodObject` members, not
-  // `ZodEffects`. The public `EvidenceBlockSchema` carries the same
-  // rule via its own `.superRefine` — see its definition above.
+  // `ZodEffects`. The public `EvidenceBlockSchema` / `UiDirectiveBlockSchema`
+  // carry the same rules via their own `.superRefine` — see above.
   .superRefine((data, ctx) => {
     if (data.type === 'evidence') {
       applyEvidenceConsistencyRule(data, ctx);
+    }
+    if (data.type === 'ui_directive') {
+      applyUiDirectiveConsistencyRule(data, ctx);
     }
   });
 export type Block = z.infer<typeof BlockSchema>;
