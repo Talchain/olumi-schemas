@@ -173,7 +173,15 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   FIELDS on the already-registered AnalysisEnrichmentSchema (their
     //   coverage rides that fixture, which now populates all four), and only
     //   the entry shape is a newly-exported schema of its own.
-    expect(MAXIMAL_FIXTURES.length).toBe(126);
+    // 0.32.0: 126 -> 129 (+3): ui_directive panel verbs (Lane 2, P3). Two
+    //   panel-verb VARIANTS of the already-registered UiDirectiveBlockSchema
+    //   (#open_panel / #open_section) — the verb/ui_target cross-field rule
+    //   makes `ui_target` and non-empty `targets` mutually exclusive, so ONE
+    //   fixture cannot be maximal for this block; maximality aggregates by
+    //   schema identity, and the variants populate `ui_target` and exercise
+    //   BOTH of its union branches. Plus boundary/UiDirectiveUiTargetSchema,
+    //   a newly-exported schema of its own.
+    expect(MAXIMAL_FIXTURES.length).toBe(129);
   });
 
   it('family keys are unique', () => {

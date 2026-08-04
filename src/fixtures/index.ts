@@ -129,6 +129,7 @@ import {
   ExerciseBlockSchema,
   HeldProposalBlockSchema,
   UiDirectiveBlockSchema,
+  UiDirectiveUiTargetSchema,
   TargetRefSchema,
   BlockSchema,
   ChipSchema,
@@ -1324,6 +1325,32 @@ export const maximalUiDirectiveBlock = deepFreeze({
   note: 'FIXTURE synthetic directive caption.',
 });
 
+// 0.32.0 panel verbs. The cross-field rule makes `ui_target` and non-empty
+// `targets` mutually exclusive, so ONE fixture cannot be maximal for this
+// block — maximality aggregates by schema identity across the registry, and
+// these two variants populate what the graph-verb fixture cannot (`ui_target`,
+// one union branch each).
+export const maximalUiDirectiveOpenPanelBlock = deepFreeze({
+  type: 'ui_directive',
+  verb: 'open_panel',
+  targets: [],
+  ui_target: { kind: 'tab', id: 'results' },
+  note: 'FIXTURE synthetic open-panel caption.',
+});
+
+export const maximalUiDirectiveOpenSectionBlock = deepFreeze({
+  type: 'ui_directive',
+  verb: 'open_section',
+  targets: [],
+  ui_target: { kind: 'model_section', id: 'relationships' },
+  note: 'FIXTURE synthetic open-section caption.',
+});
+
+export const maximalUiDirectiveUiTargetTab = deepFreeze({
+  kind: 'tab',
+  id: 'results',
+});
+
 export const maximalChip = deepFreeze({
   id: 'fixture_chip_1',
   label: 'FIXTURE_chip_label',
@@ -1986,6 +2013,24 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'boundary/ExerciseBlockSchema', schema: ExerciseBlockSchema, fixture: maximalExerciseBlock },
   { family: 'boundary/HeldProposalBlockSchema', schema: HeldProposalBlockSchema, fixture: maximalHeldProposalBlock },
   { family: 'boundary/UiDirectiveBlockSchema', schema: UiDirectiveBlockSchema, fixture: maximalUiDirectiveBlock },
+  {
+    family: 'boundary/UiDirectiveBlockSchema#open_panel',
+    schema: UiDirectiveBlockSchema,
+    fixture: maximalUiDirectiveOpenPanelBlock,
+    notes:
+      '0.32.0 panel-verb variant. The verb/ui_target cross-field rule makes ui_target and non-empty targets mutually exclusive, so the base fixture cannot carry ui_target; this variant populates it (tab branch).',
+  },
+  {
+    family: 'boundary/UiDirectiveBlockSchema#open_section',
+    schema: UiDirectiveBlockSchema,
+    fixture: maximalUiDirectiveOpenSectionBlock,
+    notes: '0.32.0 panel-verb variant — exercises the model_section ui_target branch.',
+  },
+  {
+    family: 'boundary/UiDirectiveUiTargetSchema',
+    schema: UiDirectiveUiTargetSchema,
+    fixture: maximalUiDirectiveUiTargetTab,
+  },
   {
     family: 'boundary/BlockSchema#analysis_result',
     schema: BlockSchema,

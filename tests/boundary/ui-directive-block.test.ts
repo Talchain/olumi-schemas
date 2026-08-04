@@ -150,9 +150,9 @@ describe('UiDirectiveBlockSchema', () => {
 });
 
 describe('UiDirectiveVerb', () => {
-  it('has exactly the three v1 verbs', () => {
+  it('has exactly the five verbs (three v1 graph verbs + two 0.32.0 panel verbs)', () => {
     expect([...UiDirectiveVerb.options].sort()).toEqual(
-      ['focus', 'highlight', 'open_inspector'].sort(),
+      ['focus', 'highlight', 'open_inspector', 'open_panel', 'open_section'].sort(),
     );
   });
 });

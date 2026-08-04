@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.32.0] — 2026-08-04
+
+**One additive change: `ui_directive` panel verbs (Lane 2, capability pillar P3 — UI
+agency).** The `verb` enum gains `open_panel` and `open_section`; the block gains an
+optional `ui_target` (a closed discriminated union: `{kind:'tab', id:<5 OutputsDock tab
+ids>}` | `{kind:'model_section', id:<5 ModelTabBody section ids>}`, both branches
+`.strict()`); and a cross-field consistency rule ties them together in BOTH directions
+(panel verbs REQUIRE the verb-matching `ui_target` and an empty `targets`; graph verbs
+FORBID `ui_target`). The rule is applied at the `BlockSchema` union level AND on the
+public `UiDirectiveBlockSchema` (now a `ZodEffects`, mirroring `EvidenceBlockSchema`);
+the bare object stays module-internal (mirroring `EvidenceBlockObjectSchema`).
+
+**Additive analysis:** no field removed, no type narrowed, no required field added to any
+existing shape — every pre-0.32.0 wire payload parses byte-identically. The new key is
+optional on a still-`.strict()` object (0.18.0 precedent). **Strict-consumer landing
+hazard, stated as ever:** consumers on OLDER pins strict-REJECT any block carrying the
+new verbs or `ui_target` — producers must not emit them until every strict consumer has
+re-vendored ≥ 0.32.0. Merge/deploy order for this train: schemas → DecisionGuideAI →
+olumi-assistants-service; CEE only emits the new verbs from code that ships WITH its
+re-vendor. PLoT does not read the Block union (verified at its staging tip `d011b99`) and
+is not part of this train.
+
+**Both target vocabularies are CLOSED enums bound to surfaces with a live renderer** at
+the DecisionGuideAI staging tip this change was derived against (`6d5db185`): tab ids from
+`uiStore.ts` `OutputTab`; section ids from the five `ModelTabBody.tsx` `makeSectionProps`
+call sites. A schema-legal target with no renderer is a dead end (the `constraint`
+TargetRefKind defect class, ROADMAP 2.457(b)) — extend these enums only in the same train
+as the renderer that honours the new id.
+
+New exports: `UiDirectivePanelTabId`, `UiDirectiveModelSectionId`,
+`UiDirectiveUiTargetSchema` (+ types). Maximal-fixture
+registry: +3 entries (two panel-verb block variants — the cross-field rule makes
+`ui_target` and non-empty `targets` mutually exclusive, so one fixture cannot be maximal —
+plus the `UiDirectiveUiTargetSchema` entry). Absence census: +1 row
+(`ui_target`, verdict `distinct` with the discriminator schema-enforced in this same
+train; unresolved count unchanged at 380). The block's two pre-existing census rows
+(`duration_ms`, `note`) migrate anchor `boundary/UiDirectiveBlockSchema.*` →
+`boundary/BlockSchema|type=ui_directive.*` — the derived key form every
+effects-wrapped union member already uses (see the `type=evidence` rows); verdicts
+unchanged.
+
 ## [0.31.0] — 2026-08-01
 
 **Five additive changes, five different rows, one release train.** Four new optional
