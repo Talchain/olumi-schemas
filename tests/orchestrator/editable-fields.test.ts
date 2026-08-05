@@ -102,6 +102,15 @@ const REAL_NON_INSPECTOR_FIELDS = [
   { entity: 'node', wire_field: 'success_threshold' },
   { entity: 'node', wire_field: 'threshold_source' },
   { entity: 'edge', wire_field: 'confidence' },
+  // Revision 2 (2.474 panel leg). The RIGHT-HAND PANEL's contested-edge card
+  // writes edge `validation` (user_action / resolved_by / resolved_value) at
+  // ModelTabBody.tsx:638,:662,:670 — three human write sites, none of them a
+  // `useInspectorMutations` setter, which is exactly the blind spot this corpus
+  // exists for. Its absence was not a missing row so much as a FALSE PREMISE:
+  // provenanceOwnedSegments()'s doc asserted these stamps "have no human setter
+  // and therefore no row here". They do. Derivation could never have caught this
+  // — the table agreed with itself perfectly.
+  { entity: 'edge', wire_field: 'validation' },
 ] as const;
 
 /**
@@ -144,6 +153,14 @@ const REAL_PROVENANCE_OWNED = [
   { entity: 'edge', wire_field: 'directionSource' },
   { entity: 'edge', wire_field: 'strengthStdSource' },
   { entity: 'edge', wire_field: 'beliefExistsSource' },
+  // Revision 2 (2.474 panel leg). `validation` carries ADJUDICATION provenance,
+  // which is a strictly stronger claim than a value stamp: an AI writing
+  // `resolved_by: 'user'` asserts a human settled a producer disagreement when
+  // none did — it launders CONSENT, not just a number. CEE already denied it
+  // (field-safety.ts:173 → PIPELINE_OWNED_ROOTS at :216-218), so the row changes
+  // no behaviour anywhere; it makes the denial explicit and stops the next
+  // re-derivation from "discovering" a human setter and granting the field.
+  { entity: 'edge', wire_field: 'validation' },
 ] as const;
 
 /**
