@@ -660,6 +660,44 @@ function applyEvidenceConsistencyRule(
 export const EvidenceBlockSchema =
   EvidenceBlockObjectSchema.superRefine(applyEvidenceConsistencyRule);
 
+/**
+ * 0.37.0 — DSK PROTOCOL PROVENANCE. The decision-science record an exercise
+ * card is an instance of, so a consumer can show the user that the exercise is
+ * a published protocol rather than assistant prose.
+ *
+ * ⚠ WHY THIS IS ONE NESTED OBJECT AND NOT THREE OPTIONAL SIBLING FIELDS —
+ * this is the whole point of the shape, do not "flatten it for consistency".
+ * CEE #830 (ROADMAP 2.491/2.456) shipped an attestation that validated a DSK
+ * claim id EXISTED without checking that the text rendered beneath it RESOLVED
+ * TO that id; the badge printed the model's own prose under the bundle's
+ * authority. Three sibling optionals reproduce that shape exactly: a producer
+ * could emit `dsk_protocol_id` alone — an authority claim with nothing a
+ * consumer can check it against. As ONE strict object the triple is ATOMIC BY
+ * CONSTRUCTION: the id never travels without the title and strength that make
+ * it verifiable against `data/dsk/v1.json`. No `superRefine` is needed to get
+ * that, which matters — `ExerciseBlockSchema` stays a bare `ZodObject`, and
+ * CEE's `.shape`-derived egress guard (`leading-option-egress-guard.ts`)
+ * depends on it being one.
+ *
+ * `protocol_id` is the bundle's own id format (`DSKObjectBase.id`,
+ * `/^DSK-(B|T|F|G|P|TR)-\d{3}$/`) narrowed to the `P` arm, so a claim id
+ * (`DSK-T-…`) or a trigger id (`DSK-TR-…`) cannot masquerade as the protocol
+ * this card performs. `evidence_strength` carries the bundle's full declared
+ * union — NOT the two values that happen to occur in bundle v1.0.0 — because
+ * the domain belongs to the producer's schema, not to today's data.
+ *
+ * OPTIONAL by design: an exercise whose selection rules predate the bundle
+ * (CEE's `pre_mortem` lens) must be able to ship with NO provenance rather
+ * than claim one it does not have. Absence means "not attributed", never
+ * "unknown protocol".
+ */
+export const DskProtocolProvenanceSchema = z.object({
+  protocol_id: z.string().regex(/^DSK-P-\d{3}$/),
+  protocol_title: z.string().min(1),
+  evidence_strength: z.enum(['strong', 'medium', 'weak', 'mixed']),
+}).strict();
+export type DskProtocolProvenance = z.infer<typeof DskProtocolProvenanceSchema>;
+
 // §1.4 — ExerciseBlock. Produced by on-demand handler invocation
 // (pre-mortem, outside view, devil's advocacy, consider opposite). NOT
 // auto-invoked — triggered by user interaction intent. Hero eligible:
@@ -704,6 +742,8 @@ export const ExerciseBlockSchema = z.object({
   // uniformity. See the guidance-signal-provenance block comment.
   signal_code: z.string().min(1).optional(),
   signal: z.string().min(1).max(GUIDANCE_SIGNAL_LINE_MAX).optional(),
+  // 0.37.0 additive — DSK protocol provenance. See DskProtocolProvenanceSchema.
+  dsk_provenance: DskProtocolProvenanceSchema.optional(),
 }).strict();
 export type ExerciseBlock = z.infer<typeof ExerciseBlockSchema>;
 

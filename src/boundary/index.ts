@@ -63,6 +63,7 @@ export {
   CoachingBlockSchema,
   EvidenceBlockSchema,
   ExerciseBlockSchema,
+  DskProtocolProvenanceSchema,
   // Phase 3 shared
   ActionIntent,
   TargetRefKind,
@@ -99,6 +100,7 @@ export type {
   CoachingBlock,
   EvidenceBlock,
   ExerciseBlock,
+  DskProtocolProvenance,
   // Phase 3 shared
   ActionIntentLiteral,
   TargetRefKindLiteral,

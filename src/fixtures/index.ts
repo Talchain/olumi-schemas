@@ -131,6 +131,7 @@ import {
   UiDirectiveBlockSchema,
   UiDirectiveUiTargetSchema,
   TargetRefSchema,
+  DskProtocolProvenanceSchema,
   BlockSchema,
   ChipSchema,
   // enrichment
@@ -1300,6 +1301,20 @@ export const maximalEvidenceBlock = deepFreeze({
   action_label: 'FIXTURE gather this evidence',
 });
 
+/**
+ * 0.37.0 — DSK protocol provenance. Values are the BUNDLE's real DSK-P-001
+ * record (`data/dsk/v1.json`: title "Pre-mortem exercise", evidence_strength
+ * "medium"), matching `maximalExerciseBlock.exercise_kind: 'pre_mortem'`.
+ * Deliberately NOT `FIXTURE synthetic …` like its siblings: this object's whole
+ * contract is that its members RESOLVE TO a canonical record, so a fixture
+ * carrying invented prose would model the exact defect the field prevents.
+ */
+export const maximalDskProtocolProvenance = deepFreeze({
+  protocol_id: 'DSK-P-001',
+  protocol_title: 'Pre-mortem exercise',
+  evidence_strength: 'medium',
+});
+
 export const maximalExerciseBlock = deepFreeze({
   block_id: '77777777-7777-4777-8777-777777777777',
   signal_id: 'fixture_signal_exercise_1',
@@ -1322,6 +1337,10 @@ export const maximalExerciseBlock = deepFreeze({
   // 0.20.0 (ROADMAP 1.120 residual) — signal class code + per-item line.
   signal_code: 'FIXTURE_SIGNAL_CODE',
   signal: 'FIXTURE synthetic per-item signal line.',
+  // 0.37.0 — DSK protocol provenance. The fixture is MAXIMAL, so the triple is
+  // present; the values are the bundle's real DSK-P-001 record (the fixture's
+  // own `exercise_kind` is `pre_mortem`), never invented prose.
+  dsk_provenance: maximalDskProtocolProvenance,
 });
 
 export const maximalHeldProposalBlock = deepFreeze({
@@ -2027,6 +2046,7 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'boundary/BoundaryErrorSchema', schema: BoundaryErrorSchema, fixture: maximalBoundaryError },
   // --- blocks ---------------------------------------------------------------------
   { family: 'boundary/TargetRefSchema', schema: TargetRefSchema, fixture: maximalTargetRef },
+  { family: 'boundary/DskProtocolProvenanceSchema', schema: DskProtocolProvenanceSchema, fixture: maximalDskProtocolProvenance },
   { family: 'boundary/TextBlockSchema', schema: TextBlockSchema, fixture: maximalTextBlock },
   { family: 'boundary/ErrorBlockSchema', schema: ErrorBlockSchema, fixture: maximalErrorBlock },
   {
