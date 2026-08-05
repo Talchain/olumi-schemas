@@ -46,6 +46,7 @@ import {
   requireEditableFieldTableRevision,
   aiEditableFieldRoots,
   aiEditableObservedSubkeys,
+  deferredDerivationSegments,
   fieldsOfClass,
   editableFieldUiSetters,
   lookupEditableField,
@@ -104,10 +105,11 @@ const REAL_NON_INSPECTOR_FIELDS = [
 ] as const;
 
 /**
- * The six GENUINE GRANTS — fields a human setter reaches that the AI cannot
- * touch at the CEE tip, and that carry no invariant coupling and no provenance
- * ownership. If any of these loses its row or its `grant` class, the tool's
- * field parity silently narrows back to the 14-root allowlist.
+ * The five GENUINE GRANTS — fields a human setter reaches that the AI cannot
+ * touch at the CEE tip, that carry no invariant coupling and no provenance
+ * ownership, AND whose meaning is established. If any of these loses its row or
+ * its `grant` class, the tool's field parity silently narrows back to the
+ * 14-root allowlist.
  */
 const REAL_GENUINE_GRANTS = [
   { entity: 'node', wire_field: 'observed_state.std' },
@@ -115,6 +117,16 @@ const REAL_GENUINE_GRANTS = [
   { entity: 'node', wire_field: 'probability' },
   { entity: 'node', wire_field: 'impact' },
   { entity: 'edge', wire_field: 'label' },
+] as const;
+
+/**
+ * NOT GRANTED, and NOT denied on principle either — the grant decision is
+ * DEFERRED pending a named derivation (orchestrator ruling on J3, 5 Aug 2026).
+ * The general rule the ruling states: a field is not granted on low confidence
+ * that it means anything. This corpus entry is what stops the class quietly
+ * resolving itself into a grant without the derivation ever being done.
+ */
+const REAL_DEFERRED_DERIVATION = [
   { entity: 'edge', wire_field: 'confidence' },
 ] as const;
 
@@ -198,10 +210,27 @@ describe('editable-fields table — well-formed', () => {
     }
   });
 
-  it('the class vocabulary is exactly the four A6 classes', () => {
+  it('the class vocabulary is exactly the five classes (A6 + the J3 ruling)', () => {
     expect([...EDITABLE_FIELD_CLASSES]).toEqual([
-      'grant', 'invariant_coupled', 'provenance_owned', 'ai_only',
+      'grant', 'invariant_coupled', 'deferred_derivation', 'provenance_owned', 'ai_only',
     ]);
+  });
+
+  it('a deferred_derivation row MUST carry the question that would settle it', () => {
+    const deferred = fieldsOfClass('deferred_derivation');
+    expect(deferred.length, 'the class exists but holds nothing — delete it or use it').toBeGreaterThan(0);
+    for (const row of deferred) {
+      expect(
+        row.open_question.trim().length,
+        `${row.entity}/${row.wire_field} is deferred with no stated derivation — that is a parking space, not a deferral`,
+      ).toBeGreaterThan(0);
+    }
+  });
+
+  it('a deferred row names a READER question, not a preference — the derivation must be answerable', () => {
+    for (const row of fieldsOfClass('deferred_derivation')) {
+      expect(row.open_question.toLowerCase()).toMatch(/read|reader|consumer/);
+    }
   });
 
   it('an ai_only row has no ui_setters and no ui_write_sites (that is what makes it ai_only)', () => {
@@ -250,7 +279,7 @@ describe('editable-fields table — hand-written corpus (completeness, NOT deriv
     }
   });
 
-  it('the six GENUINE GRANTS are present and classed `grant`', () => {
+  it('the five GENUINE GRANTS are present and classed `grant`', () => {
     for (const f of REAL_GENUINE_GRANTS) {
       const row = lookupEditableField(f.entity, f.wire_field);
       expect(row, `${f.entity}/${f.wire_field} missing from the table`).toBeDefined();
@@ -266,6 +295,23 @@ describe('editable-fields table — hand-written corpus (completeness, NOT deriv
         row!.field_class,
         `${f.entity}/${f.wire_field} is provenance-owned: granting it lets the AI relabel its own invention as user-extracted`,
       ).toBe('provenance_owned');
+    }
+  });
+
+  it('every DEFERRED field is present, classed deferred_derivation, and NOT editable', () => {
+    for (const f of REAL_DEFERRED_DERIVATION) {
+      const row = lookupEditableField(f.entity, f.wire_field);
+      expect(row, `${f.entity}/${f.wire_field} missing from the table`).toBeDefined();
+      expect(
+        row!.field_class,
+        `${f.entity}/${f.wire_field} was granted without the derivation that would justify it`,
+      ).toBe('deferred_derivation');
+      // The point of the class: it must not leak into the AI-editable set.
+      expect(
+        aiEditableFieldRoots(f.entity).has(row!.field_root),
+        `deferred root '${row!.field_root}' leaked into the AI-editable roots`,
+      ).toBe(false);
+      expect(deferredDerivationSegments().has(f.wire_field.toLowerCase())).toBe(true);
     }
   });
 
@@ -330,10 +376,10 @@ describe('editable-fields table — derived agreement with the CEE referee allow
     expect(revoked, `roots silently revoked from the AI: ${revoked.join(', ')}`).toEqual([]);
   });
 
-  it('the edge delta is EXACTLY `label` and `confidence`', () => {
+  it('the edge delta is EXACTLY `label` — `confidence` is deferred, so it does NOT widen the allowlist', () => {
     const current = new Set<string>(REAL_CEE_ALLOWED_EDGE_ROOTS);
     const added = [...aiEditableFieldRoots('edge')].filter((r) => !current.has(r)).sort();
-    expect(added).toEqual(['confidence', 'label']);
+    expect(added).toEqual(['label']);
   });
 
   it('observed_state sub-keys: every current sub-key survives and the delta is exactly `std`', () => {

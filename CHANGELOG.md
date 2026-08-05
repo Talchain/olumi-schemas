@@ -19,7 +19,7 @@ claiming one release would make the publish workflow's `npm view @talchain/schem
 silently skip the second one's publish while reporting green. Derived rather than assumed, per this
 repo's own rule that the version note in `CLAUDE.md` has been wrong five times running.
 
-### Added — `orchestrator/editable-fields.ts`: the CLASSED field-parity table (A6)
+### Added — `orchestrator/editable-fields.ts`: the CLASSED field-parity table (A6 + the J3 ruling)
 
 `EDITABLE_FIELD_TABLE` — 41 rows, one per human- or AI-editable graph field, each carrying its
 wire path, its root segment, its class, the inspector setters and non-inspector write sites that
@@ -33,13 +33,25 @@ of its four parts. Measured at UI `dae8908f` and CEE `ac62fd4d`:
 
 | class | count | what it means |
 |---|---|---|
-| `grant` | 22 (16 already at parity, **6 genuinely new**) | the AI should hold the field |
+| `grant` | 21 (16 already at parity, **5 genuinely new**) | the AI should hold the field |
 | `invariant_coupled` | 7 | belongs to a set that must move together; owed a TYPED OP in a later leg, never a raw grant |
+| `deferred_derivation` | 1 | **not granted, not denied** — the decision is pending a named derivation the row carries |
 | `provenance_owned` | 7 | parity **DENIED, permanently** — "AI ≤ human" is satisfied by ≤ |
 | `ai_only` | 5 | the AI holds it and no human field setter reaches it — the asymmetry runs both ways |
 
-The six genuine grants: node `observed_state.std`, `state_space`, `probability`, `impact`; edge
-`label`, `confidence`.
+The five genuine grants: node `observed_state.std`, `state_space`, `probability`, `impact`; edge
+`label`.
+
+**`deferred_derivation` is the fifth class, added by orchestrator ruling on judgement J3 (5 Aug
+2026), and the rule it encodes is general: a field is not granted on low confidence that it means
+anything.** Edge `confidence` is human-writable but absent from `EdgeV3Schema`, so nothing
+establishes that a write to it reaches any computation — granting an AI write to a field with no
+known reader manufactures a lever that moves nothing while looking like it moves something. The row
+carries the derivation that would settle it (`open_question`: who READS `edge.confidence` — engine
+or client-only?), a required non-empty field on this class so a deferral cannot be a parking space,
+and the screen rejects such a field with **its own reason** rather than the generic "no row in the
+table", which would be a false statement about a field that has one. If the reader manifest comes
+back empty the row LEAVES the table: a write-only field is not an editable field.
 
 **Both 12d halves ship, because neither catches the other's defect.** Derivation proves the
 consumers AGREE with the table and is structurally blind to the table being SHORT;
@@ -104,7 +116,7 @@ graph kinds today, so opening it is a deliberate, RED-forcing act.
   nested strength): the add payloads carry GraphV3 node/edge data, whose own schemas are
   `.passthrough()`. The openness is structural; the add-value screen closes it behaviourally.
 - Baseline before this change, measured in a fresh blobless clone at `4526cf58`: 41 files / 1410
-  tests. After: 43 files / 1476 tests.
+  tests. After: 43 files / 1480 tests.
 
 ## [0.34.0] — 2026-08-05
 

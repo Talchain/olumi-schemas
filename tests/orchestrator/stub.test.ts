@@ -114,8 +114,8 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         'ANALYSIS_FACT_STATUSES',
         // 0.35.0 — coach structural-edit tool (ROADMAP 2.474, A1/A3/A5/A6).
         // The classed field-parity table (5 runtime values + 4 schemas + 9
-        // derived accessors = 18) and the tool op batch (2 vocabularies +
-        // 3 schemas + 1 fan-out counter = 6) = 24.
+        // derived accessors = 19) and the tool op batch (2 vocabularies +
+        // 3 schemas + 1 fan-out counter = 6) = 25.
         'EDITABLE_FIELD_CLASSES',
         'EDITABLE_FIELD_ENTITIES',
         'EditableFieldClassSchema',
@@ -132,6 +132,7 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         'aiEditableObservedSubkeys',
         'provenanceOwnedSegments',
         'invariantCoupledSegments',
+        'deferredDerivationSegments',
         'editableFieldUiSetters',
         'EDIT_TOOL_OP_KINDS',
         'EDIT_TOOL_OPS_REFERENCING_EXISTING_ENTITY',

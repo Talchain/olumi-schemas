@@ -199,6 +199,20 @@ describe('edit-tool ops — update values are screened by the classed field tabl
     }).success).toBe(false);
   });
 
+  it('a DEFERRED field is rejected — and with its OWN reason, not the generic "no row"', () => {
+    // Orchestrator ruling on J3: edge `confidence` is not granted on low
+    // confidence that it means anything. It HAS a row, so telling the model it
+    // has none would be a false reason, and a model given the wrong reason
+    // retries the wrong way.
+    const res = EditToolOperationSchema.safeParse({
+      op: 'update_edge', path: 'fac_a::fac_b', value: { confidence: 0.8 },
+    });
+    expect(res.success).toBe(false);
+    const issues = JSON.stringify(res.success ? {} : res.error.issues);
+    expect(issues).toMatch(/deferred/i);
+    expect(issues, 'a field WITH a row was told it has none').not.toMatch(/no row/i);
+  });
+
   it('identity fields are never updatable (node id/kind, edge from/to)', () => {
     expect(EditToolOperationSchema.safeParse({
       op: 'update_node', path: 'fac_revenue', value: { id: 'fac_other' },

@@ -56,6 +56,7 @@ import { z } from 'zod';
 import {
   aiEditableFieldRoots,
   aiEditableObservedSubkeys,
+  deferredDerivationSegments,
   invariantCoupledSegments,
   provenanceOwnedSegments,
 } from './editable-fields.js';
@@ -180,6 +181,14 @@ function screenUpdateKey(entity: 'node' | 'edge', key: string): string | null {
   for (const seg of lower) {
     if (invariantCoupledSegments().has(seg)) {
       return `'${key}' is invariant_coupled: it belongs to a set that must move together and has exactly one sanctioned writer, so it is not available as a raw field grant`;
+    }
+  }
+  for (const seg of lower) {
+    if (deferredDerivationSegments().has(seg)) {
+      // NOT the generic "no row" message. This field HAS a row; what it lacks is
+      // a settled grant decision, and saying otherwise would be a false reason —
+      // a model told the wrong reason retries the wrong way.
+      return `'${key}' has a table row whose grant decision is DEFERRED pending a named derivation, so it is not editable yet`;
     }
   }
 

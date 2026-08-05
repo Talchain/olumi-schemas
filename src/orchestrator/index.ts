@@ -225,6 +225,7 @@ export {
   aiEditableObservedSubkeys,
   provenanceOwnedSegments,
   invariantCoupledSegments,
+  deferredDerivationSegments,
   editableFieldUiSetters,
 } from './editable-fields.js';
 export type {
