@@ -69,13 +69,44 @@
  * candidates, because `frame-gate.ts:41` trusts only `{fresh, none}` and the
  * relaxation at `:43-47` is tunable-only — so after any applied edit on an
  * analysed scenario, structural proposals return governing `stale`. That gate is
- * real and still unbuilt. It does NOT block the panel leg: the enumeration found
- * NO reachable structural operation anywhere in the right-hand panel (the one
- * candidate, the Status-Quo-baseline action, was measured unreachable and has
- * been deleted — UI PR #597). Every reachable panel edit is a VALUE edit, i.e.
- * TUNABLE-class, and therefore already inherits the D-S relaxation. Note the
- * limit bites the HUMAN path too, independently of CEE: `ResultsBody.tsx:144-146`
- * nulls the panel's own factor writers whenever `isStale || isRunning`.
+ * real and still unbuilt. It does NOT block the panel leg — but ⚠ THE FIRST
+ * REASON GIVEN HERE WAS WRONG AND IS WITHDRAWN, and the dependent claim is
+ * re-derived rather than patched.
+ *
+ * WITHDRAWN: "the enumeration found NO reachable structural operation anywhere in
+ * the right-hand panel." FALSE. The VALIDATION-PANEL AUTO-FIX is reachable and
+ * structural: `OutputsDock.tsx:2356` passes `onAutoFix` to `<ValidationPanel>`,
+ * which genuinely consumes it (`ValidationPanel.tsx:374` renders the button), and
+ * three of `executeAutoFix`'s five kinds ADD GRAPH STRUCTURE — `add_risk` and
+ * `add_factor` create nodes, `connect_orphan` creates an edge. The original
+ * enumeration missed it because it was scoped to the Model tab and the dock's
+ * baseline wire; auto-fix enters through a THIRD path (a critique card), so a
+ * sweep shaped around the first two could not see it.
+ *
+ * RE-DERIVED CONCLUSION (same verdict, sound reason): A4 does not block THIS leg
+ * because this leg MINTS NO OPS AT ALL — the panel introduces no new AI-editable
+ * vocabulary, so there is no structural panel op for the frame gate to judge. The
+ * human auto-fix path additionally self-limits: it is rendered only when
+ * `!analysisNotConfirmedFresh`, i.e. exactly the freshness state the gate already
+ * trusts. ⚠ BUT THE NARROWING IS NOW CONDITIONAL: if a later lane mints AI panel
+ * ops MIRRORING auto-fix, those ARE structural and A4 WOULD gate them. Do not
+ * read this paragraph as "A4 is irrelevant to the panel" — it is irrelevant to a
+ * leg that adds no ops, and binding on any leg that adds these.
+ *
+ * The limit also bites the HUMAN path independently of CEE:
+ * `ResultsBody.tsx:144-146` nulls the panel's own factor writers on
+ * `isStale || isRunning`.
+ *
+ * FIELD SURFACE OF AUTO-FIX, measured (this is why no row is owed for it): its
+ * node adds write `label` + `kind`; its edges write `weight`, `beliefExists`,
+ * `confidence` plus `DEFAULT_EDGE_DATA`. Every one of those is either an existing
+ * row (`label`, `strength.mean`←`weight`, `exists_probability`←`beliefExists`,
+ * `confidence`), an identity/structural key (`kind`), or a CLIENT-ONLY rendering
+ * or legacy key the referee never screens (`style`, `curvature`, `pathType`,
+ * `functionType`, `schemaVersion`, `beliefStrength`, and `belief` — explicitly
+ * DEPRECATED at `domain/edges.ts:170` in favour of `beliefExists`). Client keys
+ * are not wire vocabulary and correctly have no rows. The ONE change auto-fix
+ * does owe is on `edge.confidence`, whose write-site list was short — extended.
  *
  * Derived at: UI staging 0ac79113bafe089ad0b533a92c0470248cebb29f,
  *             CEE staging e82738b20ca83fadfb1e8404af7e84380d9a59bd (5 Aug 2026).
@@ -193,8 +224,8 @@ export const EDITABLE_FIELD_TABLE: readonly EditableFieldRow[] = Object.freeze([
   {
     entity: 'node', wire_field: 'is_baseline', field_root: 'is_baseline', field_class: 'grant',
     ui_setters: [], ui_client_fields: ['is_baseline'],
-    ui_write_sites: ['useAddBaseline.ts:105', 'applyDraftResult.ts:559'],
-    reason: 'Already granted. Human-editable outside the inspector hook — a boolean flag with no coupled set. ⚠ WRITE-SITE CORRECTED 5 Aug 2026 (2.474 panel leg): this row used to name "OutputsDock baseline toggle" FIRST, and that site no longer exists. The 2.474 enumeration measured the dock\'s Status-Quo-baseline action UNREACHABLE — its handlers were passed to <ResultsBody>, destructured into `_`-prefixed unused bindings, and the only components that would have rendered controls for them (BaselineTargetRow / BaselineToggleCard) are never mounted — so the dead wire was deleted (UI PR #597). A write site that has been deleted is worse than one that was never listed: it is positive evidence for a reachability claim that is false, in the register a later lane will trust instead of re-deriving. The two sites named now are live at UI staging.',
+    ui_write_sites: ['applyDraftResult.ts:559', 'useAddBaseline.ts:105 (⚠ DEAD — hook has ZERO importers; listed so it is not "restored")'],
+    reason: 'Already granted. Human-editable outside the inspector hook — a boolean flag with no coupled set. ⚠ WRITE-SITE CORRECTED TWICE, 5 Aug 2026 (2.474 panel leg), and the second correction is the instructive one. FIRST: this row named "OutputsDock baseline toggle", and that site no longer exists — the enumeration measured the dock\'s Status-Quo-baseline action UNREACHABLE (handlers passed to <ResultsBody>, destructured into `_`-prefixed unused bindings; BaselineTargetRow / BaselineToggleCard never mounted), so the dead wire was deleted (UI PR #597, merged). SECOND: the correction REPLACED ONE DEAD SITE WITH ANOTHER. `useAddBaseline.ts:105` writes the field but the hook has ZERO IMPORTERS (measured at UI staging; positive control: `useGraphReadiness` resolves in 14 files), so it is as unreachable as the toggle was, and the sentence "the two sites named now are live at UI staging" was FALSE for one of its two. THE PARAGRAPH DOCUMENTING THE DEFECT REPRODUCED THE DEFECT — a correction is a claim, and it needs the same reachability measurement as the thing it corrects, not just a fresh-looking file:line. Verified live now: `applyDraftResult.ts:559` (6 importers — mergeServerGraph, mergeAppliedGraph, mirrorAnalysisReady, loadStarter, useConversation, useRetryDraft). The dead hook stays NAMED AND MARKED rather than deleted from the list, because an unexplained absence invites the next lane to "helpfully" re-add it.',
     open_question: '',
   },
   {
@@ -375,8 +406,12 @@ export const EDITABLE_FIELD_TABLE: readonly EditableFieldRow[] = Object.freeze([
   {
     entity: 'edge', wire_field: 'confidence', field_root: 'confidence', field_class: 'deferred_derivation',
     ui_setters: [], ui_client_fields: ['confidence'],
-    ui_write_sites: ['useModelActionApply.ts:353 (model-action apply path)'],
-    reason: 'NOT GRANTED — orchestrator ruling on judgement J3 (5 Aug 2026), and the ruling is the general rule: a field is not granted on LOW CONFIDENCE THAT IT MEANS ANYTHING. It is human-writable outside the inspector hook, but it is absent from EdgeV3Schema, so nothing establishes that a write to it reaches any computation. Granting an AI write to a field with no known reader manufactures a lever that moves nothing while looking like it moves something.',
+    ui_write_sites: [
+      'useModelActionApply.ts:353 (model-action apply path)',
+      'canvas/utils/autoFix.ts:126,:152,:176 (normalize_probabilities)',
+      'canvas/utils/autoFix.ts:231,:285,:348 (add_risk / add_factor / connect_orphan — new edges)',
+    ],
+    reason: 'NOT GRANTED — orchestrator ruling on judgement J3 (5 Aug 2026), and the ruling is the general rule: a field is not granted on LOW CONFIDENCE THAT IT MEANS ANYTHING. It is human-writable outside the inspector hook, but it is absent from EdgeV3Schema, so nothing establishes that a write to it reaches any computation. Granting an AI write to a field with no known reader manufactures a lever that moves nothing while looking like it moves something. ⚠ WRITE-SITES EXTENDED 5 Aug 2026 (2.474 panel leg): the panel\'s VALIDATION-PANEL AUTO-FIX is a SECOND human writer, six lines across five fix kinds, and this row named only one site. The deferral is UNCHANGED and in fact STRENGTHENED: the open_question asks who READS this field, and finding a second WRITER answers the opposite question. Two independent human paths now write a field with no established reader — which is the shape of a write-only field, the state the open_question says should remove the row from the table entirely rather than reclass it.',
     open_question: 'Who READS edge.confidence — is there an engine reader (ISL/PLoT/the referee), or is it client-only display state? Grant ONLY if a reader in the compute path is named at a pinned sha. If the complete reader manifest is empty, the row leaves the table entirely rather than being reclassed (a write-only field is not an editable field). Note the shape of the evidence required: an ABSENCE claim about readers needs a complete reviewed manifest plus the explicit scope searched, not a partial grep.',
   },
 
@@ -577,7 +612,7 @@ export const EDITABLE_FIELD_TABLE_REVISION = 2;
  * Non-cryptographic (FNV-1a x2) on purpose: no node:crypto import in a package
  * the UI bundles for the browser.
  */
-export const EDITABLE_FIELD_TABLE_DIGEST = 'b7b0b6bd-583f32c3';
+export const EDITABLE_FIELD_TABLE_DIGEST = '67cea469-77605f3b';
 
 function fnv1a(input: string, offset: number, prime: number): string {
   let h = offset >>> 0;
