@@ -168,10 +168,21 @@ type FieldRejection = { readonly path: readonly (string | number)[]; readonly me
  * Screen ONE update key against the table. Order matches field-safety.ts: the
  * owned screen runs BEFORE the allowlist so the reason is the precise one.
  */
+/**
+ * Everything below an `interventions` segment is a FACTOR ID, not vocabulary —
+ * `data/interventions/<factor_id>`, the live option-configure spelling. Scanning
+ * those segments as if they were field names would reject a factor that happened
+ * to be called `cap` or `source`, and would mean nothing when it passed.
+ */
+function vocabularySegments(lower: readonly string[]): readonly string[] {
+  const i = lower.indexOf('interventions');
+  return i === -1 ? lower : lower.slice(0, i + 1);
+}
+
 function screenUpdateKey(entity: 'node' | 'edge', key: string): string | null {
   const segs = pathSegments(key);
   if (segs.length === 0) return `empty field path`;
-  const lower = segs.map((s) => s.toLowerCase());
+  const lower = vocabularySegments(segs.map((s) => s.toLowerCase()));
 
   for (const seg of lower) {
     if (provenanceOwnedSegments().has(seg)) {
@@ -247,6 +258,55 @@ const ADD_EDGE_STRUCTURAL_KEYS: ReadonlySet<string> = new Set([
   'from', 'to', 'strength', 'exists_probability', 'effect_direction',
 ]);
 
+/**
+ * Recursively collect every object key in a payload, EXCEPT below an
+ * `interventions` key. Mirrors CEE's `collectObjectKeys` smuggle guard
+ * (field-safety.ts:198-208) — a top-level-only scan is not a screen at all,
+ * because `{ observed_state: { source: 'user' } }` has no denied key at the top
+ * level. Measured before this existed: that exact payload was ACCEPTED.
+ *
+ * ⚠ THE INTERVENTIONS SUBTREE IS EXCLUDED, AND IT IS NOT AN OVERSIGHT. Its
+ * payload is InterventionV3's contract, and `source` IS ONE OF ITS FIELDS
+ * (`cee-v3.ts:284` — an enum of `brief_extraction | cee_hypothesis |
+ * user_specified`, meaning HOW THE INTERVENTION WAS DETERMINED). That is a
+ * different field from node `observed_state.source` wearing the same name, and
+ * CEE exempts it for exactly this reason (`INTERVENTION_CONTRACT_KEYS`, derived
+ * from `InterventionV3.shape`). Screening it here would reject the sanctioned
+ * option-configure vocabulary — the same live capability the missing
+ * `observed_state.interventions` row was revoking. This package does not carry
+ * InterventionV3, so it does not carry that contract's screen either: copying
+ * the key list would be a mirror that drifts silently the day the shape
+ * changes, and the drift would read as green. CEE remains the authority there.
+ */
+function collectNestedKeys(value: unknown, out: Set<string>, insideInterventions = false): void {
+  if (Array.isArray(value)) {
+    for (const el of value) collectNestedKeys(el, out, insideInterventions);
+    return;
+  }
+  if (value === null || typeof value !== 'object') return;
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    const key = k.toLowerCase();
+    if (insideInterventions) continue;
+    if (key === 'interventions') {
+      collectNestedKeys(v, out, true);
+      continue;
+    }
+    out.add(key);
+    collectNestedKeys(v, out, false);
+  }
+}
+
+/**
+ * Screen an ADD op's value. Two passes, because they catch different things:
+ *   (1) TOP-LEVEL keys are field paths and get the full field screen;
+ *   (2) NESTED keys are payload, and get the owned screen only — the smuggle
+ *       guard. `provenance_owned` ∪ `invariant_coupled` reproduces CEE's
+ *       `PIPELINE_OWNED_ROOTS` for every key the two sets share, and keeps
+ *       `raw_value` screened despite the J1 reclassification. `cap` is screened
+ *       on adds too, which is STRICTER than CEE: J1's ruling put the tuple
+ *       re-derivation in a typed op, so the tool has no business writing `cap`
+ *       raw at creation either.
+ */
 function screenAddValue(
   entity: 'node' | 'edge',
   value: unknown,
@@ -254,10 +314,33 @@ function screenAddValue(
 ): FieldRejection[] {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return [];
   const out: FieldRejection[] = [];
-  for (const key of Object.keys(value as Record<string, unknown>)) {
+  const top = value as Record<string, unknown>;
+
+  for (const key of Object.keys(top)) {
     if (structural.has(key)) continue;
     const rejection = screenUpdateKey(entity, key);
     if (rejection !== null) out.push({ path: [0, 'value', key], message: rejection });
+  }
+
+  const nested = new Set<string>();
+  for (const [k, v] of Object.entries(top)) {
+    if (k.toLowerCase() === 'interventions') continue;
+    collectNestedKeys(v, nested, false);
+  }
+  const owned = provenanceOwnedSegments();
+  const coupled = invariantCoupledSegments();
+  for (const key of nested) {
+    if (owned.has(key)) {
+      out.push({
+        path: [0, 'value', key],
+        message: `'${key}' is provenance_owned and rode in NESTED inside this add's payload — an add op reaches the applier without meeting the referee's field screen at all, so the payload is screened here`,
+      });
+    } else if (coupled.has(key)) {
+      out.push({
+        path: [0, 'value', key],
+        message: `'${key}' is invariant_coupled and rode in NESTED inside this add's payload — it belongs to a set a typed op must write together, on creation as much as on update`,
+      });
+    }
   }
   return out;
 }

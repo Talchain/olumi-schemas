@@ -21,7 +21,7 @@ repo's own rule that the version note in `CLAUDE.md` has been wrong five times r
 
 ### Added — `orchestrator/editable-fields.ts`: the CLASSED field-parity table (A6 + the J3 ruling)
 
-`EDITABLE_FIELD_TABLE` — 41 rows, one per human- or AI-editable graph field, each carrying its
+`EDITABLE_FIELD_TABLE` — 42 rows, one per human- or AI-editable graph field, each carrying its
 wire path, its root segment, its class, the inspector setters and non-inspector write sites that
 reach it, and a one-line reason. Plus the derived accessors every consumer binds through
 (`aiEditableFieldRoots`, `aiEditableObservedSubkeys`, `provenanceOwnedSegments`,
@@ -33,7 +33,7 @@ of its four parts. Measured at UI `dae8908f` and CEE `ac62fd4d`:
 
 | class | count | what it means |
 |---|---|---|
-| `grant` | 21 (16 already at parity, **5 genuinely new**) | the AI should hold the field |
+| `grant` | 22 (17 already at parity, **5 genuinely new**) | the AI should hold the field |
 | `invariant_coupled` | 7 | belongs to a set that must move together; owed a TYPED OP in a later leg, never a raw grant |
 | `deferred_derivation` | 1 | **not granted, not denied** — the decision is pending a named derivation the row carries |
 | `provenance_owned` | 7 | parity **DENIED, permanently** — "AI ≤ human" is satisfied by ≤ |
@@ -61,7 +61,30 @@ pinned content digest with a positive control (trap 13) proving it can see a dro
 
 **Pin-skew rider.** `requireEditableFieldTableRevision(n)` throws with both revisions named when a
 consumer's pin carries an older table — the silently-narrower-allowlist failure made loud. Both
-consumers pin 0.32.0 today, so both must re-vendor before either leg can bind.
+consumers are BEHIND today and neither carries this table — re-derived at each repo's own staging
+tip on 5 Aug 2026: **CEE `7c3dca4a` pins 0.33.0** (it re-vendored in #819, so the earlier
+"both pin 0.32.0" reading was already stale when written) and **UI `dae8908f` pins 0.32.0**. Both
+must re-vendor 0.35.0 before either leg can bind. Never quote a pin without naming the branch and
+the sha you read it at — this sentence went stale inside one session.
+
+### Fixed before merge — two blockers found by adversarial review, both measured
+
+- **The table was SHORT by `observed_state.interventions`, and that revoked a live capability.**
+  CEE's `ALLOWED_OBSERVED_SUBKEYS` carries it; the derived accessor dropped it; and the op screen
+  therefore REJECTED `data/interventions/<factor_id>` — the spelling the producer actually emits
+  for an option-configure edit. Worse than the omission: the equality test had the sub-key
+  **filtered out** with a note rationalising it, so the guard agreed by narrowing the comparison
+  instead of by fixing the list. **That is trap 12d firing inside the change built to encode trap
+  12d.** The row is added, the carve-out is deleted, the screen accepts both sanctioned spellings,
+  and a hand-written list of LIVE WIRE SPELLINGS now guards them from the producer's side rather
+  than the table's.
+- **Nested provenance smuggling through an add value was OPEN.** The add screen inspected
+  top-level keys only, so `add_node` with `{ observed_state: { source: 'user' } }` was ACCEPTED —
+  probed, not inferred — and nothing downstream catches adds. Now recursive, mirroring CEE's
+  `collectObjectKeys`. The interventions subtree is deliberately excluded, with a positive control
+  proving the screen does not over-reach: `source` **is** an `InterventionV3` field
+  (`cee-v3.ts:284`) meaning how the intervention was determined — a different field wearing the
+  same name as node provenance, which CEE exempts for exactly that reason.
 
 ### Added — `orchestrator/edit-tool-ops.ts`: the tool op-batch (A1 / A3 / A5c / A5d)
 
@@ -116,7 +139,7 @@ graph kinds today, so opening it is a deliberate, RED-forcing act.
   nested strength): the add payloads carry GraphV3 node/edge data, whose own schemas are
   `.passthrough()`. The openness is structural; the add-value screen closes it behaviourally.
 - Baseline before this change, measured in a fresh blobless clone at `4526cf58`: 41 files / 1410
-  tests. After: 43 files / 1480 tests.
+  tests. After: 43 files / 1486 tests.
 
 ## [0.34.0] — 2026-08-05
 

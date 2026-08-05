@@ -251,6 +251,79 @@ describe('edit-tool ops — update values are screened by the classed field tabl
     expect(legitimate.success).toBe(true);
   });
 
+  it('the LIVE option-configure spelling is ACCEPTED — a screen that revokes it is worse than none', () => {
+    // `data/interventions/<factor_id>` is what the producer actually emits for
+    // an option-configure edit, carrying InterventionV3's own payload. Bound by
+    // the exact wire string, not by a shape another path could satisfy.
+    expect(EditToolOperationSchema.safeParse({
+      op: 'update_node',
+      path: 'opt_raise_price',
+      value: {
+        'data/interventions/fac_marketing_spend': {
+          value: 0.5, raw_value: 25000, unit: 'GBP', cap: 50000, source: 'user_specified',
+        },
+      },
+    }).success, 'the live option-configure edit was rejected').toBe(true);
+
+    expect(EditToolOperationSchema.safeParse({
+      op: 'update_node', path: 'opt_raise_price',
+      value: { 'observed_state.interventions.fac_marketing_spend': 0.5 },
+    }).success).toBe(true);
+
+    // Everything below `interventions` is a FACTOR ID, not vocabulary — a factor
+    // that happens to be called `cap` is not an invariant-coupled field.
+    expect(EditToolOperationSchema.safeParse({
+      op: 'update_node', path: 'opt_raise_price',
+      value: { 'data/interventions/cap': 0.5 },
+    }).success, 'a factor id collided with a vocabulary token').toBe(true);
+  });
+
+  it('NESTED provenance in an add value is REJECTED — a top-level scan is not a screen', () => {
+    // Measured before the recursive screen existed: this exact payload was
+    // ACCEPTED, and nothing downstream catches adds (checkFieldSafety screens
+    // only the update kinds, and add_node projects to {id,kind,label}).
+    const res = EditToolOperationSchema.safeParse({
+      op: 'add_node', path: 'fac_x',
+      value: { id: 'fac_x', kind: 'factor', label: 'FIXTURE_X', observed_state: { value: 1, source: 'user' } },
+    });
+    expect(res.success, 'a provenance stamp rode in NESTED on a new node').toBe(false);
+    expect(JSON.stringify(res.success ? {} : res.error.issues)).toMatch(/provenance_owned/);
+  });
+
+  it('NESTED raw_value and a deeply-buried extractiontype are REJECTED', () => {
+    expect(EditToolOperationSchema.safeParse({
+      op: 'add_node', path: 'fac_x',
+      value: { id: 'fac_x', kind: 'factor', label: 'FIXTURE_X', observed_state: { value: 1, raw_value: 25000 } },
+    }).success, 'nested raw_value was accepted').toBe(false);
+
+    expect(EditToolOperationSchema.safeParse({
+      op: 'add_node', path: 'fac_x',
+      value: { id: 'fac_x', kind: 'factor', label: 'FIXTURE_X', meta: { deep: { extractionType: 'explicit' } } },
+    }).success, 'a stamp buried two levels down was accepted').toBe(false);
+  });
+
+  it('POSITIVE CONTROL: the recursive screen does NOT over-reach into the interventions payload', () => {
+    // InterventionV3 declares its OWN `source` (cee-v3.ts:284 — an enum of
+    // brief_extraction | cee_hypothesis | user_specified, meaning how the
+    // INTERVENTION was determined). That is a different field from node
+    // observed_state.source wearing the same name, and CEE exempts it. Without
+    // this control, a screen that rejected everything named `source` would look
+    // perfectly correct while killing the option-configure path.
+    expect(EditToolOperationSchema.safeParse({
+      op: 'add_node', path: 'opt_x',
+      value: {
+        id: 'opt_x', kind: 'option', label: 'FIXTURE_Opt',
+        interventions: { fac_spend: { value: 0.5, raw_value: 25000, cap: 50000, source: 'user_specified' } },
+      },
+    }).success, 'the screen over-reached into InterventionV3 contract keys').toBe(true);
+
+    // ...and a clean add is still clean.
+    expect(EditToolOperationSchema.safeParse({
+      op: 'add_node', path: 'fac_x',
+      value: { id: 'fac_x', kind: 'factor', label: 'FIXTURE_X', observed_state: { value: 1, unit: 'GBP' } },
+    }).success).toBe(true);
+  });
+
   it('an add_edge value is screened past its structural keys', () => {
     const base = {
       from: 'fac_a', to: 'fac_b',

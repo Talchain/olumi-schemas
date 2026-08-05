@@ -190,6 +190,12 @@ export const EDITABLE_FIELD_TABLE: readonly EditableFieldRow[] = Object.freeze([
     reason: 'Already granted (ALLOWED_OBSERVED_SUBKEYS).',
     open_question: '',
   },
+  {
+    entity: 'node', wire_field: 'observed_state.interventions', field_root: 'observed_state', field_class: 'grant',
+    ui_setters: ['setIntervention', 'removeIntervention'], ui_client_fields: ['observedState', 'interventions'], ui_write_sites: [],
+    reason: 'Already granted (ALLOWED_OBSERVED_SUBKEYS) — and this row EXISTS BECAUSE ITS ABSENCE WAS A LIVE REVOCATION, caught by adversarial review. The bare `interventions` root has its own row, so it looked covered; but the LIVE option-configure edit lands as `data/interventions/<factor_id>` (edit-graph-producer fans an update value out per KEY, and CEE screens the observed subtree on segs[1]), and without this row the derived sub-key set dropped `interventions` and the screen REJECTED the sanctioned spelling. The deeper segments are FACTOR IDS, not vocabulary: nothing below `interventions` is screened as a field name, and the payload beneath it is InterventionV3\'s contract, which this package does not carry.',
+    open_question: '',
+  },
 
   // ── node · GENUINE NEW GRANTS (the real half of the gap) ─────────────────
   {
@@ -427,6 +433,20 @@ export function aiEditableObservedSubkeys(): ReadonlySet<string> {
  * Path SEGMENTS (lowercased) that are provenance-owned. Screened on EVERY
  * segment, matching field-safety.ts's `isPipelineOwned`, so
  * `observed_state.source` and `data/source` are as owned as the bare spelling.
+ *
+ * ⚠ UNION SEMANTICS, AND THE DIRECTION IS LOAD-BEARING. A consumer deriving its
+ * owned set from this function must take the UNION with whatever it already
+ * denies — `CEE_OWNED = PIPELINE_OWNED_ROOTS ∪ provenanceOwnedSegments()`. It
+ * may WIDEN; it may NEVER NARROW. The two sets are not equal and are not meant
+ * to be: this table adds `threshold_source` (J2) which CEE does not yet own,
+ * while CEE owns analysis-derived stamps (`validation`, `defaulted`, `origin`,
+ * `provenance_display`) that have no human setter and therefore no row here. A
+ * consumer that INTERSECTED, or that replaced its list with this one, would
+ * silently un-deny every stamp this table does not happen to name — a
+ * provenance breach introduced by an operation that reads like a tidy-up.
+ *
+ * The same direction applies to the allowlist accessors, inverted: those are
+ * the maximum the AI may touch, and a consumer may narrow but never widen them.
  */
 export function provenanceOwnedSegments(): ReadonlySet<string> {
   return new Set(
@@ -487,13 +507,25 @@ export function editableFieldUiSetters(): ReadonlySet<string> {
 export const EDITABLE_FIELD_TABLE_REVISION = 1;
 
 /**
- * Content digest of the table, pinned. Any row added, removed, reclassed or
- * re-worded REDs `tests/orchestrator/editable-fields.test.ts`, which is what
- * makes a revision bump a deliberate act rather than something to forget.
+ * Content digest of the table, pinned. A row ADDED, REMOVED, RECLASSED, or with
+ * its entity / wire_field / field_root / ui_setters / ui_client_fields /
+ * ui_write_sites changed REDs `tests/orchestrator/editable-fields.test.ts`,
+ * which is what makes a revision bump a deliberate act rather than something to
+ * forget.
+ *
+ * ⚠ WHAT IT DELIBERATELY DOES NOT COVER, stated because an earlier version of
+ * this comment claimed "or re-worded" and that was FALSE: `reason` and
+ * `open_question` are EXCLUDED from the digest. Prose is revised often and a
+ * digest that fired on every wording tweak would train people to re-baseline it
+ * without reading — the broken-alarm class. Those two fields are guarded by
+ * their own assertions instead (`reason` non-empty on every row;
+ * `open_question` non-empty and reader-shaped on every `deferred_derivation`
+ * row), so emptying one still REDs, just not through the digest.
+ *
  * Non-cryptographic (FNV-1a x2) on purpose: no node:crypto import in a package
  * the UI bundles for the browser.
  */
-export const EDITABLE_FIELD_TABLE_DIGEST = 'ac880b21-db417497';
+export const EDITABLE_FIELD_TABLE_DIGEST = 'f6354a44-ea998eaa';
 
 function fnv1a(input: string, offset: number, prime: number): string {
   let h = offset >>> 0;

@@ -181,6 +181,22 @@ const REAL_CEE_ALLOWED_EDGE_ROOTS = [
 
 const REAL_CEE_ALLOWED_OBSERVED_SUBKEYS = ['value', 'baseline', 'unit', 'interventions'] as const;
 
+/**
+ * WIRE SPELLINGS THAT ARE LIVE TODAY and must keep parsing. Hand-written, from
+ * the producer rather than from the table: `edit-graph-producer.ts:88-141` fans
+ * an update value out one envelope PER KEY, and CEE's `checkObservedSubtree`
+ * screens the observed subtree on `segs[1]`, so THESE are the strings the model
+ * actually emits for an option-configure edit. A derived guard cannot notice
+ * that one of them stopped parsing; this list can.
+ */
+const REAL_LIVE_WIRE_SPELLINGS = [
+  'data/interventions/fac_marketing_spend',
+  'observed_state.interventions.fac_marketing_spend',
+  'interventions',
+  'observed_state.value',
+  'data/value',
+] as const;
+
 // ---------------------------------------------------------------------------
 // 1. Well-formedness
 // ---------------------------------------------------------------------------
@@ -269,6 +285,23 @@ describe('editable-fields table — hand-written corpus (completeness, NOT deriv
     const real = new Set<string>([...REAL_NODE_SETTERS, ...REAL_EDGE_SETTERS]);
     const fabricated = [...editableFieldUiSetters()].filter((s) => !real.has(s));
     expect(fabricated, `table cites setters absent from the UI tip: ${fabricated.join(', ')}`).toEqual([]);
+  });
+
+  it('every LIVE wire spelling resolves to a row whose class permits it', () => {
+    for (const spelling of REAL_LIVE_WIRE_SPELLINGS) {
+      const segs = spelling.split(/[/.]/);
+      const root = segs[0]!;
+      expect(
+        aiEditableFieldRoots('node').has(root),
+        `live spelling '${spelling}' has root '${root}' which is not AI-editable`,
+      ).toBe(true);
+      if ((root === 'observed_state' || root === 'data') && segs.length > 1) {
+        expect(
+          aiEditableObservedSubkeys().has(segs[1]!),
+          `live spelling '${spelling}' names sub-key '${segs[1]}', which the derived set drops — this REVOKES a live capability`,
+        ).toBe(true);
+      }
+    }
   });
 
   it('every non-inspector human-editable field has a row', () => {
@@ -382,14 +415,31 @@ describe('editable-fields table — derived agreement with the CEE referee allow
     expect(added).toEqual(['label']);
   });
 
-  it('observed_state sub-keys: every current sub-key survives and the delta is exactly `std`', () => {
+  it('observed_state sub-keys: EVERY current sub-key survives and the delta is exactly `std`', () => {
+    // ⚠ NO FILTER HERE, AND THAT IS THE POINT. An earlier version of this test
+    // excluded `interventions` with the note "reachable as its own root row" —
+    // which made the comparison agree by NARROWING IT rather than by adding the
+    // missing row, and the derived accessor genuinely dropped the sub-key. The
+    // live `data/interventions/<factor_id>` spelling was rejected as a result:
+    // a capability revoked by a guard that read green. That is trap 12d firing
+    // inside the change built to encode trap 12d. Compare the WHOLE set.
     const derived = aiEditableObservedSubkeys();
-    // `interventions` is reachable as its own root row, not as an observed sub-row.
-    const currentSubRows = REAL_CEE_ALLOWED_OBSERVED_SUBKEYS.filter((k) => k !== 'interventions');
-    const revoked = currentSubRows.filter((k) => !derived.has(k));
+    const revoked = REAL_CEE_ALLOWED_OBSERVED_SUBKEYS.filter((k) => !derived.has(k));
     expect(revoked, `observed sub-keys silently revoked: ${revoked.join(', ')}`).toEqual([]);
-    const current = new Set<string>(currentSubRows);
+    const current = new Set<string>(REAL_CEE_ALLOWED_OBSERVED_SUBKEYS);
     expect([...derived].filter((k) => !current.has(k)).sort()).toEqual(['std']);
+  });
+
+  it('`observed_state.interventions` has its OWN row — the bare root does not cover the subtree', () => {
+    // Bound by identity (entity + exact wire_field), not by a value predicate:
+    // the bare `interventions` root row would satisfy any looser check, and it
+    // is precisely what made the gap look covered.
+    const subtree = lookupEditableField('node', 'observed_state.interventions');
+    expect(subtree, 'the sub-key row is missing — the live option-configure spelling is revoked').toBeDefined();
+    expect(subtree!.field_class).toBe('grant');
+    const bareRoot = lookupEditableField('node', 'interventions');
+    expect(bareRoot, 'the bare root row is also required — the two spellings are both live').toBeDefined();
+    expect(subtree).not.toBe(bareRoot);
   });
 
   it('the four node roots the AI holds with no human setter are recorded, not hidden', () => {
