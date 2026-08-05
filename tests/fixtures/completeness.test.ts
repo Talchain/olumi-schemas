@@ -183,7 +183,12 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   a newly-exported schema of its own.
     // 0.33.0: 129 -> 130 (+1): TransportedCritiqueSchema (Lane 3 Car 2, 2.293
     // seam split — the CEE→UI transported critique row).
-    expect(MAXIMAL_FIXTURES.length).toBe(130);
+    // 0.34.0: 130 -> 132 (+2): P4 transport — SystemEventSchema variants
+    //   #edge_adjudication and #prior_range_edit (the two human-judgement
+    //   signals that previously terminated in the browser). The three new
+    //   handler facts/results are ORCHESTRATOR_INTERNAL exclusions, same
+    //   grounds as every sibling fact schema.
+    expect(MAXIMAL_FIXTURES.length).toBe(132);
   });
 
   it('family keys are unique', () => {

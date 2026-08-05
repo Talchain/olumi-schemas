@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.34.0] — 2026-08-05
+
+**P4 transport — make human judgement reach the server (wiring only; no member feeds compute).**
+Lane evidence: `PHASE0-EVIDENCE-2026-07-28/lane-p4-transport-2026-08-05.md` in the workspace root.
+
+### Added
+- `SystemEventSchema` members `edge_adjudication` (the ContestedEdgeCard verdict — edge identity
+  as from+to node ids, verdict enum, optional signed `resolved_strength_mean`) and
+  `prior_range_edit` (the inspector prior-range edit — `target_id`, finite `range_min`/`range_max`,
+  optional `distribution`). Both `.strict()`. ⚠ READER-FIRST: a consumer pinned below 0.34.0
+  REJECTS the whole turn on either kind — publish → CEE re-vendors + deploys → only then the UI
+  emitters ship.
+- Cross-field rules at the `OrchestratorTurnPayloadSchema` root superRefine (members must stay
+  plain ZodObjects — `SystemEventSchema.options` is load-bearing for the parity tests and CEE's
+  kind-exhaustiveness test): `overridden` requires `resolved_strength_mean`, `dismissed` forbids
+  it; `range_min <= range_max`. Exported helpers `refineEdgeAdjudication` / `refinePriorRangeEdit`
+  for bare-SystemEventSchema consumers.
+- `EdgeAdjudicationVerdict` enum (`accepted_pass1 | accepted_pass2 | overridden | dismissed` —
+  the UI's `UserAction` minus the unresolved `pending`).
+- `HandlerFactSchema` members `feedback`, `edge_adjudication`, `prior_range_edit` with strict
+  results (`FeedbackResultSchema` — R-004: `comment_present` boolean, NEVER the comment text;
+  `EdgeAdjudicationResultSchema` / `PriorRangeEditResultSchema` — server-stamped
+  `provenance: 'user_set'` literal). These persist judgements CEE previously acked and dropped
+  (the `feedback` event committed with `handler_facts: []`).
+- Adoption-manifest rows (declared) for both new event members.
+
 ## [0.33.0] — 2026-08-04
 
 **One additive change: seam-specific critique schemas (Lane 3 Car 2, ROADMAP 2.293 — the

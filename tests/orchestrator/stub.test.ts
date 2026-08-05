@@ -91,6 +91,13 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         'EditGraphImpactSchema',
         'EditGraphAffectedEntitySchema',
         'EditGraphHandlerFactSchema',
+        // 0.34.0 — P4 transport: human-judgement receipts (additive)
+        'FeedbackResultSchema',
+        'EdgeAdjudicationResultSchema',
+        'PriorRangeEditResultSchema',
+        'FeedbackHandlerFactSchema',
+        'EdgeAdjudicationHandlerFactSchema',
+        'PriorRangeEditHandlerFactSchema',
         // 0.25.0 — T1 claim safety (additive)
         'ConstraintVerdictSchema',
         'ConstraintVerdictStateSchema',

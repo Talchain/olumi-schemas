@@ -12,6 +12,8 @@ export {
   // 0.22.0 — typed coaching/elicitation/mutation intent vocabulary (S2, ①)
   Intent,
   SystemEventKind,
+  // 0.34.0 — edge_adjudication verdict vocabulary (P4 transport)
+  EdgeAdjudicationVerdict,
   TurnSource,
 } from './enums.js';
 export type {
@@ -23,6 +25,7 @@ export type {
   ActionTypeLiteral,
   IntentLiteral,
   SystemEventKindLiteral,
+  EdgeAdjudicationVerdictLiteral,
   TurnSourceLiteral,
 } from './enums.js';
 
@@ -199,6 +202,9 @@ export {
   // Typed feedback event (0.22.0 — design decision ⑥, WIRE)
   FeedbackRating,
   FeedbackTargetKind,
+  // 0.34.0 — cross-field rules for bare-SystemEventSchema consumers
+  refineEdgeAdjudication,
+  refinePriorRangeEdit,
 } from './turn-payload.js';
 export type {
   OrchestratorTurnPayload,

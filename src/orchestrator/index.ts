@@ -100,6 +100,10 @@ export {
   AddConstraintResultSchema,
   AdjustEdgeStrengthResultSchema,
   EditGraphResultSchema,
+  // 0.34.0 — P4 transport: human-judgement receipts
+  FeedbackResultSchema,
+  EdgeAdjudicationResultSchema,
+  PriorRangeEditResultSchema,
   EditGraphEditKindSchema,
   EditGraphImpactSchema,
   EditGraphAffectedEntitySchema,
@@ -120,6 +124,9 @@ export type {
   AddConstraintResult,
   AdjustEdgeStrengthResult,
   EditGraphResult,
+  FeedbackResult,
+  EdgeAdjudicationResult,
+  PriorRangeEditResult,
   EditGraphEditKind,
   EditGraphImpact,
   EditGraphAffectedEntity,
@@ -170,6 +177,10 @@ export {
   AddConstraintHandlerFactSchema,
   AdjustEdgeStrengthHandlerFactSchema,
   EditGraphHandlerFactSchema,
+  // 0.34.0 — P4 transport: human-judgement receipts
+  FeedbackHandlerFactSchema,
+  EdgeAdjudicationHandlerFactSchema,
+  PriorRangeEditHandlerFactSchema,
   HandlerFactSchema,
 } from './handler-fact.js';
 export type {
@@ -183,5 +194,8 @@ export type {
   AddConstraintHandlerFact,
   AdjustEdgeStrengthHandlerFact,
   EditGraphHandlerFact,
+  FeedbackHandlerFact,
+  EdgeAdjudicationHandlerFact,
+  PriorRangeEditHandlerFact,
   HandlerFact,
 } from './handler-fact.js';

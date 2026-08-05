@@ -63,8 +63,8 @@
     }
   },
   "counts": {
-    "distinct": 30,
-    "same": 5,
+    "distinct": 34,
+    "same": 7,
     "unresolved": 387
   },
   "open_objects": {
@@ -2835,6 +2835,54 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=edge_adjudication.edge_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Absence means 'the client supplied no edge id of its own', and the persisted record spells exactly that as null (EdgeAdjudicationResultSchema.edge_id: 'The client's own edge id as sent, or null when it sent none'). Nothing DECIDES on this field — edge identity is the required from+to pair — so absence and the null it maps to are equivalent by construction.",
+      "ref": "src/boundary/turn-payload.ts — EdgeAdjudicationEvent.edge_id doc (0.34.0); src/orchestrator/handler-results.ts — EdgeAdjudicationResultSchema.edge_id"
+    },
+    "boundary/SystemEventSchema|kind=edge_adjudication.resolved_strength_mean": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means 'no value asserted', which no number can express — 0 is a legitimate signed mean. The coupling is enforced ON THE WIRE at the union-root superRefine: 'overridden' REQUIRES the value (an override asserts a number), 'dismissed' FORBIDS it (a dismissal asserts none), accepted_pass1/2 may omit it because the authoritative copy lives in the edge's validation metadata. A consumer substituting a default for absence would manufacture a strength the user never stated.",
+      "ref": "src/boundary/turn-payload.ts — refineEdgeAdjudication + OrchestratorTurnPayloadSchema superRefine (0.34.0); pinned by tests/boundary/turn-payload-0.34.test.ts"
+    },
+    "boundary/SystemEventSchema|kind=prior_range_edit.distribution": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means 'the client did not say' — it NEVER means 'uniform' (or any other family). Same class as factor_value_edit.unit: a consumer substituting a default family for absence would silently convert an unstated choice into a stated one.",
+      "ref": "src/boundary/turn-payload.ts — PriorRangeEditEvent.distribution .describe() (0.34.0)"
+    },
+    "orchestrator/EdgeAdjudicationResultSchema.edge_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "Required-but-nullable: null is the modelled spelling of 'the client sent no id' (the wire field's absence maps to it 1:1). No reader keys off it — identity is from+to.",
+      "ref": "src/orchestrator/handler-results.ts — EdgeAdjudicationResultSchema.edge_id doc (0.34.0)"
+    },
+    "orchestrator/EdgeAdjudicationResultSchema.resolved_strength_mean": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "null means 'no value asserted' (always on dismissed; on accepted_pass1/2 when the client did not echo the pass mean). No number can express it — 0 is a legitimate signed mean. Mirrors the wire field's verdict above; the wire-side cross-field rule is what keeps the two spellings consistent.",
+      "ref": "src/orchestrator/handler-results.ts — EdgeAdjudicationResultSchema.resolved_strength_mean doc (0.34.0)"
+    },
+    "orchestrator/PriorRangeEditResultSchema.distribution": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "null means 'the user stated no distribution family' — never 'uniform'. Mirrors the wire field's verdict above.",
+      "ref": "src/orchestrator/handler-results.ts — PriorRangeEditResultSchema.distribution doc (0.34.0)"
     }
   }
 }
