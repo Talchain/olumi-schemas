@@ -199,3 +199,55 @@ export type {
   PriorRangeEditHandlerFact,
   HandlerFact,
 } from './handler-fact.js';
+
+// ---------------------------------------------------------------------------
+// 0.35.0 — coach structural-edit tool (ROADMAP 2.474, design-review A1/A3/A5/A6)
+// ---------------------------------------------------------------------------
+
+// The CLASSED field-parity table: the derivable source of truth for which graph
+// fields the AI may edit and in which class. CEE derives its referee allowlist
+// from it; the UI asserts every inspector setter has a row; both call
+// `requireEditableFieldTableRevision` so an older pin fails LOUD (hazard 1).
+export {
+  EDITABLE_FIELD_CLASSES,
+  EDITABLE_FIELD_ENTITIES,
+  EditableFieldClassSchema,
+  EditableFieldEntitySchema,
+  EditableFieldRowSchema,
+  EDITABLE_FIELD_TABLE,
+  EDITABLE_FIELD_TABLE_REVISION,
+  EDITABLE_FIELD_TABLE_DIGEST,
+  computeEditableFieldTableDigest,
+  requireEditableFieldTableRevision,
+  fieldsOfClass,
+  lookupEditableField,
+  aiEditableFieldRoots,
+  aiEditableObservedSubkeys,
+  provenanceOwnedSegments,
+  invariantCoupledSegments,
+  editableFieldUiSetters,
+} from './editable-fields.js';
+export type {
+  EditableFieldClass,
+  EditableFieldEntity,
+  EditableFieldRow,
+} from './editable-fields.js';
+
+// The tool's op batch — canonical PatchOperation[] vocabulary (A1), strict,
+// screened by the classed table, with A5c identity bindings and the A3 fan-out
+// counter. Panel ops are a documented extension point, deliberately not open.
+export {
+  EDIT_TOOL_OP_KINDS,
+  EDIT_TOOL_OPS_REFERENCING_EXISTING_ENTITY,
+  EditToolOperationSchema,
+  EditToolTargetBindingSchema,
+  EditToolOpBatchSchema,
+  countEnvelopeFanOut,
+} from './edit-tool-ops.js';
+export type {
+  EditToolOpKind,
+  EditToolOperation,
+  EditToolTargetBinding,
+  EditToolOpBatch,
+  EditToolOpLike,
+} from './edit-tool-ops.js';

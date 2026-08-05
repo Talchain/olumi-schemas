@@ -7,6 +7,105 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.35.0] — 2026-08-05
+
+**The schemas leg of the coach structural-edit tool (Option A, ROADMAP 2.474), carrying
+design-review amendments A1 / A3 / A5c / A5d / A6. Fully additive — no existing schema, export or
+generated artefact changes shape.**
+
+**⚠ Version note: 0.34.0 was NOT free.** Open PR #33 (`p4/transport-events-0.34`, head `b8838691`,
+base `main`, `mergeable_state: clean`) already sets `package.json` to `0.34.0`. Two open PRs
+claiming one release would make the publish workflow's `npm view @talchain/schemas@$VERSION` switch
+silently skip the second one's publish while reporting green. Derived rather than assumed, per this
+repo's own rule that the version note in `CLAUDE.md` has been wrong five times running.
+
+### Added — `orchestrator/editable-fields.ts`: the CLASSED field-parity table (A6)
+
+`EDITABLE_FIELD_TABLE` — 41 rows, one per human- or AI-editable graph field, each carrying its
+wire path, its root segment, its class, the inspector setters and non-inspector write sites that
+reach it, and a one-line reason. Plus the derived accessors every consumer binds through
+(`aiEditableFieldRoots`, `aiEditableObservedSubkeys`, `provenanceOwnedSegments`,
+`invariantCoupledSegments`, `editableFieldUiSetters`, `fieldsOfClass`, `lookupEditableField`).
+
+**Why classed and not a flat allowlist.** The "14 AI-editable roots vs 26 inspector setters" gap
+does not decompose into "fields the AI is missing"; naive parity would be a shipped defect in two
+of its four parts. Measured at UI `dae8908f` and CEE `ac62fd4d`:
+
+| class | count | what it means |
+|---|---|---|
+| `grant` | 22 (16 already at parity, **6 genuinely new**) | the AI should hold the field |
+| `invariant_coupled` | 7 | belongs to a set that must move together; owed a TYPED OP in a later leg, never a raw grant |
+| `provenance_owned` | 7 | parity **DENIED, permanently** — "AI ≤ human" is satisfied by ≤ |
+| `ai_only` | 5 | the AI holds it and no human field setter reaches it — the asymmetry runs both ways |
+
+The six genuine grants: node `observed_state.std`, `state_space`, `probability`, `impact`; edge
+`label`, `confidence`.
+
+**Both 12d halves ship, because neither catches the other's defect.** Derivation proves the
+consumers AGREE with the table and is structurally blind to the table being SHORT;
+`tests/orchestrator/editable-fields.test.ts` therefore also carries a hand-written corpus that
+spells the real setter and field names out, re-typed from the UI tip rather than derived, plus a
+pinned content digest with a positive control (trap 13) proving it can see a dropped row.
+
+**Pin-skew rider.** `requireEditableFieldTableRevision(n)` throws with both revisions named when a
+consumer's pin carries an older table — the silently-narrower-allowlist failure made loud. Both
+consumers pin 0.32.0 today, so both must re-vendor before either leg can bind.
+
+### Added — `orchestrator/edit-tool-ops.ts`: the tool op-batch (A1 / A3 / A5c / A5d)
+
+`EditToolOperationSchema` is the canonical `PatchOperation` vocabulary — `{ op, path, value }` over
+CEE's own six op kinds — so the tool enters the existing `handleEditGraph` → referee → commit train
+rather than minting a second producer vocabulary (A1: a tool emitting referee envelopes directly
+would need a new applier, i.e. 2.380's parity defect built on purpose). `.strict()` throughout, so
+an unknown key is a rejection rather than a silent strip.
+
+The schema is deliberately NARROWER than CEE's, never wider, and **the narrowing is the classed
+table**: every update key is screened against it, with `provenance_owned` and `invariant_coupled`
+producing their own precise reasons before the closed-allowlist reason. That makes the table
+load-bearing in the contract rather than documentation the referee happens to agree with.
+
+Two fields CEE's shape has that this one omits, each closing a seam:
+- **`old_value`** — the producer reads it to fill a receipt's "was" half. An LLM-authored "was"
+  value is a fabricated number in a trust surface (the 2.461 class); the executor reads the real
+  previous value from the persisted graph, exactly as A5b requires for hashes.
+- **`value` on remove ops** — never read by the producer, so declaring it optional would accept a
+  silently-ignored payload. Both omissions keep an `EditToolOperation` assignable to a
+  `PatchOperation`, because both fields are optional there.
+
+**ADD values are screened too, which is strictly tighter than the referee and closes a real hole:**
+`checkFieldSafety` screens only `update_node_field` / `update_edge_field`, and `add_node` projects
+to a payload of just `{id, kind, label}` — so every other key on an add value bypasses the field
+screen and reaches the applier. A producer could stamp `observed_state.source` on a NEW node and
+never meet the provenance guard.
+
+`EditToolOpBatchSchema` — the envelope: `batch_id` (uuid), server-stamped `base_graph_hash`
+(absent/empty forbidden — the stale gate is non-optional), the operations, and A5c
+`target_bindings` binding each existing-entity op to its target by **id AND label echo** (trap 19:
+bind by identity, never by a predicate another object could satisfy). Coverage is exact — an
+unbound update, a binding on an add, a duplicate binding and an out-of-range index all reject — and
+A5d's id lifecycle is pre-caught: `remove_node X; add_node X` in one batch rejects with a precise
+reason, because the referee's working view never subtracts removes.
+
+`countEnvelopeFanOut(ops)` — **A3's root cause made computable.** The pipeline gate counts OPS (15)
+while the referee caps ENVELOPES (`PROPOSAL_CAP` 8), and a multi-field update fans out one envelope
+PER FIELD, so a 5-op batch can be whole-batch rejected after passing a 15-op gate. This package
+exports the COUNT and deliberately NOT the number: A3 requires the cap stated once, derived from
+CEE's own constant.
+
+**Panel ops are a documented extension point, deliberately NOT open.** A7 makes right-panel
+enumeration a blocking input and it does not exist yet; when it lands, panel ops join the same
+discriminated union with the same verdict vocabulary. A test pins the union to exactly the six
+graph kinds today, so opening it is a deliberate, RED-forcing act.
+
+### Notes
+- `contracts/adoption-manifest.json` gains one row, state `declared` — neither consumer reads the
+  table yet, and `declared` is what the evidence licenses.
+- Three new `open_objects` census keys (`EditToolOperationSchema` add-node/add-edge values and the
+  nested strength): the add payloads carry GraphV3 node/edge data, whose own schemas are
+  `.passthrough()`. The openness is structural; the add-value screen closes it behaviourally.
+- Baseline before this change, measured in a fresh blobless clone at `4526cf58`: 41 files / 1410
+  tests. After: 43 files / 1476 tests.
+
 ## [0.34.0] — 2026-08-05
 
 **P4 transport — make human judgement reach the server (wiring only; no member feeds compute).**

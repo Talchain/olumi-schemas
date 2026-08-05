@@ -2467,6 +2467,16 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   'orchestrator/EdgeAdjudicationHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/PriorRangeEditHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/HandlerFactSchema': ORCHESTRATOR_INTERNAL,
+  // 0.35.0 — coach structural-edit tool (ROADMAP 2.474). Same class as every
+  // other /orchestrator shape: CEE-internal, never a cross-service wire
+  // format, so the silent-drop hazard the fixture library attacks does not
+  // apply. The table's OWN cross-pin hazard is handled by
+  // `requireEditableFieldTableRevision` (A6 pin-skew rider), which is a
+  // loud runtime failure rather than a fixture round-trip.
+  'orchestrator/EditableFieldRowSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/EditToolOperationSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/EditToolTargetBindingSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/EditToolOpBatchSchema': ORCHESTRATOR_INTERNAL,
 });
 
 // ----------------------------------------------------------------------------

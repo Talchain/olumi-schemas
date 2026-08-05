@@ -1,0 +1,446 @@
+/**
+ * COACH STRUCTURAL-EDIT TOOL — the op-batch contract. ROADMAP 2.474.
+ * Amendments A1 (vocabulary), A3 (fan-out), A5c/A5d (grounding), A6 (field classes).
+ *
+ * A1, BINDING: the tool emits the CANONICAL `PatchOperation[]` vocabulary and
+ * enters the existing `handleEditGraph` -> `evaluateEditGraphMutations` -> commit
+ * train. It does NOT mint a second producer vocabulary and it does NOT emit
+ * referee `CandidateMutationEnvelope`s directly — envelopes are PROJECTED from
+ * PatchOperations by `editOperationsToCandidateEnvelopes`, so a tool that emitted
+ * them would need a new applier or a reverse projection: a second
+ * referee<->applier agreement surface, which is 2.380's parity defect built on
+ * purpose.
+ *
+ * So an `EditToolOperation` is `{ op, path, value }` over the same six op kinds
+ * CEE's `PatchOperationSchema` validates
+ * (`src/orchestrator/patch-validation.ts:23-30,:139-153`). This schema is
+ * deliberately NARROWER than CEE's, never wider — an accepted `EditToolOperation`
+ * is a valid `PatchOperation`. The narrowing IS the point: validate-before-propose,
+ * reject-don't-repair, and the narrowing rule is the classed field table
+ * (`./editable-fields.ts`), so the table is load-bearing in the contract rather
+ * than being documentation the referee happens to agree with.
+ *
+ * TWO FIELDS CEE'S SHAPE HAS THAT THIS ONE DELIBERATELY OMITS:
+ *   - `old_value`. The producer reads it to fill the receipt's "was" half
+ *     (`edit-graph-producer.ts:104,:135`). An LLM-authored "was" value is a
+ *     FABRICATED NUMBER IN A TRUST SURFACE — the 2.461 class, and the same
+ *     argument A5b makes for hashes: the model never echoes state the server
+ *     already holds. The executor reads the real previous value from the
+ *     persisted graph.
+ *   - `value` on `remove_node` / `remove_edge`. The producer's remove branches
+ *     never read it (`:84-87`, `:112-123` use only `op.path`). Declaring it
+ *     optional would accept a payload that is silently ignored; omitting it under
+ *     `.strict()` rejects it with a reason. Both omissions keep an
+ *     `EditToolOperation` assignable to a `PatchOperation`, because both fields
+ *     are optional there.
+ *
+ * WHAT THIS SCHEMA DOES NOT DO. It is a SHAPE gate, not the referee. Referential
+ * integrity against the live graph, freshness, hold-vs-auto-apply routing and the
+ * batch-governing verdict all remain the referee's (`governingOf`:
+ * rejected > stale > held > clarify_required > proceed — A2's batch-conservative
+ * invariant is enforced THERE and must stay there).
+ *
+ * PANEL OPS — DOCUMENTED EXTENSION POINT, DELIBERATELY NOT OPEN YET.
+ * A7 makes right-panel enumeration a BLOCKING input, and it does not exist. When
+ * it lands, panel ops join `EditToolOperationSchema` as ADDITIONAL members of the
+ * same discriminated union, `.strict()`, with the same verdict vocabulary and a
+ * hold-class assigned per kind at enumeration time — never a parallel envelope
+ * and never a second batch type. `tests/orchestrator/edit-tool-ops.test.ts` pins
+ * the union to exactly the six graph kinds today, so opening it is a deliberate,
+ * RED-forcing act rather than an accident.
+ *
+ * Derived at CEE staging ac62fd4d3a3a8657b4bcb58e64b0e91a1454f59f (5 Aug 2026).
+ */
+import { z } from 'zod';
+
+import {
+  aiEditableFieldRoots,
+  aiEditableObservedSubkeys,
+  invariantCoupledSegments,
+  provenanceOwnedSegments,
+} from './editable-fields.js';
+
+// ---------------------------------------------------------------------------
+// Vocabulary — CEE's, not a new one
+// ---------------------------------------------------------------------------
+
+export const EDIT_TOOL_OP_KINDS = [
+  'add_node',
+  'remove_node',
+  'update_node',
+  'add_edge',
+  'remove_edge',
+  'update_edge',
+] as const;
+
+export type EditToolOpKind = (typeof EDIT_TOOL_OP_KINDS)[number];
+
+/**
+ * Ops whose target ALREADY EXISTS in the persisted graph, and which therefore
+ * require an A5c identity binding. The add kinds are excluded because their id
+ * does not exist yet (R3 catches collisions at the referee).
+ */
+export const EDIT_TOOL_OPS_REFERENCING_EXISTING_ENTITY: readonly EditToolOpKind[] = [
+  'remove_node',
+  'update_node',
+  'remove_edge',
+  'update_edge',
+];
+
+const REFERENCING = new Set<string>(EDIT_TOOL_OPS_REFERENCING_EXISTING_ENTITY);
+
+// ---------------------------------------------------------------------------
+// Values — aligned with CEE's AddNodeValue / AddEdgeValue / Update*Value
+// ---------------------------------------------------------------------------
+
+/** Identity keys the producer skips and the applier strips — never updatable. */
+const NODE_IDENTITY_KEYS: ReadonlySet<string> = new Set(['id', 'kind']);
+const EDGE_IDENTITY_KEYS: ReadonlySet<string> = new Set(['from', 'to']);
+
+const AddNodeValueSchema = z
+  .object({
+    id: z.string().min(1),
+    kind: z.string().min(1),
+    label: z.string().min(1),
+  })
+  .passthrough();
+
+const AddEdgeValueSchema = z
+  .object({
+    from: z.string().min(1),
+    to: z.string().min(1),
+    strength: z
+      .object({ mean: z.number().min(-1).max(1), std: z.number().positive() })
+      .passthrough(),
+    exists_probability: z.number().min(0).max(1),
+    effect_direction: z.enum(['positive', 'negative']),
+  })
+  .passthrough();
+
+/** A partial update — a flat record whose KEYS are the field vocabulary. */
+const UpdateValueSchema = z.record(z.string(), z.unknown());
+
+// ---------------------------------------------------------------------------
+// Ops — `.strict()`, so an unknown key is a rejection, not a silent strip
+// ---------------------------------------------------------------------------
+
+const AddNodeOp = z
+  .object({ op: z.literal('add_node'), path: z.string().min(1), value: AddNodeValueSchema })
+  .strict();
+const RemoveNodeOp = z
+  .object({ op: z.literal('remove_node'), path: z.string().min(1) })
+  .strict();
+const UpdateNodeOp = z
+  .object({ op: z.literal('update_node'), path: z.string().min(1), value: UpdateValueSchema })
+  .strict();
+const AddEdgeOp = z
+  .object({ op: z.literal('add_edge'), path: z.string().min(1), value: AddEdgeValueSchema })
+  .strict();
+const RemoveEdgeOp = z
+  .object({ op: z.literal('remove_edge'), path: z.string().min(1) })
+  .strict();
+const UpdateEdgeOp = z
+  .object({ op: z.literal('update_edge'), path: z.string().min(1), value: UpdateValueSchema })
+  .strict();
+
+const EditToolOperationUnion = z.discriminatedUnion('op', [
+  AddNodeOp,
+  RemoveNodeOp,
+  UpdateNodeOp,
+  AddEdgeOp,
+  RemoveEdgeOp,
+  UpdateEdgeOp,
+]);
+
+// ---------------------------------------------------------------------------
+// A6 — the classed table screens every update key
+// ---------------------------------------------------------------------------
+
+/** Split a field path in every producer spelling: bare, dotted, slash-keyed. */
+function pathSegments(field: string): string[] {
+  return field.split(/[/.]/).filter((s) => s.length > 0);
+}
+
+type FieldRejection = { readonly path: readonly (string | number)[]; readonly message: string };
+
+/**
+ * Screen ONE update key against the table. Order matches field-safety.ts: the
+ * owned screen runs BEFORE the allowlist so the reason is the precise one.
+ */
+function screenUpdateKey(entity: 'node' | 'edge', key: string): string | null {
+  const segs = pathSegments(key);
+  if (segs.length === 0) return `empty field path`;
+  const lower = segs.map((s) => s.toLowerCase());
+
+  for (const seg of lower) {
+    if (provenanceOwnedSegments().has(seg)) {
+      return `'${key}' is provenance_owned and permanently human-only — relabelling an AI-invented value as user-set is a provenance integrity breach`;
+    }
+  }
+  for (const seg of lower) {
+    if (invariantCoupledSegments().has(seg)) {
+      return `'${key}' is invariant_coupled: it belongs to a set that must move together and has exactly one sanctioned writer, so it is not available as a raw field grant`;
+    }
+  }
+
+  const root = segs[0]!;
+  const identity = entity === 'node' ? NODE_IDENTITY_KEYS : EDGE_IDENTITY_KEYS;
+  if (identity.has(root)) return `'${key}' is an identity field and is never updatable`;
+
+  if (!aiEditableFieldRoots(entity).has(root)) {
+    return `'${key}' has no row in the editable-field table, so it is not AI-editable (the table is CLOSED, not open)`;
+  }
+
+  if (entity === 'node' && (root === 'observed_state' || root === 'data') && segs.length > 1) {
+    if (!aiEditableObservedSubkeys().has(segs[1]!)) {
+      return `'${key}' names a non-editable sub-key of ${root}`;
+    }
+  }
+  return null;
+}
+
+function screenUpdateValue(
+  entity: 'node' | 'edge',
+  value: unknown,
+  index: number,
+): FieldRejection[] {
+  const out: FieldRejection[] = [];
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return [{ path: [index, 'value'], message: 'update value must be an object' }];
+  }
+  const keys = Object.keys(value as Record<string, unknown>);
+  if (keys.length === 0) {
+    return [{ path: [index, 'value'], message: 'update value must name at least one field — a no-op op is a clarification, not an edit' }];
+  }
+  for (const key of keys) {
+    const rejection = screenUpdateKey(entity, key);
+    if (rejection !== null) out.push({ path: [index, 'value', key], message: rejection });
+  }
+  return out;
+}
+
+/**
+ * Keys an ADD op's value carries structurally, which are therefore exempt from
+ * the field screen: they are the entity's identity and required shape, not
+ * tunables. Everything ELSE on an add value is screened exactly as an update is.
+ *
+ * WHY ADD VALUES ARE SCREENED AT ALL — a hole in the referee, closed here.
+ * `checkFieldSafety` screens only `update_node_field` / `update_edge_field`
+ * envelopes, and `add_node` projects to a payload of just `{id, kind, label}`
+ * (edit-graph-producer.ts:76-83). Every OTHER key on an add_node's value bypasses
+ * the field screen entirely and lands in the graph through the applier — so a
+ * producer could stamp `observed_state.source: 'user'` on a NEW node and never
+ * meet the provenance guard at all. Screening add values here is strictly tighter
+ * than the referee and closes that path at the point the tool composes the batch.
+ */
+const ADD_NODE_STRUCTURAL_KEYS: ReadonlySet<string> = new Set(['id', 'kind', 'label']);
+const ADD_EDGE_STRUCTURAL_KEYS: ReadonlySet<string> = new Set([
+  'from', 'to', 'strength', 'exists_probability', 'effect_direction',
+]);
+
+function screenAddValue(
+  entity: 'node' | 'edge',
+  value: unknown,
+  structural: ReadonlySet<string>,
+): FieldRejection[] {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return [];
+  const out: FieldRejection[] = [];
+  for (const key of Object.keys(value as Record<string, unknown>)) {
+    if (structural.has(key)) continue;
+    const rejection = screenUpdateKey(entity, key);
+    if (rejection !== null) out.push({ path: [0, 'value', key], message: rejection });
+  }
+  return out;
+}
+
+/**
+ * The tool's operation schema. ONE denied key rejects the whole op — there is no
+ * partial acceptance and no repair (A2's spirit, one level down: the model gets a
+ * precise reason and one corrective round, never a silently-narrowed edit).
+ */
+export const EditToolOperationSchema = EditToolOperationUnion.superRefine((op, ctx) => {
+  if (op.op === 'update_node' || op.op === 'update_edge') {
+    const entity = op.op === 'update_node' ? 'node' : 'edge';
+    for (const r of screenUpdateValue(entity, op.value, 0)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['value', ...r.path.slice(2)], message: r.message });
+    }
+  }
+  if (op.op === 'add_node' || op.op === 'add_edge') {
+    const entity = op.op === 'add_node' ? 'node' : 'edge';
+    const structural = op.op === 'add_node' ? ADD_NODE_STRUCTURAL_KEYS : ADD_EDGE_STRUCTURAL_KEYS;
+    for (const r of screenAddValue(entity, op.value, structural)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['value', ...r.path.slice(2)], message: r.message });
+    }
+  }
+  if (op.op === 'add_node') {
+    const id = (op.value as { id?: unknown }).id;
+    if (id !== op.path) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['value', 'id'],
+        message: `add_node value.id ('${String(id)}') must equal its path ('${op.path}') — op.path is the authoritative node id (patch-applier contract)`,
+      });
+    }
+  }
+});
+
+export type EditToolOperation = z.infer<typeof EditToolOperationSchema>;
+
+// ---------------------------------------------------------------------------
+// A5c — dual identity binding
+// ---------------------------------------------------------------------------
+
+/**
+ * Trap 19, at the contract layer: an op binds to its target by IDENTITY (id)
+ * AND by a label echo, so a wrong-id-right-shape target — duplicate labels in a
+ * graph are common — is caught by the executor before the gate rather than
+ * passing every id-level check.
+ */
+export const EditToolTargetBindingSchema = z
+  .object({
+    op_index: z.number().int().min(0),
+    target_id: z.string().min(1),
+    /** The label the model believes this id carries. Verified server-side. */
+    target_label: z.string().min(1),
+  })
+  .strict();
+
+export type EditToolTargetBinding = z.infer<typeof EditToolTargetBindingSchema>;
+
+// ---------------------------------------------------------------------------
+// The batch envelope
+// ---------------------------------------------------------------------------
+
+const EditToolOpBatchObject = z
+  .object({
+    /** Correlates the proposal with its hold, receipt and undo unit. */
+    batch_id: z.string().uuid(),
+    /**
+     * A5b: STAMPED SERVER-SIDE from the same frame that built the tool context.
+     * The model never echoes a hash — transcription errors would produce spurious
+     * BASE_HASH_DIVERGED dead-ends. Absent/null/empty are all forbidden: the
+     * stale gate is non-optional (types.ts:201-202).
+     */
+    base_graph_hash: z.string().min(1),
+    operations: z.array(EditToolOperationSchema).min(1),
+    target_bindings: z.array(EditToolTargetBindingSchema),
+  })
+  .strict();
+
+export const EditToolOpBatchSchema = EditToolOpBatchObject.superRefine((batch, ctx) => {
+  // (a) exact binding coverage — one binding per existing-entity op, none for adds.
+  const seen = new Map<number, number>();
+  batch.target_bindings.forEach((b, i) => {
+    if (b.op_index >= batch.operations.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['target_bindings', i, 'op_index'],
+        message: `op_index ${b.op_index} is out of range (batch has ${batch.operations.length} operations)`,
+      });
+      return;
+    }
+    seen.set(b.op_index, (seen.get(b.op_index) ?? 0) + 1);
+    const kind = batch.operations[b.op_index]!.op;
+    if (!REFERENCING.has(kind)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['target_bindings', i],
+        message: `op ${b.op_index} is '${kind}', which creates its target — there is nothing to bind against`,
+      });
+    }
+  });
+  for (const [opIndex, count] of seen) {
+    if (count > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['target_bindings'],
+        message: `op ${opIndex} has ${count} identity bindings — one op, one identity`,
+      });
+    }
+  }
+  batch.operations.forEach((op, i) => {
+    if (REFERENCING.has(op.op) && !seen.has(i)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['target_bindings'],
+        message: `op ${i} ('${op.op}') names an existing entity but carries no identity binding (id + label echo)`,
+      });
+    }
+  });
+
+  // (b) A5d — no id reuse within a batch. The referee's working view deliberately
+  //     never subtracts removes (referee.ts:478-480), so `remove_node X; add_node X`
+  //     is a structural collision. Pre-catching it with a PRECISE reason is what
+  //     stops the model looping on generic collision copy.
+  const removed = new Set<string>();
+  for (const op of batch.operations) if (op.op === 'remove_node') removed.add(op.path);
+  batch.operations.forEach((op, i) => {
+    if (op.op === 'add_node' && removed.has(op.path)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['operations', i, 'path'],
+        message: `add_node reuses id '${op.path}', which this same batch removes — the referee's working view never subtracts removes, so this is a structural collision. Use a new id.`,
+      });
+    }
+  });
+});
+
+export type EditToolOpBatch = z.infer<typeof EditToolOpBatchSchema>;
+
+// ---------------------------------------------------------------------------
+// A3 — the fan-out rule, exported ONCE so the two caps stop counting differently
+// ---------------------------------------------------------------------------
+
+/** The loose op shape this counter accepts — it runs BEFORE validation. */
+export interface EditToolOpLike {
+  readonly op: string;
+  readonly path?: string;
+  readonly value?: unknown;
+  readonly old_value?: unknown;
+}
+
+/**
+ * How many referee ENVELOPES a batch of ops will produce.
+ *
+ * This is the cap incoherence's root cause made computable. The pipeline gate
+ * counts OPS (`MAX_PATCH_OPERATIONS`, 15); the referee caps ENVELOPES
+ * (`PROPOSAL_CAP`, 8); and `edit-graph-producer.ts:88-141` fans a multi-field
+ * update out ONE ENVELOPE PER FIELD. So a 5-op batch can be whole-batch
+ * BATCH_CAP_EXCEEDED-rejected after passing a 15-op gate, and nothing in either
+ * repo could see that coming.
+ *
+ * This package exports the COUNT and deliberately NOT the number: A3 requires the
+ * cap to be stated ONCE, derived from CEE's own exported constant. The CEE leg
+ * compares `countEnvelopeFanOut(ops)` against `PROPOSAL_CAP` rather than counting
+ * ops, and owes a parity test that this function agrees with its producer.
+ *
+ * Total: never throws on a malformed op (the referee's R1 parse is the only
+ * validity authority — a projection that cannot resolve a payload still emits an
+ * envelope and R1 rejects it).
+ */
+export function countEnvelopeFanOut(operations: readonly EditToolOpLike[]): number {
+  let total = 0;
+  for (const op of operations) {
+    switch (op.op) {
+      case 'add_node':
+      case 'remove_node':
+      case 'add_edge':
+      case 'remove_edge':
+        total += 1;
+        break;
+      case 'update_node':
+      case 'update_edge': {
+        const value = op.value;
+        if (value === null || typeof value !== 'object' || Array.isArray(value)) break;
+        const identity = op.op === 'update_node' ? NODE_IDENTITY_KEYS : EDGE_IDENTITY_KEYS;
+        total += Object.keys(value as Record<string, unknown>).filter((k) => !identity.has(k)).length;
+        break;
+      }
+      default:
+        // Unknown op — one R1-rejectable envelope, never silently dropped.
+        total += 1;
+        break;
+    }
+  }
+  return total;
+}
