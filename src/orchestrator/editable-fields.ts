@@ -53,8 +53,33 @@
  * a HAND-WRITTEN corpus that spells the real field and setter names out. Both
  * guards ship; neither supersedes the other.
  *
- * Derived at: UI staging dae8908fdf4fdc9328c7b28048d03e6de37911d4,
- *             CEE staging ac62fd4d3a3a8657b4bcb58e64b0e91a1454f59f (5 Aug 2026).
+ * ── REVISION 2 (5 Aug 2026) — THE RIGHT-HAND PANEL LEG (2.474) ───────────────
+ * The panel enumeration REFUTED the design brief's premise. The brief said "the
+ * panel is currently OUTSIDE the mutation contract entirely"; measured at UI
+ * staging `0ac79113`, the panel's editors REUSE `useInspectorMutations`, so the
+ * right-hand panel introduces ZERO new AI-editable field vocabulary — it is a
+ * second SURFACE over the SAME vocabulary. No new op kinds were owed, and
+ * `edit-tool-ops.ts`'s union stays pinned to the six graph kinds. Revision 2
+ * therefore adds exactly ONE row (`edge.validation`) and corrects two write-site
+ * claims; it does not widen what the AI may touch by a single field.
+ *
+ * ── A4 IS NOT BLOCKING FOR THE PANEL (recorded so the staleness lane need not
+ *    re-derive it) ──────────────────────────────────────────────────────────
+ * Amendment A4 asks Paul to extend the D-S freshness relaxation to STRUCTURAL
+ * candidates, because `frame-gate.ts:41` trusts only `{fresh, none}` and the
+ * relaxation at `:43-47` is tunable-only — so after any applied edit on an
+ * analysed scenario, structural proposals return governing `stale`. That gate is
+ * real and still unbuilt. It does NOT block the panel leg: the enumeration found
+ * NO reachable structural operation anywhere in the right-hand panel (the one
+ * candidate, the Status-Quo-baseline action, was measured unreachable and has
+ * been deleted — UI PR #597). Every reachable panel edit is a VALUE edit, i.e.
+ * TUNABLE-class, and therefore already inherits the D-S relaxation. Note the
+ * limit bites the HUMAN path too, independently of CEE: `ResultsBody.tsx:144-146`
+ * nulls the panel's own factor writers whenever `isStale || isRunning`.
+ *
+ * Derived at: UI staging 0ac79113bafe089ad0b533a92c0470248cebb29f,
+ *             CEE staging e82738b20ca83fadfb1e8404af7e84380d9a59bd (5 Aug 2026).
+ * (Revision 1 was derived at UI dae8908f / CEE ac62fd4d.)
  */
 import { z } from 'zod';
 
@@ -168,8 +193,8 @@ export const EDITABLE_FIELD_TABLE: readonly EditableFieldRow[] = Object.freeze([
   {
     entity: 'node', wire_field: 'is_baseline', field_root: 'is_baseline', field_class: 'grant',
     ui_setters: [], ui_client_fields: ['is_baseline'],
-    ui_write_sites: ['OutputsDock baseline toggle', 'useAddBaseline', 'applyDraftResult'],
-    reason: 'Already granted. Human-editable outside the inspector hook — a boolean flag with no coupled set.',
+    ui_write_sites: ['useAddBaseline.ts:105', 'applyDraftResult.ts:559'],
+    reason: 'Already granted. Human-editable outside the inspector hook — a boolean flag with no coupled set. ⚠ WRITE-SITE CORRECTED 5 Aug 2026 (2.474 panel leg): this row used to name "OutputsDock baseline toggle" FIRST, and that site no longer exists. The 2.474 enumeration measured the dock\'s Status-Quo-baseline action UNREACHABLE — its handlers were passed to <ResultsBody>, destructured into `_`-prefixed unused bindings, and the only components that would have rendered controls for them (BaselineTargetRow / BaselineToggleCard) are never mounted — so the dead wire was deleted (UI PR #597). A write site that has been deleted is worse than one that was never listed: it is positive evidence for a reachability claim that is false, in the register a later lane will trust instead of re-deriving. The two sites named now are live at UI staging.',
     open_question: '',
   },
   {
@@ -257,14 +282,14 @@ export const EDITABLE_FIELD_TABLE: readonly EditableFieldRow[] = Object.freeze([
   {
     entity: 'node', wire_field: 'goal_threshold', field_root: 'goal_threshold', field_class: 'invariant_coupled',
     ui_setters: [], ui_client_fields: ['goalThreshold', 'goal_threshold'],
-    ui_write_sites: ['store.ts setGoalThreshold action', 'model-tab GoalSection'],
+    ui_write_sites: ['store.ts setGoalThreshold action', 'model-tab/GoalSection.tsx:130', 'OutputsDock.tsx:1028 (Analysis-tab hero success-target apply)'],
     reason: 'COUPLED — the NORMALISED member of the quad; the NodeV3 field the engine actually reads (with goal_threshold_frame). Derived from raw/unit/cap, never set independently.',
     open_question: '',
   },
   {
     entity: 'node', wire_field: 'success_threshold', field_root: 'success_threshold', field_class: 'invariant_coupled',
     ui_setters: [], ui_client_fields: ['success_threshold'],
-    ui_write_sites: ['store.ts setGoalThreshold action', 'model-tab GoalSection'],
+    ui_write_sites: ['store.ts setGoalThreshold action', 'model-tab/GoalSection.tsx:130', 'OutputsDock.tsx:1028 (Analysis-tab hero success-target apply)'],
     reason: 'COUPLED — same goal-target seam, written by the same store action as threshold_source.',
     open_question: '',
   },
@@ -285,7 +310,7 @@ export const EDITABLE_FIELD_TABLE: readonly EditableFieldRow[] = Object.freeze([
   {
     entity: 'node', wire_field: 'threshold_source', field_root: 'threshold_source', field_class: 'provenance_owned',
     ui_setters: [], ui_client_fields: ['threshold_source'],
-    ui_write_sites: ['store.ts setGoalThreshold action', 'model-tab GoalSection'],
+    ui_write_sites: ['store.ts setGoalThreshold action', 'model-tab/GoalSection.tsx:130', 'OutputsDock.tsx:1028 (Analysis-tab hero success-target apply)'],
     reason: 'DENIED — judgement J2, ACCEPTED by the orchestrator 5 Aug 2026. Stamps WHO set the goal threshold, the same class as observed_state.source. ⚠ THIS IS STRICTER THAN CEE TODAY: `threshold_source` is not in PIPELINE_OWNED_ROOTS (the match is exact-segment, and threshold_source != source), so CEE currently rejects it with the vaguer FIELD_NOT_ALLOWED. THE CEE LEG TAKES THIS AS A DELIBERATE BEHAVIOUR CHANGE AND OWES ITS OWN RED TEST: a test that FAILS at CEE pristine (proving the field is not owned today) and passes once threshold_source joins PIPELINE_OWNED_ROOTS, with the reason code asserted as PIPELINE_OWNED_FIELD rather than FIELD_NOT_ALLOWED. Absorbing this into a wiring commit would ship a behaviour change unwitnessed.',
     open_question: '',
   },
@@ -380,6 +405,17 @@ export const EDITABLE_FIELD_TABLE: readonly EditableFieldRow[] = Object.freeze([
     reason: 'DENIED. Same class as weightSource.',
     open_question: '',
   },
+  {
+    entity: 'edge', wire_field: 'validation', field_root: 'validation', field_class: 'provenance_owned',
+    ui_setters: [], ui_client_fields: ['validation'],
+    ui_write_sites: [
+      'ModelTabBody.tsx:638 (contested-edge resolve, accepted_pass2)',
+      'ModelTabBody.tsx:662 (contested-edge resolve, overridden)',
+      'ModelTabBody.tsx:670 (contested-edge resolve, accepted_pass1 / dismissed)',
+    ],
+    reason: 'DENIED — the RIGHT-HAND PANEL row (2.474 panel leg), and it exists to correct a FALSE PREMISE in this file rather than to change a verdict. `validation` carries ADJUDICATION PROVENANCE: the contested-edge card writes `user_action`, `resolved_by: \'user\'` and `resolved_value` when a human settles a producer disagreement. An AI writing `resolved_by: \'user\'` asserts that a human adjudicated when none did — the same integrity breach as observed_state.source, one level up (it launders consent, not just a value). CEE ALREADY denies it (`validation` sits in CEE_ANALYSIS_OWNED_ROOTS, field-safety.ts:173, unioned into PIPELINE_OWNED_ROOTS at :216-218), so this row changes NO behaviour at any consumer — the union is identical. What it changes is the RECORD: `provenanceOwnedSegments()`\'s own doc said CEE owns `validation` et al. because they "have no human setter and therefore no row here", and that premise is false at UI staging 0ac79113 — three human write sites, listed above. The verdict was right and its stated reason was wrong, which is precisely the shape that rots: the next lane to re-derive this table from "fields with human setters" would have found a setter, believed the field had been overlooked, and granted it. Also note what this row does NOT do: it screens the `validation` SEGMENT, so an AI update naming it now gets the precise provenance reason instead of the generic FIELD_NOT_ALLOWED, and an add payload carrying it nested is caught by the smuggle guard.',
+    open_question: '',
+  },
 
   // ── edge · ai_only ──────────────────────────────────────────────────────
   {
@@ -439,11 +475,27 @@ export function aiEditableObservedSubkeys(): ReadonlySet<string> {
  * denies — `CEE_OWNED = PIPELINE_OWNED_ROOTS ∪ provenanceOwnedSegments()`. It
  * may WIDEN; it may NEVER NARROW. The two sets are not equal and are not meant
  * to be: this table adds `threshold_source` (J2) which CEE does not yet own,
- * while CEE owns analysis-derived stamps (`validation`, `defaulted`, `origin`,
- * `provenance_display`) that have no human setter and therefore no row here. A
- * consumer that INTERSECTED, or that replaced its list with this one, would
- * silently un-deny every stamp this table does not happen to name — a
+ * while CEE owns analysis-derived stamps (`defaulted`, `origin`,
+ * `provenance_display`) that no human setter reaches and which therefore have no
+ * row here. A consumer that INTERSECTED, or that replaced its list with this
+ * one, would silently un-deny every stamp this table does not happen to name — a
  * provenance breach introduced by an operation that reads like a tidy-up.
+ *
+ * ⚠ CORRECTED 5 Aug 2026 (2.474 panel leg) — THIS PARAGRAPH NAMED `validation`
+ * IN THAT LIST AND THE STATED REASON WAS FALSE. It read "…(`validation`,
+ * `defaulted`, `origin`, `provenance_display`) that have no human setter and
+ * therefore no row here." Measured at UI staging `0ac79113`, `validation` HAS
+ * three human write sites — the right-hand panel's contested-edge resolution
+ * (`ModelTabBody.tsx:638,:662,:670`) writes `user_action`, `resolved_by: 'user'`
+ * and `resolved_value`. The VERDICT was right (CEE owns it, the AI must never
+ * write it) and the REASON was wrong, which is the shape that rots: a later lane
+ * re-deriving this table from "fields a human setter reaches" would have found
+ * the setter, concluded the field had been overlooked, and GRANTED it. So
+ * `validation` now has an explicit `provenance_owned` row and has left this
+ * sentence. The remaining three are named on the narrower, checked claim that no
+ * human setter reaches them — if you are about to add one, add a row instead of
+ * editing this list. A denial resting on a false premise is one honest re-derivation
+ * away from becoming a grant.
  *
  * The same direction applies to the allowlist accessors, inverted: those are
  * the maximum the AI may touch, and a consumer may narrow but never widen them.
@@ -504,7 +556,7 @@ export function editableFieldUiSetters(): ReadonlySet<string> {
  * was written against; an older pin then throws instead of quietly enforcing a
  * shorter list.
  */
-export const EDITABLE_FIELD_TABLE_REVISION = 1;
+export const EDITABLE_FIELD_TABLE_REVISION = 2;
 
 /**
  * Content digest of the table, pinned. A row ADDED, REMOVED, RECLASSED, or with
@@ -525,7 +577,7 @@ export const EDITABLE_FIELD_TABLE_REVISION = 1;
  * Non-cryptographic (FNV-1a x2) on purpose: no node:crypto import in a package
  * the UI bundles for the browser.
  */
-export const EDITABLE_FIELD_TABLE_DIGEST = 'f6354a44-ea998eaa';
+export const EDITABLE_FIELD_TABLE_DIGEST = 'b7b0b6bd-583f32c3';
 
 function fnv1a(input: string, offset: number, prime: number): string {
   let h = offset >>> 0;
