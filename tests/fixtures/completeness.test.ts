@@ -188,7 +188,7 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   signals that previously terminated in the browser). The three new
     //   handler facts/results are ORCHESTRATOR_INTERNAL exclusions, same
     //   grounds as every sibling fact schema.
-    expect(MAXIMAL_FIXTURES.length).toBe(132);
+    expect(MAXIMAL_FIXTURES.length).toBe(133);
   });
 
   it('family keys are unique', () => {

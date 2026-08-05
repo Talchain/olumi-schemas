@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.37.0] — 2026-08-06
+
+**Leg 1 of 3 of DSK protocol provenance (ROADMAP 2.490 slice 2; merge order schemas → UI → CEE —
+the reader lands before the producer). Fully additive — one new exported schema and one new
+OPTIONAL field on `ExerciseBlockSchema`; no existing field is renamed, retyped, narrowed or
+removed.**
+
+### Added — `boundary/DskProtocolProvenanceSchema` + `ExerciseBlock.dsk_provenance` (optional)
+
+One strict nested object, all three members REQUIRED, so the triple is atomic by construction:
+
+```ts
+dsk_provenance?: {
+  protocol_id: string;        // /^DSK-P-\d{3}$/ — DSKObjectBase.id narrowed to the P (protocol) arm
+  protocol_title: string;     // min(1)
+  evidence_strength: 'strong' | 'medium' | 'weak' | 'mixed';
+}
+```
+
+**Why one nested object and not three sibling optionals:** CEE #830 (2.491/2.456) shipped an
+attestation that validated a DSK claim id EXISTED without checking the text under it RESOLVED TO
+that id. Three sibling optionals reproduce that shape — an id could travel alone, an authority
+claim with nothing to check it against. As one `.strict()` object no partial form parses, so
+absence ("not attributed", the `pre_mortem` case) is the only alternative to a complete,
+verifiable triple. No `superRefine` is used, so `ExerciseBlockSchema` stays a bare `ZodObject` and
+CEE's `.shape`-derived egress guard keeps working (pinned by test).
+
+Domains are the bundle's DECLARED ones (CEE `src/dsk/types.ts` `DSKObjectBase` /
+`EVIDENCE_STRENGTHS`), not the two values bundle v1.0.0 happens to use.
+
+### Notes
+
+- Adoption order: **UI (reader) re-vendors 0.37.0 before CEE (producer) ships the field.** The
+  deployed consumers' `ExerciseBlockSchema` is `.strict()`, so a producer emitting the field ahead
+  of a reader re-vendor is a parse failure, not a silent drop.
+- `npm pack` of this release is byte-identical to the tarballs pre-vendored on the two consumer
+  branches (sha256 `835ab4b8381e1280f239de0d408c2da6790ab9f93a0a14ce6e5a389acd4dd369`), so those
+  pins survive the merge unchanged — CHANGELOG.md is not in the published tarball.
+- This entry and 0.36.0's were added on the PR branch by the merging reviewer; both release lanes
+  had omitted the CHANGELOG.
+
+## [0.36.0] — 2026-08-05
+
+*(Entry written retroactively on 2026-08-06 by the 0.37.0 reviewer — the release shipped without
+one.)*
+
+**Editable-field table revision 2: the edge `validation` row (ROADMAP 2.474 panel leg, PR #35,
+tagged `v0.36.0`).** Additive revision of `orchestrator/editable-fields.ts` and its tests only —
+no wire schema changed shape. `provenanceOwnedSegments()`'s premise that `validation` had no human
+setter was false (three human write sites at UI `ModelTabBody.tsx`); the table was re-derived
+accordingly.
+
+**Disposition: consumed by NOBODY — adopt 0.37.0 directly and skip this version.** Measured
+2026-08-06 at each consumer's `staging` tip: UI and CEE pin `talchain-schemas-0.35.0.tgz`, PLoT
+pins `0.31.0.tgz`. 0.37.0 is a direct descendant of the 0.36.0 release commit (`ef901f5`), so
+vendoring 0.37.0 carries everything 0.36.0 added; no reason a consumer cannot skip 0.36.0 was
+found.
+
 ## [0.35.0] — 2026-08-05
 
 **The schemas leg of the coach structural-edit tool (Option A, ROADMAP 2.474), carrying
