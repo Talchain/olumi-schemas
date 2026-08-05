@@ -324,6 +324,59 @@ describe('edit-tool ops — update values are screened by the classed field tabl
     }).success).toBe(true);
   });
 
+  it('POSITIVE CONTROL: a NESTED `observed_state.interventions` payload parses — the SECONDARY live spelling', () => {
+    // ⚠ THIS TEST EXISTS BECAUSE THE PREVIOUS CONTROL DID NOT REACH THE CODE IT
+    // WAS MEANT TO PIN. The control above puts `interventions` at the TOP LEVEL
+    // of the add value, where `screenAddValue`'s own skip catches it — so the
+    // recursive walker's inner `insideInterventions` branch was never exercised
+    // by any test, and deleting it left the suite GREEN while flipping THIS
+    // payload from ACCEPTED to REJECTED. A future tidy-up of a branch with no
+    // coverage would have silently revoked the secondary live spelling: the
+    // exact defect class this whole change set exists to close, one level down.
+    //
+    // `observed_state.interventions.<factor_id>` is live on the update path
+    // (see REAL_LIVE_WIRE_SPELLINGS); this is the same subtree arriving as an
+    // add payload, carrying InterventionV3's contract keys — including its own
+    // `source` (cee-v3.ts:284), which is NOT node provenance.
+    const res = EditToolOperationSchema.safeParse({
+      op: 'add_node',
+      path: 'opt_raise_price',
+      value: {
+        id: 'opt_raise_price', kind: 'option', label: 'FIXTURE_Opt',
+        observed_state: {
+          value: 1,
+          interventions: {
+            fac_marketing_spend: {
+              value: 0.5, raw_value: 25000, unit: 'GBP', cap: 50000, source: 'user_specified',
+            },
+          },
+        },
+      },
+    });
+    expect(
+      res.success,
+      'the nested interventions subtree was screened as node vocabulary — the secondary live spelling is revoked',
+    ).toBe(true);
+  });
+
+  it('the nested exclusion is SCOPED — a stamp beside the nested interventions map is still caught', () => {
+    // The exclusion must tunnel through `interventions` ONLY. A sibling key on
+    // the same observed_state is still node vocabulary and must still reject,
+    // or the fix for the tunnel would open a hole beside it.
+    expect(EditToolOperationSchema.safeParse({
+      op: 'add_node',
+      path: 'opt_x',
+      value: {
+        id: 'opt_x', kind: 'option', label: 'FIXTURE_Opt',
+        observed_state: {
+          value: 1,
+          source: 'user',
+          interventions: { fac_spend: { value: 0.5, source: 'user_specified' } },
+        },
+      },
+    }).success, 'a node provenance stamp rode in beside a legitimate interventions map').toBe(false);
+  });
+
   it('an add_edge value is screened past its structural keys', () => {
     const base = {
       from: 'fac_a', to: 'fac_b',
