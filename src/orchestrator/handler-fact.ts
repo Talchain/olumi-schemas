@@ -10,6 +10,9 @@ import {
   AddConstraintResultSchema,
   AdjustEdgeStrengthResultSchema,
   EditGraphResultSchema,
+  FeedbackResultSchema,
+  EdgeAdjudicationResultSchema,
+  PriorRangeEditResultSchema,
 } from './handler-results.js';
 
 // HandlerFact — typed evidence of what a handler did on a turn, persisted in
@@ -124,6 +127,33 @@ export const EditGraphHandlerFactSchema = z.object({
 }).strict();
 export type EditGraphHandlerFact = z.infer<typeof EditGraphHandlerFactSchema>;
 
+// 0.34.0 — P4 transport: the three human-judgement receipts. Committed by
+// CEE's SYSTEM-EVENT dispatch (not an LLM handler), on the same turn row that
+// acknowledged the event, via the canonical `v5_handler_facts` wrapper — the
+// `edit_graph` fact's turn-linkage convention (no turn_id/scenario_id on the
+// fact itself). `fact_type` matches the system-event `kind` that carried the
+// judgement, so a fact row names its wire producer.
+export const FeedbackHandlerFactSchema = z.object({
+  fact_type: z.literal('feedback'),
+  ...BaseHandlerFactFields,
+  result: FeedbackResultSchema,
+}).strict();
+export type FeedbackHandlerFact = z.infer<typeof FeedbackHandlerFactSchema>;
+
+export const EdgeAdjudicationHandlerFactSchema = z.object({
+  fact_type: z.literal('edge_adjudication'),
+  ...BaseHandlerFactFields,
+  result: EdgeAdjudicationResultSchema,
+}).strict();
+export type EdgeAdjudicationHandlerFact = z.infer<typeof EdgeAdjudicationHandlerFactSchema>;
+
+export const PriorRangeEditHandlerFactSchema = z.object({
+  fact_type: z.literal('prior_range_edit'),
+  ...BaseHandlerFactFields,
+  result: PriorRangeEditResultSchema,
+}).strict();
+export type PriorRangeEditHandlerFact = z.infer<typeof PriorRangeEditHandlerFactSchema>;
+
 export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   RunAnalysisHandlerFactSchema,
   ExplainResultHandlerFactSchema,
@@ -135,5 +165,8 @@ export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   AddConstraintHandlerFactSchema,
   AdjustEdgeStrengthHandlerFactSchema,
   EditGraphHandlerFactSchema,
+  FeedbackHandlerFactSchema,
+  EdgeAdjudicationHandlerFactSchema,
+  PriorRangeEditHandlerFactSchema,
 ]);
 export type HandlerFact = z.infer<typeof HandlerFactSchema>;

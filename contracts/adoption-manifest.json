@@ -337,6 +337,56 @@
       ]
     },
     {
+      "field": "system_event.event[kind=edge_adjudication]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::EdgeAdjudicationEvent (0.34.0) — the contested-edge verdict, a new member of SystemEventSchema (P4 transport lane 2026-08-05; ROADMAP 2.396-adjacent)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED, reader-first by construction: the UI emitter (handleResolveContested) and the",
+        "  CEE fact-persisting dispatch land in their own PRs on their own staging branches.",
+        "  Test refs land when those PRs land.",
+        "THE SEQUENCING IS A HARD CONSTRAINT (same class as factor_value_edit, 0.29.0): every",
+        "  SystemEventSchema member is .strict() and the union discriminates on 'kind', so a",
+        "  consumer pinned below 0.34.0 that receives this member REJECTS THE WHOLE TURN. Pins",
+        "  measured 2026-08-05 at each repo's staging tip: UI 0.32.0, CEE 0.32.0. Order: publish",
+        "  0.34.0 -> CEE re-vendors AND deploys -> only then the UI emitter ships.",
+        "THE DEFECT IT CLOSES, verified at the bytes 2026-08-05 (UI staging dae8908f): the",
+        "  ContestedEdgeCard verdict terminates in ModelTabBody.handleResolveContested as a",
+        "  local updateEdge — the human's settled disagreement had NO wire shape at all."
+      ]
+    },
+    {
+      "field": "system_event.event[kind=prior_range_edit]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::PriorRangeEditEvent (0.34.0) — the user-set prior range, a new member of SystemEventSchema (P4 transport lane 2026-08-05)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED, reader-first by construction — same train and same sequencing as",
+        "  edge_adjudication above.",
+        "THE SEQUENCING IS A HARD CONSTRAINT (same class as factor_value_edit, 0.29.0): every",
+        "  SystemEventSchema member is .strict() and the union discriminates on 'kind', so a",
+        "  consumer pinned below 0.34.0 that receives this member REJECTS THE WHOLE TURN. Pins",
+        "  measured 2026-08-05 at each repo's staging tip: UI 0.32.0, CEE 0.32.0. Order: publish",
+        "  0.34.0 -> CEE re-vendors AND deploys -> only then the UI emitter ships.",
+        "THE DEFECT IT CLOSES, verified at the bytes 2026-08-05 (UI staging dae8908f):",
+        "  useInspectorMutations.setPriorRange writes data.prior.range_min/range_max locally and",
+        "  emits nothing — user-set prior ranges never reached the server.",
+        "CARRY-ONLY, stated deliberately: this member exists so the judgement is PERSISTED as a",
+        "  turn fact. Whether/how confirmed ranges affect the maths is a separate explicit design",
+        "  decision (they would change ANALYSIS inputs) — not smuggled in via this row."
+      ]
+    },
+    {
       "field": "goal_threshold_frame",
       "declared_in": "schemas:src/graph.ts::NodeV3Schema.goal_threshold_frame (0.31.0) — the frame a goal_threshold is stated in (ROADMAP 2.258)",
       "producer": null,

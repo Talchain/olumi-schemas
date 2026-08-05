@@ -201,6 +201,13 @@ export type IntentLiteral = z.infer<typeof Intent>;
 // turn-payload.ts; kept in parity here. The parity is not left to memory —
 // `tests/boundary/turn-payload-0.22.test.ts` asserts set-equality between this
 // enum and the union's `kind` literals, so this mirror fails loud on drift.
+// 0.34.0: `edge_adjudication` + `prior_range_edit` added — the two remaining
+// human-judgement signals that terminated in the browser (P4 transport lane;
+// evidence PHASE0-EVIDENCE-2026-07-28/lane-p4-transport-2026-08-05.md).
+// `edge_adjudication` carries the ContestedEdgeCard verdict; `prior_range_edit`
+// carries the inspector's prior-range edit. Mirrors the members added to the
+// `SystemEventSchema` union in turn-payload.ts; parity pinned by
+// `tests/boundary/turn-payload-0.22.test.ts` as for every earlier addition.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
@@ -211,8 +218,25 @@ export const SystemEventKind = z.enum([
   'redo',
   'selection_change',
   'feedback',
+  'edge_adjudication',
+  'prior_range_edit',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
+
+// 0.34.0 — the verdict vocabulary for `edge_adjudication`. Transcribed from
+// the UI's `UserAction` union (DecisionGuideAI `canvas/domain/validation`)
+// MINUS `pending`: `pending` is the UNRESOLVED state, not a verdict — an event
+// carrying it would record "the user adjudicated: nothing". A CLOSED enum
+// (not a free string) so every consumer keys off the same four outcomes; a
+// fifth outcome is a loud versioned widening, never a value that quietly
+// parses everywhere and means different things per pin (hazard 1).
+export const EdgeAdjudicationVerdict = z.enum([
+  'accepted_pass1',
+  'accepted_pass2',
+  'overridden',
+  'dismissed',
+]);
+export type EdgeAdjudicationVerdictLiteral = z.infer<typeof EdgeAdjudicationVerdict>;
 
 // v0.7.0 — Source of a `kind: 'message'` turn. Distinguishes composer-typed
 // text from chip clicks and retries so CEE can apply the right dispatch path.

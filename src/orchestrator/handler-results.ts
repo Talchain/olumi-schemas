@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { NodeKind } from '../graph.js';
 import { AnalysisFactSchema } from '../contracts/analysis-fact.js';
+import { EdgeAdjudicationVerdict } from '../boundary/enums.js';
+import { FeedbackRating, FeedbackTargetKind } from '../boundary/turn-payload.js';
 
 // Per-handler result schemas. These validate the in-memory body a handler
 // returns; they also describe the JSONB payload persisted in the
@@ -404,3 +406,69 @@ export const EditGraphResultSchema = z.object({
   rerun_recommended: z.boolean(),
 }).strict();
 export type EditGraphResult = z.infer<typeof EditGraphResultSchema>;
+
+// ---- 0.34.0: P4 transport — human-judgement receipts ------------------------
+//
+// Three results that make human judgement PERSIST server-side (lane evidence:
+// PHASE0-EVIDENCE-2026-07-28/lane-p4-transport-2026-08-05.md). Each is the
+// JSONB payload body of a fact committed on the system-event turn that carried
+// the judgement (`turn_class: 'direct_answer'`, handler_id null — the
+// edit_graph/DL-7 PR B precedent). WIRING ONLY: none of these results feeds
+// compute; whether/how confirmed human numbers affect the maths is a separate,
+// explicit design decision.
+
+/**
+ * The persisted thumbs rating. Before 0.34.0 CEE committed an EMPTY ack
+ * (`handler_facts: []`) for the `feedback` system event — the rating was
+ * hashed into `request_hash` and then discarded.
+ *
+ * ⚠ R-004: the user's free-text comment is NEVER persisted here — only its
+ * presence. The comment may contain PII (names, emails, whatever the user
+ * typed); a fact row is long-lived and widely read. `.strict()` makes a future
+ * `comment` field a deliberate, reviewed widening rather than a quiet leak.
+ */
+export const FeedbackResultSchema = z.object({
+  /** The rated artifact's id (a turn UUID for whole-turn ratings). */
+  target_id: z.string().min(1),
+  target_kind: FeedbackTargetKind,
+  rating: FeedbackRating,
+  /** True when the user typed a comment alongside the thumb (text NOT stored). */
+  comment_present: z.boolean(),
+}).strict();
+export type FeedbackResult = z.infer<typeof FeedbackResultSchema>;
+
+/**
+ * The persisted contested-edge adjudication. Identity is from+to node ids —
+ * the canonical edge key — never the client's edge id (which rides along,
+ * nullable, as an informative echo).
+ */
+export const EdgeAdjudicationResultSchema = z.object({
+  from: z.string().min(1),
+  to: z.string().min(1),
+  /** The client's own edge id as sent, or null when it sent none. */
+  edge_id: z.string().min(1).nullable(),
+  verdict: EdgeAdjudicationVerdict,
+  /**
+   * The SIGNED strength mean the adjudication committed (present on
+   * `overridden`, optionally on `accepted_pass1`/`accepted_pass2`; always
+   * null on `dismissed`).
+   */
+  resolved_strength_mean: z.number().finite().nullable(),
+  /**
+   * The provenance CLASS of this record, stamped by the SERVER (never taken
+   * from the wire): only a user acts on the adjudication surface.
+   */
+  provenance: z.literal('user_set'),
+}).strict();
+export type EdgeAdjudicationResult = z.infer<typeof EdgeAdjudicationResultSchema>;
+
+/** The persisted user-set prior range. Same server-stamped provenance rule. */
+export const PriorRangeEditResultSchema = z.object({
+  target_id: z.string().min(1),
+  range_min: z.number().finite(),
+  range_max: z.number().finite(),
+  /** Distribution family the user chose, or null when they stated none. */
+  distribution: z.string().min(1).nullable(),
+  provenance: z.literal('user_set'),
+}).strict();
+export type PriorRangeEditResult = z.infer<typeof PriorRangeEditResultSchema>;

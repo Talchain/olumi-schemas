@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { TurnClass, Stage, ActionType, Intent, TurnSource } from './enums.js';
+import {
+  TurnClass,
+  Stage,
+  ActionType,
+  Intent,
+  TurnSource,
+  EdgeAdjudicationVerdict,
+} from './enums.js';
 import { GraphV3Schema } from '../graph.js';
 
 // UUIDv4 pattern — keep loose; CEE also re-checks.
@@ -320,6 +327,128 @@ const FeedbackEvent = z.object({
   }).strict(),
 }).strict();
 
+// `edge_adjudication` (0.34.0) — the human settles a CEE multi-pass
+// disagreement on an edge. Before this member the ContestedEdgeCard verdict
+// (`handleResolveContested` in DecisionGuideAI's ModelTabBody) terminated in
+// the client store: the highest-signal human judgement in the product had NO
+// wire shape at all (P4 transport lane, 2026-08-05).
+//
+// EDGE IDENTITY IS from + to NODE IDS — the canonical edge key CEE itself uses
+// (`EDGE_IDENTITY_KEYS` / `findEdge(from, to)` in canonicalise-value-ops.ts).
+// Client-side edge ids (`reactflow__edge-…`) are NOT stable across repos, so
+// `edge_id` rides along as an optional, informative client identifier only —
+// never the lookup key. Assertions bind by identity, not by a value a
+// different edge could satisfy.
+//
+// PROVENANCE, deliberately NOT a wire field: the event KIND is the provenance
+// claim (only a user acts on this surface). A client-supplied constant would
+// add nothing the server could trust; CEE stamps `user_set` on the persisted
+// fact. The `.strict()` reject of a `provenance` key is pinned in
+// turn-payload-0.34.test.ts.
+//
+// CROSS-FIELD RULE (enforced by `refineEdgeAdjudication`, applied at the
+// UNION-ROOT superRefine below — the same place the chip/retry_of rules live.
+// It cannot live on this member: `z.discriminatedUnion` requires plain
+// ZodObject options, and `SystemEventSchema.options` is load-bearing for the
+// parity tests here AND for CEE's derived kind-exhaustiveness test, so the
+// union must stay bare. CEE validates ingress with the ROOT schema
+// (`b1.ts::validateIngress`), so the root IS the wire):
+//   · `overridden` REQUIRES `resolved_strength_mean` — an override asserts a
+//     number; without one the record is unactionable.
+//   · `dismissed` FORBIDS it — a dismissal asserts no value.
+//   · `accepted_pass1` / `accepted_pass2` MAY carry it (the accepted pass's
+//     signed mean, informative — the authoritative copy lives in the edge's
+//     validation metadata).
+const EdgeAdjudicationEvent = z.object({
+  kind: z.literal('edge_adjudication'),
+  /** Source node id of the contested edge (canonical edge identity, half 1). */
+  from: z.string().min(1),
+  /** Target node id of the contested edge (canonical edge identity, half 2). */
+  to: z.string().min(1),
+  /** The client's own edge id, informative only — never the lookup key. */
+  edge_id: z.string().min(1).optional(),
+  verdict: EdgeAdjudicationVerdict,
+  /**
+   * SIGNED strength mean the adjudication commits (UI scale, matches
+   * `validation.pass*.strength_mean`). Required iff verdict is `overridden`;
+   * forbidden on `dismissed` — see the cross-field rule above.
+   */
+  resolved_strength_mean: z.number().finite().optional(),
+}).strict();
+
+/**
+ * The edge_adjudication cross-field rule, exported so a consumer that parses a
+ * BARE `SystemEventSchema` (rather than the root payload) can apply the same
+ * verdict/value coupling instead of re-deriving it. Root-payload parsing gets
+ * it automatically via the union-level superRefine.
+ */
+export function refineEdgeAdjudication(
+  ev: z.infer<typeof EdgeAdjudicationEvent>,
+  ctx: z.RefinementCtx,
+  pathPrefix: readonly (string | number)[] = [],
+): void {
+  if (ev.verdict === 'overridden' && ev.resolved_strength_mean === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'resolved_strength_mean'],
+      message: 'an overridden verdict must carry the value the user asserted',
+    });
+  }
+  if (ev.verdict === 'dismissed' && ev.resolved_strength_mean !== undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'resolved_strength_mean'],
+      message: 'a dismissed verdict asserts no value — omit resolved_strength_mean',
+    });
+  }
+}
+
+// `prior_range_edit` (0.34.0) — the inspector's prior-range edit
+// (`useInspectorMutations.setPriorRange`), which likewise terminated in the
+// client store. Carries the USER-set bounds of the factor's prior
+// (`prior.range_min` / `prior.range_max` in the graph contract's
+// `PriorSchema`), id-addressed to the factor node.
+//
+// This member CARRIES the judgement so the server can persist it as a fact —
+// whether/how confirmed ranges affect the maths is a separate, explicit design
+// decision (they change ANALYSIS inputs), deliberately not smuggled in here.
+//
+// `range_min === range_max` is ACCEPTED: a collapsed range is a legitimate
+// statement of certainty, not an error. Inverted bounds are refused via
+// `refinePriorRangeEdit`, applied at the union-root superRefine (same
+// plain-ZodObject constraint as edge_adjudication above) rather than left to
+// each consumer.
+const PriorRangeEditEvent = z.object({
+  kind: z.literal('prior_range_edit'),
+  /** The factor node whose prior the user bounded. ID-addressed, never a label. */
+  target_id: z.string().min(1),
+  range_min: z.number().finite(),
+  range_max: z.number().finite(),
+  /**
+   * Distribution family, stated ONLY when the user chose one. Absence means
+   * "the client did not say" — it never means "uniform".
+   */
+  distribution: z.string().min(1).optional(),
+}).strict();
+
+/**
+ * The prior_range_edit cross-field rule (min ≤ max), exported for bare
+ * `SystemEventSchema` consumers — see {@link refineEdgeAdjudication}.
+ */
+export function refinePriorRangeEdit(
+  ev: z.infer<typeof PriorRangeEditEvent>,
+  ctx: z.RefinementCtx,
+  pathPrefix: readonly (string | number)[] = [],
+): void {
+  if (ev.range_min > ev.range_max) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'range_min'],
+      message: 'range_min must not exceed range_max',
+    });
+  }
+}
+
 export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
@@ -330,6 +459,8 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   RedoEvent,
   SelectionChangeEvent,
   FeedbackEvent,
+  EdgeAdjudicationEvent,
+  PriorRangeEditEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 
@@ -345,6 +476,18 @@ export const SystemEventTurnPayloadSchema = z.object({
 export const OrchestratorTurnPayloadSchema = z
   .discriminatedUnion('kind', [MessageTurnPayloadSchema, SystemEventTurnPayloadSchema])
   .superRefine((payload, ctx) => {
+    if (payload.kind === 'system_event') {
+      // 0.34.0 cross-field rules — root-level because discriminatedUnion
+      // members must stay plain ZodObjects (see the member comments). CEE
+      // validates ingress with THIS schema, so these run on the wire.
+      if (payload.event.kind === 'edge_adjudication') {
+        refineEdgeAdjudication(payload.event, ctx, ['event']);
+      }
+      if (payload.event.kind === 'prior_range_edit') {
+        refinePriorRangeEdit(payload.event, ctx, ['event']);
+      }
+      return;
+    }
     if (payload.kind !== 'message') return;
     const isChipSource = payload.source === 'chip' || payload.source === 'chip_click';
     if (payload.chip && !isChipSource) {

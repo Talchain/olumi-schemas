@@ -1547,6 +1547,26 @@ const eventFeedback = deepFreeze({
   comment: 'FIXTURE synthetic feedback comment.',
   target: { id: UUID_TURN, kind: 'turn' },
 });
+// 0.34.0 (P4 transport) — the contested-edge verdict. Verdict is 'overridden'
+// so the maximal fixture may populate resolved_strength_mean WITHOUT violating
+// the root cross-field rule (dismissed forbids the value); every optional
+// populated so the walker exercises the full shape.
+const eventEdgeAdjudication = deepFreeze({
+  kind: 'edge_adjudication',
+  from: ID_FACTOR,
+  to: ID_OPTION_A,
+  edge_id: ID_EDGE,
+  verdict: 'overridden',
+  resolved_strength_mean: -0.45,
+});
+// 0.34.0 (P4 transport) — the user-set prior range, distribution stated.
+const eventPriorRangeEdit = deepFreeze({
+  kind: 'prior_range_edit',
+  target_id: ID_FACTOR,
+  range_min: 0.2,
+  range_max: 0.6,
+  distribution: 'beta',
+});
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
   selected: [maximalSelectedElementRef],
@@ -2196,6 +2216,16 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: eventFeedback,
   },
   {
+    family: 'boundary/SystemEventSchema#edge_adjudication',
+    schema: SystemEventSchema,
+    fixture: eventEdgeAdjudication,
+  },
+  {
+    family: 'boundary/SystemEventSchema#prior_range_edit',
+    schema: SystemEventSchema,
+    fixture: eventPriorRangeEdit,
+  },
+  {
     family: 'boundary/SystemEventTurnPayloadSchema',
     schema: SystemEventTurnPayloadSchema,
     fixture: maximalSystemEventTurnPayload,
@@ -2427,6 +2457,15 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   'orchestrator/AddConstraintHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/AdjustEdgeStrengthHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/EditGraphHandlerFactSchema': ORCHESTRATOR_INTERNAL,
+  // 0.34.0 — P4 transport receipts: CEE-internal fact persistence, not a
+  // cross-service wire format (the WIRE shapes are the SystemEventSchema
+  // members, which carry real maximal fixtures above).
+  'orchestrator/FeedbackResultSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/EdgeAdjudicationResultSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/PriorRangeEditResultSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/FeedbackHandlerFactSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/EdgeAdjudicationHandlerFactSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/PriorRangeEditHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/HandlerFactSchema': ORCHESTRATOR_INTERNAL,
 });
 
