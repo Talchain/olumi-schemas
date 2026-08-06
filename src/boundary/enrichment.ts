@@ -127,16 +127,48 @@ export type EnrichmentConfidenceTierType = z.infer<typeof EnrichmentConfidenceTi
 // option_comparison — [F1] entries, [F2] OptionComparisonResultV3
 // ----------------------------------------------------------------------------
 
-/** Outcome statistics from ISL Monte Carlo. [F1][F2] OutcomeStatsV3. */
+/**
+ * Outcome statistics from ISL Monte Carlo. [F1][F2] OutcomeStatsV3.
+ *
+ * 0.38.0 (ROADMAP 2.646) — HONEST ABSENCE. `mean`/`p10`/`p50`/`p90` were
+ * REQUIRED (byte-identical 0.31.0→0.37.0), which could not model ISL's
+ * degenerate-run shape: `OutcomeDistributionV2` (ISL `response_v2.py` @
+ * `c25836f7`) omits the summary stats when no finite sample population
+ * exists, while keeping the REQUIRED accounting triple — `n_samples`,
+ * `n_valid_samples: 0`, `validity_ratio: 0.0` is a MEASUREMENT ("we sampled
+ * and got nothing usable"). PLoT (2.581 partial carry, `run.ts` @
+ * `c03e36fe`) forwards that block PARTIALLY: what is honest survives, what
+ * was not measured stays ABSENT — never `0`, never `null` — so the
+ * required-four raised a TRUE `ENRICHMENT_CONTRACT_MISMATCH` on every
+ * degenerate option. Absence of a stat means NOT MEASURABLE FROM THE SAMPLE
+ * POPULATION; a present value (including 0) is a real measurement. The
+ * discriminator is `percentiles_source` below.
+ *
+ * `percentiles_source` — percentile provenance, the wire discriminator
+ * between "ISL had no usable sample population" (`'unavailable'`) and
+ * "computed from actual MC samples" (`'samples'`). ISL declares
+ * `Literal["samples","unavailable"]` with a PYTHON-side default of
+ * `"samples"`; PLoT deliberately does NOT re-apply that default
+ * ("Substituting 'samples' for a build that sent nothing would manufacture
+ * a provenance claim PLoT never received") and neither does this contract:
+ * NEVER `.default()` this field — absent means the producer did not state
+ * provenance, and consumers MUST NOT read absence as `'samples'`.
+ */
 export const EnrichmentOutcomeStatsSchema = z.object({
-  mean: z.number(),
+  mean: z.number().optional(),
   std: z.number().optional(),
-  p10: z.number(),
-  p50: z.number(),
-  p90: z.number(),
+  p10: z.number().optional(),
+  p50: z.number().optional(),
+  p90: z.number().optional(),
   n_samples: z.number().optional(),
   n_valid_samples: z.number().optional(),
   validity_ratio: z.number().optional(),
+  percentiles_source: z.enum(['samples', 'unavailable']).optional().describe(
+    "'samples' when p10/p50/p90 were computed from actual MC samples; " +
+    "'unavailable' when no valid samples exist (the stats are then absent). " +
+    'Absence means the producer did not state provenance — consumers MUST ' +
+    "NOT assume 'samples'. Never defaulted at any hop, by contract.",
+  ),
 }).passthrough();
 export type EnrichmentOutcomeStats = z.infer<typeof EnrichmentOutcomeStatsSchema>;
 

@@ -112,14 +112,16 @@
                   },
                   "validity_ratio": {
                     "type": "number"
+                  },
+                  "percentiles_source": {
+                    "type": "string",
+                    "enum": [
+                      "samples",
+                      "unavailable"
+                    ],
+                    "description": "'samples' when p10/p50/p90 were computed from actual MC samples; 'unavailable' when no valid samples exist (the stats are then absent). Absence means the producer did not state provenance — consumers MUST NOT assume 'samples'. Never defaulted at any hop, by contract."
                   }
                 },
-                "required": [
-                  "mean",
-                  "p10",
-                  "p50",
-                  "p90"
-                ],
                 "additionalProperties": true
               },
               "status": {

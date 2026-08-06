@@ -677,6 +677,11 @@ export const maximalEnrichmentOutcomeStats = deepFreeze({
   n_samples: 10000,
   n_valid_samples: 9800,
   validity_ratio: 0.98,
+  // 0.38.0 (2.646) — 'samples' is the branch consistent with the populated
+  // stats above (ISL: downside/stats presence implies percentiles_source ==
+  // 'samples'); the honest-absence 'unavailable' branch is exercised in
+  // tests/boundary/enrichment-outcome-honest-absence.test.ts.
+  percentiles_source: 'samples',
   [PROBE]: true,
 });
 
@@ -1206,6 +1211,9 @@ export const maximalDraftGoalConstraint = deepFreeze({
     original_unit: '%',
     [PROBE]: true,
   },
+  // 0.38.0 (2.266) — 'level' is the frame CEE's constraint mints state today
+  // (absolute threshold in user units, as the sibling `value` above is).
+  value_frame: 'level',
   [PROBE]: true,
 });
 
