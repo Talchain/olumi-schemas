@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 34,
+    "distinct": 40,
     "same": 8,
     "unresolved": 387
   },
@@ -717,6 +717,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/DraftGoalConstraintSchema.value_frame": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.38.0 (ROADMAP 2.266 schemas-train half). Absence means UNATTESTED - no one has stated whether `value` is a level or a delta - which is not the same claim as either enum value: 'level' and 'delta' are attestations, absence is the lack of one. Consumers MUST fail closed on absence (no joint-goal figures from an unattested constraint value) and MUST NOT default it - a defaulted frame is a manufactured attestation, the fabrication class 2.258/2.266 exist to kill. Same shape as graph/NodeV3Schema.goal_threshold_frame (0.31.0), whose contract text this field's comment points at. The absence state is LOAD-BEARING DEBT by design: it is what keeps ISL's suppressed constraint-frame gates honest until producers stamp the field (each in its own train).",
+      "ref": "src/boundary/blocks.ts - DraftGoalConstraintSchema.value_frame comment (0.38.0); src/graph.ts GoalThresholdFrame block comment (0.31.0, ROADMAP 2.258); plot:src/routes/v2/run.ts@c03e36fe auto-synthesis 'level'/'unattested' refusals; isl:src/models/robustness_v2.py@c25836f7 GoalConstraint (frameless, extra:'ignore')"
     },
     "boundary/DraftGraphBlockSchema.goal_constraints": {
       "markers": [
@@ -1470,6 +1478,14 @@
       ],
       "verdict": "unresolved"
     },
+    "boundary/EnrichmentOutcomeStatsSchema.mean": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.38.0 (ROADMAP 2.646, honest absence). Absence means NOT MEASURABLE FROM THE SAMPLE POPULATION (degenerate run, no finite draws) - never 0; a present 0 is a real measurement. Unusually, the DISCRIMINATOR EXISTS ON THE WIRE and lands in the same train: percentiles_source == 'unavailable' names the no-usable-samples state, and ISL's own model validator enforces mean/std may be absent ONLY in that state. PLoT's partial carry (2.581) preserves absence - 'what was not measured stays ABSENT - never 0, never null'.",
+      "ref": "src/boundary/enrichment.ts - EnrichmentOutcomeStatsSchema 0.38.0 block comment; isl:src/models/response_v2.py@c25836f7 OutcomeDistributionV2._summary_stats_absent_only_without_samples; plot:src/routes/v2/run.ts@c03e36fe 2.581 partial-carry comment"
+    },
     "boundary/EnrichmentOutcomeStatsSchema.n_samples": {
       "markers": [
         "optional"
@@ -1481,6 +1497,38 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/EnrichmentOutcomeStatsSchema.p10": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.38.0 (ROADMAP 2.646). As for .mean: absence = no usable sample population to take a percentile of, discriminated on-wire by percentiles_source == 'unavailable' (ISL: \"'unavailable' when no valid samples exist (p10/p50/p90 will be null)\" - PLoT's finite-guard turns that null into honest key absence at egress).",
+      "ref": "src/boundary/enrichment.ts - EnrichmentOutcomeStatsSchema 0.38.0 block comment; isl:src/models/response_v2.py@c25836f7 OutcomeDistributionV2.p10; plot:src/routes/v2/run.ts@c03e36fe finiteNum guards"
+    },
+    "boundary/EnrichmentOutcomeStatsSchema.p50": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.38.0 (ROADMAP 2.646). Same claim and same on-wire discriminator as .p10 - see that row.",
+      "ref": "src/boundary/enrichment.ts - EnrichmentOutcomeStatsSchema 0.38.0 block comment; isl:src/models/response_v2.py@c25836f7 OutcomeDistributionV2.p50"
+    },
+    "boundary/EnrichmentOutcomeStatsSchema.p90": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.38.0 (ROADMAP 2.646). Same claim and same on-wire discriminator as .p10 - see that row.",
+      "ref": "src/boundary/enrichment.ts - EnrichmentOutcomeStatsSchema 0.38.0 block comment; isl:src/models/response_v2.py@c25836f7 OutcomeDistributionV2.p90"
+    },
+    "boundary/EnrichmentOutcomeStatsSchema.percentiles_source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.38.0 (ROADMAP 2.646). THE DISCRIMINATOR ITSELF, and its own absence is a third state: 'samples' and 'unavailable' are provenance claims, absence means THE PRODUCER DID NOT STATE PROVENANCE (a pre-0.38 payload, or a hop that dropped the key). ISL's Python default is 'samples', but PLoT deliberately does NOT re-apply it ('Substituting samples for a build that sent nothing would manufacture a provenance claim PLoT never received') and this contract must never .default() it either - the never-defaults rule is pinned by test. Consumers MUST NOT read absence as 'samples'.",
+      "ref": "src/boundary/enrichment.ts - percentiles_source .describe(); tests/boundary/enrichment-outcome-honest-absence.test.ts NEVER DEFAULTS pin; plot:src/routes/v2/run.ts@c03e36fe percentilesSource never-default comment; isl:src/models/response_v2.py@c25836f7 percentiles_source Field(default='samples')"
     },
     "boundary/EnrichmentOutcomeStatsSchema.std": {
       "markers": [

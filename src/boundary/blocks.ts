@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BoundaryErrorCode } from './error-codes.js';
 import { Severity } from './enums.js';
+import { GoalThresholdFrame } from '../graph.js';
 
 // Narrowed subset of ActionType for graph-edit operations. Used by the
 // GraphPatchBlock `operation` field so semantic-garbage constructions like
@@ -207,6 +208,42 @@ export const DraftGoalConstraintSchema = z.object({
     original_value: z.number(),
     original_unit: z.string(),
   }).passthrough().optional(),
+  /**
+   * 0.38.0 additive (ROADMAP 2.266 schemas-train half; reinforced by 2.298).
+   * The FRAME `value` is stated in — `'level'` (absolute target on the
+   * metric's own scale) or `'delta'` (change from the observed baseline).
+   * Reuses the canonical `GoalThresholdFrame` enum (0.31.0) — one frame
+   * vocabulary, two attestation sites; see its block comment in
+   * `src/graph.ts` for the full contract.
+   *
+   * WHY: `goal_constraints[].value` carries the SAME unattested
+   * level-vs-delta problem that made the goal probability a structural zero
+   * before 0.31.0 — ISL evaluates constraints against change-from-baseline
+   * samples, CEE mints values as absolute levels, nobody converts
+   * (witness-2258: `goal_fit 0.0054` where the honest answer was ~0.55).
+   * Two honesty gates are suppressed pending exactly this attestation
+   * (PLoT's auto-synthesis 'level' refusal; ISL's frame-blind constraint
+   * check refusing rather than converting).
+   *
+   * THIS FIELD IS THE PRECONDITION FOR REINSTATING THOSE GATES, NOT THE
+   * DELIVERY. Producer adoption rides separate trains: CEE stamps it as a
+   * CODE CONSTANT at its constraint mint sites (never LLM-derivable — the
+   * frame is a property of the minting arithmetic, exactly as for
+   * `goal_threshold_frame`), PLoT forwards it, ISL declares it (today
+   * `GoalConstraint` has `extra: 'ignore'` and silently drops it) and owns
+   * the conversion at its comparison site, holding the `observed_state`
+   * baselines. No per-constraint baseline member is added: the baseline is
+   * a property of the TARGET NODE (`observed_state.baseline`, plus CEE's
+   * enricher-minted `goal_baseline`/`goal_baseline_raw` riding NodeV3
+   * passthrough) — copying it per-constraint would create a second source
+   * of truth that can diverge from the node's.
+   *
+   * FAILURE SEMANTICS — FAIL CLOSED. Absence means UNATTESTED: consumers
+   * MUST NOT compute joint-goal figures from an unattested constraint value,
+   * and MUST NOT default this field — a defaulted frame is a manufactured
+   * attestation, the exact fabrication class 2.258/2.266 exist to kill.
+   */
+  value_frame: GoalThresholdFrame.optional(),
 }).passthrough();
 export type DraftGoalConstraint = z.infer<typeof DraftGoalConstraintSchema>;
 
@@ -718,6 +755,15 @@ export const ExerciseBlockSchema = z.object({
     'outside_view',
     'devils_advocacy',
     'consider_opposite',
+    // 0.38.0 additive (DSK selector design 2026-08-06, slice E1) — appended;
+    // nothing moves. Vocabulary for DSK P-004/P-006, which could not be
+    // emitted before (no member ⇒ CEE's strict parse drops the block). The
+    // emitting slices (O1/S1) are Paul-gated and ship separately; S1's
+    // ActionType/HandlerFact members are deliberately NOT reserved here —
+    // the repo's only vocabulary-ahead-of-wire precedent (what_changed,
+    // PR #17) carried an explicit Paul approval, and S1 has none yet.
+    'opportunity_cost',
+    'implementation_intentions',
   ]),
   failure_scenario: z.string().min(1).optional(),
   warning_signs: z.array(z.string().min(1)).optional(),

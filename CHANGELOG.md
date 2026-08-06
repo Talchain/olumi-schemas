@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.38.0] — 2026-08-06
+
+**Three independent additive cars, batched by the release seam. Fully additive on the wire — no
+field is renamed, retyped, narrowed or removed; every payload that parsed at 0.37.0 still parses.
+One deliberate TYPE-level consequence for TypeScript consumers is called out under car 1.**
+
+**Release discipline note: this train must NOT merge until the 0.37.0 DSK legs are consumed
+(UI #606 + CEE #833 merged — the one-train rule).**
+
+### 1. `EnrichmentOutcomeStatsSchema` — honest-absence outcome stats (ROADMAP 2.646)
+
+`mean` / `p10` / `p50` / `p90` are now **`.optional()`** (they were REQUIRED, byte-identical
+0.31.0→0.37.0), and the block gains:
+
+```ts
+percentiles_source?: 'samples' | 'unavailable'
+```
+
+WHY: the required-four could not model ISL's honest-absence shape. On a degenerate run
+(`OutcomeDistributionV2`, ISL `src/models/response_v2.py` @ `c25836f7`) the summary stats are
+omitted while the REQUIRED accounting triple survives — `n_samples`, `n_valid_samples: 0`,
+`validity_ratio: 0.0` is a measurement ("we sampled and got nothing usable"). PLoT's 2.581
+partial carry (`src/routes/v2/run.ts` @ `c03e36fe`) forwards that block partially — what is
+honest survives, what was not measured stays ABSENT, never `0`, never `null` — so the
+required-four raised a TRUE `ENRICHMENT_CONTRACT_MISMATCH` on every degenerate option.
+
+- **Absence semantics (census rows answered `distinct`):** an absent stat means NOT MEASURABLE
+  FROM THE SAMPLE POPULATION; a present value (including 0) is a real measurement. The wire
+  discriminator is `percentiles_source`, landing in this same train.
+- **Never defaulted, pinned by test:** ISL's Python-side default is `'samples'`, but PLoT
+  deliberately does not re-apply it and neither does this contract — an absent
+  `percentiles_source` stays absent (a `.default('samples')` here would manufacture a
+  provenance claim no producer made). Consumers MUST NOT read absence as `'samples'`.
+- **⚠ TYPE-level consequence for TS consumers (deliberate):** `EnrichmentOutcomeStats.mean/p10/
+  p50/p90` infer as `number | undefined` after a pin bump. Consumer code that read them as
+  `number` must branch on presence (or on `percentiles_source`) — that forced branch IS the fix
+  the row orders; do not restore requiredness to silence it, and do not `?? 0` it.
+
+### 2. `DraftGoalConstraint.value_frame` — constraint frame attestation (ROADMAP 2.266 schemas-train half; reinforced by 2.298)
+
+```ts
+value_frame?: 'level' | 'delta'   // the canonical GoalThresholdFrame enum (0.31.0), reused
+```
+
+`goal_constraints[].value` carries the SAME unattested level-vs-delta frame problem that made
+the goal probability a structural zero before 0.31.0 — witnessed live at ~100× consequence
+(witness-2258: the auto-materialised `auto_goal_threshold` constraint evaluated level-vs-uplift,
+`goal_fit 0.0054` where the honest answer was ≈0.55). Two honesty gates are suppressed pending
+exactly this attestation: PLoT's auto-synthesis `'level'` refusal ("goal_constraints carry no
+frame field … PLoT cannot convert it and will not guess", `run.ts` @ `c03e36fe`) and ISL's
+frame-blind constraint check (ISL's `GoalConstraint` is frameless with `extra: 'ignore'` —
+`robustness_v2.py` @ `c25836f7`).
+
+- **This field is the PRECONDITION for reinstating those suppressed gates, not the delivery.**
+  Producer adoption rides separate trains: CEE stamps it as a CODE CONSTANT at its constraint
+  mint sites (never LLM-derivable), PLoT forwards it, ISL declares + converts at its comparison
+  site.
+- **Fail closed on absence:** absence means UNATTESTED — consumers must not compute joint-goal
+  figures from an unattested constraint value, and must never default the field.
+- **No per-constraint baseline member** (the rows specify none): the conversion baseline is a
+  property of the TARGET NODE (`observed_state.baseline`; CEE's enricher-minted
+  `goal_baseline`/`goal_baseline_raw` ride NodeV3 passthrough). A per-constraint copy would be a
+  second source of truth that can diverge from the node's.
+- **Derive-don't-mirror:** the field reuses the `GoalThresholdFrame` instance — one frame
+  vocabulary, two attestation sites; an identity pin REDs if it is ever replaced by a copy.
+
+### 3. `exercise_kind` += `'opportunity_cost'`, `'implementation_intentions'` (DSK selector design 2026-08-06, slice E1)
+
+Appended enum members; nothing moves. Vocabulary for DSK protocols P-004 / P-006, which
+currently CANNOT be emitted (no member ⇒ CEE's strict parse drops the block). The emitting
+slices (O1 / S1) are Paul-gated product rulings and ship separately with their own trains.
+
+- **Deliberately left out:** S1's `ActionType` member `'confirm_decision'` and its
+  `HandlerFactSchema` arm. The HandlerFact arm is shaped machinery whose result object could
+  change with Paul's ruling; and this repo's only precedent for reserving an ActionType member
+  ahead of the wire carrying it (`what_changed`, PR #17, 22 Jul) was explicitly Paul-approved.
+  S1 has no ruling yet, so its members wait for it.
+
+### Notes
+
+- **Adoption order (hazard 1):** consumers on ≤0.37.0 pins silently pass `percentiles_source` /
+  `value_frame` through untyped (`.passthrough()` shapes) and reject the two new
+  `exercise_kind` members at strict parses — dark-but-honest, never a wrong number. The CEE pin
+  bump (0.35.0 → 0.38.0 at CEE `c80cfead`) silently adopts everything in 0.36/0.37/0.38 and owes
+  a semantic delta measurement across the skipped versions (2.618's standing lesson).
+- No `contracts/adoption-manifest.json` rows added (same call as the 0.37.0 `dsk_provenance`
+  car); `contracts/manifest.sha256` is unchanged, `SCHEMA_SHA` regenerated (version +
+  json-schema docs).
+- Census: 6 new optionality-bearing fields, all answered `distinct` with producer refs
+  (counts: distinct 34 → 40); the census was not weakened.
+
 ## [0.37.0] — 2026-08-06
 
 **Leg 1 of 3 of DSK protocol provenance (ROADMAP 2.490 slice 2; merge order schemas → UI → CEE —
