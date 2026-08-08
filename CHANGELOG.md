@@ -7,6 +7,127 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.39.0] — 2026-08-08
+
+**The four-car train unblocking proof-PR2 (science provenance) and proof-PR4 (the collaborative
+slice): 2.964's claim-provenance triple · 2.701's deferred ui_directive enum · 2.698-S2's
+`run_delta` block · the 2.686 U-S0 collab types. FULLY ADDITIVE — no existing field is renamed,
+retyped, narrowed or removed; every payload that parsed at 0.38.0 still parses IDENTICALLY,
+proven in-repo by `tests/contracts/additivity-0.39.test.ts`, which replays the COMPLETE 0.38.0
+maximal-fixture corpus (all 133 families, serialised mechanically from the built dist at
+`371e18c8`) through the 0.39.0 schemas and asserts byte-identical parse output.**
+
+### 1. `DskClaimProvenanceSchema` + `dsk_claim_provenance` on CoachingBlock AND ReviewCardBlock (ROADMAP 2.964)
+
+One strict nested object, the three claim members REQUIRED, so the triple is atomic by
+construction (the 0.37.0 `dsk_provenance` doctrine — CEE #830 — applied to CLAIM provenance;
+never flat siblings):
+
+```ts
+dsk_claim_provenance?: {
+  claim_id: string;           // /^DSK-(B|T)-\d{3}$/ — the claim arms only; DSK-P-/DSK-TR- cannot masquerade
+  claim_title: string;        // min(1)
+  evidence_strength: 'strong' | 'medium' | 'weak' | 'mixed';
+  protocol_id?: string;       // /^DSK-P-\d{3}$/ — INSIDE the object, never travels without its claim anchor
+}
+```
+
+- `evidence_strength` reuses ONE shared `DskEvidenceStrength` instance with 0.37.0's
+  `DskProtocolProvenanceSchema` (identity-pinned by test — derive, don't mirror; the vocabulary
+  belongs to the DSK bundle's schema).
+- **Absence = "not grounded in a cited DSK claim"** — no badge, never inferred, never defaulted
+  (census rows answered `distinct` at both declaration sites).
+- Reader-first safe (the `action_prompt` precedent): a UI on an older pin strict-fails a block
+  carrying the key, so **CEE must not emit until both strict consumers re-vendor ≥ 0.39.0.**
+  CEE's attach map (two lineage-bearing mint hops, bias cards gated on 2.965) is the producer's
+  train — this field is the contract precondition 2.964 names.
+
+### 2. `UiDirectiveSource` + `UiDirectiveBlock.source` (ROADMAP 2.701's deferred enum; UI-DIRECTIVE-0.38-DESIGN §2.3)
+
+```ts
+source?: 'ladder' | 'gate' | 'composer'
+```
+
+P4 gesture-source provenance: deterministic fact-derived (`ladder`), advice-gate deterministic
+mapping (`gate`), or LLM-proposed on gesture-less turns (`composer`, the §3-hybrid slot).
+Absence ⇔ emitted by a producer that does not stamp it — never null, no default, and a consumer
+MUST NOT infer `ladder` from absence.
+
+- **NO NEW VERBS — deliberately.** The wave-2 design's own §2 verdict is encoded as what this
+  car does not do: `activate_tab` is ruled DO NOT ADD (`open_panel` already IS tab activation);
+  `annotate`/`start_tour` still need their own payload shapes; the §2.2 right-panel target
+  extensions carry an unfired named trigger. The verb enum is pinned unchanged by test.
+- Scope note, stated honestly: row 2.701's "future enums ride 0.39.0" names no member list; the
+  §2.3 `source` field is the ONLY designed, non-speculative ui_directive-family schemas item in
+  the estate's corpus. The §3-hybrid composer policy itself remains CEE's to ship (recommended,
+  Paul-ratifiable at its merge report) — this optional field is safe contract surface either way.
+
+### 3. `RunDeltaSchema` + `OlumiResponse.run_delta` (ROADMAP 2.698-S2; RUN-DELTA-DESIGN-2026-08-08)
+
+The run-over-run delta block, one per completed rerun, beside `analysis_ready`. Carries the §b
+attribution case enum (`C0_identical | C1_attributable | C2_unpaired | C3_engine_drift |
+C4_budget_drift`), the pair-provenance record every member of which derives from PRODUCER ECHOES
+(`seed_equal`, `hash_equal`, `builds_equal: 'equal'|'unequal'|'unknown'`, `n_equal`), and the S2
+first tier: leader line, per-option win-probability lines, flip-threshold band lines (each with
+`noise_verdict: 'signal'|'within_noise'|'not_noise_qualified'`), and the `edit_list`.
+
+- **Fabrication rules live in the type system** (`refineRunDelta`, exported): `C1_attributable`
+  fails to parse without seed_equal ∧ ¬hash_equal ∧ builds_equal='equal' ∧ n_equal;
+  `C0_identical` requires all four equalities; `edit_list` only on a ¬hash_equal pair and never
+  empty (hash and list derive from one whitelist and cannot disagree). C2/C3/C4 deliberately
+  carry NO cross-rule: their conditions can co-occur and the design states no precedence — the
+  classifier's precedence is CEE's derivation obligation (trap 13c).
+- **Shape provenance, flagged per the design's own gap:** the design specifies semantics
+  (the §b quadruple + case table, §a first-tier quantities, §c card copy slots) but not Zod
+  literals; field names/literals here are the minimal derivation of what the S3 card consumes.
+  Deliberately NOT carried: any free-text attribution sentence (the sentence builder takes the
+  case enum BY IDENTITY), per-edit attribution, later-tier quantity rows.
+- Absence semantics `distinct` throughout (leader ids = no ENTITLED claim on that side; flip
+  medians = not measured on that side; edit_list = prior fact predates edit tracking).
+
+### 4. Collab elicitation + disagreement types (ROADMAP 2.686 U-S0; 2.968 build-list item 1)
+
+New `boundary/collab.ts`: `ElicitationRound` / `ElicitationEvent` (discriminated on kind:
+`belief_submitted | belief_revised | declined | clarification_requested`) / `ElicitationBelief` /
+`ElicitationProvenance` (method `elicited_nl | elicited_numeric | derived`, `elicitation_version`
+required) / `ElicitationTarget` / `Disagreement` / `DisagreementType`
+(`structure | evidence | goals | risk_tolerance`) / `DisagreementStatus` (incl.
+`accepted_as_difference` first-class) / the position-kind union (`exists | absent | reversed`
+census kinds + `attributed_value` + `preference` + `doubt`) / `DisagreementParty` /
+`DisagreementSubject` / `AuthoredBySchema` (`'owner' | 'assistant' |` participant UUID — ONE
+authorship axis, co-designed with 2.682).
+
+The ratified 8-Aug rulings are PARSE RULES, not prose: `doubt` and `declined` are VALUELESS BY
+CONSTRUCTION (their union arms declare no value member — the analysis-fact doctrine);
+`.strict()` everywhere, so a smuggled `recommended`/`winner`/aggregate member fails to parse
+(spread-not-consensus); `parties[]` is 2.146's list of positions with provenance.
+
+- **Neil-gate structural omissions (deliberate, land additively WITH their rulings/slices):**
+  `elicited_range` is NOT DECLARED (G2 names it reserved-unpopulated pre-Neil — a strict parent
+  makes premature population a parse failure, stronger than a reserved field);
+  `internal_combined` is nowhere on the wire; `impact_on_analysis` (derived-or-absent, computing
+  slice S3) and `suggested_resolution` (U-S2 facilitation) ship with their producing slices.
+- **Scope forks, flagged:** the packet/reveal RESPONSE shapes appear in the unified plan's U-S0
+  item 6 but not in the 2.968 build-list item 1 — the narrower later list is taken; they ride
+  the CEE routes' train. Participant ids constrained to UUID (derived from the estate id style;
+  makes the reserved literals collision-free) — widens in a versioned minor if CEE mints
+  non-UUID ids. `graph_version_ref` stays an OPAQUE string resolving to `model_versions.id`
+  (the unified plan's version anchor; a row id, never a hash).
+
+### Notes
+
+- **Adoption order (hazard 1):** every new object family is `.strict()` and both block carriers
+  are strict, so consumers on ≤0.38.0 pins REJECT blocks carrying `dsk_claim_provenance` /
+  `source` — producers must not emit until UI and CEE re-vendor ≥ 0.39.0 (reader-first, merge
+  order schemas → consumers → producers). `run_delta` rides the strict `OlumiResponseSchema`:
+  same rule. The collab types have no producer yet (the U-S0 CEE slice is the first).
+- No `contracts/adoption-manifest.json` rows added (same call as 0.37.0/0.38.0);
+  `contracts/manifest.sha256` unchanged; `SCHEMA_SHA` regenerated (version + new exports).
+- `json-schema/` is byte-identical (it derives from the enrichment family only, untouched here).
+- Census: 13 new optionality-bearing fields, ALL answered `distinct` with refs to their own
+  schemas' absence-semantics comments (counts: distinct 40 → 53); the census was not weakened.
+- Fixture registry: 133 → 159 (+26), incl. union-branch variants for the valueless arms.
+
 ## [0.38.0] — 2026-08-06
 
 **Three independent additive cars, batched by the release seam. Fully additive on the wire — no

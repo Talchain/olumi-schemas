@@ -188,7 +188,21 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   signals that previously terminated in the browser). The three new
     //   handler facts/results are ORCHESTRATOR_INTERNAL exclusions, same
     //   grounds as every sibling fact schema.
-    expect(MAXIMAL_FIXTURES.length).toBe(133);
+    // 0.39.0: 133 -> 159 (+26): the four-car train.
+    //   Car 1 (+1): boundary/DskClaimProvenanceSchema (the coaching/review-
+    //   card claim triple rides the two existing block fixtures).
+    //   Car 3 (+5): RunDeltaSchema + its four exported line/provenance
+    //   shapes (attribution case / builds / noise / band vocabularies are
+    //   enums, auto-exempt).
+    //   Car 4 (+20): ten collab schemas (AuthoredBy, ElicitationProvenance/
+    //   Target/Round/Belief/Event, DisagreementPosition/Party/Subject/
+    //   Disagreement) + three ElicitationEventSchema kind variants + four
+    //   DisagreementPositionSchema branch variants + three
+    //   DisagreementSubjectSchema branch variants — discriminated unions
+    //   whose valueless arms (declined / doubt) CANNOT ride one maximal
+    //   fixture, so branch coverage is spread across variants, the
+    //   ui_directive precedent.
+    expect(MAXIMAL_FIXTURES.length).toBe(159);
   });
 
   it('family keys are unique', () => {

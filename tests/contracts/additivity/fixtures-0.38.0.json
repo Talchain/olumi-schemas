@@ -1,0 +1,4961 @@
+[
+  {
+    "family": "root/ObservedStateSchema",
+    "fixture": {
+      "value": 42.5,
+      "std": 3.2,
+      "baseline": 40,
+      "unit": "FIXTURE_units_per_month",
+      "source": "FIXTURE_user_estimate",
+      "declared_scale": "raw_count",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/PriorSchema",
+    "fixture": {
+      "distribution": "normal",
+      "range_min": 10,
+      "range_max": 90,
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/StateSpaceSchema",
+    "fixture": {
+      "range": {
+        "min": 0,
+        "max": 100
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/NodeV3Schema",
+    "fixture": {
+      "id": "fixture_factor_market_demand",
+      "kind": "factor",
+      "label": "FIXTURE_market_demand",
+      "body": "FIXTURE synthetic factor description — no real decision content.",
+      "type": "numeric",
+      "categories": [
+        "FIXTURE_low",
+        "FIXTURE_high"
+      ],
+      "category": "observable",
+      "observed_state": {
+        "value": 42.5,
+        "std": 3.2,
+        "baseline": 40,
+        "unit": "FIXTURE_units_per_month",
+        "source": "FIXTURE_user_estimate",
+        "declared_scale": "raw_count",
+        "FIXTURE_passthrough_probe": true
+      },
+      "state_space": {
+        "range": {
+          "min": 0,
+          "max": 100
+        },
+        "FIXTURE_passthrough_probe": true
+      },
+      "goal_threshold": 75,
+      "goal_threshold_frame": "level",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/StrengthSchema",
+    "fixture": {
+      "mean": 0.6,
+      "std": 0.15
+    }
+  },
+  {
+    "family": "root/EdgeV3Schema",
+    "fixture": {
+      "from": "fixture_factor_market_demand",
+      "to": "fixture_goal_revenue",
+      "strength": {
+        "mean": 0.6,
+        "std": 0.15
+      },
+      "exists_probability": 0.9,
+      "effect_direction": "positive",
+      "edge_type": "directed",
+      "label": "FIXTURE_demand_drives_revenue",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/EdgeV3Schema#default-edge_type",
+    "fixture": {
+      "from": "fixture_factor_market_demand",
+      "to": "fixture_goal_revenue",
+      "strength": {
+        "mean": 0.6,
+        "std": 0.15
+      },
+      "exists_probability": 0.9,
+      "effect_direction": "positive",
+      "label": "FIXTURE_demand_drives_revenue",
+      "FIXTURE_passthrough_probe": true
+    },
+    "expectedParseOutput": {
+      "from": "fixture_factor_market_demand",
+      "to": "fixture_goal_revenue",
+      "strength": {
+        "mean": 0.6,
+        "std": 0.15
+      },
+      "exists_probability": 0.9,
+      "effect_direction": "positive",
+      "label": "FIXTURE_demand_drives_revenue",
+      "FIXTURE_passthrough_probe": true,
+      "edge_type": "directed"
+    }
+  },
+  {
+    "family": "root/GraphV3Schema",
+    "fixture": {
+      "nodes": [
+        {
+          "id": "fixture_factor_market_demand",
+          "kind": "factor",
+          "label": "FIXTURE_market_demand",
+          "body": "FIXTURE synthetic factor description — no real decision content.",
+          "type": "numeric",
+          "categories": [
+            "FIXTURE_low",
+            "FIXTURE_high"
+          ],
+          "category": "observable",
+          "observed_state": {
+            "value": 42.5,
+            "std": 3.2,
+            "baseline": 40,
+            "unit": "FIXTURE_units_per_month",
+            "source": "FIXTURE_user_estimate",
+            "declared_scale": "raw_count",
+            "FIXTURE_passthrough_probe": true
+          },
+          "state_space": {
+            "range": {
+              "min": 0,
+              "max": 100
+            },
+            "FIXTURE_passthrough_probe": true
+          },
+          "goal_threshold": 75,
+          "goal_threshold_frame": "level",
+          "FIXTURE_passthrough_probe": true
+        },
+        {
+          "id": "fixture_goal_revenue",
+          "kind": "goal",
+          "label": "FIXTURE_monthly_revenue",
+          "goal_threshold": 100,
+          "FIXTURE_passthrough_probe": true
+        },
+        {
+          "id": "fixture_option_alpha",
+          "kind": "option",
+          "label": "FIXTURE_option_alpha"
+        },
+        {
+          "id": "fixture_option_beta",
+          "kind": "option",
+          "label": "FIXTURE_option_beta"
+        }
+      ],
+      "edges": [
+        {
+          "from": "fixture_factor_market_demand",
+          "to": "fixture_goal_revenue",
+          "strength": {
+            "mean": 0.6,
+            "std": 0.15
+          },
+          "exists_probability": 0.9,
+          "effect_direction": "positive",
+          "edge_type": "directed",
+          "label": "FIXTURE_demand_drives_revenue",
+          "FIXTURE_passthrough_probe": true
+        },
+        {
+          "from": "fixture_option_alpha",
+          "to": "fixture_factor_market_demand",
+          "strength": {
+            "mean": 0.4,
+            "std": 0.2
+          },
+          "exists_probability": 0.8,
+          "effect_direction": "positive",
+          "edge_type": "directed",
+          "label": "FIXTURE_option_lifts_demand"
+        }
+      ],
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/TopologyPlanSchema",
+    "fixture": [
+      "fixture_option_alpha",
+      "fixture_factor_market_demand",
+      "fixture_goal_revenue"
+    ]
+  },
+  {
+    "family": "root/BiasSignalSchema",
+    "fixture": {
+      "type": "overconfidence",
+      "detail": "FIXTURE synthetic bias-signal detail."
+    }
+  },
+  {
+    "family": "root/WideningLogSchema",
+    "fixture": {
+      "elements_added": [
+        "FIXTURE_added_option"
+      ],
+      "elements_considered_but_excluded": [
+        "FIXTURE_excluded_risk"
+      ],
+      "brief_completeness": "partial"
+    }
+  },
+  {
+    "family": "root/StrengthenItemSchema",
+    "fixture": {
+      "id": "fixture_strengthen_1",
+      "label": "FIXTURE_add_a_second_option",
+      "detail": "FIXTURE synthetic strengthen detail.",
+      "action_type": "add_option",
+      "bias_category": "narrow_framing"
+    }
+  },
+  {
+    "family": "root/CoachingSchema",
+    "fixture": {
+      "summary": "FIXTURE synthetic coaching summary.",
+      "strengthen_items": [
+        {
+          "id": "fixture_strengthen_1",
+          "label": "FIXTURE_add_a_second_option",
+          "detail": "FIXTURE synthetic strengthen detail.",
+          "action_type": "add_option",
+          "bias_category": "narrow_framing"
+        }
+      ],
+      "widening_log": {
+        "elements_added": [
+          "FIXTURE_added_option"
+        ],
+        "elements_considered_but_excluded": [
+          "FIXTURE_excluded_risk"
+        ],
+        "brief_completeness": "partial"
+      },
+      "bias_signals": [
+        {
+          "type": "overconfidence",
+          "detail": "FIXTURE synthetic bias-signal detail."
+        }
+      ]
+    }
+  },
+  {
+    "family": "root/DirectEffectClaimSchema",
+    "fixture": {
+      "type": "direct_effect",
+      "from": "fixture_factor_market_demand",
+      "to": "fixture_goal_revenue",
+      "stated_strength": "strong"
+    }
+  },
+  {
+    "family": "root/MediationOnlyClaimSchema",
+    "fixture": {
+      "type": "mediation_only",
+      "from": "fixture_option_alpha",
+      "via": "fixture_factor_market_demand",
+      "to": "fixture_goal_revenue"
+    }
+  },
+  {
+    "family": "root/NoDirectEffectClaimSchema",
+    "fixture": {
+      "type": "no_direct_effect",
+      "from": "fixture_option_beta",
+      "to": "fixture_goal_revenue"
+    }
+  },
+  {
+    "family": "root/UnmeasuredConfounderClaimSchema",
+    "fixture": {
+      "type": "unmeasured_confounder",
+      "between": [
+        "fixture_factor_market_demand",
+        "fixture_goal_revenue"
+      ]
+    }
+  },
+  {
+    "family": "root/CausalClaimSchema#direct_effect",
+    "fixture": {
+      "type": "direct_effect",
+      "from": "fixture_factor_market_demand",
+      "to": "fixture_goal_revenue",
+      "stated_strength": "strong"
+    }
+  },
+  {
+    "family": "root/CausalClaimsArraySchema",
+    "fixture": [
+      {
+        "type": "direct_effect",
+        "from": "fixture_factor_market_demand",
+        "to": "fixture_goal_revenue",
+        "stated_strength": "strong"
+      },
+      {
+        "type": "mediation_only",
+        "from": "fixture_option_alpha",
+        "via": "fixture_factor_market_demand",
+        "to": "fixture_goal_revenue"
+      },
+      {
+        "type": "no_direct_effect",
+        "from": "fixture_option_beta",
+        "to": "fixture_goal_revenue"
+      },
+      {
+        "type": "unmeasured_confounder",
+        "between": [
+          "fixture_factor_market_demand",
+          "fixture_goal_revenue"
+        ]
+      }
+    ]
+  },
+  {
+    "family": "root/OptionForAnalysisSchema",
+    "fixture": {
+      "id": "fixture_option_alpha",
+      "label": "FIXTURE_option_alpha",
+      "description": "FIXTURE synthetic option description.",
+      "status": "ready",
+      "interventions": {
+        "fixture_factor_market_demand": 55
+      },
+      "raw_interventions": {
+        "fixture_factor_market_demand": 55,
+        "fixture_factor_flag": true,
+        "fixture_factor_level": "FIXTURE_high"
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/AnalysisReadyV3Schema",
+    "fixture": {
+      "status": "ready",
+      "options": [
+        {
+          "id": "fixture_option_alpha",
+          "label": "FIXTURE_option_alpha",
+          "description": "FIXTURE synthetic option description.",
+          "status": "ready",
+          "interventions": {
+            "fixture_factor_market_demand": 55
+          },
+          "raw_interventions": {
+            "fixture_factor_market_demand": 55,
+            "fixture_factor_flag": true,
+            "fixture_factor_level": "FIXTURE_high"
+          },
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "goal_node_id": "fixture_goal_revenue",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/AnalysisRequestIdChainSchema",
+    "fixture": {
+      "ui_sent": "fixture_req_1",
+      "plot_received": "fixture_req_1",
+      "forwarded_to_isl": "fixture_req_1",
+      "isl_echoed": "fixture_req_1",
+      "all_match": true
+    }
+  },
+  {
+    "family": "root/DraftGraphTraceSchema",
+    "fixture": {
+      "cee_trace": "fixture_trace_1"
+    }
+  },
+  {
+    "family": "root/ResponseMetaSchema",
+    "fixture": {
+      "seed_used": "42",
+      "seed_source": "client_generated",
+      "request_id": "fixture_req_1",
+      "request_id_chain": {
+        "analysis_chain": {
+          "ui_sent": "fixture_req_1",
+          "plot_received": "fixture_req_1",
+          "forwarded_to_isl": "fixture_req_1",
+          "isl_echoed": "fixture_req_1",
+          "all_match": true
+        },
+        "draft_trace": {
+          "cee_trace": "fixture_trace_1"
+        },
+        "FIXTURE_passthrough_probe": true
+      },
+      "response_hash": "fixture_hash_0123456789abcdef",
+      "computed_at": "2026-01-01T00:00:00.000Z",
+      "processing_time_ms": 812,
+      "build": "FIXTURE_build_0000000",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/StrengthDefaultAppliedDetailsSchema",
+    "fixture": {
+      "total_edges": 5,
+      "structural_edges_excluded": 1,
+      "defaulted_count": 4,
+      "defaulted_percentage": 80,
+      "defaulted_edge_ids": [
+        "fixture_edge_demand_revenue"
+      ]
+    }
+  },
+  {
+    "family": "root/StrengthMeanDefaultDominantDetailsSchema",
+    "fixture": {
+      "total_edges": 5,
+      "structural_edges_excluded": 1,
+      "mean_default_count": 3,
+      "mean_default_percentage": 75,
+      "mean_defaulted_edge_ids": [
+        "fixture_edge_demand_revenue"
+      ]
+    }
+  },
+  {
+    "family": "root/EdgeStrengthDetailsSchema",
+    "fixture": {
+      "edge_id": "fixture_edge_demand_revenue",
+      "mean": 0.04
+    }
+  },
+  {
+    "family": "root/ValidationWarningSchema",
+    "fixture": {
+      "code": "STRENGTH_DEFAULT_APPLIED",
+      "message": "FIXTURE synthetic warning message.",
+      "severity": "warn",
+      "details": {
+        "total_edges": 5,
+        "defaulted_count": 4
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/CeeErrorRecoverySchema",
+    "fixture": {
+      "hints": [
+        "FIXTURE synthetic recovery hint."
+      ],
+      "suggestion": "FIXTURE synthetic recovery suggestion.",
+      "example": "FIXTURE synthetic recovery example.",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/CeeTypedErrorSchema",
+    "fixture": {
+      "error": "CEE_INTERNAL_ERROR",
+      "message": "FIXTURE synthetic error message.",
+      "retryable": false,
+      "elapsed_ms": 1234,
+      "request_id": "fixture_req_1",
+      "recovery_suggestion": "FIXTURE synthetic recovery suggestion.",
+      "recovery": {
+        "hints": [
+          "FIXTURE synthetic recovery hint."
+        ],
+        "suggestion": "FIXTURE synthetic recovery suggestion.",
+        "example": "FIXTURE synthetic recovery example.",
+        "FIXTURE_passthrough_probe": true
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/CeeTimeoutErrorSchema",
+    "fixture": {
+      "error": "CEE_LLM_TIMEOUT",
+      "message": "FIXTURE synthetic timeout message.",
+      "retryable": true,
+      "elapsed_ms": 30000,
+      "request_id": "fixture_req_1",
+      "model": "FIXTURE_model_id",
+      "recovery_suggestion": "FIXTURE synthetic recovery suggestion.",
+      "recovery": {
+        "hints": [
+          "FIXTURE synthetic recovery hint."
+        ],
+        "suggestion": "FIXTURE synthetic recovery suggestion.",
+        "example": "FIXTURE synthetic recovery example.",
+        "FIXTURE_passthrough_probe": true
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/CeeBudgetErrorSchema",
+    "fixture": {
+      "error": "CEE_REQUEST_BUDGET_EXCEEDED",
+      "message": "FIXTURE synthetic budget message.",
+      "retryable": true,
+      "elapsed_ms": 45000,
+      "request_id": "fixture_req_1",
+      "stage": "FIXTURE_compose",
+      "recovery_suggestion": "FIXTURE synthetic recovery suggestion.",
+      "recovery": {
+        "hints": [
+          "FIXTURE synthetic recovery hint."
+        ],
+        "suggestion": "FIXTURE synthetic recovery suggestion.",
+        "example": "FIXTURE synthetic recovery example.",
+        "FIXTURE_passthrough_probe": true
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/CeeUpstreamLlmErrorSchema",
+    "fixture": {
+      "error": "CEE_LLM_UPSTREAM_ERROR",
+      "message": "FIXTURE synthetic upstream message.",
+      "retryable": true,
+      "elapsed_ms": 900,
+      "request_id": "fixture_req_1",
+      "upstream_content_type": "text/html",
+      "upstream_body_preview": "FIXTURE upstream body preview.",
+      "upstream_status": 502,
+      "provider": "FIXTURE_provider",
+      "recovery_suggestion": "FIXTURE synthetic recovery suggestion.",
+      "recovery": {
+        "hints": [
+          "FIXTURE synthetic recovery hint."
+        ],
+        "suggestion": "FIXTURE synthetic recovery suggestion.",
+        "example": "FIXTURE synthetic recovery example.",
+        "FIXTURE_passthrough_probe": true
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/PlotProxyTimeoutErrorSchema",
+    "fixture": {
+      "error": "CEE_PROXY_TIMEOUT",
+      "message": "FIXTURE synthetic proxy timeout.",
+      "retryable": true,
+      "elapsed_ms": 60000,
+      "request_id": "fixture_req_1"
+    }
+  },
+  {
+    "family": "root/PlotCeeUpstreamEnvelopeSchema",
+    "fixture": {
+      "error": "CEE_UPSTREAM_ERROR",
+      "message": "FIXTURE synthetic upstream envelope.",
+      "retryable": false,
+      "upstream_content_type": "text/plain",
+      "upstream_body_preview": "FIXTURE upstream body preview.",
+      "elapsed_ms": 750,
+      "request_id": "fixture_req_1"
+    }
+  },
+  {
+    "family": "root/RepairEntrySchema",
+    "fixture": {
+      "code": "CLAMP_STD_MINIMUM",
+      "layer": "plot",
+      "field_path": "edges[0].strength.std",
+      "before": 0.001,
+      "after": 0.05,
+      "reason": "FIXTURE synthetic repair reason.",
+      "severity": "warn"
+    }
+  },
+  {
+    "family": "root/FactorSensitivitySchema",
+    "fixture": {
+      "node_id": "fixture_factor_market_demand",
+      "label": "FIXTURE_market_demand",
+      "importance_score": 0.74,
+      "sensitivity_score": 0.68,
+      "elasticity": 1.2,
+      "direction": "positive",
+      "importance_rank": 1,
+      "confidence": 0.8,
+      "confidence_components": {
+        "structural_certainty": 0.9,
+        "sampling_stability": 0.7
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "root/FragileEdgeSchema",
+    "fixture": {
+      "edge_id": "fixture_edge_demand_revenue",
+      "from_id": "fixture_factor_market_demand",
+      "to_id": "fixture_goal_revenue",
+      "current_strength": 0.6,
+      "threshold": 0.35,
+      "impact_on_outcome": 0.22,
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/BoundaryErrorSchema",
+    "fixture": {
+      "error": "UPSTREAM_TIMEOUT",
+      "boundary": "B2",
+      "direction": "egress",
+      "validator": "FIXTURE_egress_validator",
+      "details": {
+        "issues": [
+          {
+            "path": "blocks[0].type",
+            "message": "FIXTURE synthetic issue"
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "request_id": "fixture_req_1",
+      "retryable": true
+    }
+  },
+  {
+    "family": "boundary/TargetRefSchema",
+    "fixture": {
+      "id": "fixture_factor_market_demand",
+      "label": "FIXTURE_market_demand",
+      "kind": "factor"
+    }
+  },
+  {
+    "family": "boundary/DskProtocolProvenanceSchema",
+    "fixture": {
+      "protocol_id": "DSK-P-001",
+      "protocol_title": "Pre-mortem exercise",
+      "evidence_strength": "medium"
+    }
+  },
+  {
+    "family": "boundary/TextBlockSchema",
+    "fixture": {
+      "type": "text",
+      "content": "FIXTURE synthetic assistant text."
+    }
+  },
+  {
+    "family": "boundary/ErrorBlockSchema",
+    "fixture": {
+      "type": "error",
+      "error_code": "INTERNAL_ERROR",
+      "severity": "warn",
+      "details": {
+        "blocker_code": "FIXTURE_BLOCKER",
+        "FIXTURE_passthrough_probe": true
+      }
+    }
+  },
+  {
+    "family": "boundary/AnalysisResultBlockSchema",
+    "fixture": {
+      "type": "analysis_result",
+      "summary": "FIXTURE synthetic analysis summary.",
+      "leading_option_id": "fixture_option_alpha",
+      "win_probabilities": {
+        "fixture_option_alpha": 0.62,
+        "fixture_option_beta": 0.38
+      },
+      "enrichment": {
+        "analysis_status": "computed",
+        "status_reason": "FIXTURE_computed_normally",
+        "option_comparison_status": "computed",
+        "robustness_status": "computed",
+        "drivers_status": "computed",
+        "constraints_status": "computed",
+        "option_comparison": [
+          {
+            "option_id": "fixture_option_alpha",
+            "option_label": "FIXTURE_option_alpha",
+            "id": "fixture_option_alpha",
+            "label": "FIXTURE_option_alpha",
+            "expected_outcome": 61.9,
+            "confidence_interval": [
+              51,
+              74
+            ],
+            "outcome": {
+              "mean": 62.4,
+              "std": 8.1,
+              "p10": 51,
+              "p50": 62,
+              "p90": 74,
+              "n_samples": 10000,
+              "n_valid_samples": 9800,
+              "validity_ratio": 0.98,
+              "percentiles_source": "samples",
+              "FIXTURE_passthrough_probe": true
+            },
+            "status": "computed",
+            "status_reason": "FIXTURE_computed_normally",
+            "probability_of_goal": 0.71,
+            "win_probability": 0.62,
+            "probability_of_joint_goal": 0.58,
+            "constraint_probabilities": {
+              "fixture_constraint_budget": 0.83
+            },
+            "goal_fit_basis": {
+              "scored_from": "modelled_outcome_distribution",
+              "node_ids": [
+                "fixture_constraint_budget"
+              ],
+              "FIXTURE_passthrough_probe": true
+            },
+            "constraint_margins": [
+              {
+                "constraint_id": "fixture_constraint_budget",
+                "failure_margin_median": 24000,
+                "near_miss_fraction": 0.15,
+                "margin_precision": "lower_bound",
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "constraints_decision_grade": true,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "factor_sensitivity": [
+          {
+            "factor_id": "fixture_factor_market_demand",
+            "factor_label": "FIXTURE_market_demand",
+            "influence_score": 0.74,
+            "influence_rank": 1,
+            "sensitivity_score": 0.68,
+            "elasticity": 1.2,
+            "direction": "positive",
+            "importance_rank": 1,
+            "interpretation": "FIXTURE synthetic interpretation.",
+            "value_of_information": 0.12,
+            "evpi_percentage_points": 4.2,
+            "evpi_method": "heuristic",
+            "evpi_status": "below_resolution",
+            "confidence": 0.7,
+            "zero_reason": "intervention_override",
+            "source": "isl",
+            "confidence_source": "plot_unified_from_isl_bootstrap",
+            "confidence_provenance": {
+              "computation_source": "FIXTURE_plot_unified",
+              "formula_version": "FIXTURE_v1",
+              "is_provisional": true,
+              "calibration_status": "FIXTURE_uncalibrated",
+              "input_quality": "FIXTURE_mixed",
+              "FIXTURE_passthrough_probe": true
+            },
+            "flip_risk_category": "isolated",
+            "elasticity_std": 0.3,
+            "attribution_stability": "high",
+            "rank_flip_rate": 0.05,
+            "stability_method": "FIXTURE_bootstrap",
+            "value_source": "FIXTURE_observed_state",
+            "value_extraction_type": "FIXTURE_numeric",
+            "value_defaulted": false,
+            "confidence_components": {
+              "structural_certainty": 0.9,
+              "sampling_stability": 0.7,
+              "FIXTURE_passthrough_probe": true
+            },
+            "range_derivation_source": "FIXTURE_state_space",
+            "_normalised": true,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "robustness": {
+          "score": 0.66,
+          "label": "moderate",
+          "fragile_edges": [
+            {
+              "edge_id": "fixture_edge_demand_revenue",
+              "from_id": "fixture_factor_market_demand",
+              "to_id": "fixture_goal_revenue",
+              "from_label": "FIXTURE_market_demand",
+              "to_label": "FIXTURE_monthly_revenue",
+              "switch_probability": 0.42,
+              "severity": "warning",
+              "marginal_switch_probability": 0.18,
+              "alternative_winner_id": "fixture_option_beta",
+              "alternative_winner_label": "FIXTURE_option_beta",
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "robust_edges": [
+            {
+              "edge_id": "fixture_edge_option_demand",
+              "from_id": "fixture_option_alpha",
+              "to_id": "fixture_factor_market_demand",
+              "from_label": "FIXTURE_option_alpha",
+              "to_label": "FIXTURE_market_demand",
+              "switch_probability": 0.03,
+              "severity": "warning",
+              "marginal_switch_probability": 0.01,
+              "alternative_winner_id": null,
+              "alternative_winner_label": null,
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "explanation": "FIXTURE synthetic robustness explanation.",
+          "recommendation_stability": 0.62,
+          "is_robust": true,
+          "level": "medium",
+          "confidence": 0.75,
+          "normalization_errors": [
+            {
+              "edge_type": "bidirected",
+              "error": "FIXTURE synthetic normalisation note.",
+              "raw_value": {
+                "FIXTURE_raw": true
+              },
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "recommended_option_id": "fixture_option_alpha",
+          "recommended_option_label": "FIXTURE_option_alpha",
+          "near_tie": {
+            "is_tie": false,
+            "top_option_id": "fixture_option_alpha",
+            "second_option_id": "fixture_option_beta",
+            "tied_option_ids": [
+              "fixture_option_alpha",
+              "fixture_option_beta"
+            ],
+            "gap": 0.11,
+            "threshold": 0.05,
+            "FIXTURE_passthrough_probe": true
+          },
+          "display_verdict": "moderate",
+          "display_verdict_reason": "FIXTURE synthetic display-safe verdict reason.",
+          "FIXTURE_passthrough_probe": true
+        },
+        "flip_thresholds": [
+          {
+            "factor_id": "fixture_factor_market_demand",
+            "factor_label": "FIXTURE_market_demand",
+            "current_value": 55,
+            "flip_value": 48.2,
+            "direction": "decrease",
+            "unit": "FIXTURE_units_per_month",
+            "alternative_winner_id": "fixture_option_beta",
+            "alternative_winner_label": "FIXTURE_option_beta",
+            "flip_reason": "FIXTURE_flip_found",
+            "no_flip_in_range": false,
+            "iterations_used": 12,
+            "probes_used": 24,
+            "margin_sensitivity": {
+              "FIXTURE_passthrough_probe": true
+            },
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "edge_e_values": [
+          {
+            "edge_id": "fixture_edge_demand_revenue",
+            "from_id": "fixture_factor_market_demand",
+            "to_id": "fixture_goal_revenue",
+            "from_label": "FIXTURE_market_demand",
+            "to_label": "FIXTURE_monthly_revenue",
+            "e_value": 1.8,
+            "flip_direction": "increase",
+            "current_mean": 0.6,
+            "flip_mean": 0.33,
+            "stability": {
+              "n_seeds": 10,
+              "n_seeds_flipped": 3,
+              "band_min": 0.2,
+              "band_median": 0.5,
+              "band_max": 0.8,
+              "band_width": 0.6,
+              "seed_flip_means": [
+                0.2,
+                null,
+                0.5,
+                null,
+                0.8,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "FIXTURE_passthrough_probe": true
+            },
+            "_normalised": true,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "inference_warnings": [
+          {
+            "code": "FIXTURE_WARNING_CODE",
+            "message": "FIXTURE synthetic inference warning.",
+            "severity": "info",
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "critiques": [
+          {
+            "id": "fixture_critique_1",
+            "code": "FIXTURE_CRITIQUE_CODE",
+            "severity": "warning",
+            "message": "FIXTURE synthetic internal critique wording.",
+            "user_message": "FIXTURE synthetic display-safe critique wording.",
+            "source": "validation",
+            "affected_option_ids": [
+              "fixture_option_alpha"
+            ],
+            "affected_node_ids": [
+              "fixture_factor_market_demand"
+            ],
+            "blocks_analysis": false,
+            "suggestion": "FIXTURE synthetic critique suggestion.",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_critique_transported_1",
+            "code": "FIXTURE_CRITIQUE_CODE",
+            "severity": "warning",
+            "user_message": "FIXTURE synthetic display-safe transported critique wording.",
+            "source": "validation",
+            "affected_option_ids": [
+              "fixture_option_alpha"
+            ],
+            "affected_node_ids": [
+              "fixture_factor_market_demand"
+            ],
+            "blocks_analysis": false,
+            "suggestion": "FIXTURE synthetic critique suggestion.",
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "confidence_tier": "fair",
+        "factor_evppi": [
+          {
+            "factor_id": "fixture_factor_market_demand",
+            "evppi": 0.34,
+            "evppi_raw": 0.341982,
+            "baseline_max_expected_utility": 12.5,
+            "conditional_max_expected_utility": 12.84,
+            "units": "outcome",
+            "method": "regression_evppi_v1",
+            "regression_degree": 2,
+            "n_samples": 4000,
+            "clamped_low": false,
+            "clamped_high": false,
+            "noise_floor": 0.02,
+            "status": "resolved",
+            "correlation_active": false,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "decision_evpi": 0.91,
+        "p_win_sensitivity": [
+          {
+            "FIXTURE_pp_delta_key": "FIXTURE_pp_delta_value"
+          }
+        ],
+        "correlation_model": {
+          "suppressed_attributions": [
+            "p_win_sensitivity"
+          ],
+          "FIXTURE_passthrough_probe": true
+        },
+        "constraint_results": [
+          {
+            "constraint_id": "fixture_constraint_budget",
+            "node_id": "fixture_goal_revenue",
+            "operator": ">=",
+            "value": 100,
+            "probability": 0.83,
+            "scale_provenance": {
+              "source": "FIXTURE_plot_constraint_normaliser",
+              "range_unified": true,
+              "threshold_clamped": "high",
+              "decision_grade": true,
+              "FIXTURE_passthrough_probe": true
+            },
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "conditional_probabilities": [
+          {
+            "given_constraint_id": "fixture_constraint_budget",
+            "target_constraint_id": "fixture_constraint_timeline",
+            "probability": 0.7,
+            "effective_sample_size": 4200,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "m1_coaching": {
+          "story_headlines": {
+            "primary": "FIXTURE_synthetic_headline"
+          },
+          "evidence_gaps": [
+            {
+              "factor_id": "fixture_factor_market_demand",
+              "factor_label": "FIXTURE_market_demand",
+              "voi_score": 0.12,
+              "confidence": 0.7,
+              "influence": 0.74,
+              "suggestion": "FIXTURE synthetic evidence suggestion.",
+              "evpi_percentage_points": 4.2,
+              "evpi_method": "heuristic",
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "model_critiques": [
+            {
+              "type": "FIXTURE_narrow_frame",
+              "severity": "info",
+              "challenge_question": "FIXTURE synthetic challenge question?",
+              "suggested_action": "FIXTURE synthetic suggested action.",
+              "targets": [
+                "fixture_factor_market_demand"
+              ],
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "next_actions": [
+            {
+              "priority": 1,
+              "action": "FIXTURE synthetic next action.",
+              "rationale": "FIXTURE synthetic rationale.",
+              "target_type": "factor",
+              "target_id": "fixture_factor_market_demand",
+              "target_label": "FIXTURE_market_demand",
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "readiness": "close_call",
+          "headline_type": "FIXTURE_headline_type",
+          "top_fragile_edge": {
+            "edge_id": "fixture_edge_demand_revenue",
+            "label": "FIXTURE_demand_drives_revenue",
+            "alternative_winner": "FIXTURE_option_beta",
+            "switch_probability": 0.42,
+            "FIXTURE_passthrough_probe": true
+          },
+          "coaching_version": "FIXTURE_m1_v9",
+          "computed_at": "2026-01-01T00:00:00.000Z",
+          "FIXTURE_passthrough_probe": true
+        },
+        "decision_review": {
+          "produced_at": "2026-01-01T00:00:00.000Z",
+          "narrative_summary": "FIXTURE synthetic narrative summary.",
+          "robustness_explanation": "FIXTURE synthetic robustness explanation.",
+          "FIXTURE_passthrough_probe": true
+        },
+        "decision_brief": {
+          "brief_id": "fixture-brief-0001",
+          "version": "1",
+          "headline": "FIXTURE synthetic leader-band headline.",
+          "options": [
+            {
+              "option_id": "fixture_option_alpha",
+              "label": "FIXTURE_option_alpha",
+              "win_probability": 0.7,
+              "rank": 1
+            }
+          ],
+          "FIXTURE_passthrough_probe": true
+        },
+        "results": [
+          {
+            "FIXTURE_legacy_key": "FIXTURE_legacy_value"
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "computed_against_hash": "FIXTURE_graph_hash_0a1b2c3d4e5f"
+    }
+  },
+  {
+    "family": "boundary/GraphPatchBlockSchema",
+    "fixture": {
+      "type": "graph_patch",
+      "status": "applied",
+      "operation": "set_factor_value",
+      "target_id": "fixture_factor_market_demand",
+      "before": {
+        "value": 40,
+        "FIXTURE_passthrough_probe": true
+      },
+      "after": {
+        "value": 55,
+        "FIXTURE_passthrough_probe": true
+      }
+    }
+  },
+  {
+    "family": "boundary/ExplanationBlockSchema",
+    "fixture": {
+      "type": "explanation",
+      "narrative": "FIXTURE synthetic explanation narrative.",
+      "referenced_option_ids": [
+        "fixture_option_alpha",
+        "fixture_option_beta"
+      ],
+      "enrichment": {
+        "FIXTURE_passthrough_probe": true
+      }
+    }
+  },
+  {
+    "family": "boundary/ComparisonBlockSchema",
+    "fixture": {
+      "type": "comparison",
+      "options": [
+        {
+          "option_id": "fixture_option_alpha",
+          "label": "FIXTURE_option_alpha",
+          "win_probability": 0.62,
+          "attributes": {
+            "FIXTURE_attribute": "FIXTURE_value"
+          }
+        },
+        {
+          "option_id": "fixture_option_beta",
+          "label": "FIXTURE_option_beta",
+          "win_probability": 0.38,
+          "attributes": {
+            "FIXTURE_attribute": "FIXTURE_value"
+          }
+        }
+      ],
+      "narrative": "FIXTURE synthetic comparison narrative."
+    }
+  },
+  {
+    "family": "boundary/FlipAnalysisBlockSchema",
+    "fixture": {
+      "type": "flip_analysis",
+      "narrative": "FIXTURE synthetic flip narrative.",
+      "flip_scenarios": [
+        {
+          "factor_id": "fixture_factor_market_demand",
+          "current_value": 55,
+          "flip_threshold": 48.2,
+          "from_option_id": "fixture_option_alpha",
+          "to_option_id": "fixture_option_beta",
+          "fragile": true
+        },
+        {
+          "factor_id": "fixture_factor_secondary",
+          "current_value": null,
+          "flip_threshold": null,
+          "from_option_id": null,
+          "to_option_id": null,
+          "fragile": false
+        }
+      ],
+      "enrichment": {
+        "FIXTURE_passthrough_probe": true
+      }
+    }
+  },
+  {
+    "family": "boundary/DraftGraphBlockSchema",
+    "fixture": {
+      "type": "draft_graph",
+      "nodes": [
+        {
+          "id": "fixture_factor_market_demand",
+          "kind": "factor",
+          "label": "FIXTURE_market_demand",
+          "body": "FIXTURE synthetic factor description — no real decision content.",
+          "type": "numeric",
+          "categories": [
+            "FIXTURE_low",
+            "FIXTURE_high"
+          ],
+          "category": "observable",
+          "observed_state": {
+            "value": 42.5,
+            "std": 3.2,
+            "baseline": 40,
+            "unit": "FIXTURE_units_per_month",
+            "source": "FIXTURE_user_estimate",
+            "declared_scale": "raw_count",
+            "FIXTURE_passthrough_probe": true
+          },
+          "state_space": {
+            "range": {
+              "min": 0,
+              "max": 100
+            },
+            "FIXTURE_passthrough_probe": true
+          },
+          "goal_threshold": 75,
+          "goal_threshold_frame": "level",
+          "FIXTURE_passthrough_probe": true
+        },
+        {
+          "id": "fixture_goal_revenue",
+          "kind": "goal",
+          "label": "FIXTURE_monthly_revenue",
+          "goal_threshold": 100,
+          "FIXTURE_passthrough_probe": true
+        },
+        {
+          "id": "fixture_option_alpha",
+          "kind": "option",
+          "label": "FIXTURE_option_alpha"
+        },
+        {
+          "id": "fixture_option_beta",
+          "kind": "option",
+          "label": "FIXTURE_option_beta"
+        }
+      ],
+      "edges": [
+        {
+          "from": "fixture_factor_market_demand",
+          "to": "fixture_goal_revenue",
+          "strength": {
+            "mean": 0.6,
+            "std": 0.15
+          },
+          "exists_probability": 0.9,
+          "effect_direction": "positive",
+          "edge_type": "directed",
+          "label": "FIXTURE_demand_drives_revenue",
+          "FIXTURE_passthrough_probe": true
+        },
+        {
+          "from": "fixture_option_alpha",
+          "to": "fixture_factor_market_demand",
+          "strength": {
+            "mean": 0.4,
+            "std": 0.2
+          },
+          "exists_probability": 0.8,
+          "effect_direction": "positive",
+          "edge_type": "directed",
+          "label": "FIXTURE_option_lifts_demand"
+        }
+      ],
+      "node_count": 4,
+      "edge_count": 2,
+      "goal_constraints": [
+        {
+          "constraint_id": "FIXTURE_constraint_first_year_cost_max",
+          "node_id": "FIXTURE_fac_first_year_cost",
+          "operator": "<=",
+          "value": 50000,
+          "label": "FIXTURE synthetic first-year budget cap",
+          "unit": "£",
+          "source_quote": "FIXTURE synthetic source quote from the brief.",
+          "confidence": 0.85,
+          "provenance": "explicit",
+          "deadline_metadata": {
+            "deadline_date": "2027-01-01",
+            "reference_date": "2026-01-01",
+            "assumed_reference_date": true,
+            "FIXTURE_passthrough_probe": true
+          },
+          "provenance_unit_normalised": {
+            "rule": "percent_to_fraction",
+            "original_value": 15,
+            "original_unit": "%",
+            "FIXTURE_passthrough_probe": true
+          },
+          "value_frame": "level",
+          "FIXTURE_passthrough_probe": true
+        }
+      ]
+    }
+  },
+  {
+    "family": "boundary/DraftGoalConstraintSchema",
+    "fixture": {
+      "constraint_id": "FIXTURE_constraint_first_year_cost_max",
+      "node_id": "FIXTURE_fac_first_year_cost",
+      "operator": "<=",
+      "value": 50000,
+      "label": "FIXTURE synthetic first-year budget cap",
+      "unit": "£",
+      "source_quote": "FIXTURE synthetic source quote from the brief.",
+      "confidence": 0.85,
+      "provenance": "explicit",
+      "deadline_metadata": {
+        "deadline_date": "2027-01-01",
+        "reference_date": "2026-01-01",
+        "assumed_reference_date": true,
+        "FIXTURE_passthrough_probe": true
+      },
+      "provenance_unit_normalised": {
+        "rule": "percent_to_fraction",
+        "original_value": 15,
+        "original_unit": "%",
+        "FIXTURE_passthrough_probe": true
+      },
+      "value_frame": "level",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/ReviewCardBlockSchema",
+    "fixture": {
+      "block_id": "44444444-4444-4444-8444-444444444444",
+      "signal_id": "fixture_signal_review_1",
+      "created_at": "2026-01-01T09:30:00.000+01:00",
+      "source_handler": "FIXTURE_decision_review",
+      "graph_hash_at_generation": "fixture_graph_hash_1",
+      "freshness": "fresh",
+      "type": "review_card",
+      "card_kind": "flip_threshold",
+      "title": "FIXTURE synthetic review card title",
+      "body": "FIXTURE synthetic review card body.",
+      "severity": "warning",
+      "target_refs": [
+        {
+          "id": "fixture_factor_market_demand",
+          "label": "FIXTURE_market_demand",
+          "kind": "factor"
+        }
+      ],
+      "priority_rank": 1,
+      "category": "should_fix",
+      "priority": 70,
+      "signal_code": "FIXTURE_SIGNAL_CODE",
+      "signal": "FIXTURE synthetic per-item signal line.",
+      "action_intent": "what_would_flip",
+      "action_label": "FIXTURE test the tipping point"
+    }
+  },
+  {
+    "family": "boundary/CoachingBlockSchema",
+    "fixture": {
+      "block_id": "55555555-5555-4555-8555-555555555555",
+      "signal_id": "fixture_signal_coaching_1",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "source_handler": "FIXTURE_coaching_pass",
+      "graph_hash_at_generation": "fixture_graph_hash_1",
+      "freshness": "fresh",
+      "type": "coaching",
+      "coaching_kind": "bias_signal",
+      "title": "FIXTURE synthetic coaching title",
+      "body": "FIXTURE synthetic coaching body.",
+      "source": "decision_review",
+      "target_refs": [
+        {
+          "id": "fixture_factor_market_demand",
+          "label": "FIXTURE_market_demand",
+          "kind": "factor"
+        }
+      ],
+      "priority_rank": 2,
+      "category": "could_fix",
+      "priority": 50,
+      "signal_code": "FIXTURE_SIGNAL_CODE",
+      "signal": "FIXTURE synthetic per-item signal line.",
+      "action_intent": "gather_evidence",
+      "action_label": "FIXTURE gather evidence",
+      "action_prompt": "FIXTURE help me gather evidence for this factor."
+    }
+  },
+  {
+    "family": "boundary/EvidenceBlockSchema",
+    "fixture": {
+      "block_id": "66666666-6666-4666-8666-666666666666",
+      "signal_id": "fixture_signal_evidence_1",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "source_handler": "FIXTURE_evidence_ranker",
+      "graph_hash_at_generation": "fixture_graph_hash_1",
+      "freshness": "fresh",
+      "type": "evidence",
+      "factor_label": "FIXTURE_market_demand",
+      "factor_ref": {
+        "id": "fixture_factor_market_demand",
+        "label": "FIXTURE_market_demand",
+        "kind": "factor"
+      },
+      "target_refs": [
+        {
+          "id": "fixture_factor_market_demand",
+          "label": "FIXTURE_market_demand",
+          "kind": "factor"
+        },
+        {
+          "id": "fixture_option_alpha",
+          "label": "FIXTURE_option_alpha",
+          "kind": "option"
+        }
+      ],
+      "current_confidence": "medium",
+      "evidence_gap": "FIXTURE synthetic evidence gap.",
+      "suggested_technique": "FIXTURE synthetic technique.",
+      "impact_if_gathered": "FIXTURE synthetic impact.",
+      "priority_rank": 3,
+      "severity": "info",
+      "category": "must_fix",
+      "priority": 90,
+      "signal_code": "FIXTURE_SIGNAL_CODE",
+      "signal": "FIXTURE synthetic per-item signal line.",
+      "action_intent": "gather_evidence",
+      "action_label": "FIXTURE gather this evidence"
+    }
+  },
+  {
+    "family": "boundary/ExerciseBlockSchema",
+    "fixture": {
+      "block_id": "77777777-7777-4777-8777-777777777777",
+      "signal_id": "fixture_signal_exercise_1",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "source_handler": "FIXTURE_pre_mortem",
+      "graph_hash_at_generation": "fixture_graph_hash_1",
+      "freshness": "fresh",
+      "type": "exercise",
+      "exercise_kind": "pre_mortem",
+      "failure_scenario": "FIXTURE synthetic failure scenario.",
+      "warning_signs": [
+        "FIXTURE synthetic warning sign."
+      ],
+      "mitigation": "FIXTURE synthetic mitigation.",
+      "reference_class": "FIXTURE synthetic reference class.",
+      "target_element_ref": {
+        "id": "fixture_option_alpha",
+        "label": "FIXTURE_option_alpha",
+        "kind": "option"
+      },
+      "counter_case": "FIXTURE synthetic counter case.",
+      "review_trigger": "FIXTURE synthetic review trigger.",
+      "target_refs": [
+        {
+          "id": "fixture_factor_market_demand",
+          "label": "FIXTURE_market_demand",
+          "kind": "factor"
+        }
+      ],
+      "category": "technique",
+      "priority": 30,
+      "signal_code": "FIXTURE_SIGNAL_CODE",
+      "signal": "FIXTURE synthetic per-item signal line.",
+      "dsk_provenance": {
+        "protocol_id": "DSK-P-001",
+        "protocol_title": "Pre-mortem exercise",
+        "evidence_strength": "medium"
+      }
+    }
+  },
+  {
+    "family": "boundary/HeldProposalBlockSchema",
+    "fixture": {
+      "type": "held_proposal",
+      "proposal_id": "gmh_fixture0001",
+      "summary": "FIXTURE synthetic held-change summary.",
+      "mutation_class": "structural",
+      "reason_code": "STRUCTURAL_APPLY_HELD",
+      "confirm_action_id": "fixture_action_confirm_apply",
+      "decline_action_id": "fixture_action_decline_apply"
+    }
+  },
+  {
+    "family": "boundary/UiDirectiveBlockSchema",
+    "fixture": {
+      "type": "ui_directive",
+      "verb": "highlight",
+      "targets": [
+        {
+          "id": "fixture_factor_market_demand",
+          "label": "FIXTURE_market_demand",
+          "kind": "factor"
+        }
+      ],
+      "duration_ms": 1500,
+      "note": "FIXTURE synthetic directive caption."
+    }
+  },
+  {
+    "family": "boundary/UiDirectiveBlockSchema#open_panel",
+    "fixture": {
+      "type": "ui_directive",
+      "verb": "open_panel",
+      "targets": [],
+      "ui_target": {
+        "kind": "tab",
+        "id": "results"
+      },
+      "note": "FIXTURE synthetic open-panel caption."
+    }
+  },
+  {
+    "family": "boundary/UiDirectiveBlockSchema#open_section",
+    "fixture": {
+      "type": "ui_directive",
+      "verb": "open_section",
+      "targets": [],
+      "ui_target": {
+        "kind": "model_section",
+        "id": "relationships"
+      },
+      "note": "FIXTURE synthetic open-section caption."
+    }
+  },
+  {
+    "family": "boundary/UiDirectiveUiTargetSchema",
+    "fixture": {
+      "kind": "tab",
+      "id": "results"
+    }
+  },
+  {
+    "family": "boundary/BlockSchema#analysis_result",
+    "fixture": {
+      "type": "analysis_result",
+      "summary": "FIXTURE synthetic analysis summary.",
+      "leading_option_id": "fixture_option_alpha",
+      "win_probabilities": {
+        "fixture_option_alpha": 0.62,
+        "fixture_option_beta": 0.38
+      },
+      "enrichment": {
+        "analysis_status": "computed",
+        "status_reason": "FIXTURE_computed_normally",
+        "option_comparison_status": "computed",
+        "robustness_status": "computed",
+        "drivers_status": "computed",
+        "constraints_status": "computed",
+        "option_comparison": [
+          {
+            "option_id": "fixture_option_alpha",
+            "option_label": "FIXTURE_option_alpha",
+            "id": "fixture_option_alpha",
+            "label": "FIXTURE_option_alpha",
+            "expected_outcome": 61.9,
+            "confidence_interval": [
+              51,
+              74
+            ],
+            "outcome": {
+              "mean": 62.4,
+              "std": 8.1,
+              "p10": 51,
+              "p50": 62,
+              "p90": 74,
+              "n_samples": 10000,
+              "n_valid_samples": 9800,
+              "validity_ratio": 0.98,
+              "percentiles_source": "samples",
+              "FIXTURE_passthrough_probe": true
+            },
+            "status": "computed",
+            "status_reason": "FIXTURE_computed_normally",
+            "probability_of_goal": 0.71,
+            "win_probability": 0.62,
+            "probability_of_joint_goal": 0.58,
+            "constraint_probabilities": {
+              "fixture_constraint_budget": 0.83
+            },
+            "goal_fit_basis": {
+              "scored_from": "modelled_outcome_distribution",
+              "node_ids": [
+                "fixture_constraint_budget"
+              ],
+              "FIXTURE_passthrough_probe": true
+            },
+            "constraint_margins": [
+              {
+                "constraint_id": "fixture_constraint_budget",
+                "failure_margin_median": 24000,
+                "near_miss_fraction": 0.15,
+                "margin_precision": "lower_bound",
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "constraints_decision_grade": true,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "factor_sensitivity": [
+          {
+            "factor_id": "fixture_factor_market_demand",
+            "factor_label": "FIXTURE_market_demand",
+            "influence_score": 0.74,
+            "influence_rank": 1,
+            "sensitivity_score": 0.68,
+            "elasticity": 1.2,
+            "direction": "positive",
+            "importance_rank": 1,
+            "interpretation": "FIXTURE synthetic interpretation.",
+            "value_of_information": 0.12,
+            "evpi_percentage_points": 4.2,
+            "evpi_method": "heuristic",
+            "evpi_status": "below_resolution",
+            "confidence": 0.7,
+            "zero_reason": "intervention_override",
+            "source": "isl",
+            "confidence_source": "plot_unified_from_isl_bootstrap",
+            "confidence_provenance": {
+              "computation_source": "FIXTURE_plot_unified",
+              "formula_version": "FIXTURE_v1",
+              "is_provisional": true,
+              "calibration_status": "FIXTURE_uncalibrated",
+              "input_quality": "FIXTURE_mixed",
+              "FIXTURE_passthrough_probe": true
+            },
+            "flip_risk_category": "isolated",
+            "elasticity_std": 0.3,
+            "attribution_stability": "high",
+            "rank_flip_rate": 0.05,
+            "stability_method": "FIXTURE_bootstrap",
+            "value_source": "FIXTURE_observed_state",
+            "value_extraction_type": "FIXTURE_numeric",
+            "value_defaulted": false,
+            "confidence_components": {
+              "structural_certainty": 0.9,
+              "sampling_stability": 0.7,
+              "FIXTURE_passthrough_probe": true
+            },
+            "range_derivation_source": "FIXTURE_state_space",
+            "_normalised": true,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "robustness": {
+          "score": 0.66,
+          "label": "moderate",
+          "fragile_edges": [
+            {
+              "edge_id": "fixture_edge_demand_revenue",
+              "from_id": "fixture_factor_market_demand",
+              "to_id": "fixture_goal_revenue",
+              "from_label": "FIXTURE_market_demand",
+              "to_label": "FIXTURE_monthly_revenue",
+              "switch_probability": 0.42,
+              "severity": "warning",
+              "marginal_switch_probability": 0.18,
+              "alternative_winner_id": "fixture_option_beta",
+              "alternative_winner_label": "FIXTURE_option_beta",
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "robust_edges": [
+            {
+              "edge_id": "fixture_edge_option_demand",
+              "from_id": "fixture_option_alpha",
+              "to_id": "fixture_factor_market_demand",
+              "from_label": "FIXTURE_option_alpha",
+              "to_label": "FIXTURE_market_demand",
+              "switch_probability": 0.03,
+              "severity": "warning",
+              "marginal_switch_probability": 0.01,
+              "alternative_winner_id": null,
+              "alternative_winner_label": null,
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "explanation": "FIXTURE synthetic robustness explanation.",
+          "recommendation_stability": 0.62,
+          "is_robust": true,
+          "level": "medium",
+          "confidence": 0.75,
+          "normalization_errors": [
+            {
+              "edge_type": "bidirected",
+              "error": "FIXTURE synthetic normalisation note.",
+              "raw_value": {
+                "FIXTURE_raw": true
+              },
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "recommended_option_id": "fixture_option_alpha",
+          "recommended_option_label": "FIXTURE_option_alpha",
+          "near_tie": {
+            "is_tie": false,
+            "top_option_id": "fixture_option_alpha",
+            "second_option_id": "fixture_option_beta",
+            "tied_option_ids": [
+              "fixture_option_alpha",
+              "fixture_option_beta"
+            ],
+            "gap": 0.11,
+            "threshold": 0.05,
+            "FIXTURE_passthrough_probe": true
+          },
+          "display_verdict": "moderate",
+          "display_verdict_reason": "FIXTURE synthetic display-safe verdict reason.",
+          "FIXTURE_passthrough_probe": true
+        },
+        "flip_thresholds": [
+          {
+            "factor_id": "fixture_factor_market_demand",
+            "factor_label": "FIXTURE_market_demand",
+            "current_value": 55,
+            "flip_value": 48.2,
+            "direction": "decrease",
+            "unit": "FIXTURE_units_per_month",
+            "alternative_winner_id": "fixture_option_beta",
+            "alternative_winner_label": "FIXTURE_option_beta",
+            "flip_reason": "FIXTURE_flip_found",
+            "no_flip_in_range": false,
+            "iterations_used": 12,
+            "probes_used": 24,
+            "margin_sensitivity": {
+              "FIXTURE_passthrough_probe": true
+            },
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "edge_e_values": [
+          {
+            "edge_id": "fixture_edge_demand_revenue",
+            "from_id": "fixture_factor_market_demand",
+            "to_id": "fixture_goal_revenue",
+            "from_label": "FIXTURE_market_demand",
+            "to_label": "FIXTURE_monthly_revenue",
+            "e_value": 1.8,
+            "flip_direction": "increase",
+            "current_mean": 0.6,
+            "flip_mean": 0.33,
+            "stability": {
+              "n_seeds": 10,
+              "n_seeds_flipped": 3,
+              "band_min": 0.2,
+              "band_median": 0.5,
+              "band_max": 0.8,
+              "band_width": 0.6,
+              "seed_flip_means": [
+                0.2,
+                null,
+                0.5,
+                null,
+                0.8,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              "FIXTURE_passthrough_probe": true
+            },
+            "_normalised": true,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "inference_warnings": [
+          {
+            "code": "FIXTURE_WARNING_CODE",
+            "message": "FIXTURE synthetic inference warning.",
+            "severity": "info",
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "critiques": [
+          {
+            "id": "fixture_critique_1",
+            "code": "FIXTURE_CRITIQUE_CODE",
+            "severity": "warning",
+            "message": "FIXTURE synthetic internal critique wording.",
+            "user_message": "FIXTURE synthetic display-safe critique wording.",
+            "source": "validation",
+            "affected_option_ids": [
+              "fixture_option_alpha"
+            ],
+            "affected_node_ids": [
+              "fixture_factor_market_demand"
+            ],
+            "blocks_analysis": false,
+            "suggestion": "FIXTURE synthetic critique suggestion.",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_critique_transported_1",
+            "code": "FIXTURE_CRITIQUE_CODE",
+            "severity": "warning",
+            "user_message": "FIXTURE synthetic display-safe transported critique wording.",
+            "source": "validation",
+            "affected_option_ids": [
+              "fixture_option_alpha"
+            ],
+            "affected_node_ids": [
+              "fixture_factor_market_demand"
+            ],
+            "blocks_analysis": false,
+            "suggestion": "FIXTURE synthetic critique suggestion.",
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "confidence_tier": "fair",
+        "factor_evppi": [
+          {
+            "factor_id": "fixture_factor_market_demand",
+            "evppi": 0.34,
+            "evppi_raw": 0.341982,
+            "baseline_max_expected_utility": 12.5,
+            "conditional_max_expected_utility": 12.84,
+            "units": "outcome",
+            "method": "regression_evppi_v1",
+            "regression_degree": 2,
+            "n_samples": 4000,
+            "clamped_low": false,
+            "clamped_high": false,
+            "noise_floor": 0.02,
+            "status": "resolved",
+            "correlation_active": false,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "decision_evpi": 0.91,
+        "p_win_sensitivity": [
+          {
+            "FIXTURE_pp_delta_key": "FIXTURE_pp_delta_value"
+          }
+        ],
+        "correlation_model": {
+          "suppressed_attributions": [
+            "p_win_sensitivity"
+          ],
+          "FIXTURE_passthrough_probe": true
+        },
+        "constraint_results": [
+          {
+            "constraint_id": "fixture_constraint_budget",
+            "node_id": "fixture_goal_revenue",
+            "operator": ">=",
+            "value": 100,
+            "probability": 0.83,
+            "scale_provenance": {
+              "source": "FIXTURE_plot_constraint_normaliser",
+              "range_unified": true,
+              "threshold_clamped": "high",
+              "decision_grade": true,
+              "FIXTURE_passthrough_probe": true
+            },
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "conditional_probabilities": [
+          {
+            "given_constraint_id": "fixture_constraint_budget",
+            "target_constraint_id": "fixture_constraint_timeline",
+            "probability": 0.7,
+            "effective_sample_size": 4200,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "m1_coaching": {
+          "story_headlines": {
+            "primary": "FIXTURE_synthetic_headline"
+          },
+          "evidence_gaps": [
+            {
+              "factor_id": "fixture_factor_market_demand",
+              "factor_label": "FIXTURE_market_demand",
+              "voi_score": 0.12,
+              "confidence": 0.7,
+              "influence": 0.74,
+              "suggestion": "FIXTURE synthetic evidence suggestion.",
+              "evpi_percentage_points": 4.2,
+              "evpi_method": "heuristic",
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "model_critiques": [
+            {
+              "type": "FIXTURE_narrow_frame",
+              "severity": "info",
+              "challenge_question": "FIXTURE synthetic challenge question?",
+              "suggested_action": "FIXTURE synthetic suggested action.",
+              "targets": [
+                "fixture_factor_market_demand"
+              ],
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "next_actions": [
+            {
+              "priority": 1,
+              "action": "FIXTURE synthetic next action.",
+              "rationale": "FIXTURE synthetic rationale.",
+              "target_type": "factor",
+              "target_id": "fixture_factor_market_demand",
+              "target_label": "FIXTURE_market_demand",
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "readiness": "close_call",
+          "headline_type": "FIXTURE_headline_type",
+          "top_fragile_edge": {
+            "edge_id": "fixture_edge_demand_revenue",
+            "label": "FIXTURE_demand_drives_revenue",
+            "alternative_winner": "FIXTURE_option_beta",
+            "switch_probability": 0.42,
+            "FIXTURE_passthrough_probe": true
+          },
+          "coaching_version": "FIXTURE_m1_v9",
+          "computed_at": "2026-01-01T00:00:00.000Z",
+          "FIXTURE_passthrough_probe": true
+        },
+        "decision_review": {
+          "produced_at": "2026-01-01T00:00:00.000Z",
+          "narrative_summary": "FIXTURE synthetic narrative summary.",
+          "robustness_explanation": "FIXTURE synthetic robustness explanation.",
+          "FIXTURE_passthrough_probe": true
+        },
+        "decision_brief": {
+          "brief_id": "fixture-brief-0001",
+          "version": "1",
+          "headline": "FIXTURE synthetic leader-band headline.",
+          "options": [
+            {
+              "option_id": "fixture_option_alpha",
+              "label": "FIXTURE_option_alpha",
+              "win_probability": 0.7,
+              "rank": 1
+            }
+          ],
+          "FIXTURE_passthrough_probe": true
+        },
+        "results": [
+          {
+            "FIXTURE_legacy_key": "FIXTURE_legacy_value"
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "computed_against_hash": "FIXTURE_graph_hash_0a1b2c3d4e5f"
+    }
+  },
+  {
+    "family": "boundary/ChipSchema",
+    "fixture": {
+      "id": "fixture_chip_1",
+      "label": "FIXTURE_chip_label",
+      "action": "run_analysis"
+    }
+  },
+  {
+    "family": "boundary/EnrichmentOutcomeStatsSchema",
+    "fixture": {
+      "mean": 62.4,
+      "std": 8.1,
+      "p10": 51,
+      "p50": 62,
+      "p90": 74,
+      "n_samples": 10000,
+      "n_valid_samples": 9800,
+      "validity_ratio": 0.98,
+      "percentiles_source": "samples",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentGoalFitBasisSchema",
+    "fixture": {
+      "scored_from": "modelled_outcome_distribution",
+      "node_ids": [
+        "fixture_constraint_budget"
+      ],
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentConstraintMarginSchema",
+    "fixture": {
+      "constraint_id": "fixture_constraint_budget",
+      "failure_margin_median": 24000,
+      "near_miss_fraction": 0.15,
+      "margin_precision": "lower_bound",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentOptionComparisonEntrySchema",
+    "fixture": {
+      "option_id": "fixture_option_alpha",
+      "option_label": "FIXTURE_option_alpha",
+      "id": "fixture_option_alpha",
+      "label": "FIXTURE_option_alpha",
+      "expected_outcome": 61.9,
+      "confidence_interval": [
+        51,
+        74
+      ],
+      "outcome": {
+        "mean": 62.4,
+        "std": 8.1,
+        "p10": 51,
+        "p50": 62,
+        "p90": 74,
+        "n_samples": 10000,
+        "n_valid_samples": 9800,
+        "validity_ratio": 0.98,
+        "percentiles_source": "samples",
+        "FIXTURE_passthrough_probe": true
+      },
+      "status": "computed",
+      "status_reason": "FIXTURE_computed_normally",
+      "probability_of_goal": 0.71,
+      "win_probability": 0.62,
+      "probability_of_joint_goal": 0.58,
+      "constraint_probabilities": {
+        "fixture_constraint_budget": 0.83
+      },
+      "goal_fit_basis": {
+        "scored_from": "modelled_outcome_distribution",
+        "node_ids": [
+          "fixture_constraint_budget"
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "constraint_margins": [
+        {
+          "constraint_id": "fixture_constraint_budget",
+          "failure_margin_median": 24000,
+          "near_miss_fraction": 0.15,
+          "margin_precision": "lower_bound",
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "constraints_decision_grade": true,
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentConfidenceProvenanceSchema",
+    "fixture": {
+      "computation_source": "FIXTURE_plot_unified",
+      "formula_version": "FIXTURE_v1",
+      "is_provisional": true,
+      "calibration_status": "FIXTURE_uncalibrated",
+      "input_quality": "FIXTURE_mixed",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentFactorSensitivityEntrySchema",
+    "fixture": {
+      "factor_id": "fixture_factor_market_demand",
+      "factor_label": "FIXTURE_market_demand",
+      "influence_score": 0.74,
+      "influence_rank": 1,
+      "sensitivity_score": 0.68,
+      "elasticity": 1.2,
+      "direction": "positive",
+      "importance_rank": 1,
+      "interpretation": "FIXTURE synthetic interpretation.",
+      "value_of_information": 0.12,
+      "evpi_percentage_points": 4.2,
+      "evpi_method": "heuristic",
+      "evpi_status": "below_resolution",
+      "confidence": 0.7,
+      "zero_reason": "intervention_override",
+      "source": "isl",
+      "confidence_source": "plot_unified_from_isl_bootstrap",
+      "confidence_provenance": {
+        "computation_source": "FIXTURE_plot_unified",
+        "formula_version": "FIXTURE_v1",
+        "is_provisional": true,
+        "calibration_status": "FIXTURE_uncalibrated",
+        "input_quality": "FIXTURE_mixed",
+        "FIXTURE_passthrough_probe": true
+      },
+      "flip_risk_category": "isolated",
+      "elasticity_std": 0.3,
+      "attribution_stability": "high",
+      "rank_flip_rate": 0.05,
+      "stability_method": "FIXTURE_bootstrap",
+      "value_source": "FIXTURE_observed_state",
+      "value_extraction_type": "FIXTURE_numeric",
+      "value_defaulted": false,
+      "confidence_components": {
+        "structural_certainty": 0.9,
+        "sampling_stability": 0.7,
+        "FIXTURE_passthrough_probe": true
+      },
+      "range_derivation_source": "FIXTURE_state_space",
+      "_normalised": true,
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentRobustnessEdgeSchema",
+    "fixture": {
+      "edge_id": "fixture_edge_demand_revenue",
+      "from_id": "fixture_factor_market_demand",
+      "to_id": "fixture_goal_revenue",
+      "from_label": "FIXTURE_market_demand",
+      "to_label": "FIXTURE_monthly_revenue",
+      "switch_probability": 0.42,
+      "severity": "warning",
+      "marginal_switch_probability": 0.18,
+      "alternative_winner_id": "fixture_option_beta",
+      "alternative_winner_label": "FIXTURE_option_beta",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentNearTieSchema",
+    "fixture": {
+      "is_tie": false,
+      "top_option_id": "fixture_option_alpha",
+      "second_option_id": "fixture_option_beta",
+      "tied_option_ids": [
+        "fixture_option_alpha",
+        "fixture_option_beta"
+      ],
+      "gap": 0.11,
+      "threshold": 0.05,
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentRobustnessSchema",
+    "fixture": {
+      "score": 0.66,
+      "label": "moderate",
+      "fragile_edges": [
+        {
+          "edge_id": "fixture_edge_demand_revenue",
+          "from_id": "fixture_factor_market_demand",
+          "to_id": "fixture_goal_revenue",
+          "from_label": "FIXTURE_market_demand",
+          "to_label": "FIXTURE_monthly_revenue",
+          "switch_probability": 0.42,
+          "severity": "warning",
+          "marginal_switch_probability": 0.18,
+          "alternative_winner_id": "fixture_option_beta",
+          "alternative_winner_label": "FIXTURE_option_beta",
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "robust_edges": [
+        {
+          "edge_id": "fixture_edge_option_demand",
+          "from_id": "fixture_option_alpha",
+          "to_id": "fixture_factor_market_demand",
+          "from_label": "FIXTURE_option_alpha",
+          "to_label": "FIXTURE_market_demand",
+          "switch_probability": 0.03,
+          "severity": "warning",
+          "marginal_switch_probability": 0.01,
+          "alternative_winner_id": null,
+          "alternative_winner_label": null,
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "explanation": "FIXTURE synthetic robustness explanation.",
+      "recommendation_stability": 0.62,
+      "is_robust": true,
+      "level": "medium",
+      "confidence": 0.75,
+      "normalization_errors": [
+        {
+          "edge_type": "bidirected",
+          "error": "FIXTURE synthetic normalisation note.",
+          "raw_value": {
+            "FIXTURE_raw": true
+          },
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "recommended_option_id": "fixture_option_alpha",
+      "recommended_option_label": "FIXTURE_option_alpha",
+      "near_tie": {
+        "is_tie": false,
+        "top_option_id": "fixture_option_alpha",
+        "second_option_id": "fixture_option_beta",
+        "tied_option_ids": [
+          "fixture_option_alpha",
+          "fixture_option_beta"
+        ],
+        "gap": 0.11,
+        "threshold": 0.05,
+        "FIXTURE_passthrough_probe": true
+      },
+      "display_verdict": "moderate",
+      "display_verdict_reason": "FIXTURE synthetic display-safe verdict reason.",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentFlipThresholdSchema",
+    "fixture": {
+      "factor_id": "fixture_factor_market_demand",
+      "factor_label": "FIXTURE_market_demand",
+      "current_value": 55,
+      "flip_value": 48.2,
+      "direction": "decrease",
+      "unit": "FIXTURE_units_per_month",
+      "alternative_winner_id": "fixture_option_beta",
+      "alternative_winner_label": "FIXTURE_option_beta",
+      "flip_reason": "FIXTURE_flip_found",
+      "no_flip_in_range": false,
+      "iterations_used": 12,
+      "probes_used": 24,
+      "margin_sensitivity": {
+        "FIXTURE_passthrough_probe": true
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentEdgeEValueSchema",
+    "fixture": {
+      "edge_id": "fixture_edge_demand_revenue",
+      "from_id": "fixture_factor_market_demand",
+      "to_id": "fixture_goal_revenue",
+      "from_label": "FIXTURE_market_demand",
+      "to_label": "FIXTURE_monthly_revenue",
+      "e_value": 1.8,
+      "flip_direction": "increase",
+      "current_mean": 0.6,
+      "flip_mean": 0.33,
+      "stability": {
+        "n_seeds": 10,
+        "n_seeds_flipped": 3,
+        "band_min": 0.2,
+        "band_median": 0.5,
+        "band_max": 0.8,
+        "band_width": 0.6,
+        "seed_flip_means": [
+          0.2,
+          null,
+          0.5,
+          null,
+          0.8,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "_normalised": true,
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentEdgeEValueStabilitySchema",
+    "fixture": {
+      "n_seeds": 10,
+      "n_seeds_flipped": 3,
+      "band_min": 0.2,
+      "band_median": 0.5,
+      "band_max": 0.8,
+      "band_width": 0.6,
+      "seed_flip_means": [
+        0.2,
+        null,
+        0.5,
+        null,
+        0.8,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentInferenceWarningSchema",
+    "fixture": {
+      "code": "FIXTURE_WARNING_CODE",
+      "message": "FIXTURE synthetic inference warning.",
+      "severity": "info",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentCritiqueSchema",
+    "fixture": {
+      "id": "fixture_critique_1",
+      "code": "FIXTURE_CRITIQUE_CODE",
+      "severity": "warning",
+      "message": "FIXTURE synthetic internal critique wording.",
+      "user_message": "FIXTURE synthetic display-safe critique wording.",
+      "source": "validation",
+      "affected_option_ids": [
+        "fixture_option_alpha"
+      ],
+      "affected_node_ids": [
+        "fixture_factor_market_demand"
+      ],
+      "blocks_analysis": false,
+      "suggestion": "FIXTURE synthetic critique suggestion.",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/TransportedCritiqueSchema",
+    "fixture": {
+      "id": "fixture_critique_transported_1",
+      "code": "FIXTURE_CRITIQUE_CODE",
+      "severity": "warning",
+      "user_message": "FIXTURE synthetic display-safe transported critique wording.",
+      "source": "validation",
+      "affected_option_ids": [
+        "fixture_option_alpha"
+      ],
+      "affected_node_ids": [
+        "fixture_factor_market_demand"
+      ],
+      "blocks_analysis": false,
+      "suggestion": "FIXTURE synthetic critique suggestion.",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentM1CoachingSchema",
+    "fixture": {
+      "story_headlines": {
+        "primary": "FIXTURE_synthetic_headline"
+      },
+      "evidence_gaps": [
+        {
+          "factor_id": "fixture_factor_market_demand",
+          "factor_label": "FIXTURE_market_demand",
+          "voi_score": 0.12,
+          "confidence": 0.7,
+          "influence": 0.74,
+          "suggestion": "FIXTURE synthetic evidence suggestion.",
+          "evpi_percentage_points": 4.2,
+          "evpi_method": "heuristic",
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "model_critiques": [
+        {
+          "type": "FIXTURE_narrow_frame",
+          "severity": "info",
+          "challenge_question": "FIXTURE synthetic challenge question?",
+          "suggested_action": "FIXTURE synthetic suggested action.",
+          "targets": [
+            "fixture_factor_market_demand"
+          ],
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "next_actions": [
+        {
+          "priority": 1,
+          "action": "FIXTURE synthetic next action.",
+          "rationale": "FIXTURE synthetic rationale.",
+          "target_type": "factor",
+          "target_id": "fixture_factor_market_demand",
+          "target_label": "FIXTURE_market_demand",
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "readiness": "close_call",
+      "headline_type": "FIXTURE_headline_type",
+      "top_fragile_edge": {
+        "edge_id": "fixture_edge_demand_revenue",
+        "label": "FIXTURE_demand_drives_revenue",
+        "alternative_winner": "FIXTURE_option_beta",
+        "switch_probability": 0.42,
+        "FIXTURE_passthrough_probe": true
+      },
+      "coaching_version": "FIXTURE_m1_v9",
+      "computed_at": "2026-01-01T00:00:00.000Z",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentDecisionReviewSchema",
+    "fixture": {
+      "produced_at": "2026-01-01T00:00:00.000Z",
+      "narrative_summary": "FIXTURE synthetic narrative summary.",
+      "robustness_explanation": "FIXTURE synthetic robustness explanation.",
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentScaleProvenanceSchema",
+    "fixture": {
+      "source": "FIXTURE_plot_constraint_normaliser",
+      "range_unified": true,
+      "threshold_clamped": "high",
+      "decision_grade": true,
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentConstraintResultSchema",
+    "fixture": {
+      "constraint_id": "fixture_constraint_budget",
+      "node_id": "fixture_goal_revenue",
+      "operator": ">=",
+      "value": 100,
+      "probability": 0.83,
+      "scale_provenance": {
+        "source": "FIXTURE_plot_constraint_normaliser",
+        "range_unified": true,
+        "threshold_clamped": "high",
+        "decision_grade": true,
+        "FIXTURE_passthrough_probe": true
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentConditionalProbabilitySchema",
+    "fixture": {
+      "given_constraint_id": "fixture_constraint_budget",
+      "target_constraint_id": "fixture_constraint_timeline",
+      "probability": 0.7,
+      "effective_sample_size": 4200,
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/EnrichmentFactorEvppiEntrySchema",
+    "fixture": {
+      "factor_id": "fixture_factor_market_demand",
+      "evppi": 0.34,
+      "evppi_raw": 0.341982,
+      "baseline_max_expected_utility": 12.5,
+      "conditional_max_expected_utility": 12.84,
+      "units": "outcome",
+      "method": "regression_evppi_v1",
+      "regression_degree": 2,
+      "n_samples": 4000,
+      "clamped_low": false,
+      "clamped_high": false,
+      "noise_floor": 0.02,
+      "status": "resolved",
+      "correlation_active": false,
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/AnalysisEnrichmentSchema",
+    "fixture": {
+      "analysis_status": "computed",
+      "status_reason": "FIXTURE_computed_normally",
+      "option_comparison_status": "computed",
+      "robustness_status": "computed",
+      "drivers_status": "computed",
+      "constraints_status": "computed",
+      "option_comparison": [
+        {
+          "option_id": "fixture_option_alpha",
+          "option_label": "FIXTURE_option_alpha",
+          "id": "fixture_option_alpha",
+          "label": "FIXTURE_option_alpha",
+          "expected_outcome": 61.9,
+          "confidence_interval": [
+            51,
+            74
+          ],
+          "outcome": {
+            "mean": 62.4,
+            "std": 8.1,
+            "p10": 51,
+            "p50": 62,
+            "p90": 74,
+            "n_samples": 10000,
+            "n_valid_samples": 9800,
+            "validity_ratio": 0.98,
+            "percentiles_source": "samples",
+            "FIXTURE_passthrough_probe": true
+          },
+          "status": "computed",
+          "status_reason": "FIXTURE_computed_normally",
+          "probability_of_goal": 0.71,
+          "win_probability": 0.62,
+          "probability_of_joint_goal": 0.58,
+          "constraint_probabilities": {
+            "fixture_constraint_budget": 0.83
+          },
+          "goal_fit_basis": {
+            "scored_from": "modelled_outcome_distribution",
+            "node_ids": [
+              "fixture_constraint_budget"
+            ],
+            "FIXTURE_passthrough_probe": true
+          },
+          "constraint_margins": [
+            {
+              "constraint_id": "fixture_constraint_budget",
+              "failure_margin_median": 24000,
+              "near_miss_fraction": 0.15,
+              "margin_precision": "lower_bound",
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "constraints_decision_grade": true,
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "factor_sensitivity": [
+        {
+          "factor_id": "fixture_factor_market_demand",
+          "factor_label": "FIXTURE_market_demand",
+          "influence_score": 0.74,
+          "influence_rank": 1,
+          "sensitivity_score": 0.68,
+          "elasticity": 1.2,
+          "direction": "positive",
+          "importance_rank": 1,
+          "interpretation": "FIXTURE synthetic interpretation.",
+          "value_of_information": 0.12,
+          "evpi_percentage_points": 4.2,
+          "evpi_method": "heuristic",
+          "evpi_status": "below_resolution",
+          "confidence": 0.7,
+          "zero_reason": "intervention_override",
+          "source": "isl",
+          "confidence_source": "plot_unified_from_isl_bootstrap",
+          "confidence_provenance": {
+            "computation_source": "FIXTURE_plot_unified",
+            "formula_version": "FIXTURE_v1",
+            "is_provisional": true,
+            "calibration_status": "FIXTURE_uncalibrated",
+            "input_quality": "FIXTURE_mixed",
+            "FIXTURE_passthrough_probe": true
+          },
+          "flip_risk_category": "isolated",
+          "elasticity_std": 0.3,
+          "attribution_stability": "high",
+          "rank_flip_rate": 0.05,
+          "stability_method": "FIXTURE_bootstrap",
+          "value_source": "FIXTURE_observed_state",
+          "value_extraction_type": "FIXTURE_numeric",
+          "value_defaulted": false,
+          "confidence_components": {
+            "structural_certainty": 0.9,
+            "sampling_stability": 0.7,
+            "FIXTURE_passthrough_probe": true
+          },
+          "range_derivation_source": "FIXTURE_state_space",
+          "_normalised": true,
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "robustness": {
+        "score": 0.66,
+        "label": "moderate",
+        "fragile_edges": [
+          {
+            "edge_id": "fixture_edge_demand_revenue",
+            "from_id": "fixture_factor_market_demand",
+            "to_id": "fixture_goal_revenue",
+            "from_label": "FIXTURE_market_demand",
+            "to_label": "FIXTURE_monthly_revenue",
+            "switch_probability": 0.42,
+            "severity": "warning",
+            "marginal_switch_probability": 0.18,
+            "alternative_winner_id": "fixture_option_beta",
+            "alternative_winner_label": "FIXTURE_option_beta",
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "robust_edges": [
+          {
+            "edge_id": "fixture_edge_option_demand",
+            "from_id": "fixture_option_alpha",
+            "to_id": "fixture_factor_market_demand",
+            "from_label": "FIXTURE_option_alpha",
+            "to_label": "FIXTURE_market_demand",
+            "switch_probability": 0.03,
+            "severity": "warning",
+            "marginal_switch_probability": 0.01,
+            "alternative_winner_id": null,
+            "alternative_winner_label": null,
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "explanation": "FIXTURE synthetic robustness explanation.",
+        "recommendation_stability": 0.62,
+        "is_robust": true,
+        "level": "medium",
+        "confidence": 0.75,
+        "normalization_errors": [
+          {
+            "edge_type": "bidirected",
+            "error": "FIXTURE synthetic normalisation note.",
+            "raw_value": {
+              "FIXTURE_raw": true
+            },
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "recommended_option_id": "fixture_option_alpha",
+        "recommended_option_label": "FIXTURE_option_alpha",
+        "near_tie": {
+          "is_tie": false,
+          "top_option_id": "fixture_option_alpha",
+          "second_option_id": "fixture_option_beta",
+          "tied_option_ids": [
+            "fixture_option_alpha",
+            "fixture_option_beta"
+          ],
+          "gap": 0.11,
+          "threshold": 0.05,
+          "FIXTURE_passthrough_probe": true
+        },
+        "display_verdict": "moderate",
+        "display_verdict_reason": "FIXTURE synthetic display-safe verdict reason.",
+        "FIXTURE_passthrough_probe": true
+      },
+      "flip_thresholds": [
+        {
+          "factor_id": "fixture_factor_market_demand",
+          "factor_label": "FIXTURE_market_demand",
+          "current_value": 55,
+          "flip_value": 48.2,
+          "direction": "decrease",
+          "unit": "FIXTURE_units_per_month",
+          "alternative_winner_id": "fixture_option_beta",
+          "alternative_winner_label": "FIXTURE_option_beta",
+          "flip_reason": "FIXTURE_flip_found",
+          "no_flip_in_range": false,
+          "iterations_used": 12,
+          "probes_used": 24,
+          "margin_sensitivity": {
+            "FIXTURE_passthrough_probe": true
+          },
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "edge_e_values": [
+        {
+          "edge_id": "fixture_edge_demand_revenue",
+          "from_id": "fixture_factor_market_demand",
+          "to_id": "fixture_goal_revenue",
+          "from_label": "FIXTURE_market_demand",
+          "to_label": "FIXTURE_monthly_revenue",
+          "e_value": 1.8,
+          "flip_direction": "increase",
+          "current_mean": 0.6,
+          "flip_mean": 0.33,
+          "stability": {
+            "n_seeds": 10,
+            "n_seeds_flipped": 3,
+            "band_min": 0.2,
+            "band_median": 0.5,
+            "band_max": 0.8,
+            "band_width": 0.6,
+            "seed_flip_means": [
+              0.2,
+              null,
+              0.5,
+              null,
+              0.8,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "FIXTURE_passthrough_probe": true
+          },
+          "_normalised": true,
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "inference_warnings": [
+        {
+          "code": "FIXTURE_WARNING_CODE",
+          "message": "FIXTURE synthetic inference warning.",
+          "severity": "info",
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "critiques": [
+        {
+          "id": "fixture_critique_1",
+          "code": "FIXTURE_CRITIQUE_CODE",
+          "severity": "warning",
+          "message": "FIXTURE synthetic internal critique wording.",
+          "user_message": "FIXTURE synthetic display-safe critique wording.",
+          "source": "validation",
+          "affected_option_ids": [
+            "fixture_option_alpha"
+          ],
+          "affected_node_ids": [
+            "fixture_factor_market_demand"
+          ],
+          "blocks_analysis": false,
+          "suggestion": "FIXTURE synthetic critique suggestion.",
+          "FIXTURE_passthrough_probe": true
+        },
+        {
+          "id": "fixture_critique_transported_1",
+          "code": "FIXTURE_CRITIQUE_CODE",
+          "severity": "warning",
+          "user_message": "FIXTURE synthetic display-safe transported critique wording.",
+          "source": "validation",
+          "affected_option_ids": [
+            "fixture_option_alpha"
+          ],
+          "affected_node_ids": [
+            "fixture_factor_market_demand"
+          ],
+          "blocks_analysis": false,
+          "suggestion": "FIXTURE synthetic critique suggestion.",
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "confidence_tier": "fair",
+      "factor_evppi": [
+        {
+          "factor_id": "fixture_factor_market_demand",
+          "evppi": 0.34,
+          "evppi_raw": 0.341982,
+          "baseline_max_expected_utility": 12.5,
+          "conditional_max_expected_utility": 12.84,
+          "units": "outcome",
+          "method": "regression_evppi_v1",
+          "regression_degree": 2,
+          "n_samples": 4000,
+          "clamped_low": false,
+          "clamped_high": false,
+          "noise_floor": 0.02,
+          "status": "resolved",
+          "correlation_active": false,
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "decision_evpi": 0.91,
+      "p_win_sensitivity": [
+        {
+          "FIXTURE_pp_delta_key": "FIXTURE_pp_delta_value"
+        }
+      ],
+      "correlation_model": {
+        "suppressed_attributions": [
+          "p_win_sensitivity"
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "constraint_results": [
+        {
+          "constraint_id": "fixture_constraint_budget",
+          "node_id": "fixture_goal_revenue",
+          "operator": ">=",
+          "value": 100,
+          "probability": 0.83,
+          "scale_provenance": {
+            "source": "FIXTURE_plot_constraint_normaliser",
+            "range_unified": true,
+            "threshold_clamped": "high",
+            "decision_grade": true,
+            "FIXTURE_passthrough_probe": true
+          },
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "conditional_probabilities": [
+        {
+          "given_constraint_id": "fixture_constraint_budget",
+          "target_constraint_id": "fixture_constraint_timeline",
+          "probability": 0.7,
+          "effective_sample_size": 4200,
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "m1_coaching": {
+        "story_headlines": {
+          "primary": "FIXTURE_synthetic_headline"
+        },
+        "evidence_gaps": [
+          {
+            "factor_id": "fixture_factor_market_demand",
+            "factor_label": "FIXTURE_market_demand",
+            "voi_score": 0.12,
+            "confidence": 0.7,
+            "influence": 0.74,
+            "suggestion": "FIXTURE synthetic evidence suggestion.",
+            "evpi_percentage_points": 4.2,
+            "evpi_method": "heuristic",
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "model_critiques": [
+          {
+            "type": "FIXTURE_narrow_frame",
+            "severity": "info",
+            "challenge_question": "FIXTURE synthetic challenge question?",
+            "suggested_action": "FIXTURE synthetic suggested action.",
+            "targets": [
+              "fixture_factor_market_demand"
+            ],
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "next_actions": [
+          {
+            "priority": 1,
+            "action": "FIXTURE synthetic next action.",
+            "rationale": "FIXTURE synthetic rationale.",
+            "target_type": "factor",
+            "target_id": "fixture_factor_market_demand",
+            "target_label": "FIXTURE_market_demand",
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "readiness": "close_call",
+        "headline_type": "FIXTURE_headline_type",
+        "top_fragile_edge": {
+          "edge_id": "fixture_edge_demand_revenue",
+          "label": "FIXTURE_demand_drives_revenue",
+          "alternative_winner": "FIXTURE_option_beta",
+          "switch_probability": 0.42,
+          "FIXTURE_passthrough_probe": true
+        },
+        "coaching_version": "FIXTURE_m1_v9",
+        "computed_at": "2026-01-01T00:00:00.000Z",
+        "FIXTURE_passthrough_probe": true
+      },
+      "decision_review": {
+        "produced_at": "2026-01-01T00:00:00.000Z",
+        "narrative_summary": "FIXTURE synthetic narrative summary.",
+        "robustness_explanation": "FIXTURE synthetic robustness explanation.",
+        "FIXTURE_passthrough_probe": true
+      },
+      "decision_brief": {
+        "brief_id": "fixture-brief-0001",
+        "version": "1",
+        "headline": "FIXTURE synthetic leader-band headline.",
+        "options": [
+          {
+            "option_id": "fixture_option_alpha",
+            "label": "FIXTURE_option_alpha",
+            "win_probability": 0.7,
+            "rank": 1
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "results": [
+        {
+          "FIXTURE_legacy_key": "FIXTURE_legacy_value"
+        }
+      ],
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/SelectedElementRefSchema",
+    "fixture": {
+      "id": "fixture_factor_market_demand",
+      "kind": "factor",
+      "label": "FIXTURE_market_demand"
+    }
+  },
+  {
+    "family": "boundary/MessageTurnPayloadSchema#chip",
+    "fixture": {
+      "turn_id": "11111111-1111-4111-8111-111111111111",
+      "scenario_id": "22222222-2222-4222-8222-222222222222",
+      "stage": "analyse",
+      "kind": "message",
+      "message": "FIXTURE synthetic user message.",
+      "turn_class": "propose",
+      "source": "chip",
+      "chip": {
+        "id": "fixture_chip_run_analysis",
+        "action_type": "run_analysis",
+        "intent": "elicit_options",
+        "parameters": {
+          "FIXTURE_parameter": "FIXTURE_value"
+        }
+      },
+      "generate_model": true,
+      "explicit_generate": true,
+      "selected_elements": [
+        {
+          "id": "fixture_factor_market_demand",
+          "kind": "factor",
+          "label": "FIXTURE_market_demand"
+        }
+      ],
+      "graph_state": {
+        "nodes": [
+          {
+            "id": "fixture_factor_market_demand",
+            "kind": "factor",
+            "label": "FIXTURE_market_demand",
+            "body": "FIXTURE synthetic factor description — no real decision content.",
+            "type": "numeric",
+            "categories": [
+              "FIXTURE_low",
+              "FIXTURE_high"
+            ],
+            "category": "observable",
+            "observed_state": {
+              "value": 42.5,
+              "std": 3.2,
+              "baseline": 40,
+              "unit": "FIXTURE_units_per_month",
+              "source": "FIXTURE_user_estimate",
+              "declared_scale": "raw_count",
+              "FIXTURE_passthrough_probe": true
+            },
+            "state_space": {
+              "range": {
+                "min": 0,
+                "max": 100
+              },
+              "FIXTURE_passthrough_probe": true
+            },
+            "goal_threshold": 75,
+            "goal_threshold_frame": "level",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_goal_revenue",
+            "kind": "goal",
+            "label": "FIXTURE_monthly_revenue",
+            "goal_threshold": 100,
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_option_alpha",
+            "kind": "option",
+            "label": "FIXTURE_option_alpha"
+          },
+          {
+            "id": "fixture_option_beta",
+            "kind": "option",
+            "label": "FIXTURE_option_beta"
+          }
+        ],
+        "edges": [
+          {
+            "from": "fixture_factor_market_demand",
+            "to": "fixture_goal_revenue",
+            "strength": {
+              "mean": 0.6,
+              "std": 0.15
+            },
+            "exists_probability": 0.9,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_demand_drives_revenue",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "from": "fixture_option_alpha",
+            "to": "fixture_factor_market_demand",
+            "strength": {
+              "mean": 0.4,
+              "std": 0.2
+            },
+            "exists_probability": 0.8,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_option_lifts_demand"
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      }
+    }
+  },
+  {
+    "family": "boundary/MessageTurnPayloadSchema#retry",
+    "fixture": {
+      "turn_id": "11111111-1111-4111-8111-111111111111",
+      "scenario_id": "22222222-2222-4222-8222-222222222222",
+      "stage": "analyse",
+      "kind": "message",
+      "message": "FIXTURE synthetic retried message.",
+      "turn_class": "propose",
+      "source": "retry",
+      "retry_of": "33333333-3333-4333-8333-333333333333",
+      "generate_model": true,
+      "explicit_generate": true,
+      "selected_elements": [
+        {
+          "id": "fixture_factor_market_demand",
+          "kind": "factor",
+          "label": "FIXTURE_market_demand"
+        }
+      ]
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#patch_accepted",
+    "fixture": {
+      "kind": "patch_accepted",
+      "patch_id": "fixture_patch_1"
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#patch_dismissed",
+    "fixture": {
+      "kind": "patch_dismissed",
+      "patch_id": "fixture_patch_1"
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#direct_graph_edit",
+    "fixture": {
+      "kind": "direct_graph_edit",
+      "target_id": "fixture_factor_market_demand",
+      "operation": "set_factor_value",
+      "changed_node_ids": [
+        "fixture_factor_market_demand",
+        "fixture_option_alpha"
+      ],
+      "changed_edge_ids": [
+        "fixture_edge_demand_revenue"
+      ],
+      "operations": [
+        "set_factor_value",
+        "adjust_edge_strength"
+      ],
+      "fields_changed": [
+        "value",
+        "strength"
+      ],
+      "summary": "FIXTURE batched canvas edit: 2 nodes, 1 edge."
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#factor_value_edit",
+    "fixture": {
+      "kind": "factor_value_edit",
+      "target_id": "fixture_factor_market_demand",
+      "value": 0.3,
+      "raw_value": 30000,
+      "unit": "£",
+      "field": "value"
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#chip_click",
+    "fixture": {
+      "kind": "chip_click",
+      "chip_id": "fixture_chip_1"
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#undo",
+    "fixture": {
+      "kind": "undo"
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#redo",
+    "fixture": {
+      "kind": "redo"
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#selection_change",
+    "fixture": {
+      "kind": "selection_change",
+      "selected": [
+        {
+          "id": "fixture_factor_market_demand",
+          "kind": "factor",
+          "label": "FIXTURE_market_demand"
+        }
+      ],
+      "cleared": false
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#feedback",
+    "fixture": {
+      "kind": "feedback",
+      "rating": "up",
+      "comment": "FIXTURE synthetic feedback comment.",
+      "target": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "kind": "turn"
+      }
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#edge_adjudication",
+    "fixture": {
+      "kind": "edge_adjudication",
+      "from": "fixture_factor_market_demand",
+      "to": "fixture_option_alpha",
+      "edge_id": "fixture_edge_demand_revenue",
+      "verdict": "overridden",
+      "resolved_strength_mean": -0.45
+    }
+  },
+  {
+    "family": "boundary/SystemEventSchema#prior_range_edit",
+    "fixture": {
+      "kind": "prior_range_edit",
+      "target_id": "fixture_factor_market_demand",
+      "range_min": 0.2,
+      "range_max": 0.6,
+      "distribution": "beta"
+    }
+  },
+  {
+    "family": "boundary/SystemEventTurnPayloadSchema",
+    "fixture": {
+      "turn_id": "11111111-1111-4111-8111-111111111111",
+      "scenario_id": "22222222-2222-4222-8222-222222222222",
+      "stage": "analyse",
+      "kind": "system_event",
+      "event": {
+        "kind": "selection_change",
+        "selected": [
+          {
+            "id": "fixture_factor_market_demand",
+            "kind": "factor",
+            "label": "FIXTURE_market_demand"
+          }
+        ],
+        "cleared": false
+      }
+    }
+  },
+  {
+    "family": "boundary/OrchestratorTurnPayloadSchema#message-chip",
+    "fixture": {
+      "turn_id": "11111111-1111-4111-8111-111111111111",
+      "scenario_id": "22222222-2222-4222-8222-222222222222",
+      "stage": "analyse",
+      "kind": "message",
+      "message": "FIXTURE synthetic user message.",
+      "turn_class": "propose",
+      "source": "chip",
+      "chip": {
+        "id": "fixture_chip_run_analysis",
+        "action_type": "run_analysis",
+        "intent": "elicit_options",
+        "parameters": {
+          "FIXTURE_parameter": "FIXTURE_value"
+        }
+      },
+      "generate_model": true,
+      "explicit_generate": true,
+      "selected_elements": [
+        {
+          "id": "fixture_factor_market_demand",
+          "kind": "factor",
+          "label": "FIXTURE_market_demand"
+        }
+      ],
+      "graph_state": {
+        "nodes": [
+          {
+            "id": "fixture_factor_market_demand",
+            "kind": "factor",
+            "label": "FIXTURE_market_demand",
+            "body": "FIXTURE synthetic factor description — no real decision content.",
+            "type": "numeric",
+            "categories": [
+              "FIXTURE_low",
+              "FIXTURE_high"
+            ],
+            "category": "observable",
+            "observed_state": {
+              "value": 42.5,
+              "std": 3.2,
+              "baseline": 40,
+              "unit": "FIXTURE_units_per_month",
+              "source": "FIXTURE_user_estimate",
+              "declared_scale": "raw_count",
+              "FIXTURE_passthrough_probe": true
+            },
+            "state_space": {
+              "range": {
+                "min": 0,
+                "max": 100
+              },
+              "FIXTURE_passthrough_probe": true
+            },
+            "goal_threshold": 75,
+            "goal_threshold_frame": "level",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_goal_revenue",
+            "kind": "goal",
+            "label": "FIXTURE_monthly_revenue",
+            "goal_threshold": 100,
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_option_alpha",
+            "kind": "option",
+            "label": "FIXTURE_option_alpha"
+          },
+          {
+            "id": "fixture_option_beta",
+            "kind": "option",
+            "label": "FIXTURE_option_beta"
+          }
+        ],
+        "edges": [
+          {
+            "from": "fixture_factor_market_demand",
+            "to": "fixture_goal_revenue",
+            "strength": {
+              "mean": 0.6,
+              "std": 0.15
+            },
+            "exists_probability": 0.9,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_demand_drives_revenue",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "from": "fixture_option_alpha",
+            "to": "fixture_factor_market_demand",
+            "strength": {
+              "mean": 0.4,
+              "std": 0.2
+            },
+            "exists_probability": 0.8,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_option_lifts_demand"
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      }
+    }
+  },
+  {
+    "family": "boundary/OrchestratorTurnPayloadSchema#message-retry",
+    "fixture": {
+      "turn_id": "11111111-1111-4111-8111-111111111111",
+      "scenario_id": "22222222-2222-4222-8222-222222222222",
+      "stage": "analyse",
+      "kind": "message",
+      "message": "FIXTURE synthetic retried message.",
+      "turn_class": "propose",
+      "source": "retry",
+      "retry_of": "33333333-3333-4333-8333-333333333333",
+      "generate_model": true,
+      "explicit_generate": true,
+      "selected_elements": [
+        {
+          "id": "fixture_factor_market_demand",
+          "kind": "factor",
+          "label": "FIXTURE_market_demand"
+        }
+      ]
+    }
+  },
+  {
+    "family": "boundary/OrchestratorTurnPayloadSchema#system_event",
+    "fixture": {
+      "turn_id": "11111111-1111-4111-8111-111111111111",
+      "scenario_id": "22222222-2222-4222-8222-222222222222",
+      "stage": "analyse",
+      "kind": "system_event",
+      "event": {
+        "kind": "selection_change",
+        "selected": [
+          {
+            "id": "fixture_factor_market_demand",
+            "kind": "factor",
+            "label": "FIXTURE_market_demand"
+          }
+        ],
+        "cleared": false
+      }
+    }
+  },
+  {
+    "family": "boundary/ActionSchema",
+    "fixture": {
+      "id": "fixture_action_confirm_apply",
+      "label": "FIXTURE_confirm_label",
+      "message": "FIXTURE synthetic action message.",
+      "action_type": "run_analysis",
+      "detail": "FIXTURE synthetic full action detail sentence."
+    }
+  },
+  {
+    "family": "boundary/InsightSchema",
+    "fixture": {
+      "id": "fixture_insight_1",
+      "text": "FIXTURE synthetic insight text."
+    }
+  },
+  {
+    "family": "boundary/DecisionClassificationSchema",
+    "fixture": {
+      "stakes": "high",
+      "reversibility": "partially_reversible",
+      "horizon": "FIXTURE next quarter",
+      "risk": "balanced"
+    }
+  },
+  {
+    "family": "boundary/OlumiResponseSchema",
+    "fixture": {
+      "response_version": 2,
+      "assistant_text": "FIXTURE synthetic assistant text.",
+      "blocks": [
+        {
+          "type": "text",
+          "content": "FIXTURE synthetic assistant text."
+        },
+        {
+          "type": "error",
+          "error_code": "INTERNAL_ERROR",
+          "severity": "warn",
+          "details": {
+            "blocker_code": "FIXTURE_BLOCKER",
+            "FIXTURE_passthrough_probe": true
+          }
+        },
+        {
+          "type": "analysis_result",
+          "summary": "FIXTURE synthetic analysis summary.",
+          "leading_option_id": "fixture_option_alpha",
+          "win_probabilities": {
+            "fixture_option_alpha": 0.62,
+            "fixture_option_beta": 0.38
+          },
+          "enrichment": {
+            "analysis_status": "computed",
+            "status_reason": "FIXTURE_computed_normally",
+            "option_comparison_status": "computed",
+            "robustness_status": "computed",
+            "drivers_status": "computed",
+            "constraints_status": "computed",
+            "option_comparison": [
+              {
+                "option_id": "fixture_option_alpha",
+                "option_label": "FIXTURE_option_alpha",
+                "id": "fixture_option_alpha",
+                "label": "FIXTURE_option_alpha",
+                "expected_outcome": 61.9,
+                "confidence_interval": [
+                  51,
+                  74
+                ],
+                "outcome": {
+                  "mean": 62.4,
+                  "std": 8.1,
+                  "p10": 51,
+                  "p50": 62,
+                  "p90": 74,
+                  "n_samples": 10000,
+                  "n_valid_samples": 9800,
+                  "validity_ratio": 0.98,
+                  "percentiles_source": "samples",
+                  "FIXTURE_passthrough_probe": true
+                },
+                "status": "computed",
+                "status_reason": "FIXTURE_computed_normally",
+                "probability_of_goal": 0.71,
+                "win_probability": 0.62,
+                "probability_of_joint_goal": 0.58,
+                "constraint_probabilities": {
+                  "fixture_constraint_budget": 0.83
+                },
+                "goal_fit_basis": {
+                  "scored_from": "modelled_outcome_distribution",
+                  "node_ids": [
+                    "fixture_constraint_budget"
+                  ],
+                  "FIXTURE_passthrough_probe": true
+                },
+                "constraint_margins": [
+                  {
+                    "constraint_id": "fixture_constraint_budget",
+                    "failure_margin_median": 24000,
+                    "near_miss_fraction": 0.15,
+                    "margin_precision": "lower_bound",
+                    "FIXTURE_passthrough_probe": true
+                  }
+                ],
+                "constraints_decision_grade": true,
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "factor_sensitivity": [
+              {
+                "factor_id": "fixture_factor_market_demand",
+                "factor_label": "FIXTURE_market_demand",
+                "influence_score": 0.74,
+                "influence_rank": 1,
+                "sensitivity_score": 0.68,
+                "elasticity": 1.2,
+                "direction": "positive",
+                "importance_rank": 1,
+                "interpretation": "FIXTURE synthetic interpretation.",
+                "value_of_information": 0.12,
+                "evpi_percentage_points": 4.2,
+                "evpi_method": "heuristic",
+                "evpi_status": "below_resolution",
+                "confidence": 0.7,
+                "zero_reason": "intervention_override",
+                "source": "isl",
+                "confidence_source": "plot_unified_from_isl_bootstrap",
+                "confidence_provenance": {
+                  "computation_source": "FIXTURE_plot_unified",
+                  "formula_version": "FIXTURE_v1",
+                  "is_provisional": true,
+                  "calibration_status": "FIXTURE_uncalibrated",
+                  "input_quality": "FIXTURE_mixed",
+                  "FIXTURE_passthrough_probe": true
+                },
+                "flip_risk_category": "isolated",
+                "elasticity_std": 0.3,
+                "attribution_stability": "high",
+                "rank_flip_rate": 0.05,
+                "stability_method": "FIXTURE_bootstrap",
+                "value_source": "FIXTURE_observed_state",
+                "value_extraction_type": "FIXTURE_numeric",
+                "value_defaulted": false,
+                "confidence_components": {
+                  "structural_certainty": 0.9,
+                  "sampling_stability": 0.7,
+                  "FIXTURE_passthrough_probe": true
+                },
+                "range_derivation_source": "FIXTURE_state_space",
+                "_normalised": true,
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "robustness": {
+              "score": 0.66,
+              "label": "moderate",
+              "fragile_edges": [
+                {
+                  "edge_id": "fixture_edge_demand_revenue",
+                  "from_id": "fixture_factor_market_demand",
+                  "to_id": "fixture_goal_revenue",
+                  "from_label": "FIXTURE_market_demand",
+                  "to_label": "FIXTURE_monthly_revenue",
+                  "switch_probability": 0.42,
+                  "severity": "warning",
+                  "marginal_switch_probability": 0.18,
+                  "alternative_winner_id": "fixture_option_beta",
+                  "alternative_winner_label": "FIXTURE_option_beta",
+                  "FIXTURE_passthrough_probe": true
+                }
+              ],
+              "robust_edges": [
+                {
+                  "edge_id": "fixture_edge_option_demand",
+                  "from_id": "fixture_option_alpha",
+                  "to_id": "fixture_factor_market_demand",
+                  "from_label": "FIXTURE_option_alpha",
+                  "to_label": "FIXTURE_market_demand",
+                  "switch_probability": 0.03,
+                  "severity": "warning",
+                  "marginal_switch_probability": 0.01,
+                  "alternative_winner_id": null,
+                  "alternative_winner_label": null,
+                  "FIXTURE_passthrough_probe": true
+                }
+              ],
+              "explanation": "FIXTURE synthetic robustness explanation.",
+              "recommendation_stability": 0.62,
+              "is_robust": true,
+              "level": "medium",
+              "confidence": 0.75,
+              "normalization_errors": [
+                {
+                  "edge_type": "bidirected",
+                  "error": "FIXTURE synthetic normalisation note.",
+                  "raw_value": {
+                    "FIXTURE_raw": true
+                  },
+                  "FIXTURE_passthrough_probe": true
+                }
+              ],
+              "recommended_option_id": "fixture_option_alpha",
+              "recommended_option_label": "FIXTURE_option_alpha",
+              "near_tie": {
+                "is_tie": false,
+                "top_option_id": "fixture_option_alpha",
+                "second_option_id": "fixture_option_beta",
+                "tied_option_ids": [
+                  "fixture_option_alpha",
+                  "fixture_option_beta"
+                ],
+                "gap": 0.11,
+                "threshold": 0.05,
+                "FIXTURE_passthrough_probe": true
+              },
+              "display_verdict": "moderate",
+              "display_verdict_reason": "FIXTURE synthetic display-safe verdict reason.",
+              "FIXTURE_passthrough_probe": true
+            },
+            "flip_thresholds": [
+              {
+                "factor_id": "fixture_factor_market_demand",
+                "factor_label": "FIXTURE_market_demand",
+                "current_value": 55,
+                "flip_value": 48.2,
+                "direction": "decrease",
+                "unit": "FIXTURE_units_per_month",
+                "alternative_winner_id": "fixture_option_beta",
+                "alternative_winner_label": "FIXTURE_option_beta",
+                "flip_reason": "FIXTURE_flip_found",
+                "no_flip_in_range": false,
+                "iterations_used": 12,
+                "probes_used": 24,
+                "margin_sensitivity": {
+                  "FIXTURE_passthrough_probe": true
+                },
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "edge_e_values": [
+              {
+                "edge_id": "fixture_edge_demand_revenue",
+                "from_id": "fixture_factor_market_demand",
+                "to_id": "fixture_goal_revenue",
+                "from_label": "FIXTURE_market_demand",
+                "to_label": "FIXTURE_monthly_revenue",
+                "e_value": 1.8,
+                "flip_direction": "increase",
+                "current_mean": 0.6,
+                "flip_mean": 0.33,
+                "stability": {
+                  "n_seeds": 10,
+                  "n_seeds_flipped": 3,
+                  "band_min": 0.2,
+                  "band_median": 0.5,
+                  "band_max": 0.8,
+                  "band_width": 0.6,
+                  "seed_flip_means": [
+                    0.2,
+                    null,
+                    0.5,
+                    null,
+                    0.8,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+                  ],
+                  "FIXTURE_passthrough_probe": true
+                },
+                "_normalised": true,
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "inference_warnings": [
+              {
+                "code": "FIXTURE_WARNING_CODE",
+                "message": "FIXTURE synthetic inference warning.",
+                "severity": "info",
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "critiques": [
+              {
+                "id": "fixture_critique_1",
+                "code": "FIXTURE_CRITIQUE_CODE",
+                "severity": "warning",
+                "message": "FIXTURE synthetic internal critique wording.",
+                "user_message": "FIXTURE synthetic display-safe critique wording.",
+                "source": "validation",
+                "affected_option_ids": [
+                  "fixture_option_alpha"
+                ],
+                "affected_node_ids": [
+                  "fixture_factor_market_demand"
+                ],
+                "blocks_analysis": false,
+                "suggestion": "FIXTURE synthetic critique suggestion.",
+                "FIXTURE_passthrough_probe": true
+              },
+              {
+                "id": "fixture_critique_transported_1",
+                "code": "FIXTURE_CRITIQUE_CODE",
+                "severity": "warning",
+                "user_message": "FIXTURE synthetic display-safe transported critique wording.",
+                "source": "validation",
+                "affected_option_ids": [
+                  "fixture_option_alpha"
+                ],
+                "affected_node_ids": [
+                  "fixture_factor_market_demand"
+                ],
+                "blocks_analysis": false,
+                "suggestion": "FIXTURE synthetic critique suggestion.",
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "confidence_tier": "fair",
+            "factor_evppi": [
+              {
+                "factor_id": "fixture_factor_market_demand",
+                "evppi": 0.34,
+                "evppi_raw": 0.341982,
+                "baseline_max_expected_utility": 12.5,
+                "conditional_max_expected_utility": 12.84,
+                "units": "outcome",
+                "method": "regression_evppi_v1",
+                "regression_degree": 2,
+                "n_samples": 4000,
+                "clamped_low": false,
+                "clamped_high": false,
+                "noise_floor": 0.02,
+                "status": "resolved",
+                "correlation_active": false,
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "decision_evpi": 0.91,
+            "p_win_sensitivity": [
+              {
+                "FIXTURE_pp_delta_key": "FIXTURE_pp_delta_value"
+              }
+            ],
+            "correlation_model": {
+              "suppressed_attributions": [
+                "p_win_sensitivity"
+              ],
+              "FIXTURE_passthrough_probe": true
+            },
+            "constraint_results": [
+              {
+                "constraint_id": "fixture_constraint_budget",
+                "node_id": "fixture_goal_revenue",
+                "operator": ">=",
+                "value": 100,
+                "probability": 0.83,
+                "scale_provenance": {
+                  "source": "FIXTURE_plot_constraint_normaliser",
+                  "range_unified": true,
+                  "threshold_clamped": "high",
+                  "decision_grade": true,
+                  "FIXTURE_passthrough_probe": true
+                },
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "conditional_probabilities": [
+              {
+                "given_constraint_id": "fixture_constraint_budget",
+                "target_constraint_id": "fixture_constraint_timeline",
+                "probability": 0.7,
+                "effective_sample_size": 4200,
+                "FIXTURE_passthrough_probe": true
+              }
+            ],
+            "m1_coaching": {
+              "story_headlines": {
+                "primary": "FIXTURE_synthetic_headline"
+              },
+              "evidence_gaps": [
+                {
+                  "factor_id": "fixture_factor_market_demand",
+                  "factor_label": "FIXTURE_market_demand",
+                  "voi_score": 0.12,
+                  "confidence": 0.7,
+                  "influence": 0.74,
+                  "suggestion": "FIXTURE synthetic evidence suggestion.",
+                  "evpi_percentage_points": 4.2,
+                  "evpi_method": "heuristic",
+                  "FIXTURE_passthrough_probe": true
+                }
+              ],
+              "model_critiques": [
+                {
+                  "type": "FIXTURE_narrow_frame",
+                  "severity": "info",
+                  "challenge_question": "FIXTURE synthetic challenge question?",
+                  "suggested_action": "FIXTURE synthetic suggested action.",
+                  "targets": [
+                    "fixture_factor_market_demand"
+                  ],
+                  "FIXTURE_passthrough_probe": true
+                }
+              ],
+              "next_actions": [
+                {
+                  "priority": 1,
+                  "action": "FIXTURE synthetic next action.",
+                  "rationale": "FIXTURE synthetic rationale.",
+                  "target_type": "factor",
+                  "target_id": "fixture_factor_market_demand",
+                  "target_label": "FIXTURE_market_demand",
+                  "FIXTURE_passthrough_probe": true
+                }
+              ],
+              "readiness": "close_call",
+              "headline_type": "FIXTURE_headline_type",
+              "top_fragile_edge": {
+                "edge_id": "fixture_edge_demand_revenue",
+                "label": "FIXTURE_demand_drives_revenue",
+                "alternative_winner": "FIXTURE_option_beta",
+                "switch_probability": 0.42,
+                "FIXTURE_passthrough_probe": true
+              },
+              "coaching_version": "FIXTURE_m1_v9",
+              "computed_at": "2026-01-01T00:00:00.000Z",
+              "FIXTURE_passthrough_probe": true
+            },
+            "decision_review": {
+              "produced_at": "2026-01-01T00:00:00.000Z",
+              "narrative_summary": "FIXTURE synthetic narrative summary.",
+              "robustness_explanation": "FIXTURE synthetic robustness explanation.",
+              "FIXTURE_passthrough_probe": true
+            },
+            "decision_brief": {
+              "brief_id": "fixture-brief-0001",
+              "version": "1",
+              "headline": "FIXTURE synthetic leader-band headline.",
+              "options": [
+                {
+                  "option_id": "fixture_option_alpha",
+                  "label": "FIXTURE_option_alpha",
+                  "win_probability": 0.7,
+                  "rank": 1
+                }
+              ],
+              "FIXTURE_passthrough_probe": true
+            },
+            "results": [
+              {
+                "FIXTURE_legacy_key": "FIXTURE_legacy_value"
+              }
+            ],
+            "FIXTURE_passthrough_probe": true
+          },
+          "computed_against_hash": "FIXTURE_graph_hash_0a1b2c3d4e5f"
+        },
+        {
+          "type": "graph_patch",
+          "status": "applied",
+          "operation": "set_factor_value",
+          "target_id": "fixture_factor_market_demand",
+          "before": {
+            "value": 40,
+            "FIXTURE_passthrough_probe": true
+          },
+          "after": {
+            "value": 55,
+            "FIXTURE_passthrough_probe": true
+          }
+        },
+        {
+          "type": "explanation",
+          "narrative": "FIXTURE synthetic explanation narrative.",
+          "referenced_option_ids": [
+            "fixture_option_alpha",
+            "fixture_option_beta"
+          ],
+          "enrichment": {
+            "FIXTURE_passthrough_probe": true
+          }
+        },
+        {
+          "type": "comparison",
+          "options": [
+            {
+              "option_id": "fixture_option_alpha",
+              "label": "FIXTURE_option_alpha",
+              "win_probability": 0.62,
+              "attributes": {
+                "FIXTURE_attribute": "FIXTURE_value"
+              }
+            },
+            {
+              "option_id": "fixture_option_beta",
+              "label": "FIXTURE_option_beta",
+              "win_probability": 0.38,
+              "attributes": {
+                "FIXTURE_attribute": "FIXTURE_value"
+              }
+            }
+          ],
+          "narrative": "FIXTURE synthetic comparison narrative."
+        },
+        {
+          "type": "flip_analysis",
+          "narrative": "FIXTURE synthetic flip narrative.",
+          "flip_scenarios": [
+            {
+              "factor_id": "fixture_factor_market_demand",
+              "current_value": 55,
+              "flip_threshold": 48.2,
+              "from_option_id": "fixture_option_alpha",
+              "to_option_id": "fixture_option_beta",
+              "fragile": true
+            },
+            {
+              "factor_id": "fixture_factor_secondary",
+              "current_value": null,
+              "flip_threshold": null,
+              "from_option_id": null,
+              "to_option_id": null,
+              "fragile": false
+            }
+          ],
+          "enrichment": {
+            "FIXTURE_passthrough_probe": true
+          }
+        },
+        {
+          "type": "draft_graph",
+          "nodes": [
+            {
+              "id": "fixture_factor_market_demand",
+              "kind": "factor",
+              "label": "FIXTURE_market_demand",
+              "body": "FIXTURE synthetic factor description — no real decision content.",
+              "type": "numeric",
+              "categories": [
+                "FIXTURE_low",
+                "FIXTURE_high"
+              ],
+              "category": "observable",
+              "observed_state": {
+                "value": 42.5,
+                "std": 3.2,
+                "baseline": 40,
+                "unit": "FIXTURE_units_per_month",
+                "source": "FIXTURE_user_estimate",
+                "declared_scale": "raw_count",
+                "FIXTURE_passthrough_probe": true
+              },
+              "state_space": {
+                "range": {
+                  "min": 0,
+                  "max": 100
+                },
+                "FIXTURE_passthrough_probe": true
+              },
+              "goal_threshold": 75,
+              "goal_threshold_frame": "level",
+              "FIXTURE_passthrough_probe": true
+            },
+            {
+              "id": "fixture_goal_revenue",
+              "kind": "goal",
+              "label": "FIXTURE_monthly_revenue",
+              "goal_threshold": 100,
+              "FIXTURE_passthrough_probe": true
+            },
+            {
+              "id": "fixture_option_alpha",
+              "kind": "option",
+              "label": "FIXTURE_option_alpha"
+            },
+            {
+              "id": "fixture_option_beta",
+              "kind": "option",
+              "label": "FIXTURE_option_beta"
+            }
+          ],
+          "edges": [
+            {
+              "from": "fixture_factor_market_demand",
+              "to": "fixture_goal_revenue",
+              "strength": {
+                "mean": 0.6,
+                "std": 0.15
+              },
+              "exists_probability": 0.9,
+              "effect_direction": "positive",
+              "edge_type": "directed",
+              "label": "FIXTURE_demand_drives_revenue",
+              "FIXTURE_passthrough_probe": true
+            },
+            {
+              "from": "fixture_option_alpha",
+              "to": "fixture_factor_market_demand",
+              "strength": {
+                "mean": 0.4,
+                "std": 0.2
+              },
+              "exists_probability": 0.8,
+              "effect_direction": "positive",
+              "edge_type": "directed",
+              "label": "FIXTURE_option_lifts_demand"
+            }
+          ],
+          "node_count": 4,
+          "edge_count": 2,
+          "goal_constraints": [
+            {
+              "constraint_id": "FIXTURE_constraint_first_year_cost_max",
+              "node_id": "FIXTURE_fac_first_year_cost",
+              "operator": "<=",
+              "value": 50000,
+              "label": "FIXTURE synthetic first-year budget cap",
+              "unit": "£",
+              "source_quote": "FIXTURE synthetic source quote from the brief.",
+              "confidence": 0.85,
+              "provenance": "explicit",
+              "deadline_metadata": {
+                "deadline_date": "2027-01-01",
+                "reference_date": "2026-01-01",
+                "assumed_reference_date": true,
+                "FIXTURE_passthrough_probe": true
+              },
+              "provenance_unit_normalised": {
+                "rule": "percent_to_fraction",
+                "original_value": 15,
+                "original_unit": "%",
+                "FIXTURE_passthrough_probe": true
+              },
+              "value_frame": "level",
+              "FIXTURE_passthrough_probe": true
+            }
+          ]
+        },
+        {
+          "block_id": "44444444-4444-4444-8444-444444444444",
+          "signal_id": "fixture_signal_review_1",
+          "created_at": "2026-01-01T09:30:00.000+01:00",
+          "source_handler": "FIXTURE_decision_review",
+          "graph_hash_at_generation": "fixture_graph_hash_1",
+          "freshness": "fresh",
+          "type": "review_card",
+          "card_kind": "flip_threshold",
+          "title": "FIXTURE synthetic review card title",
+          "body": "FIXTURE synthetic review card body.",
+          "severity": "warning",
+          "target_refs": [
+            {
+              "id": "fixture_factor_market_demand",
+              "label": "FIXTURE_market_demand",
+              "kind": "factor"
+            }
+          ],
+          "priority_rank": 1,
+          "category": "should_fix",
+          "priority": 70,
+          "signal_code": "FIXTURE_SIGNAL_CODE",
+          "signal": "FIXTURE synthetic per-item signal line.",
+          "action_intent": "what_would_flip",
+          "action_label": "FIXTURE test the tipping point"
+        },
+        {
+          "block_id": "55555555-5555-4555-8555-555555555555",
+          "signal_id": "fixture_signal_coaching_1",
+          "created_at": "2026-01-01T00:00:00.000Z",
+          "source_handler": "FIXTURE_coaching_pass",
+          "graph_hash_at_generation": "fixture_graph_hash_1",
+          "freshness": "fresh",
+          "type": "coaching",
+          "coaching_kind": "bias_signal",
+          "title": "FIXTURE synthetic coaching title",
+          "body": "FIXTURE synthetic coaching body.",
+          "source": "decision_review",
+          "target_refs": [
+            {
+              "id": "fixture_factor_market_demand",
+              "label": "FIXTURE_market_demand",
+              "kind": "factor"
+            }
+          ],
+          "priority_rank": 2,
+          "category": "could_fix",
+          "priority": 50,
+          "signal_code": "FIXTURE_SIGNAL_CODE",
+          "signal": "FIXTURE synthetic per-item signal line.",
+          "action_intent": "gather_evidence",
+          "action_label": "FIXTURE gather evidence",
+          "action_prompt": "FIXTURE help me gather evidence for this factor."
+        },
+        {
+          "block_id": "66666666-6666-4666-8666-666666666666",
+          "signal_id": "fixture_signal_evidence_1",
+          "created_at": "2026-01-01T00:00:00.000Z",
+          "source_handler": "FIXTURE_evidence_ranker",
+          "graph_hash_at_generation": "fixture_graph_hash_1",
+          "freshness": "fresh",
+          "type": "evidence",
+          "factor_label": "FIXTURE_market_demand",
+          "factor_ref": {
+            "id": "fixture_factor_market_demand",
+            "label": "FIXTURE_market_demand",
+            "kind": "factor"
+          },
+          "target_refs": [
+            {
+              "id": "fixture_factor_market_demand",
+              "label": "FIXTURE_market_demand",
+              "kind": "factor"
+            },
+            {
+              "id": "fixture_option_alpha",
+              "label": "FIXTURE_option_alpha",
+              "kind": "option"
+            }
+          ],
+          "current_confidence": "medium",
+          "evidence_gap": "FIXTURE synthetic evidence gap.",
+          "suggested_technique": "FIXTURE synthetic technique.",
+          "impact_if_gathered": "FIXTURE synthetic impact.",
+          "priority_rank": 3,
+          "severity": "info",
+          "category": "must_fix",
+          "priority": 90,
+          "signal_code": "FIXTURE_SIGNAL_CODE",
+          "signal": "FIXTURE synthetic per-item signal line.",
+          "action_intent": "gather_evidence",
+          "action_label": "FIXTURE gather this evidence"
+        },
+        {
+          "block_id": "77777777-7777-4777-8777-777777777777",
+          "signal_id": "fixture_signal_exercise_1",
+          "created_at": "2026-01-01T00:00:00.000Z",
+          "source_handler": "FIXTURE_pre_mortem",
+          "graph_hash_at_generation": "fixture_graph_hash_1",
+          "freshness": "fresh",
+          "type": "exercise",
+          "exercise_kind": "pre_mortem",
+          "failure_scenario": "FIXTURE synthetic failure scenario.",
+          "warning_signs": [
+            "FIXTURE synthetic warning sign."
+          ],
+          "mitigation": "FIXTURE synthetic mitigation.",
+          "reference_class": "FIXTURE synthetic reference class.",
+          "target_element_ref": {
+            "id": "fixture_option_alpha",
+            "label": "FIXTURE_option_alpha",
+            "kind": "option"
+          },
+          "counter_case": "FIXTURE synthetic counter case.",
+          "review_trigger": "FIXTURE synthetic review trigger.",
+          "target_refs": [
+            {
+              "id": "fixture_factor_market_demand",
+              "label": "FIXTURE_market_demand",
+              "kind": "factor"
+            }
+          ],
+          "category": "technique",
+          "priority": 30,
+          "signal_code": "FIXTURE_SIGNAL_CODE",
+          "signal": "FIXTURE synthetic per-item signal line.",
+          "dsk_provenance": {
+            "protocol_id": "DSK-P-001",
+            "protocol_title": "Pre-mortem exercise",
+            "evidence_strength": "medium"
+          }
+        },
+        {
+          "type": "held_proposal",
+          "proposal_id": "gmh_fixture0001",
+          "summary": "FIXTURE synthetic held-change summary.",
+          "mutation_class": "structural",
+          "reason_code": "STRUCTURAL_APPLY_HELD",
+          "confirm_action_id": "fixture_action_confirm_apply",
+          "decline_action_id": "fixture_action_decline_apply"
+        },
+        {
+          "type": "ui_directive",
+          "verb": "highlight",
+          "targets": [
+            {
+              "id": "fixture_factor_market_demand",
+              "label": "FIXTURE_market_demand",
+              "kind": "factor"
+            }
+          ],
+          "duration_ms": 1500,
+          "note": "FIXTURE synthetic directive caption."
+        }
+      ],
+      "suggested_actions": [
+        {
+          "id": "fixture_action_confirm_apply",
+          "label": "FIXTURE_confirm_label",
+          "message": "FIXTURE synthetic action message.",
+          "action_type": "run_analysis",
+          "detail": "FIXTURE synthetic full action detail sentence."
+        },
+        {
+          "id": "fixture_action_decline_apply",
+          "label": "FIXTURE_decline_label",
+          "message": "FIXTURE synthetic decline message.",
+          "action_type": "what_would_flip"
+        }
+      ],
+      "insights": [
+        {
+          "id": "fixture_insight_1",
+          "text": "FIXTURE synthetic insight text."
+        }
+      ],
+      "stage_indicator": "analyse",
+      "draft_graph": {
+        "nodes": [
+          {
+            "id": "fixture_factor_market_demand",
+            "kind": "factor",
+            "label": "FIXTURE_market_demand",
+            "body": "FIXTURE synthetic factor description — no real decision content.",
+            "type": "numeric",
+            "categories": [
+              "FIXTURE_low",
+              "FIXTURE_high"
+            ],
+            "category": "observable",
+            "observed_state": {
+              "value": 42.5,
+              "std": 3.2,
+              "baseline": 40,
+              "unit": "FIXTURE_units_per_month",
+              "source": "FIXTURE_user_estimate",
+              "declared_scale": "raw_count",
+              "FIXTURE_passthrough_probe": true
+            },
+            "state_space": {
+              "range": {
+                "min": 0,
+                "max": 100
+              },
+              "FIXTURE_passthrough_probe": true
+            },
+            "goal_threshold": 75,
+            "goal_threshold_frame": "level",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_goal_revenue",
+            "kind": "goal",
+            "label": "FIXTURE_monthly_revenue",
+            "goal_threshold": 100,
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_option_alpha",
+            "kind": "option",
+            "label": "FIXTURE_option_alpha"
+          },
+          {
+            "id": "fixture_option_beta",
+            "kind": "option",
+            "label": "FIXTURE_option_beta"
+          }
+        ],
+        "edges": [
+          {
+            "from": "fixture_factor_market_demand",
+            "to": "fixture_goal_revenue",
+            "strength": {
+              "mean": 0.6,
+              "std": 0.15
+            },
+            "exists_probability": 0.9,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_demand_drives_revenue",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "from": "fixture_option_alpha",
+            "to": "fixture_factor_market_demand",
+            "strength": {
+              "mean": 0.4,
+              "std": 0.2
+            },
+            "exists_probability": 0.8,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_option_lifts_demand"
+          }
+        ],
+        "node_count": 4,
+        "edge_count": 2,
+        "goal_constraints": [
+          {
+            "constraint_id": "FIXTURE_constraint_first_year_cost_max",
+            "node_id": "FIXTURE_fac_first_year_cost",
+            "operator": "<=",
+            "value": 50000,
+            "label": "FIXTURE synthetic first-year budget cap",
+            "unit": "£",
+            "source_quote": "FIXTURE synthetic source quote from the brief.",
+            "confidence": 0.85,
+            "provenance": "explicit",
+            "deadline_metadata": {
+              "deadline_date": "2027-01-01",
+              "reference_date": "2026-01-01",
+              "assumed_reference_date": true,
+              "FIXTURE_passthrough_probe": true
+            },
+            "provenance_unit_normalised": {
+              "rule": "percent_to_fraction",
+              "original_value": 15,
+              "original_unit": "%",
+              "FIXTURE_passthrough_probe": true
+            },
+            "value_frame": "level",
+            "FIXTURE_passthrough_probe": true
+          }
+        ]
+      },
+      "analysis_ready": {
+        "status": "ready",
+        "options": [
+          {
+            "id": "fixture_option_alpha",
+            "label": "FIXTURE_option_alpha",
+            "description": "FIXTURE synthetic option description.",
+            "status": "ready",
+            "interventions": {
+              "fixture_factor_market_demand": 55
+            },
+            "raw_interventions": {
+              "fixture_factor_market_demand": 55,
+              "fixture_factor_flag": true,
+              "fixture_factor_level": "FIXTURE_high"
+            },
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "goal_node_id": "fixture_goal_revenue",
+        "FIXTURE_passthrough_probe": true
+      },
+      "reasoning": "FIXTURE synthetic verbatim model reasoning.",
+      "framing_question": "FIXTURE what would it take to reach the synthetic goal?",
+      "decision_classification": {
+        "stakes": "high",
+        "reversibility": "partially_reversible",
+        "horizon": "FIXTURE next quarter",
+        "risk": "balanced"
+      },
+      "framing_quality": "ready",
+      "graph_hash": "FIXTURE_graph_hash_0a1b2c3d4e5f"
+    }
+  },
+  {
+    "family": "boundary/LegacyGoalConstraintStubSchema",
+    "fixture": {
+      "id": "fixture_constraint_budget",
+      "label": "FIXTURE_budget_cap",
+      "bound": "lte",
+      "value": 100000
+    }
+  },
+  {
+    "family": "boundary/V2OptionSchema",
+    "fixture": {
+      "id": "fixture_option_alpha",
+      "label": "FIXTURE_option_alpha",
+      "description": "FIXTURE synthetic option description."
+    }
+  },
+  {
+    "family": "boundary/V2RunRequestSchema",
+    "fixture": {
+      "request_id": "fixture_req_1",
+      "scenario_id": "22222222-2222-4222-8222-222222222222",
+      "graph": {
+        "nodes": [
+          {
+            "id": "fixture_factor_market_demand",
+            "kind": "factor",
+            "label": "FIXTURE_market_demand",
+            "body": "FIXTURE synthetic factor description — no real decision content.",
+            "type": "numeric",
+            "categories": [
+              "FIXTURE_low",
+              "FIXTURE_high"
+            ],
+            "category": "observable",
+            "observed_state": {
+              "value": 42.5,
+              "std": 3.2,
+              "baseline": 40,
+              "unit": "FIXTURE_units_per_month",
+              "source": "FIXTURE_user_estimate",
+              "declared_scale": "raw_count",
+              "FIXTURE_passthrough_probe": true
+            },
+            "state_space": {
+              "range": {
+                "min": 0,
+                "max": 100
+              },
+              "FIXTURE_passthrough_probe": true
+            },
+            "goal_threshold": 75,
+            "goal_threshold_frame": "level",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_goal_revenue",
+            "kind": "goal",
+            "label": "FIXTURE_monthly_revenue",
+            "goal_threshold": 100,
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_option_alpha",
+            "kind": "option",
+            "label": "FIXTURE_option_alpha"
+          },
+          {
+            "id": "fixture_option_beta",
+            "kind": "option",
+            "label": "FIXTURE_option_beta"
+          }
+        ],
+        "edges": [
+          {
+            "from": "fixture_factor_market_demand",
+            "to": "fixture_goal_revenue",
+            "strength": {
+              "mean": 0.6,
+              "std": 0.15
+            },
+            "exists_probability": 0.9,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_demand_drives_revenue",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "from": "fixture_option_alpha",
+            "to": "fixture_factor_market_demand",
+            "strength": {
+              "mean": 0.4,
+              "std": 0.2
+            },
+            "exists_probability": 0.8,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_option_lifts_demand"
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "options": [
+        {
+          "id": "fixture_option_alpha",
+          "label": "FIXTURE_option_alpha",
+          "description": "FIXTURE synthetic option description."
+        }
+      ],
+      "constraints": [
+        {
+          "id": "fixture_constraint_budget",
+          "label": "FIXTURE_budget_cap",
+          "bound": "lte",
+          "value": 100000
+        }
+      ],
+      "seed": 42
+    }
+  },
+  {
+    "family": "boundary/V2RunErrorSchema",
+    "fixture": {
+      "code": "FIXTURE_RUN_ERROR_CODE",
+      "message": "FIXTURE synthetic run error message.",
+      "details": {
+        "FIXTURE_passthrough_probe": true
+      }
+    }
+  },
+  {
+    "family": "boundary/V2RunResponseSchema#success",
+    "fixture": {
+      "request_id": "fixture_req_1",
+      "result": "success",
+      "error": null
+    }
+  },
+  {
+    "family": "boundary/V2RunResponseSchema#failed",
+    "fixture": {
+      "request_id": "fixture_req_1",
+      "result": "failed",
+      "error": {
+        "code": "FIXTURE_RUN_ERROR_CODE",
+        "message": "FIXTURE synthetic run error message.",
+        "details": {
+          "FIXTURE_passthrough_probe": true
+        }
+      }
+    }
+  },
+  {
+    "family": "boundary/ValidatePatchRequestSchema",
+    "fixture": {
+      "request_id": "fixture_req_1",
+      "scenario_id": "22222222-2222-4222-8222-222222222222",
+      "graph": {
+        "nodes": [
+          {
+            "id": "fixture_factor_market_demand",
+            "kind": "factor",
+            "label": "FIXTURE_market_demand",
+            "body": "FIXTURE synthetic factor description — no real decision content.",
+            "type": "numeric",
+            "categories": [
+              "FIXTURE_low",
+              "FIXTURE_high"
+            ],
+            "category": "observable",
+            "observed_state": {
+              "value": 42.5,
+              "std": 3.2,
+              "baseline": 40,
+              "unit": "FIXTURE_units_per_month",
+              "source": "FIXTURE_user_estimate",
+              "declared_scale": "raw_count",
+              "FIXTURE_passthrough_probe": true
+            },
+            "state_space": {
+              "range": {
+                "min": 0,
+                "max": 100
+              },
+              "FIXTURE_passthrough_probe": true
+            },
+            "goal_threshold": 75,
+            "goal_threshold_frame": "level",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_goal_revenue",
+            "kind": "goal",
+            "label": "FIXTURE_monthly_revenue",
+            "goal_threshold": 100,
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "id": "fixture_option_alpha",
+            "kind": "option",
+            "label": "FIXTURE_option_alpha"
+          },
+          {
+            "id": "fixture_option_beta",
+            "kind": "option",
+            "label": "FIXTURE_option_beta"
+          }
+        ],
+        "edges": [
+          {
+            "from": "fixture_factor_market_demand",
+            "to": "fixture_goal_revenue",
+            "strength": {
+              "mean": 0.6,
+              "std": 0.15
+            },
+            "exists_probability": 0.9,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_demand_drives_revenue",
+            "FIXTURE_passthrough_probe": true
+          },
+          {
+            "from": "fixture_option_alpha",
+            "to": "fixture_factor_market_demand",
+            "strength": {
+              "mean": 0.4,
+              "std": 0.2
+            },
+            "exists_probability": 0.8,
+            "effect_direction": "positive",
+            "edge_type": "directed",
+            "label": "FIXTURE_option_lifts_demand"
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "patch": [
+        {
+          "op": "FIXTURE_set",
+          "path": "/nodes/0/label",
+          "value": "FIXTURE_new_label",
+          "FIXTURE_passthrough_probe": true
+        }
+      ]
+    }
+  },
+  {
+    "family": "boundary/ValidatePatchResponseSchema",
+    "fixture": {
+      "request_id": "fixture_req_1",
+      "valid": false,
+      "issues": [
+        {
+          "path": "/nodes/0/label",
+          "message": "FIXTURE synthetic issue message."
+        }
+      ]
+    }
+  },
+  {
+    "family": "boundary/SequentialAnalysisResponseSchema",
+    "fixture": {
+      "schema_version": "sequential.v1",
+      "optimal_policy": {
+        "stages": [
+          {
+            "stage_index": 0,
+            "stage_label": "FIXTURE Stage 0 — Decide",
+            "decision_rule": {
+              "default_action": "go",
+              "conditional_actions": [
+                {
+                  "condition": "If choosing stop",
+                  "action": "stop",
+                  "expected_value_if_taken": 0,
+                  "FIXTURE_passthrough_probe": true
+                }
+              ],
+              "FIXTURE_passthrough_probe": true
+            },
+            "contingent_on": [
+              "stage_prior"
+            ],
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "expected_total_value": 126.06,
+        "value_distribution": {
+          "type": "normal",
+          "parameters": {
+            "mean": 126.06,
+            "std": 12.3
+          },
+          "FIXTURE_passthrough_probe": true
+        },
+        "FIXTURE_passthrough_probe": true
+      },
+      "stage_analyses": [
+        {
+          "stage_index": 0,
+          "stage_label": "FIXTURE Decision Stage",
+          "options_at_stage": [
+            {
+              "option_id": "fixture_option_alpha",
+              "label": "FIXTURE_option_alpha",
+              "immediate_value": 10,
+              "continuation_value": 20,
+              "total_value": 30,
+              "FIXTURE_passthrough_probe": true
+            }
+          ],
+          "information_value": 587.87,
+          "optimal_waiting_value": 587.87,
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "value_of_flexibility": 0,
+      "sensitivity_to_timing": "high",
+      "_metadata": {
+        "isl_version": "1.0.0",
+        "config_fingerprint": "FIXTURE_cb0a8a533671",
+        "config_details": {
+          "monte_carlo_samples": 1000,
+          "deterministic_mode": true
+        },
+        "request_id": "FIXTURE_req_3fa0d94669f9",
+        "FIXTURE_passthrough_probe": true
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/CounterfactualResponseSchema",
+    "fixture": {
+      "scenario": {
+        "intervention": {
+          "X": 5
+        },
+        "outcome": "Y",
+        "context": {
+          "u_b": 20
+        },
+        "FIXTURE_passthrough_probe": true
+      },
+      "prediction": {
+        "point_estimate": 9.938,
+        "confidence_interval": {
+          "lower": -9.898,
+          "upper": 29.8,
+          "confidence_level": 0.95,
+          "FIXTURE_passthrough_probe": true
+        },
+        "sensitivity_range": {
+          "optimistic": 29.8,
+          "pessimistic": -9.898,
+          "explanation": "FIXTURE synthetic sensitivity range explanation.",
+          "FIXTURE_passthrough_probe": true
+        },
+        "FIXTURE_passthrough_probe": true
+      },
+      "uncertainty": {
+        "overall": "high",
+        "sources": [
+          {
+            "factor": "U",
+            "impact": 102.18,
+            "confidence": "low",
+            "explanation": "FIXTURE synthetic uncertainty-source explanation.",
+            "basis": "Distribution: normal with parameters {mean: 0, std: 1}",
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "robustness": {
+        "score": "moderate",
+        "critical_assumptions": [
+          {
+            "assumption": "FIXTURE synthetic critical assumption.",
+            "impact": 1,
+            "confidence": "medium",
+            "recommendation": "FIXTURE synthetic recommendation.",
+            "FIXTURE_passthrough_probe": true
+          }
+        ],
+        "FIXTURE_passthrough_probe": true
+      },
+      "explanation": {
+        "summary": "FIXTURE synthetic counterfactual summary.",
+        "reasoning": "FIXTURE synthetic reasoning.",
+        "technical_basis": "FIXTURE synthetic technical basis.",
+        "assumptions": [
+          "FIXTURE assumption one"
+        ],
+        "simple_explanation": "FIXTURE synthetic simple explanation.",
+        "learn_more_url": "https://example.invalid/fixture/learn-more",
+        "visual_type": "uncertainty_plot",
+        "FIXTURE_passthrough_probe": true
+      },
+      "_metadata": {
+        "isl_version": "1.0.0",
+        "config_fingerprint": "FIXTURE_cb0a8a533671",
+        "config_details": {
+          "deterministic_mode": true
+        },
+        "request_id": "FIXTURE_req_cf_0001",
+        "FIXTURE_passthrough_probe": true
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/OptimiseResponseSchema",
+    "fixture": {
+      "schema": "optimise.v1",
+      "method": "greedy_independent_v1",
+      "action_semantics": "edge_weight_scaling",
+      "selected": [
+        "aY"
+      ],
+      "utility": {
+        "expected": 6
+      },
+      "explanations": [
+        {
+          "action_id": "aY",
+          "marginal_gain": 4,
+          "FIXTURE_passthrough_probe": true
+        }
+      ],
+      "meta": {
+        "seed": 4242,
+        "solver": "greedy_kernel_v1",
+        "constraints_applied": [
+          "FIXTURE_cost_cap"
+        ],
+        "constraints_resolved": {
+          "budget": {
+            "value": 2,
+            "source": "top_level",
+            "FIXTURE_passthrough_probe": true
+          },
+          "FIXTURE_cost_cap": {
+            "source": "user",
+            "FIXTURE_passthrough_probe": true
+          }
+        },
+        "FIXTURE_passthrough_probe": true
+      },
+      "FIXTURE_passthrough_probe": true
+    }
+  },
+  {
+    "family": "boundary/OptimiseUtilitySchema",
+    "fixture": {
+      "expected": 6
+    }
+  },
+  {
+    "family": "boundary/DecisionRecordAnalysisSummarySchema",
+    "fixture": {
+      "leading_option": "FIXTURE_option_alpha",
+      "win_probability": 0.62,
+      "goal_fit": 0.71,
+      "robustness_band": "FIXTURE_moderate"
+    }
+  },
+  {
+    "family": "boundary/DecisionRecordDecisionSchema",
+    "fixture": {
+      "chosen_option_id": "fixture_option_alpha",
+      "chosen_option_label": "FIXTURE_option_alpha",
+      "graph_hash": "fixture_graph_hash_1",
+      "analysis_summary": {
+        "leading_option": "FIXTURE_option_alpha",
+        "win_probability": 0.62,
+        "goal_fit": 0.71,
+        "robustness_band": "FIXTURE_moderate"
+      },
+      "committed_by_user": true
+    }
+  },
+  {
+    "family": "boundary/DecisionRecordPredictionSchema",
+    "fixture": {
+      "statement": "FIXTURE synthetic prediction statement.",
+      "confidence": 0.7,
+      "confidence_source": "user_stated",
+      "probability_of_goal": 0.71,
+      "probability_of_joint_goal": 0.58
+    }
+  },
+  {
+    "family": "boundary/DecisionRecordOutcomeSchema",
+    "fixture": {
+      "recorded_at": "2026-01-01T09:30:00.000+01:00",
+      "result": "as_expected",
+      "notes": "FIXTURE synthetic outcome notes.",
+      "brier_component": 0.09
+    }
+  },
+  {
+    "family": "boundary/DecisionRecordSchema",
+    "fixture": {
+      "record_id": "fixture_record_1",
+      "scenario_id": "22222222-2222-4222-8222-222222222222",
+      "created_at": "2026-01-01T00:00:00.000Z",
+      "decision": {
+        "chosen_option_id": "fixture_option_alpha",
+        "chosen_option_label": "FIXTURE_option_alpha",
+        "graph_hash": "fixture_graph_hash_1",
+        "analysis_summary": {
+          "leading_option": "FIXTURE_option_alpha",
+          "win_probability": 0.62,
+          "goal_fit": 0.71,
+          "robustness_band": "FIXTURE_moderate"
+        },
+        "committed_by_user": true
+      },
+      "prediction": {
+        "statement": "FIXTURE synthetic prediction statement.",
+        "confidence": 0.7,
+        "confidence_source": "user_stated",
+        "probability_of_goal": 0.71,
+        "probability_of_joint_goal": 0.58
+      },
+      "review_date": "2026-02-01T00:00:00.000Z",
+      "outcome": {
+        "recorded_at": "2026-01-01T09:30:00.000+01:00",
+        "result": "as_expected",
+        "notes": "FIXTURE synthetic outcome notes.",
+        "brier_component": 0.09
+      }
+    }
+  },
+  {
+    "family": "root/HealthManifestSchema",
+    "fixture": {
+      "schema_write_version": "0.24.0",
+      "schema_read_versions": [
+        "0.23.0",
+        "0.24.0"
+      ],
+      "schema_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contract_manifest_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  {
+    "family": "root/PopulationRefSchema#model_only",
+    "fixture": {
+      "id": "olumi.mc.model_only@1",
+      "stage": "raw"
+    }
+  },
+  {
+    "family": "root/PopulationRefSchema#auto_noise_sqrt2",
+    "fixture": {
+      "id": "olumi.mc.auto_noise_sqrt2@1",
+      "stage": "transformed",
+      "parent_id": "olumi.mc.model_only@1",
+      "transform_id": "olumi.transform.auto_scaled_noise@1"
+    }
+  },
+  {
+    "family": "root/AnalysisFactSubjectSchema",
+    "fixture": {
+      "kind": "option",
+      "id": "fixture_option_a"
+    }
+  },
+  {
+    "family": "root/SuppressionGuardSchema",
+    "fixture": {
+      "id": "FIXTURE_G02",
+      "version": "3",
+      "reason_code": "FIXTURE_insufficient_separation",
+      "evidence_fact_ids": [
+        "fixture_fact_win_probability_option_b",
+        "fixture_fact_evpi_scenario"
+      ]
+    }
+  },
+  {
+    "family": "root/ComputedFactSchema",
+    "fixture": {
+      "status": "computed",
+      "fact_id": "fixture_fact_win_probability_option_a",
+      "analysis_id": "fixture_analysis_01J0FIXTURE0000000000000",
+      "metric_id": "win_probability",
+      "subject": {
+        "kind": "option",
+        "id": "fixture_option_a"
+      },
+      "storage_fact_row_id": "fixture_row_0001",
+      "value": 0.62,
+      "units": "probability",
+      "method_id": "isl.robustness.mc@2",
+      "population": {
+        "id": "olumi.mc.auto_noise_sqrt2@1",
+        "stage": "transformed",
+        "parent_id": "olumi.mc.model_only@1",
+        "transform_id": "olumi.transform.auto_scaled_noise@1"
+      }
+    }
+  },
+  {
+    "family": "root/UnavailableFactSchema",
+    "fixture": {
+      "status": "unavailable",
+      "fact_id": "fixture_fact_evpi_option_a",
+      "analysis_id": "fixture_analysis_01J0FIXTURE0000000000000",
+      "metric_id": "evpi",
+      "subject": {
+        "kind": "goal",
+        "id": "fixture_goal_1"
+      },
+      "storage_fact_row_id": "fixture_row_0002",
+      "reason_code": "FIXTURE_solver_timeout"
+    }
+  },
+  {
+    "family": "root/SuppressedFactSchema",
+    "fixture": {
+      "status": "suppressed",
+      "fact_id": "fixture_fact_win_probability_option_c",
+      "analysis_id": "fixture_analysis_01J0FIXTURE0000000000000",
+      "metric_id": "win_probability",
+      "subject": {
+        "kind": "option",
+        "id": "fixture_option_c"
+      },
+      "storage_fact_row_id": "fixture_row_0003",
+      "guard": {
+        "id": "FIXTURE_G02",
+        "version": "3",
+        "reason_code": "FIXTURE_insufficient_separation",
+        "evidence_fact_ids": [
+          "fixture_fact_win_probability_option_b",
+          "fixture_fact_evpi_scenario"
+        ]
+      }
+    }
+  },
+  {
+    "family": "root/AnalysisFactSchema#computed",
+    "fixture": {
+      "status": "computed",
+      "fact_id": "fixture_fact_win_probability_option_a",
+      "analysis_id": "fixture_analysis_01J0FIXTURE0000000000000",
+      "metric_id": "win_probability",
+      "subject": {
+        "kind": "option",
+        "id": "fixture_option_a"
+      },
+      "storage_fact_row_id": "fixture_row_0001",
+      "value": 0.62,
+      "units": "probability",
+      "method_id": "isl.robustness.mc@2",
+      "population": {
+        "id": "olumi.mc.auto_noise_sqrt2@1",
+        "stage": "transformed",
+        "parent_id": "olumi.mc.model_only@1",
+        "transform_id": "olumi.transform.auto_scaled_noise@1"
+      }
+    }
+  },
+  {
+    "family": "root/AnalysisFactSchema#unavailable",
+    "fixture": {
+      "status": "unavailable",
+      "fact_id": "fixture_fact_evpi_option_a",
+      "analysis_id": "fixture_analysis_01J0FIXTURE0000000000000",
+      "metric_id": "evpi",
+      "subject": {
+        "kind": "goal",
+        "id": "fixture_goal_1"
+      },
+      "storage_fact_row_id": "fixture_row_0002",
+      "reason_code": "FIXTURE_solver_timeout"
+    }
+  },
+  {
+    "family": "root/AnalysisFactSchema#suppressed",
+    "fixture": {
+      "status": "suppressed",
+      "fact_id": "fixture_fact_win_probability_option_c",
+      "analysis_id": "fixture_analysis_01J0FIXTURE0000000000000",
+      "metric_id": "win_probability",
+      "subject": {
+        "kind": "option",
+        "id": "fixture_option_c"
+      },
+      "storage_fact_row_id": "fixture_row_0003",
+      "guard": {
+        "id": "FIXTURE_G02",
+        "version": "3",
+        "reason_code": "FIXTURE_insufficient_separation",
+        "evidence_fact_ids": [
+          "fixture_fact_win_probability_option_b",
+          "fixture_fact_evpi_scenario"
+        ]
+      }
+    }
+  }
+]
