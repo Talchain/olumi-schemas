@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 40,
+    "distinct": 53,
     "same": 8,
     "unresolved": 387
   },
@@ -2942,6 +2942,110 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/BlockSchema|type=ui_directive.source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence <=> the producing path does not stamp gesture-source provenance (every pre-0.39 directive, and any future producer that omits it). No enum member expresses that: a consumer MUST NOT infer 'ladder' from absence - absence is 'not stamped', never a source claim. Never null, no default (the 0.32.0 ui_target convention, applied verbatim).",
+      "ref": "src/boundary/blocks.ts - UiDirectiveSource doc comment (0.39.0 car 2, ROADMAP 2.701; UI-DIRECTIVE-0.38-DESIGN §2.3)"
+    },
+    "boundary/CoachingBlockSchema.dsk_claim_provenance": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence = 'not grounded in a cited DSK claim' - every surface renders NO grounding badge. Presence is an ATTESTATION from bundle-resolved bytes. No value can express ungroundedness (an empty triple is unparseable by construction), and no consumer may infer a claim.",
+      "ref": "src/boundary/blocks.ts - DskClaimProvenanceSchema doc comment, ABSENCE SEMANTICS paragraph (0.39.0 car 1, ROADMAP 2.964)"
+    },
+    "boundary/DisagreementSchema.round_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present iff the disagreement was auto-created from a round's revealed spread (the U-S1 evidence-typed path); absent = it entered via the facilitation conversation. No round id value can express 'no round' - never defaulted.",
+      "ref": "src/boundary/collab.ts - DisagreementSchema doc comment (0.39.0 car 4, ROADMAP 2.686 U-S0)"
+    },
+    "boundary/DskClaimProvenanceSchema.protocol_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present iff the producing hop RESOLVED a protocol for this claim; absent = the claim is cited without a protocol attribution. No DSK-P id can express 'no protocol resolved', and a consumer must not infer one - the badge renders claim-only.",
+      "ref": "src/boundary/blocks.ts - DskClaimProvenanceSchema doc comment (0.39.0 car 1, ROADMAP 2.964)"
+    },
+    "boundary/ElicitationProvenanceSchema.expression_raw": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present iff the author STATED WORDS (verbatim, never normalised); absent = numeric/derived input - never 'words lost'. No string value can express 'no words were stated'.",
+      "ref": "src/boundary/collab.ts - ElicitationProvenanceSchema doc comment (0.39.0 car 4, G2 §4.2)"
+    },
+    "boundary/ElicitationRoundSchema.context_note": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present iff the owner authored shared framing (participant-visible by design); absent = the owner authored none. Never defaulted - an empty-string note is unparseable (min 1), so absence is the only 'no framing' state.",
+      "ref": "src/boundary/collab.ts - ElicitationRoundSchema doc comment (0.39.0 car 4, G2 §4.1)"
+    },
+    "boundary/OlumiResponseSchema.run_delta": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent on every non-rerun turn AND on reruns produced before the producer shipped / where no prior fact exists - the consumer renders NO delta card. No RunDelta value can express 'no pair to diff' (the pair-provenance record requires two facts). Never defaulted.",
+      "ref": "src/boundary/olumi-response.ts - run_delta field comment + src/boundary/run-delta.ts header (0.39.0 car 3, ROADMAP 2.698-S2)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.edit_list": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the prior fact predates edit tracking, so the list is underivable - C1's edit clause degrades honestly to 'you changed the model'. Present => the COMPLETE projection diff under the hash whitelist, never empty and never on an equal-hash pair (both refused by refineRunDelta) - so no array value, including [], can express 'underivable'.",
+      "ref": "src/boundary/run-delta.ts - edit_list doc comment + refineRunDelta (0.39.0 car 3, RUN-DELTA-DESIGN §b rule 2 / §d)"
+    },
+    "boundary/ReviewCardBlockSchema.dsk_claim_provenance": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Same rule as the CoachingBlock declaration site: absence = not grounded, no badge; presence = attestation. Listed separately because it is a separate declaration site.",
+      "ref": "src/boundary/blocks.ts - DskClaimProvenanceSchema doc comment (0.39.0 car 1, ROADMAP 2.964)"
+    },
+    "boundary/RunDeltaFlipThresholdDeltaSchema.current_median": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the CURRENT run's fact carries no flip row for this factor - 'not measured', which no number (including 0) can express. The 0.38.0 honest-absence doctrine applied to the delta pair; band_verdict 'band_unavailable' is the paired discriminator for the band, the median stays honestly absent.",
+      "ref": "src/boundary/run-delta.ts - RunDeltaFlipThresholdDeltaSchema doc comment (0.39.0 car 3)"
+    },
+    "boundary/RunDeltaFlipThresholdDeltaSchema.prior_median": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the PRIOR run's fact carries no flip row for this factor - 'not measured', which no number can express. Same rule as current_median, separate side.",
+      "ref": "src/boundary/run-delta.ts - RunDeltaFlipThresholdDeltaSchema doc comment (0.39.0 car 3)"
+    },
+    "boundary/RunDeltaLeaderDeltaSchema.current_leading_option_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence = NO ENTITLED leader claim on the current side (verdict withheld, or leader not captured) - never 'no leader existed', and a consumer MUST NOT name one. No option id can express withholding; this is the same collapse seed instance #6 records on the persisted twin, declared honestly at birth here.",
+      "ref": "src/boundary/run-delta.ts - RunDeltaLeaderDeltaSchema doc comment (0.39.0 car 3)"
+    },
+    "boundary/RunDeltaLeaderDeltaSchema.prior_leading_option_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence = no entitled leader claim on the prior side. Same rule as current_leading_option_id, separate side.",
+      "ref": "src/boundary/run-delta.ts - RunDeltaLeaderDeltaSchema doc comment (0.39.0 car 3)"
     }
   }
 }

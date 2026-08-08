@@ -465,6 +465,58 @@ const PHASE3_ACTION_LABEL_MAX = 40;
 // what a chip is allowed to say.
 const PHASE3_ACTION_PROMPT_MAX = 300;
 
+/**
+ * 0.39.0 — the DSK bundle's declared evidence-strength union, extracted as
+ * ONE shared instance now that two provenance shapes carry it
+ * (`DskClaimProvenanceSchema` below and 0.37.0's
+ * `DskProtocolProvenanceSchema`, §1.3-adjacent). Same rule as 0.38.0's
+ * `value_frame`/`GoalThresholdFrame` reuse: one vocabulary, N attestation
+ * sites — an identity pin in tests/boundary/dsk-claim-provenance-0.39.test.ts
+ * REDs if either site is ever replaced by a copy. The domain belongs to the
+ * producer's schema (`data/dsk/v1.json`), not to today's data.
+ */
+export const DskEvidenceStrength = z.enum(['strong', 'medium', 'weak', 'mixed']);
+export type DskEvidenceStrengthLiteral = z.infer<typeof DskEvidenceStrength>;
+
+/**
+ * 0.39.0 car 1 (ROADMAP 2.964) — DSK CLAIM PROVENANCE. The decision-science
+ * CLAIM a coaching card / review card is grounded in, so a consumer can show
+ * that the guidance instantiates a cited claim from the DSK bundle rather
+ * than assistant prose. The CLAIM sibling of 0.37.0's
+ * `DskProtocolProvenanceSchema` (further down this file) — same atomic
+ * doctrine, different arm of the bundle id grammar.
+ *
+ * ⚠ ATOMIC STRICT TRIPLE, NEVER FLAT SIBLINGS — the 0.37.0 comment on
+ * `DskProtocolProvenanceSchema` is the doctrine of record (CEE #830: an id
+ * must never travel without the title and strength that make it verifiable
+ * against `data/dsk/v1.json`; three sibling optionals would let a producer
+ * emit a claim id alone — an authority claim with nothing a consumer can
+ * check it against). Do not "flatten it for consistency".
+ *
+ * `claim_id` is `DSKObjectBase.id` (`/^DSK-(B|T|F|G|P|TR)-\d{3}$/`) narrowed
+ * to the CLAIM arms — `B` (bias) and `T` (technique) — so a protocol id
+ * (`DSK-P-…`) or trigger id (`DSK-TR-…`) cannot masquerade as the claim this
+ * card cites. `protocol_id` (optional, INSIDE the object so it can never
+ * travel without its claim anchor) additionally names the protocol when the
+ * producing hop resolved one.
+ *
+ * OPTIONAL by design on both carrying blocks (ABSENCE SEMANTICS, for the
+ * absence census — distinct): absence means "not grounded in a cited DSK
+ * claim" and every surface renders NO grounding badge; presence is an
+ * attestation. Absence is never a default, never "unknown claim", and no
+ * consumer may infer one. Producers attach it ONLY from bundle-resolved
+ * bytes (attested/resolved grounding), never from an LLM's copy of an id —
+ * that attach policy is CEE's (ROADMAP 2.964's two-hop map); this schema is
+ * the contract precondition.
+ */
+export const DskClaimProvenanceSchema = z.object({
+  claim_id: z.string().regex(/^DSK-(B|T)-\d{3}$/),
+  claim_title: z.string().min(1),
+  evidence_strength: DskEvidenceStrength,
+  protocol_id: z.string().regex(/^DSK-P-\d{3}$/).optional(),
+}).strict();
+export type DskClaimProvenance = z.infer<typeof DskClaimProvenanceSchema>;
+
 // §1.1 — ReviewCardBlock. Produced by the decision_review enricher
 // (auto-invoked after run_analysis, once per fresh graph hash, persisted,
 // invalidated on graph edit). Hero eligible — `priority_rank` REQUIRED.
@@ -504,6 +556,10 @@ export const ReviewCardBlockSchema = z.object({
   signal: z.string().min(1).max(GUIDANCE_SIGNAL_LINE_MAX).optional(),
   action_intent: ActionIntent.optional(),
   action_label: z.string().min(1).max(PHASE3_ACTION_LABEL_MAX).optional(),
+  // 0.39.0 additive (ROADMAP 2.964) — DSK claim provenance, atomic strict
+  // triple. See DskClaimProvenanceSchema above for the full doctrine incl.
+  // absence semantics (absent = not grounded in a cited claim, no badge).
+  dsk_claim_provenance: DskClaimProvenanceSchema.optional(),
 }).strict();
 export type ReviewCardBlock = z.infer<typeof ReviewCardBlockSchema>;
 
@@ -589,6 +645,13 @@ export const CoachingBlockSchema = z.object({
    * additive and can ride a later release on evidence of a real producer.
    */
   action_prompt: z.string().min(1).max(PHASE3_ACTION_PROMPT_MAX).optional(),
+  // 0.39.0 additive (ROADMAP 2.964) — DSK claim provenance, atomic strict
+  // triple. See DskClaimProvenanceSchema above for the full doctrine incl.
+  // absence semantics (absent = not grounded in a cited claim, no badge).
+  // CEE attaches at the two lineage-bearing mint hops only
+  // (calibration_prompt; bias cards gated on 2.965) — attach policy is the
+  // producer's, this field is the contract precondition.
+  dsk_claim_provenance: DskClaimProvenanceSchema.optional(),
 }).strict();
 export type CoachingBlock = z.infer<typeof CoachingBlockSchema>;
 
@@ -731,7 +794,7 @@ export const EvidenceBlockSchema =
 export const DskProtocolProvenanceSchema = z.object({
   protocol_id: z.string().regex(/^DSK-P-\d{3}$/),
   protocol_title: z.string().min(1),
-  evidence_strength: z.enum(['strong', 'medium', 'weak', 'mixed']),
+  evidence_strength: DskEvidenceStrength,
 }).strict();
 export type DskProtocolProvenance = z.infer<typeof DskProtocolProvenanceSchema>;
 
@@ -932,6 +995,38 @@ export const UiDirectiveVerb = z.enum([
 ]);
 export type UiDirectiveVerbLiteral = z.infer<typeof UiDirectiveVerb>;
 
+/**
+ * 0.39.0 car 2 (ROADMAP 2.701's deferred ui_directive-family enum;
+ * UI-DIRECTIVE-0.38-DESIGN-2026-08-06 §2.3) — gesture SOURCE provenance.
+ * Which authoring path minted this directive:
+ *   - `ladder`   — the deterministic fact-derived emit rows (the only
+ *                  producer that has ever existed; every directive emitted
+ *                  before this field was ladder-authored);
+ *   - `gate`     — the advice-gate deterministic per-class mapping (§3.4);
+ *   - `composer` — an LLM-proposed gesture on a gesture-less coach/converse
+ *                  turn, validated fail-closed (§3-hybrid slot).
+ *
+ * P4 provenance: the UI, telemetry, and any reviewer of a capture can
+ * distinguish a deterministic fact-derived gesture from an LLM-proposed one.
+ *
+ * ABSENCE SEMANTICS (for the absence census — distinct, and fully
+ * producer-version-determined, the 0.32.0 `ui_target` convention): absence
+ * ⇔ emitted before this field existed / by a producer that does not stamp
+ * it (the ladder era). Never `null` on the wire, no default, never a second
+ * meaning — a consumer MUST NOT infer `ladder` from absence, only "not
+ * stamped".
+ *
+ * NOTE the wave-2 design's own §2 verdict, encoded here as what this car
+ * does NOT do: NO new verbs. `activate_tab` is ruled DO NOT ADD (`open_panel`
+ * already IS tab activation); `annotate`/`start_tour` still need their own
+ * payload shapes; the right-panel target extensions carry an unfired named
+ * trigger. The §3-hybrid composer policy itself is CEE's to ship (and
+ * Paul-ratifiable at its merge); this field is the contract precondition,
+ * additive-optional and reader-first-safe either way.
+ */
+export const UiDirectiveSource = z.enum(['ladder', 'gate', 'composer']);
+export type UiDirectiveSourceLiteral = z.infer<typeof UiDirectiveSource>;
+
 // 0.32.0 — non-graph UI targets for the panel verbs. BOTH vocabularies are
 // CLOSED enums bound to surfaces with a live renderer at the UI tip the
 // change was derived against (DecisionGuideAI staging 6d5db185) — a
@@ -1013,6 +1108,10 @@ const UiDirectiveBlockObjectSchema = z.object({
   // caption, not a narrative field (compare PHASE3_TITLE_MAX=80 for a
   // full card title).
   note: z.string().min(1).max(UI_DIRECTIVE_NOTE_MAX).optional(),
+  // 0.39.0 — gesture source provenance. See UiDirectiveSource above for the
+  // vocabulary + absence semantics (absent ⇔ producer does not stamp it;
+  // never null, no default, never inferred).
+  source: UiDirectiveSource.optional(),
 }).strict();
 export type UiDirectiveBlock = z.infer<typeof UiDirectiveBlockObjectSchema>;
 

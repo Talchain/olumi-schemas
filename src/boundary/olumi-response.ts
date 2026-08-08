@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BlockSchema, DraftGraphBlockSchema } from './blocks.js';
 import { ActionType, Stage } from './enums.js';
+import { RunDeltaSchema } from './run-delta.js';
 
 // Wire-level suggested action. The richer ActionRecommendation lives in the
 // orchestrator namespace (A1+). Keep this minimal and additive.
@@ -179,6 +180,15 @@ export const OlumiResponseSchema = z.object({
   // producing turn has actually assessed the framing; consumers MUST NOT
   // derive a verdict client-side when it is absent.
   framing_quality: FramingQuality.optional(),
+  // 0.39.0 additive (ROADMAP 2.698-S2) --------------------------------------
+  // The run-over-run delta block, one per completed rerun, beside
+  // `analysis_ready` — see ./run-delta.ts for the full doctrine (the C0–C4
+  // attribution table, the pair-provenance record, and the fabrication
+  // rules the schema itself enforces). ABSENCE SEMANTICS (census —
+  // distinct): absent on every non-rerun turn AND on reruns produced before
+  // the producer shipped / where no prior fact exists; never defaulted, and
+  // a consumer renders NO delta card on absence.
+  run_delta: RunDeltaSchema.optional(),
   // 0.22.0 additive (S1 — graph-identity handshake) -------------------------
   // The canonical hash of the graph state THIS turn / receipt was produced
   // against (the `CANONICAL_GRAPH_HASH_KEEP_LIST` floor — see

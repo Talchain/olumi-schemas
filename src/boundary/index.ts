@@ -64,6 +64,9 @@ export {
   EvidenceBlockSchema,
   ExerciseBlockSchema,
   DskProtocolProvenanceSchema,
+  // DSK claim provenance (0.39.0 car 1 — ROADMAP 2.964)
+  DskEvidenceStrength,
+  DskClaimProvenanceSchema,
   // Phase 3 shared
   ActionIntent,
   TargetRefKind,
@@ -76,12 +79,14 @@ export {
   HeldProposalBlockSchema,
   HeldProposalMutationClass,
   HeldProposalReasonCode,
-  // UI directive (0.15.0 — seamlessness R4 keystone; 0.32.0 — panel verbs)
+  // UI directive (0.15.0 — seamlessness R4 keystone; 0.32.0 — panel verbs;
+  // 0.39.0 — source provenance)
   UiDirectiveBlockSchema,
   UiDirectiveVerb,
   UiDirectivePanelTabId,
   UiDirectiveModelSectionId,
   UiDirectiveUiTargetSchema,
+  UiDirectiveSource,
   BlockSchema,
   ChipSchema,
 } from './blocks.js';
@@ -101,6 +106,9 @@ export type {
   EvidenceBlock,
   ExerciseBlock,
   DskProtocolProvenance,
+  // DSK claim provenance (0.39.0 car 1 — ROADMAP 2.964)
+  DskEvidenceStrengthLiteral,
+  DskClaimProvenance,
   // Phase 3 shared
   ActionIntentLiteral,
   TargetRefKindLiteral,
@@ -113,15 +121,82 @@ export type {
   HeldProposalBlock,
   HeldProposalMutationClassLiteral,
   HeldProposalReasonCodeLiteral,
-  // UI directive (0.15.0 — seamlessness R4 keystone; 0.32.0 — panel verbs)
+  // UI directive (0.15.0 — seamlessness R4 keystone; 0.32.0 — panel verbs;
+  // 0.39.0 — source provenance)
   UiDirectiveBlock,
   UiDirectiveVerbLiteral,
   UiDirectivePanelTabIdLiteral,
   UiDirectiveModelSectionIdLiteral,
   UiDirectiveUiTarget,
+  UiDirectiveSourceLiteral,
   Block,
   Chip,
 } from './blocks.js';
+
+// Run-over-run delta (0.39.0 car 3 — ROADMAP 2.698-S2). Carried on
+// `OlumiResponseSchema.run_delta`; see ./run-delta.ts for the doctrine.
+export {
+  RunDeltaSchema,
+  RunDeltaAttributionCase,
+  RunDeltaBuildsEquality,
+  RunDeltaPairProvenanceSchema,
+  RunDeltaNoiseVerdict,
+  RunDeltaWinProbabilityDeltaSchema,
+  RunDeltaLeaderDeltaSchema,
+  RunDeltaFlipBandVerdict,
+  RunDeltaFlipThresholdDeltaSchema,
+  refineRunDelta,
+} from './run-delta.js';
+export type {
+  RunDelta,
+  RunDeltaAttributionCaseLiteral,
+  RunDeltaBuildsEqualityLiteral,
+  RunDeltaPairProvenance,
+  RunDeltaNoiseVerdictLiteral,
+  RunDeltaWinProbabilityDelta,
+  RunDeltaLeaderDelta,
+  RunDeltaFlipBandVerdictLiteral,
+  RunDeltaFlipThresholdDelta,
+} from './run-delta.js';
+
+// Collaborative elicitation + disagreement (0.39.0 car 4 — ROADMAP 2.686
+// U-S0 / 2.968 build-list item 1). See ./collab.ts for the ratified-ruling
+// doctrine (composed disagreement typing, doubt first-class, one authorship
+// axis, spread-not-consensus).
+export {
+  AuthoredBySchema,
+  ElicitationMethod,
+  ElicitationProvenanceSchema,
+  ElicitationTargetSchema,
+  ElicitationRoundStatus,
+  ElicitationRoundSchema,
+  ElicitationBeliefSchema,
+  ElicitationEventKind,
+  ElicitationEventSchema,
+  DisagreementType,
+  DisagreementStatus,
+  DisagreementPositionSchema,
+  DisagreementPartySchema,
+  DisagreementSubjectSchema,
+  DisagreementSchema,
+} from './collab.js';
+export type {
+  AuthoredBy,
+  ElicitationMethodLiteral,
+  ElicitationProvenance,
+  ElicitationTarget,
+  ElicitationRoundStatusLiteral,
+  ElicitationRound,
+  ElicitationBelief,
+  ElicitationEventKindLiteral,
+  ElicitationEvent,
+  DisagreementTypeLiteral,
+  DisagreementStatusLiteral,
+  DisagreementPosition,
+  DisagreementParty,
+  DisagreementSubject,
+  Disagreement,
+} from './collab.js';
 
 // Analysis enrichment envelope (v0.14.0) — typed opt-in layer over the
 // PLoT→CEE→UI enrichment passthrough. Additive: transport fields on blocks

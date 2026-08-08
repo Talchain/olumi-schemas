@@ -132,8 +132,27 @@ import {
   UiDirectiveUiTargetSchema,
   TargetRefSchema,
   DskProtocolProvenanceSchema,
+  // 0.39.0 car 1 — DSK claim provenance (ROADMAP 2.964)
+  DskClaimProvenanceSchema,
   BlockSchema,
   ChipSchema,
+  // 0.39.0 car 3 — run-over-run delta (ROADMAP 2.698-S2)
+  RunDeltaSchema,
+  RunDeltaPairProvenanceSchema,
+  RunDeltaLeaderDeltaSchema,
+  RunDeltaWinProbabilityDeltaSchema,
+  RunDeltaFlipThresholdDeltaSchema,
+  // 0.39.0 car 4 — collab elicitation + disagreement (ROADMAP 2.686 U-S0)
+  AuthoredBySchema,
+  ElicitationProvenanceSchema,
+  ElicitationTargetSchema,
+  ElicitationRoundSchema,
+  ElicitationBeliefSchema,
+  ElicitationEventSchema,
+  DisagreementPositionSchema,
+  DisagreementPartySchema,
+  DisagreementSubjectSchema,
+  DisagreementSchema,
   // enrichment
   AnalysisEnrichmentSchema,
   EnrichmentOutcomeStatsSchema,
@@ -1226,6 +1245,15 @@ export const maximalDraftGraphBlock = deepFreeze({
   goal_constraints: [maximalDraftGoalConstraint],
 });
 
+// 0.39.0 car 1 (ROADMAP 2.964) — the atomic DSK claim-provenance triple,
+// every optional populated (protocol_id).
+export const maximalDskClaimProvenance = deepFreeze({
+  claim_id: 'DSK-B-003',
+  claim_title: 'FIXTURE anchoring on first numbers',
+  evidence_strength: 'strong',
+  protocol_id: 'DSK-P-002',
+});
+
 export const maximalReviewCardBlock = deepFreeze({
   block_id: UUID_BLOCK,
   signal_id: 'fixture_signal_review_1',
@@ -1247,6 +1275,8 @@ export const maximalReviewCardBlock = deepFreeze({
   signal: 'FIXTURE synthetic per-item signal line.',
   action_intent: 'what_would_flip',
   action_label: 'FIXTURE test the tipping point',
+  // 0.39.0 (ROADMAP 2.964) — DSK claim provenance.
+  dsk_claim_provenance: maximalDskClaimProvenance,
 });
 
 export const maximalCoachingBlock = deepFreeze({
@@ -1274,6 +1304,8 @@ export const maximalCoachingBlock = deepFreeze({
   // Written as a first-person user utterance because that is what it becomes
   // on the wire: it is SENT as the turn, not rendered as a caption.
   action_prompt: 'FIXTURE help me gather evidence for this factor.',
+  // 0.39.0 (ROADMAP 2.964) — DSK claim provenance.
+  dsk_claim_provenance: maximalDskClaimProvenance,
 });
 
 /**
@@ -1367,6 +1399,8 @@ export const maximalUiDirectiveBlock = deepFreeze({
   targets: [maximalTargetRef],
   duration_ms: 1500,
   note: 'FIXTURE synthetic directive caption.',
+  // 0.39.0 — gesture source provenance.
+  source: 'ladder',
 });
 
 // 0.32.0 panel verbs. The cross-field rule makes `ui_target` and non-empty
@@ -1380,6 +1414,8 @@ export const maximalUiDirectiveOpenPanelBlock = deepFreeze({
   targets: [],
   ui_target: { kind: 'tab', id: 'results' },
   note: 'FIXTURE synthetic open-panel caption.',
+  // 0.39.0 — a panel directive minted by the advice-gate mapping.
+  source: 'gate',
 });
 
 export const maximalUiDirectiveOpenSectionBlock = deepFreeze({
@@ -1399,6 +1435,221 @@ export const maximalChip = deepFreeze({
   id: 'fixture_chip_1',
   label: 'FIXTURE_chip_label',
   action: 'run_analysis',
+});
+
+// ----------------------------------------------------------------------------
+// Run-over-run delta (0.39.0 car 3 — ROADMAP 2.698-S2)
+// ----------------------------------------------------------------------------
+
+export const maximalRunDeltaPairProvenance = deepFreeze({
+  seed_equal: true,
+  hash_equal: false,
+  builds_equal: 'equal',
+  n_equal: true,
+});
+
+export const maximalRunDeltaLeaderDelta = deepFreeze({
+  changed: true,
+  prior_leading_option_id: 'fixture_option_a',
+  current_leading_option_id: 'fixture_option_b',
+  noise_verdict: 'signal',
+});
+
+export const maximalRunDeltaWinProbabilityDelta = deepFreeze({
+  option_id: 'fixture_option_a',
+  prior: 0.61,
+  current: 0.44,
+  noise_verdict: 'signal',
+});
+
+export const maximalRunDeltaFlipThresholdDelta = deepFreeze({
+  factor_id: ID_FACTOR,
+  prior_median: 0.42,
+  current_median: 0.63,
+  band_verdict: 'bands_disjoint',
+});
+
+/**
+ * A maximal C1 (attributable) delta — the ONLY case whose preconditions
+ * admit every optional at once (`edit_list` requires `!hash_equal`; C1
+ * requires the pinned-seed/equal-builds/equal-n echoes). The refinement
+ * rules make a "populate everything under C0" fixture unparseable BY DESIGN.
+ */
+export const maximalRunDelta = deepFreeze({
+  attribution_case: 'C1_attributable',
+  pair_provenance: maximalRunDeltaPairProvenance,
+  leader: maximalRunDeltaLeaderDelta,
+  win_probabilities: [
+    maximalRunDeltaWinProbabilityDelta,
+    {
+      option_id: 'fixture_option_b',
+      prior: 0.39,
+      current: 0.56,
+      noise_verdict: 'within_noise',
+    },
+  ],
+  flip_thresholds: [maximalRunDeltaFlipThresholdDelta],
+  edit_list: ['nodes.fixture_factor_1.observed_state.value'],
+});
+
+// ----------------------------------------------------------------------------
+// Collaborative elicitation + disagreement (0.39.0 car 4 — ROADMAP 2.686
+// U-S0 / 2.968 build-list item 1)
+// ----------------------------------------------------------------------------
+
+const UUID_PARTICIPANT_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const UUID_PARTICIPANT_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const UUID_ROUND = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+const UUID_SCENARIO_COLLAB = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+const UUID_ELICITATION_EVENT = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+const UUID_DISAGREEMENT = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+
+export const maximalElicitationProvenance = deepFreeze({
+  authored_by: UUID_PARTICIPANT_A,
+  method: 'elicited_nl',
+  expression_raw: 'FIXTURE pretty likely',
+  elicitation_version: 'FIXTURE_certainty_terms_v1',
+});
+
+export const maximalElicitationTarget = deepFreeze({
+  kind: 'factor',
+  id: ID_FACTOR,
+});
+
+export const maximalElicitationRound = deepFreeze({
+  round_id: UUID_ROUND,
+  scenario_id: UUID_SCENARIO_COLLAB,
+  graph_version_ref: 'fixture_model_version_1',
+  target_manifest: [maximalElicitationTarget, { kind: 'edge', id: 'fixture_edge_1' }],
+  context_note: 'FIXTURE shared framing for the synthetic decision.',
+  status: 'open',
+  created_by: 'owner',
+  created_at: TS_OFFSET,
+});
+
+export const maximalElicitationBelief = deepFreeze({
+  value: 0.7,
+  expression_raw: 'FIXTURE pretty likely',
+  confidence: 0.6,
+});
+
+export const maximalElicitationEvent = deepFreeze({
+  event_id: UUID_ELICITATION_EVENT,
+  round_id: UUID_ROUND,
+  participant_id: UUID_PARTICIPANT_A,
+  event_version: 'FIXTURE_elicitation_event_v1',
+  kind: 'belief_submitted',
+  target: maximalElicitationTarget,
+  belief: maximalElicitationBelief,
+  provenance: maximalElicitationProvenance,
+  created_at: TS_OFFSET,
+});
+
+// Union-branch variants (maximality aggregates by schema identity — each
+// event kind is exercised somewhere in the registry). The valueless kinds
+// carry NO `belief` BY CONSTRUCTION.
+export const maximalElicitationEventRevised = deepFreeze({
+  ...maximalElicitationEvent,
+  kind: 'belief_revised',
+  belief: { value: 0.55, expression_raw: 'FIXTURE on reflection, a coin flip plus', confidence: 0.5 },
+});
+
+export const maximalElicitationEventDeclined = deepFreeze({
+  event_id: UUID_ELICITATION_EVENT,
+  round_id: UUID_ROUND,
+  participant_id: UUID_PARTICIPANT_A,
+  event_version: 'FIXTURE_elicitation_event_v1',
+  kind: 'declined',
+  target: maximalElicitationTarget,
+  provenance: {
+    authored_by: UUID_PARTICIPANT_A,
+    method: 'elicited_nl',
+    expression_raw: 'FIXTURE I have no basis to estimate this.',
+    elicitation_version: 'FIXTURE_certainty_terms_v1',
+  },
+  created_at: TS_OFFSET,
+});
+
+export const maximalElicitationEventClarification = deepFreeze({
+  ...maximalElicitationEventDeclined,
+  kind: 'clarification_requested',
+  provenance: {
+    authored_by: UUID_PARTICIPANT_A,
+    method: 'elicited_nl',
+    expression_raw: 'FIXTURE does churn here mean logo churn or revenue churn?',
+    elicitation_version: 'FIXTURE_certainty_terms_v1',
+  },
+});
+
+export const maximalDisagreementPosition = deepFreeze({
+  kind: 'attributed_value',
+  value: 0.3,
+  expression_raw: 'FIXTURE quite unlikely',
+});
+
+export const maximalDisagreementParty = deepFreeze({
+  authored_by: UUID_PARTICIPANT_A,
+  position: maximalDisagreementPosition,
+});
+
+export const maximalDisagreementSubject = deepFreeze({
+  kind: 'factor',
+  id: ID_FACTOR,
+});
+
+/**
+ * Two attributed-value rivals plus an assistant doubt — the 2.146 list of
+ * positions with provenance, covering all three `authored_by` union branches
+ * across the registry (participant uuid here, 'owner' on the round's
+ * `created_by`, 'assistant' on this object's provenance and third party).
+ */
+export const maximalDisagreement = deepFreeze({
+  disagreement_id: UUID_DISAGREEMENT,
+  scenario_id: UUID_SCENARIO_COLLAB,
+  round_id: UUID_ROUND,
+  graph_version_ref: 'fixture_model_version_1',
+  type: 'evidence',
+  subject: maximalDisagreementSubject,
+  parties: [
+    maximalDisagreementParty,
+    {
+      authored_by: UUID_PARTICIPANT_B,
+      position: { kind: 'attributed_value', value: 0.75, expression_raw: 'FIXTURE quite likely' },
+    },
+    { authored_by: 'assistant', position: { kind: 'doubt' } },
+  ],
+  status: 'open',
+  provenance: {
+    authored_by: 'assistant',
+    method: 'derived',
+    elicitation_version: 'FIXTURE_divergence_screen_v1',
+  },
+  created_at: TS_OFFSET,
+});
+
+// Position union-branch variants (exists / absent / reversed / preference are
+// unexercised by the entries above; doubt rides maximalDisagreement).
+export const maximalDisagreementPositionExists = deepFreeze({ kind: 'exists' });
+export const maximalDisagreementPositionAbsent = deepFreeze({ kind: 'absent' });
+export const maximalDisagreementPositionReversed = deepFreeze({ kind: 'reversed' });
+export const maximalDisagreementPositionPreference = deepFreeze({
+  kind: 'preference',
+  statement: 'FIXTURE I would not accept a 20% downside risk.',
+});
+
+// Subject union-branch variants (edge / goal / structural_claim).
+export const maximalDisagreementSubjectEdge = deepFreeze({
+  kind: 'edge',
+  from: ID_FACTOR,
+  to: ID_GOAL,
+});
+export const maximalDisagreementSubjectGoal = deepFreeze({
+  kind: 'goal',
+  id: ID_GOAL,
+});
+export const maximalDisagreementSubjectStructuralClaim = deepFreeze({
+  kind: 'structural_claim',
+  description: 'FIXTURE a churn factor is missing from the model.',
 });
 
 // ----------------------------------------------------------------------------
@@ -1483,6 +1734,9 @@ export const maximalOlumiResponse = deepFreeze({
   // 0.22.0 — S1 graph-identity handshake (the hash this turn was produced
   // against). A synthetic canonical hash string.
   graph_hash: 'FIXTURE_graph_hash_0a1b2c3d4e5f',
+  // 0.39.0 (ROADMAP 2.698-S2) — the run-over-run delta block, beside
+  // `analysis_ready`.
+  run_delta: maximalRunDelta,
 });
 
 // ----------------------------------------------------------------------------
@@ -2095,6 +2349,146 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/UiDirectiveUiTargetSchema',
     schema: UiDirectiveUiTargetSchema,
     fixture: maximalUiDirectiveUiTargetTab,
+  },
+  // --- 0.39.0 car 1 — DSK claim provenance ------------------------------------------
+  {
+    family: 'boundary/DskClaimProvenanceSchema',
+    schema: DskClaimProvenanceSchema,
+    fixture: maximalDskClaimProvenance,
+  },
+  // --- 0.39.0 car 3 — run-over-run delta --------------------------------------------
+  { family: 'boundary/RunDeltaSchema', schema: RunDeltaSchema, fixture: maximalRunDelta },
+  {
+    family: 'boundary/RunDeltaPairProvenanceSchema',
+    schema: RunDeltaPairProvenanceSchema,
+    fixture: maximalRunDeltaPairProvenance,
+  },
+  {
+    family: 'boundary/RunDeltaLeaderDeltaSchema',
+    schema: RunDeltaLeaderDeltaSchema,
+    fixture: maximalRunDeltaLeaderDelta,
+  },
+  {
+    family: 'boundary/RunDeltaWinProbabilityDeltaSchema',
+    schema: RunDeltaWinProbabilityDeltaSchema,
+    fixture: maximalRunDeltaWinProbabilityDelta,
+  },
+  {
+    family: 'boundary/RunDeltaFlipThresholdDeltaSchema',
+    schema: RunDeltaFlipThresholdDeltaSchema,
+    fixture: maximalRunDeltaFlipThresholdDelta,
+  },
+  // --- 0.39.0 car 4 — collab elicitation + disagreement -----------------------------
+  {
+    family: 'boundary/AuthoredBySchema',
+    schema: AuthoredBySchema,
+    fixture: 'owner',
+    notes:
+      'Union of two reserved literals + participant uuid. All three branches are exercised across the registry: owner here and on maximalElicitationRound.created_by; assistant on maximalDisagreement provenance; participant uuids throughout the elicitation fixtures.',
+  },
+  {
+    family: 'boundary/ElicitationProvenanceSchema',
+    schema: ElicitationProvenanceSchema,
+    fixture: maximalElicitationProvenance,
+  },
+  {
+    family: 'boundary/ElicitationTargetSchema',
+    schema: ElicitationTargetSchema,
+    fixture: maximalElicitationTarget,
+  },
+  {
+    family: 'boundary/ElicitationRoundSchema',
+    schema: ElicitationRoundSchema,
+    fixture: maximalElicitationRound,
+  },
+  {
+    family: 'boundary/ElicitationBeliefSchema',
+    schema: ElicitationBeliefSchema,
+    fixture: maximalElicitationBelief,
+  },
+  {
+    family: 'boundary/ElicitationEventSchema',
+    schema: ElicitationEventSchema,
+    fixture: maximalElicitationEvent,
+  },
+  {
+    family: 'boundary/ElicitationEventSchema#belief_revised',
+    schema: ElicitationEventSchema,
+    fixture: maximalElicitationEventRevised,
+    notes: 'Union-branch variant — a pre-close mind-change is an APPEND, same shape.',
+  },
+  {
+    family: 'boundary/ElicitationEventSchema#declined',
+    schema: ElicitationEventSchema,
+    fixture: maximalElicitationEventDeclined,
+    notes:
+      'Union-branch variant — the valueless kind: its arm declares NO belief member, so a decline smuggling a value fails to parse (analysis-fact doctrine).',
+  },
+  {
+    family: 'boundary/ElicitationEventSchema#clarification_requested',
+    schema: ElicitationEventSchema,
+    fixture: maximalElicitationEventClarification,
+    notes: 'Union-branch variant — valueless; the verbatim ask rides provenance.expression_raw.',
+  },
+  {
+    family: 'boundary/DisagreementPositionSchema',
+    schema: DisagreementPositionSchema,
+    fixture: maximalDisagreementPosition,
+  },
+  {
+    family: 'boundary/DisagreementPositionSchema#exists',
+    schema: DisagreementPositionSchema,
+    fixture: maximalDisagreementPositionExists,
+    notes: 'Gen-1 census structural-claim branch.',
+  },
+  {
+    family: 'boundary/DisagreementPositionSchema#absent',
+    schema: DisagreementPositionSchema,
+    fixture: maximalDisagreementPositionAbsent,
+    notes: 'Gen-1 census structural-claim branch.',
+  },
+  {
+    family: 'boundary/DisagreementPositionSchema#reversed',
+    schema: DisagreementPositionSchema,
+    fixture: maximalDisagreementPositionReversed,
+    notes: 'Gen-1 census structural-claim branch.',
+  },
+  {
+    family: 'boundary/DisagreementPositionSchema#preference',
+    schema: DisagreementPositionSchema,
+    fixture: maximalDisagreementPositionPreference,
+    notes: 'Goals / risk-tolerance stated-preference branch.',
+  },
+  {
+    family: 'boundary/DisagreementPartySchema',
+    schema: DisagreementPartySchema,
+    fixture: maximalDisagreementParty,
+  },
+  {
+    family: 'boundary/DisagreementSubjectSchema',
+    schema: DisagreementSubjectSchema,
+    fixture: maximalDisagreementSubject,
+  },
+  {
+    family: 'boundary/DisagreementSubjectSchema#edge',
+    schema: DisagreementSubjectSchema,
+    fixture: maximalDisagreementSubjectEdge,
+    notes: 'Canonical from+to edge identity (the edge_adjudication rule).',
+  },
+  {
+    family: 'boundary/DisagreementSubjectSchema#goal',
+    schema: DisagreementSubjectSchema,
+    fixture: maximalDisagreementSubjectGoal,
+  },
+  {
+    family: 'boundary/DisagreementSubjectSchema#structural_claim',
+    schema: DisagreementSubjectSchema,
+    fixture: maximalDisagreementSubjectStructuralClaim,
+  },
+  {
+    family: 'boundary/DisagreementSchema',
+    schema: DisagreementSchema,
+    fixture: maximalDisagreement,
   },
   {
     family: 'boundary/BlockSchema#analysis_result',
