@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 53,
+    "distinct": 55,
     "same": 8,
     "unresolved": 387
   },
@@ -2132,6 +2132,14 @@
       "note": "Absence means 'no value asserted', which no number can express — 0 is a legitimate signed mean. The coupling is enforced ON THE WIRE at the union-root superRefine: 'overridden' REQUIRES the value (an override asserts a number), 'dismissed' FORBIDS it (a dismissal asserts none), accepted_pass1/2 may omit it because the authoritative copy lives in the edge's validation metadata. A consumer substituting a default for absence would manufacture a strength the user never stated.",
       "ref": "src/boundary/turn-payload.ts — refineEdgeAdjudication + OrchestratorTurnPayloadSchema superRefine (0.34.0); pinned by tests/boundary/turn-payload-0.34.test.ts"
     },
+    "boundary/SystemEventSchema|kind=factor_value_edit.applied_from": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means 'an ordinary inspector/panel-free edit' — it NEVER means 'attribution lost', and no value can express it (the field's own .describe() states both halves). Presence changes SERVER behaviour, not just display: present => CEE MUST verify the claim against its own collab store (round closed, participant belongs to it, that participant's latest belief for the target equals the value) and refuse loudly on mismatch, then stamp observed_state.elicited_from + source 'panel_elicited'; absent => the existing 0.29.0 edit path, stamping user provenance. A consumer or server substituting a default ref for absence would manufacture an attribution nobody made — the exact fabrication class the evidence loop exists to kill.",
+      "ref": "src/boundary/turn-payload.ts — FactorValueEditEvent.applied_from .describe() + member comment (0.40.0, PR4 evidence loop; EVIDENCE-LOOP-DERIVATION.md Q5/Q6)"
+    },
     "boundary/SystemEventSchema|kind=factor_value_edit.field": {
       "markers": [
         "optional"
@@ -2807,6 +2815,14 @@
       "verdict": "distinct",
       "note": "Absence means UNDECLARED - which is every graph drafted before 0.31.0 - and no member of the enum expresses it. The schema's comment states the rule that makes the two states behaviourally different: a consumer MUST NOT read absence as 'unit_interval' (that is the unsound current-value guess ROADMAP 2.193 exists to retire) and MUST fail OPEN to today's unbounded behaviour. So absence selects 'enforce nothing' while every value selects a bound. DEBT: pre-existing stored graphs stay permanently indistinguishable from undeclared new ones until a backfill decision, which 2.193 names as a separate stored-graphs train.",
       "ref": "src/graph.ts - DeclaredScale doc comment + ObservedStateSchema.declared_scale (0.31.0, ROADMAP 2.193)"
+    },
+    "root/ObservedStateSchema.elicited_from": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means 'this value was not applied from a panel round' — which is every value written before 0.40.0 and every non-panel write after it — and it NEVER means 'attribution lost' (the field's own doc comment states both halves). No value can express that state: any present ref names a round and a participant, i.e. asserts an attribution. The producer rule couples it to source 'panel_elicited' (CEE stamps both together, server-verified, INV-F), so a consumer inferring panel provenance from source alone, or substituting any default ref for absence, would manufacture an attribution nobody made.",
+      "ref": "src/graph.ts — ObservedStateSchema.elicited_from doc comment (0.40.0, PR4 evidence loop; EVIDENCE-LOOP-DERIVATION.md Q5/Q6)"
     },
     "root/ObservedStateSchema.source": {
       "markers": [

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { RoundParticipantRefSchema } from './boundary/collab.js';
 
 export const NODE_ID_PATTERN = /^[a-z0-9_:-]+$/;
 
@@ -93,11 +94,76 @@ export const DECLARED_SCALE_BOUNDS: Readonly<
   raw_count: Object.freeze({ min: 0, max: null }),
 });
 
+/**
+ * 0.40.0 (PR4 evidence loop) — the KNOWN `observed_state.source` literals,
+ * DECLARED in the contract for the first time. Until 0.40.0 this union lived
+ * only in the consumers, twice, as hand-maintained mirrors of each other:
+ *
+ *   · CEE `src/schemas/cee-v3.ts` `ObservedStateV3.source` — a closed
+ *     7-member z.enum, self-described "the narrowest validator in the chain"
+ *     (derived at staging `335a9380`, 13 Aug 2026);
+ *   · UI `src/canvas/domain/valueProvenance.ts` `SOURCE_CLASSES` — 11
+ *     literals, a strict superset of CEE's 7, and the file CEE's own comment
+ *     names as "the acknowledged cross-repo source of this list" (derived at
+ *     staging `f04e756d`, same day).
+ *
+ * The list below is the UNION of those two corpora plus `panel_elicited`
+ * (minted 0.40.0 for the evidence loop). Per-member provenance:
+ *
+ *   brief_extraction, explicit          — extraction from the user's brief
+ *   cee_inference, inferred, cee_repair — the model's own estimate/repair
+ *   user_override                       — typed value (UI edit surfaces AND
+ *                                         CEE set_factor_value / chat edits)
+ *   user_confirmed                      — "confirm as is"
+ *   user                                — Model-tab factor-value edits
+ *   user_edited                         — OutputsDock transition bridge
+ *   user_calibration                    — inspector calibration
+ *   user_assumption                     — reserved "mark as assumption"
+ *   panel_elicited                      — 0.40.0: applied from a named
+ *                                         participant's panel answer; MUST be
+ *                                         accompanied by `elicited_from`
+ *                                         when CEE stamps it (producer rule —
+ *                                         see `elicited_from` below)
+ *
+ * ⚠ THE WIRE FIELD STAYS `z.string()`, DELIBERATELY — this enum is a
+ * CONSUMER-SIDE VOCABULARY, NEVER A WIRE GATE. Narrowing the field would be
+ * breaking (not a MINOR), and a gating vocabulary refuses every literal it
+ * is missing (the trap-12d short-list failure). Consumers should DERIVE
+ * their classifier/validator membership from this list at their ≥0.40.0
+ * re-vendor (replacing the two mirrors above) while keeping their behaviour
+ * on UNKNOWN literals honest-neutral, exactly as the UI's
+ * `classifyValueProvenance` does today (null, never a guessed class).
+ */
+export const OBSERVED_STATE_SOURCE_LITERALS = [
+  'brief_extraction',
+  'explicit',
+  'cee_inference',
+  'inferred',
+  'cee_repair',
+  'user_override',
+  'user_confirmed',
+  'user',
+  'user_edited',
+  'user_calibration',
+  'user_assumption',
+  'panel_elicited',
+] as const;
+
+export const KnownObservedStateSource = z.enum(OBSERVED_STATE_SOURCE_LITERALS);
+export type KnownObservedStateSourceLiteral = z.infer<typeof KnownObservedStateSource>;
+
 export const ObservedStateSchema = z.object({
   value: z.number(),
   std: z.number().positive().optional(),
   baseline: z.number().optional(),
   unit: z.string().optional(),
+  /**
+   * How the value entered the model. A FREE STRING on the wire (see
+   * `OBSERVED_STATE_SOURCE_LITERALS` above for the declared vocabulary and
+   * for why the field is deliberately not narrowed to it). Absence means the
+   * producer stamped no provenance — a consumer MUST NOT read absence as any
+   * particular class; classify unknown/absent as neutral, never guess.
+   */
   source: z.string().optional(),
   /**
    * 0.31.0 additive (ROADMAP 2.193). The declared scale of `value` — see
@@ -105,6 +171,21 @@ export const ObservedStateSchema = z.object({
    * Absence means UNDECLARED and MUST fail open to today's behaviour.
    */
   declared_scale: DeclaredScale.optional(),
+  /**
+   * 0.40.0 additive (PR4 evidence loop). WHOSE panel answer this value was
+   * applied from: `{round_id, participant_id}`, ids only — display names are
+   * resolved at render and NEVER persisted (R-2 redaction rule; see
+   * `RoundParticipantRefSchema`). Server-stamped by CEE only after verifying
+   * the claim against its own collab store (INV-F).
+   *
+   * ABSENCE SEMANTICS — DISTINCT: absent means "this value was not applied
+   * from a panel round" (which is every value written before 0.40.0 and
+   * every non-panel write after it). Absence NEVER means "attribution lost".
+   * Producer rule: CEE stamps `elicited_from` and `source: 'panel_elicited'`
+   * together — a consumer may key display off either, but only
+   * `elicited_from` carries the identity.
+   */
+  elicited_from: RoundParticipantRefSchema.optional(),
 }).passthrough();
 
 export type ObservedStateType = z.infer<typeof ObservedStateSchema>;

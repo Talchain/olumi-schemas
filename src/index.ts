@@ -18,6 +18,10 @@ export {
   GoalThresholdFrame,
   DeclaredScale,
   DECLARED_SCALE_BOUNDS,
+  // 0.40.0 additive — PR4 evidence loop: the declared observed_state.source
+  // vocabulary (consumer-side; the wire field stays z.string()).
+  OBSERVED_STATE_SOURCE_LITERALS,
+  KnownObservedStateSource,
 } from './graph.js';
 export type {
   NodeV3,
@@ -33,7 +37,19 @@ export type {
   // 0.31.0 additive.
   GoalThresholdFrameType,
   DeclaredScaleType,
+  // 0.40.0 additive.
+  KnownObservedStateSourceLiteral,
 } from './graph.js';
+
+// 0.40.0 (PR4 evidence loop) — the shared {round_id, participant_id}
+// attribution ref. Home is ./boundary/collab.ts (the collab vocabulary);
+// re-exported here because the ROOT contract embeds it
+// (ObservedStateSchema.elicited_from), so root consumers can name the
+// runtime schema without importing the /boundary entry. Same object at both
+// entry points — pinned by identity in
+// tests/boundary/evidence-loop-0.40-vocabulary.test.ts.
+export { RoundParticipantRefSchema } from './boundary/collab.js';
+export type { RoundParticipantRef } from './boundary/collab.js';
 
 // Coaching schemas (v0.11.0 — first-class coaching contract)
 //

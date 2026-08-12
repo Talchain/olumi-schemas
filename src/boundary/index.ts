@@ -165,6 +165,10 @@ export type {
 // axis, spread-not-consensus).
 export {
   AuthoredBySchema,
+  // 0.40.0 (PR4 evidence loop) — the shared {round_id, participant_id}
+  // attribution ref consumed by `factor_value_edit.applied_from` (here in
+  // /boundary) and `observed_state.elicited_from` (root graph contract).
+  RoundParticipantRefSchema,
   ElicitationMethod,
   ElicitationProvenanceSchema,
   ElicitationTargetSchema,
@@ -182,6 +186,7 @@ export {
 } from './collab.js';
 export type {
   AuthoredBy,
+  RoundParticipantRef,
   ElicitationMethodLiteral,
   ElicitationProvenance,
   ElicitationTarget,

@@ -144,6 +144,8 @@ import {
   RunDeltaFlipThresholdDeltaSchema,
   // 0.39.0 car 4 — collab elicitation + disagreement (ROADMAP 2.686 U-S0)
   AuthoredBySchema,
+  // 0.40.0 — PR4 evidence loop (shared attribution ref)
+  RoundParticipantRefSchema,
   ElicitationProvenanceSchema,
   ElicitationTargetSchema,
   ElicitationRoundSchema,
@@ -265,6 +267,15 @@ const UUID_TURN = '11111111-1111-4111-8111-111111111111';
 const UUID_SCENARIO = '22222222-2222-4222-8222-222222222222';
 const UUID_RETRY_OF = '33333333-3333-4333-8333-333333333333';
 const UUID_BLOCK = '44444444-4444-4444-8444-444444444444';
+// Collab identities — HOISTED here (0.40.0) from the collab section below
+// because `maximalRoundParticipantRef` is consumed by the graph family
+// (module evaluation order; a later `const` would be a TDZ error).
+const UUID_PARTICIPANT_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const UUID_PARTICIPANT_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const UUID_ROUND = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+const UUID_SCENARIO_COLLAB = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+const UUID_ELICITATION_EVENT = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+const UUID_DISAGREEMENT = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 const TS_Z = '2026-01-01T00:00:00.000Z';
 const TS_OFFSET = '2026-01-01T09:30:00.000+01:00';
 
@@ -282,18 +293,38 @@ const LABEL_OPTION_B = 'FIXTURE_option_beta';
 // Graph family (root)
 // ----------------------------------------------------------------------------
 
+// 0.40.0 (PR4 evidence loop) — the shared {round_id, participant_id}
+// attribution ref, consumed by BOTH the graph family (elicited_from, below)
+// and the turn-payload family (factor_value_edit.applied_from). Ids only,
+// .strict() — a display name here is refused at parse (R-2 redaction rule).
+export const maximalRoundParticipantRef = deepFreeze({
+  round_id: UUID_ROUND,
+  participant_id: UUID_PARTICIPANT_A,
+});
+
 export const maximalObservedState = deepFreeze({
   value: 42.5,
   std: 3.2,
   baseline: 40,
   unit: 'FIXTURE_units_per_month',
-  source: 'FIXTURE_user_estimate',
+  // 0.40.0 — `panel_elicited` (a KnownObservedStateSource member) so the
+  // fixture is internally consistent with `elicited_from` below: a value
+  // that names its author should carry the source class producers stamp
+  // alongside the attribution. The field's type is unchanged (free string);
+  // the wire-stays-permissive property is pinned separately in
+  // tests/boundary/evidence-loop-0.40-vocabulary.test.ts, not here.
+  // (Was 'FIXTURE_user_estimate' ≤0.39.0 — the 0.39.0 additivity corpus
+  // still replays that value through the current schema.)
+  source: 'panel_elicited',
   // 0.31.0 (ROADMAP 2.193) — the DECLARED scale of `value`. `raw_count` is
   // the internally consistent choice here: this fixture's `value` is 42.5
   // against a `unit` of units-per-month, which is a raw magnitude, NOT a
   // proportion. Declaring `unit_interval` would make the fixture assert a
   // [0,1] bound that its own value violates.
   declared_scale: 'raw_count',
+  // 0.40.0 (PR4 evidence loop) — whose panel answer this value was applied
+  // from. Ids only; the display label resolves at render from round data.
+  elicited_from: maximalRoundParticipantRef,
   [PROBE]: true,
 });
 
@@ -1496,13 +1527,9 @@ export const maximalRunDelta = deepFreeze({
 // Collaborative elicitation + disagreement (0.39.0 car 4 — ROADMAP 2.686
 // U-S0 / 2.968 build-list item 1)
 // ----------------------------------------------------------------------------
-
-const UUID_PARTICIPANT_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
-const UUID_PARTICIPANT_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
-const UUID_ROUND = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
-const UUID_SCENARIO_COLLAB = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
-const UUID_ELICITATION_EVENT = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
-const UUID_DISAGREEMENT = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+// (Collab UUID constants hoisted to the top constants block, 0.40.0 — the
+// graph family's maximalRoundParticipantRef needs them earlier in module
+// evaluation order.)
 
 export const maximalElicitationProvenance = deepFreeze({
   authored_by: UUID_PARTICIPANT_A,
@@ -1817,6 +1844,10 @@ const eventFactorValueEdit = deepFreeze({
   raw_value: 30000,
   unit: '£',
   field: 'value',
+  // 0.40.0 (PR4 evidence loop) — maximal: this edit applies a named
+  // participant's panel answer. CEE verifies the claim against its own
+  // collab store before stamping provenance; the ref is identity-only.
+  applied_from: maximalRoundParticipantRef,
 });
 const eventChipClick = deepFreeze({ kind: 'chip_click', chip_id: 'fixture_chip_1' });
 const eventUndo = deepFreeze({ kind: 'undo' });
@@ -2385,6 +2416,14 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: 'owner',
     notes:
       'Union of two reserved literals + participant uuid. All three branches are exercised across the registry: owner here and on maximalElicitationRound.created_by; assistant on maximalDisagreement provenance; participant uuids throughout the elicitation fixtures.',
+  },
+  // --- 0.40.0 — PR4 evidence loop (shared attribution ref) ---------------------------
+  {
+    family: 'boundary/RoundParticipantRefSchema',
+    schema: RoundParticipantRefSchema,
+    fixture: maximalRoundParticipantRef,
+    notes:
+      'The {round_id, participant_id} attribution ref shared by observed_state.elicited_from (root) and factor_value_edit.applied_from (boundary). .strict(), ids only — display names never persist (R-2 redaction rule). participant_id reuses AuthoredBySchema by identity; its uuid branch is exercised here, the reserved literals on the 0.39.0 collab fixtures above.',
   },
   {
     family: 'boundary/ElicitationProvenanceSchema',

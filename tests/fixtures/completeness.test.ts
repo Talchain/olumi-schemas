@@ -202,7 +202,10 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   whose valueless arms (declined / doubt) CANNOT ride one maximal
     //   fixture, so branch coverage is spread across variants, the
     //   ui_directive precedent.
-    expect(MAXIMAL_FIXTURES.length).toBe(159);
+    // 0.40.0 (+1): RoundParticipantRefSchema — the PR4 evidence-loop
+    //   attribution ref shared by observed_state.elicited_from and
+    //   factor_value_edit.applied_from.
+    expect(MAXIMAL_FIXTURES.length).toBe(160);
   });
 
   it('family keys are unique', () => {
