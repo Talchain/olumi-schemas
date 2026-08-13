@@ -11,12 +11,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **The PR4 evidence-loop minor: apply an ATTRIBUTED panel value to the model (design of record:
 `olumi-docs/PHASE0-EVIDENCE-2026-07-28/pr4-two-person-witness-2026-08-12/EVIDENCE-LOOP-DERIVATION.md`
-Q5/Q6). FULLY ADDITIVE — nothing required, nothing renamed, nothing narrowed; every payload that
+Q5/Q6). ADDITIVE — nothing required, nothing renamed, no EXISTING field narrowed; every payload that
 parsed at 0.39.0 still parses IDENTICALLY, proven in-repo by `tests/contracts/additivity-0.40.test.ts`,
 which replays the COMPLETE 0.39.0 maximal-fixture corpus (all 159 families, serialised mechanically
 from the built dist at `76fe0ed9`) through the 0.40.0 schemas and asserts byte-identical parse output.
 UI/CEE/PLoT all vendor 0.39.0 today (derived at each staging tip, 13 Aug 2026) — one aligned
 three-pin re-vendor wave follows this release.**
+
+⚠ **ONE PRECISE EXCEPTION TO "ADDITIVE", measured at both built dists (schemas #39 review, 13 Aug) —
+read this before writing any re-vendor lane's brief.** `ObservedStateSchema` is `.passthrough()`, so at
+0.39.0 the key `elicited_from` was admissible carrying **any** value. At 0.40.0 it is TYPED, so a
+non-conforming value now REFUSES the whole `observed_state` — and through `NodeV3`, the whole
+`GraphV3`. Confirmed refusals at 0.40.0 that parsed at 0.39.0: a legacy string, an object carrying
+`display_name`, and `null`. Discriminating control: the identical payload with the key RENAMED parses
+byte-identically at both versions, so it is the key name and not the fixture.
+
+**Why this is a note and not a defect: reachability was measured at ZERO** — `elicited_from` and
+`applied_from` occur 0 times across the UI, CEE, PLoT and ISL staging tips (contrast control
+`observed_state`: 874 / 2292 / 1337 / 584), 0 times in every open PR, and 0 times across 830 parsed
+JSON captures. No stored graph or live payload can carry a non-conforming value today. **A re-vendor
+lane therefore does NOT need to migrate stored graphs — but it must not be told, as this entry
+originally said, that nothing could possibly reject.**
+
+*(The in-repo 159-family corpus is structurally blind to this class: `.passthrough()` admits keys no
+corpus enumerates — check what a corpus EXCLUDES, not only what it covers.)*
 
 ### 1. `RoundParticipantRefSchema` — the shared attribution ref (`/boundary`, re-exported at root)
 
@@ -39,6 +57,8 @@ TOGETHER, only after verifying the claim against its own collab store (INV-F —
 only what it verified). Census rows answered `distinct` at both new declaration sites.
 
 - **Skew, derived by execution against the built v0.39.0 dist (not asserted):** a 0.39.0 consumer
+  ⚠ **and 0.40.0 therefore REFUSES a non-conforming `elicited_from` that 0.39.0 admitted** — see the
+  measured exception at the top of this entry (reachability zero today, so no migration is owed).
   PARSES a payload carrying `elicited_from` and retains the key (`.passthrough()`), validating
   nothing about it — and an INVALID ref (display name, non-UUID round) also parses at 0.39.0,
   which is exactly the hole 0.40.0's typed declaration closes. Consumers that project fields
