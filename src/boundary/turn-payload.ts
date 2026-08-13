@@ -8,6 +8,7 @@ import {
   EdgeAdjudicationVerdict,
 } from './enums.js';
 import { GraphV3Schema } from '../graph.js';
+import { RoundParticipantRefSchema } from './collab.js';
 
 // UUIDv4 pattern — keep loose; CEE also re-checks.
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -246,6 +247,34 @@ const FactorValueEditEvent = z.object({
       '(e.g. "baseline") requires widening this literal to a union in a versioned release, ' +
       'which is deliberately louder than accepting an arbitrary string here and leaving each ' +
       'consumer to decide what to do with it.',
+  ),
+  // 0.40.0 (PR4 evidence loop — EVIDENCE-LOOP-DERIVATION.md Q5, ratified
+  // mechanism G2 §7.3): the owner's "Use this value" apply from a panel
+  // reveal RIDES THIS EXISTING MEMBER — deliberately NOT a new collab-seam
+  // graph-write route, which would be a second graph-write path (the
+  // shared-mutation hazard the derivation names for refusal at review).
+  //
+  // `applied_from` is the client's ATTRIBUTION CLAIM, never a trusted input:
+  // CEE verifies it against its own collab store (round closed · participant
+  // belongs to it · that participant's latest belief for this target equals
+  // `value`/`raw_value`) and only then stamps `observed_state.elicited_from`
+  // + `source: 'panel_elicited'` on the persisted node — INV-F, the server
+  // stamps only what it verified; a mismatch refuses loud. Ids only; a
+  // display name is refused at parse (RoundParticipantRefSchema is .strict()).
+  //
+  // ⚠ SEQUENCING — READER-FIRST IS MANDATORY, exactly as for this member's
+  // own 0.29.0 landing (see the member comment above): every member of this
+  // union is .strict(), so a CEE pinned ≤0.39.0 that receives `applied_from`
+  // REJECTS THE WHOLE TURN (derived by execution against the built v0.39.0
+  // dist: unrecognized_keys at path ['event']). Order: publish 0.40.0 → CEE
+  // re-vendors + deploys → only then the UI emitter sends it.
+  applied_from: RoundParticipantRefSchema.optional().describe(
+    'Present iff this edit applies a named participant\'s panel answer ("Use this value" ' +
+      'on a reveal row). ABSENCE IS DISTINCT: it means an ordinary inspector/panel-free ' +
+      'edit, never "attribution lost". When present, CEE MUST verify the claim against ' +
+      'its own collab store before stamping any provenance, and MUST refuse the edit ' +
+      'loudly on any mismatch — the wire never carries a provenance claim the server ' +
+      'could not verify for itself.',
   ),
 }).strict();
 

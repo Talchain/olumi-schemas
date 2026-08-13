@@ -67,6 +67,35 @@ export const AuthoredBySchema = z.union([
 export type AuthoredBy = z.infer<typeof AuthoredBySchema>;
 
 /**
+ * 0.40.0 (PR4 evidence loop — EVIDENCE-LOOP-DERIVATION.md Q5/Q6). The shared
+ * attribution ref: WHICH round, WHOSE stated value. Two consumers, one shape:
+ *
+ *   · `observed_state.elicited_from` (graph.ts) — the server-stamped record
+ *     that an applied value came from a named participant's panel answer.
+ *   · `factor_value_edit.applied_from` (turn-payload.ts) — the client's claim
+ *     accompanying an "Use this value" apply, which CEE VERIFIES against its
+ *     own collab store (round closed · participant belongs to it · that
+ *     participant's latest belief for the target equals the value) before
+ *     stamping anything. INV-F: the wire never carries a provenance claim the
+ *     server could not verify for itself; a mismatch refuses loud.
+ *
+ * IDS ONLY, `.strict()`, DELIBERATELY. Display names are resolved at render
+ * time from round data and are NEVER persisted into the graph — a display
+ * name inside `scenarios.graph` would sit beyond the R-2 redaction routine's
+ * reach (the derivation's PII rule). The `.strict()` reject of a
+ * `display_name` key is pinned by test.
+ *
+ * `participant_id` consumes `AuthoredBySchema` BY IDENTITY — the one
+ * authorship axis (2.682) — so the reserved literals stay collision-free and
+ * no second near-identical vocabulary is minted (the trap-21 concept split).
+ */
+export const RoundParticipantRefSchema = z.object({
+  round_id: Uuid,
+  participant_id: AuthoredBySchema,
+}).strict();
+export type RoundParticipantRef = z.infer<typeof RoundParticipantRefSchema>;
+
+/**
  * G2 §4.2 provenance, server-stamped on every event (the wire never carries
  * a provenance claim the server could stamp itself). `elicitation_version`
  * names the CERTAINTY_TERMS / `elicitBelief` code version so a future reader

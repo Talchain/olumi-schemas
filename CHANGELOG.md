@@ -7,7 +7,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.39.0] — 2026-08-08
+## [0.40.0] — 2026-08-13
+
+**The PR4 evidence-loop minor: apply an ATTRIBUTED panel value to the model (design of record:
+`olumi-docs/PHASE0-EVIDENCE-2026-07-28/pr4-two-person-witness-2026-08-12/EVIDENCE-LOOP-DERIVATION.md`
+Q5/Q6). ADDITIVE — nothing required, nothing renamed, no EXISTING field narrowed; every payload that
+parsed at 0.39.0 still parses IDENTICALLY, proven in-repo by `tests/contracts/additivity-0.40.test.ts`,
+which replays the COMPLETE 0.39.0 maximal-fixture corpus (all 159 families, serialised mechanically
+from the built dist at `76fe0ed9`) through the 0.40.0 schemas and asserts byte-identical parse output.
+UI/CEE/PLoT all vendor 0.39.0 today (derived at each staging tip, 13 Aug 2026) — one aligned
+three-pin re-vendor wave follows this release.**
+
+⚠ **ONE PRECISE EXCEPTION TO "ADDITIVE", measured at both built dists (schemas #39 review, 13 Aug) —
+read this before writing any re-vendor lane's brief.** `ObservedStateSchema` is `.passthrough()`, so at
+0.39.0 the key `elicited_from` was admissible carrying **any** value. At 0.40.0 it is TYPED, so a
+non-conforming value now REFUSES the whole `observed_state` — and through `NodeV3`, the whole
+`GraphV3`. Confirmed refusals at 0.40.0 that parsed at 0.39.0: a legacy string, an object carrying
+`display_name`, and `null`. Discriminating control: the identical payload with the key RENAMED parses
+byte-identically at both versions, so it is the key name and not the fixture.
+
+**Why this is a note and not a defect: reachability was measured at ZERO** — `elicited_from` and
+`applied_from` occur 0 times across the UI, CEE, PLoT and ISL staging tips (contrast control
+`observed_state`: 874 / 2292 / 1337 / 584), 0 times in every open PR, and 0 times across 830 parsed
+JSON captures. No stored graph or live payload can carry a non-conforming value today. **A re-vendor
+lane therefore does NOT need to migrate stored graphs — but it must not be told, as this entry
+originally said, that nothing could possibly reject.**
+
+*(The in-repo 159-family corpus is structurally blind to this class: `.passthrough()` admits keys no
+corpus enumerates — check what a corpus EXCLUDES, not only what it covers.)*
+
+### 1. `RoundParticipantRefSchema` — the shared attribution ref (`/boundary`, re-exported at root)
+
+```ts
+{ round_id: Uuid, participant_id: AuthoredBy }  // .strict()
+```
+
+WHICH round, WHOSE stated value. `participant_id` consumes 0.39.0's `AuthoredBySchema` **by object
+identity** (one authorship axis, 2.682 — no near-identical twin; pinned by test). **Ids only,
+deliberately:** display names resolve at render from round data and are NEVER persisted into the
+graph — a display name inside `scenarios.graph` would sit beyond the R-2 redaction routine's reach.
+The `.strict()` reject of a `display_name` key is pinned by test.
+
+### 2. `observed_state.elicited_from` (optional, `ObservedStateSchema`)
+
+The server-stamped attribution for a value applied from a panel round. **Absence is DISTINCT:**
+"not applied from a panel round" (every pre-0.40.0 value, every non-panel write) — never
+"attribution lost". Producer rule: CEE stamps `elicited_from` and `source: 'panel_elicited'`
+TOGETHER, only after verifying the claim against its own collab store (INV-F — the server stamps
+only what it verified). Census rows answered `distinct` at both new declaration sites.
+
+- **Skew, derived by execution against the built v0.39.0 dist (not asserted):** a 0.39.0 consumer
+  ⚠ **and 0.40.0 therefore REFUSES a non-conforming `elicited_from` that 0.39.0 admitted** — see the
+  measured exception at the top of this entry (reachability zero today, so no migration is owed).
+  PARSES a payload carrying `elicited_from` and retains the key (`.passthrough()`), validating
+  nothing about it — and an INVALID ref (display name, non-UUID round) also parses at 0.39.0,
+  which is exactly the hole 0.40.0's typed declaration closes. Consumers that project fields
+  explicitly still drop it (hazard 1) — hence the aligned re-vendor wave.
+
+### 3. `factor_value_edit.applied_from` (optional, `FactorValueEditEvent`)
+
+The client's attribution CLAIM on an apply-from-reveal edit ("Use this value" on a reveal row).
+The apply rides the EXISTING value-edit member — deliberately NOT a new collab-seam graph-write
+route (a second graph-write path is the shared-mutation hazard; the ratified mechanism is
+G2 §7.3). **Never trusted:** CEE verifies round-closed · participant-in-round · latest-belief-
+equals-value against its own store and refuses loud on mismatch.
+
+- **⚠ Reader-first sequencing is MANDATORY, derived by execution against the built v0.39.0 dist:**
+  every `SystemEventSchema` member is `.strict()`, so a CEE pinned ≤0.39.0 receiving
+  `applied_from` **rejects the whole turn** (`unrecognized_keys` at path `['event']`; the control —
+  the same turn minus the field — parses). Order: publish 0.40.0 → CEE re-vendors + deploys →
+  only then the UI emitter ships. Same sequencing class as this member's own 0.29.0 landing and
+  `graph_state`'s 0.23.0 landing.
+
+### 4. `OBSERVED_STATE_SOURCE_LITERALS` + `KnownObservedStateSource` — the source vocabulary, declared
+
+Until now the `observed_state.source` union lived only in the CONSUMERS, twice, as hand-maintained
+mirrors of each other: CEE `src/schemas/cee-v3.ts` `ObservedStateV3.source` (a closed 7-member
+enum, self-described "the narrowest validator in the chain", derived at staging `335a9380`) and the
+UI's `src/canvas/domain/valueProvenance.ts` `SOURCE_CLASSES` (11 literals, a strict superset,
+derived at staging `f04e756d`) — CEE's own comment names the UI file as "the acknowledged
+cross-repo source of this list". 0.40.0 declares the union of those corpora **plus
+`panel_elicited`** (12 literals) in the contract, so both mirrors can become derivations at their
+re-vendor PRs.
+
+- **The WIRE field stays `z.string()`, deliberately** — narrowing would be breaking (not a MINOR),
+  and a gating vocabulary refuses every literal it is missing (the trap-12d short-list failure).
+  The enum is a consumer-side vocabulary, never a wire gate; the distinction is pinned by test,
+  with a positive control proving the enum CAN refuse.
+- **Skew for `source: 'panel_elicited'` at 0.39.0 pins, derived at the consumer bytes:** parses
+  everywhere (free string); UI `classifyValueProvenance` returns null → honest neutral;
+  UI `isReviewedByUser` counts the factor unconfirmed (conservative, honest); PLoT has ZERO reads
+  of the field (swept at `b9f6b5a7`). The one refusal — CEE's own internal `ObservedStateV3.source`
+  enum — sits inside the only service that would ever STAMP the literal, so it cannot fire before
+  CEE's own leg widens that enum in the same re-vendor PR. Safe by construction, not by luck.
+
+### Consumer legs this release names (none built here — this repo publishes, it never edits a consumer)
+
+1. **CEE re-vendor:** widen `ObservedStateV3.source` (or derive from `KnownObservedStateSource`);
+   the verify+stamp leg in `set-factor-value.ts` (derivation element 4).
+2. **UI re-vendor:** `valueProvenance.ts` kind `'panel'` + reveal-row apply affordance
+   (elements 2/6); the emitter ships LAST (reader-first, above).
+3. **PLoT re-vendor:** pin alignment only — no behavioural leg (zero reads, derived).
 
 **The four-car train unblocking proof-PR2 (science provenance) and proof-PR4 (the collaborative
 slice): 2.964's claim-provenance triple · 2.701's deferred ui_directive enum · 2.698-S2's
