@@ -89,9 +89,45 @@ export type AuthoredBy = z.infer<typeof AuthoredBySchema>;
  * authorship axis (2.682) — so the reserved literals stay collision-free and
  * no second near-identical vocabulary is minted (the trap-21 concept split).
  */
+/**
+ * ── 0.41.0 ADDITIVE — `evidence_event_id` (the canonical-mutation hop) ──────
+ *
+ * WHICH PIECE OF EVIDENCE MOTIVATED THIS APPLY. Optional, and its two readings
+ * follow the two consumers above exactly:
+ *
+ *   · on `factor_value_edit.applied_from` — the owner's CITATION: "I am applying
+ *     this value because of that evidence." A claim, and therefore verified:
+ *     CEE checks the cited event exists, is an `evidence_attached` row, is on
+ *     THAT round and is about THAT target, before anything is stamped. Same
+ *     INV-F rule as the members beside it — the wire never carries a provenance
+ *     claim the server could not verify for itself.
+ *   · on `observed_state.elicited_from` — the server-stamped record of that
+ *     verified citation, so a later reader can ask what moved the model.
+ *
+ * ⭐ AN ID, NOT THE EVIDENCE. The author and the stance are deliberately NOT
+ * carried here, and that is the same R-2 rule the block above states: the
+ * evidence BODY is a participant's own words and its author has a display name,
+ * and neither may be persisted into `scenarios.graph` where the redaction
+ * routine cannot reach them. Both resolve at render from round data, exactly as
+ * `display_label` already does. An id is also the only form that stays
+ * VERIFIABLE — a body copied onto the wire is an unfalsifiable assertion, which
+ * is precisely why `applied_from` never carried a display name either.
+ *
+ * ⚠ ABSENCE SEMANTICS — DISTINCT, and this is the member's whole compatibility
+ * story. Absent means "this apply cited no evidence", which is every apply
+ * written before 0.41.0 and every ordinary one after it. Absence NEVER means
+ * "the citation was lost". The existing two-member shape stays byte-valid, so
+ * the journey-witnessed apply path is unchanged when nothing cites anything.
+ *
+ * ⚠ THE ASYMMETRY IS INTENTIONAL AND MUST NOT BE "TIDIED" INTO A CONSTRAINT:
+ * the cited evidence need NOT be authored by `participant_id`. Applying Grace's
+ * number BECAUSE ADA CHALLENGED IT is the most valuable case the collaboration
+ * feature has, and an author-equality check here would forbid exactly it.
+ */
 export const RoundParticipantRefSchema = z.object({
   round_id: Uuid,
   participant_id: AuthoredBySchema,
+  evidence_event_id: Uuid.optional(),
 }).strict();
 export type RoundParticipantRef = z.infer<typeof RoundParticipantRefSchema>;
 

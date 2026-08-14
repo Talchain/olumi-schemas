@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.41.0] — 2026-08-14
+
+**The canonical-mutation hop's contract half: an apply may CITE the evidence that
+motivated it.** One optional member, on one existing shape.
+
+### Added
+
+- `RoundParticipantRefSchema.evidence_event_id` — `Uuid.optional()`.
+
+**Additive. Not breaking.** The existing two-member shape stays byte-valid, so the
+journey-witnessed apply path is unchanged when nothing cites anything. The minor bump
+follows this repo's 0.x policy (MINOR is the compatibility boundary), not the size of
+the diff.
+
+### Why one member and not three
+
+`RoundParticipantRefSchema` is the SHARED attribution ref: `observed_state.elicited_from`
+(graph) and `factor_value_edit.applied_from` (turn payload) are the same shape. So a
+single optional member serves both ends of the hop — the owner's citation on the way in,
+and the server-stamped record on the way out. Minting a second, evidence-shaped ref would
+be a second authority on "which collab record may change this graph" (trap 21) on the one
+seam where being wrong writes a forged attribution into somebody's model.
+
+`authored_by` and `stance` are deliberately NOT carried. The evidence body is a
+participant's own words and its author has a display name; neither may persist into
+`scenarios.graph`, where the R-2 redaction routine cannot reach them. Both resolve at
+render from round data, exactly as `display_label` already does. An id is also the only
+form that stays VERIFIABLE — a body copied onto the wire is an unfalsifiable assertion,
+which is why `applied_from` never carried a display name either.
+
+### The asymmetry is intentional
+
+The cited evidence need NOT be authored by `participant_id`. Applying Grace's number
+BECAUSE ADA CHALLENGED IT is the most valuable case the collaboration feature has, and an
+author-equality constraint would forbid exactly it. Do not "tidy" this into a constraint.
+
+### Adoption
+
+`state: declared` — nothing produces or consumes it at this version. Consumers move only
+when their own vendored pin moves. **Deploy order is load-bearing** (hazard 1): a
+`.strict()` consumer on 0.40.0 REFUSES an unknown member rather than dropping it, so no
+producer may emit `evidence_event_id` until its own pin carries it — schemas → CEE
+(vendor + code) → UI (vendor + code).
+
 ## [0.40.0] — 2026-08-13
 
 **The PR4 evidence-loop minor: apply an ATTRIBUTED panel value to the model (design of record:
