@@ -300,6 +300,16 @@ const LABEL_OPTION_B = 'FIXTURE_option_beta';
 export const maximalRoundParticipantRef = deepFreeze({
   round_id: UUID_ROUND,
   participant_id: UUID_PARTICIPANT_A,
+  // 0.41.0 (the canonical-mutation hop) — WHICH evidence motivated the apply.
+  // Present here because this fixture is MAXIMAL: every optional member must
+  // appear, or the ratchet stops noticing when one is dropped.
+  //
+  // ⭐ NOTE THE FIXTURE IS DELIBERATELY ASYMMETRIC: `participant_id` is
+  // PARTICIPANT_A while the evidence is an event authored elsewhere. Applying
+  // A's value because SOMEBODY ELSE challenged it is the case the contract
+  // exists to permit, so the maximal fixture must not quietly model the
+  // easy case where the two coincide.
+  evidence_event_id: UUID_ELICITATION_EVENT,
 });
 
 export const maximalObservedState = deepFreeze({
