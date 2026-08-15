@@ -14,6 +14,9 @@ export {
   SystemEventKind,
   // 0.34.0 — edge_adjudication verdict vocabulary (P4 transport)
   EdgeAdjudicationVerdict,
+  // 0.42.0 — server-authoritative edge-strength edit vocabularies
+  EdgeStrengthDirectionIntent,
+  EdgeStrengthEditIntent,
   TurnSource,
 } from './enums.js';
 export type {
@@ -26,6 +29,8 @@ export type {
   IntentLiteral,
   SystemEventKindLiteral,
   EdgeAdjudicationVerdictLiteral,
+  EdgeStrengthDirectionIntentLiteral,
+  EdgeStrengthEditIntentLiteral,
   TurnSourceLiteral,
 } from './enums.js';
 
@@ -287,6 +292,8 @@ export {
   // 0.34.0 — cross-field rules for bare-SystemEventSchema consumers
   refineEdgeAdjudication,
   refinePriorRangeEdit,
+  // 0.42.0 — confirm-current / expected-base rules for bare consumers
+  refineEdgeStrengthEdit,
 } from './turn-payload.js';
 export type {
   OrchestratorTurnPayload,

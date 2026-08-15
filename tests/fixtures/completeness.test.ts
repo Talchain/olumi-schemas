@@ -205,7 +205,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.40.0 (+1): RoundParticipantRefSchema — the PR4 evidence-loop
     //   attribution ref shared by observed_state.elicited_from and
     //   factor_value_edit.applied_from.
-    expect(MAXIMAL_FIXTURES.length).toBe(160);
+    // 0.42.0 (+1): boundary/SystemEventSchema#edge_strength_edit — one new
+    //   branch on the existing strict union, with its own maximal exemplar.
+    expect(MAXIMAL_FIXTURES.length).toBe(161);
   });
 
   it('family keys are unique', () => {

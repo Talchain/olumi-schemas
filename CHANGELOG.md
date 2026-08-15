@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.42.0] — 2026-08-15
+
+**The contract-only prerequisite for a truthful, server-authoritative edge-strength
+edit.** This release adds one strict `SystemEventSchema` member and two closed intent
+vocabularies. It adds no UI emitter, CEE dispatch, graph write, deployment or migration.
+
+### Added
+
+- `system_event.event.kind: 'edge_strength_edit'`, carrying:
+  - canonical, separately validated `from` / `to` node ids (never a UI edge id or
+    delimiter-bearing composite);
+  - an absolute `magnitude` in `[0, 1]`;
+  - `direction_intent: 'preserve' | 'positive' | 'negative'`;
+  - exact expected-before `{ mean, effect_direction }` for stale-base refusal; and
+  - `intent: 'set' | 'confirm_current'`.
+- `EdgeStrengthDirectionIntent` and `EdgeStrengthEditIntent`, exported from
+  `@talchain/schemas/boundary` so readers and writers do not hand-maintain mirrors.
+- `refineEdgeStrengthEdit`, applied by `OrchestratorTurnPayloadSchema` and exported for
+  consumers that intentionally parse a bare `SystemEventSchema`.
+
+### Authority and scientific semantics
+
+The client states intent only. The strict event refuses client-supplied graph,
+provenance, source, uncertainty (`std`), operator and UI edge id fields. CEE must resolve
+the unique `(from, to)` against its own persisted GraphV3, compare the expected-before
+mean/direction exactly, and reuse the canonical `adjust_edge_strength` writer.
+
+`preserve` means preserve the direction on that persisted edge, never infer direction
+from the unsigned magnitude or trust a client-local guess. Direction remains explicit at
+zero because the sign of zero cannot recover a negative edge. `confirm_current` is
+constrained to `direction_intent: 'preserve'` and
+`magnitude === abs(expected.mean)`: after server verification it licenses the existing
+canonical writer's `provenance.source: 'user_specified'` /
+`provenance_display: 'user_set'` stamp, but it cannot alter mean/direction/std or stale an
+analysis whose canonical graph hash did not change. A genuine `set` value change follows
+the normal hash/stale/rerun path.
+
+The deployed `adjust_edge_strength` handler currently derives zero as positive. The CEE
+writer train must extend that canonical writer with the event's explicit/preserve direction
+policy; merely invoking the unchanged handler would violate this contract's zero-negative
+case. This schema release does not make that product change.
+
+### Compatibility and rollout
+
+**Additive for every existing event kind.** The complete 0.41.0 system-event fixture
+corpus (11 kinds, mechanically captured at
+`81692c67a3e0e998c084d14895e494c5ec79b294`) parses with byte-identical output; a strict
+unknown-key positive control proves that guard is not a pass-everything parser.
+
+**Reader-first on the new kind.** `SystemEventSchema` is a strict discriminated union, so
+a reader pinned below 0.42.0 rejects an `edge_strength_edit` turn. Exact staging pins when
+this contract was cut: UI `ab5662b2d055a76b36c6d973b3825c4034508b14` and CEE
+`97be33d51a6f395ec076982db8943664a7cbade8`, both vendoring 0.41.0. Required order:
+publish 0.42.0 → CEE re-vendors and deploys a compatibility reader → CEE enables the
+canonical writer → UI re-vendors and emits. PLoT and ISL do not read this UI→CEE event
+seam. Reverting this schema release requires the UI emitter to remain off (or be reverted
+first); every old kind remains independently compatible.
+
 ## [0.41.0] — 2026-08-14
 
 **The canonical-mutation hop's contract half: an apply may CITE the evidence that

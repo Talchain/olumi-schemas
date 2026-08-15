@@ -1889,6 +1889,21 @@ const eventPriorRangeEdit = deepFreeze({
   range_max: 0.6,
   distribution: 'beta',
 });
+// 0.42.0 — the server-authoritative edge-strength edit. `preserve` against a
+// negative expected edge plus a larger magnitude proves direction and magnitude
+// are independent fields; this is a real strength change, not confirmation.
+const eventEdgeStrengthEdit = deepFreeze({
+  kind: 'edge_strength_edit',
+  from: ID_FACTOR,
+  to: ID_OPTION_A,
+  magnitude: 0.85,
+  direction_intent: 'preserve',
+  expected: {
+    mean: -0.55,
+    effect_direction: 'negative',
+  },
+  intent: 'set',
+});
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
   selected: [maximalSelectedElementRef],
@@ -2695,6 +2710,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/SystemEventSchema#prior_range_edit',
     schema: SystemEventSchema,
     fixture: eventPriorRangeEdit,
+  },
+  {
+    family: 'boundary/SystemEventSchema#edge_strength_edit',
+    schema: SystemEventSchema,
+    fixture: eventEdgeStrengthEdit,
+    notes:
+      '0.42.0: canonical (from,to), a magnitude independent from direction, and an exact expected-before pair. Client provenance/std/operator/graph are absent by contract.',
   },
   {
     family: 'boundary/SystemEventTurnPayloadSchema',

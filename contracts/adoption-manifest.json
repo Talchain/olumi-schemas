@@ -337,6 +337,37 @@
       ]
     },
     {
+      "field": "system_event.event[kind=edge_strength_edit]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::EdgeStrengthEditEvent (0.42.0) — strict canonical-pair edge-strength intent with an exact expected-before guard",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY. This schema train adds no UI emission, CEE dispatch, graph write,",
+        "  deployment or migration. Naming a producer or consumer before those separate PRs",
+        "  merge would overstate transport as adoption; their behavioural test refs land later.",
+        "THE SEQUENCING IS LOAD-BEARING: every SystemEventSchema member is .strict() and the",
+        "  union discriminates on kind, so a CEE pinned below 0.42.0 rejects the whole new turn.",
+        "  Exact staging pins measured 2026-08-15: UI ab5662b2d055a76b36c6d973b3825c4034508b14",
+        "  and CEE 97be33d51a6f395ec076982db8943664a7cbade8 both vendor 0.41.0. Order:",
+        "  publish 0.42.0 -> CEE re-vendors and deploys the reader -> CEE enables the canonical",
+        "  writer -> only then UI re-vendors and emits. PLoT/ISL do not read this UI-to-CEE seam.",
+        "AUTHORITY STAYS SERVER-SIDE: the event identifies an edge by separate canonical from/to",
+        "  ids and carries magnitude, direction intent, and the exact mean/direction last read.",
+        "  It cannot carry graph, provenance, source, std, operator or a client/UI edge id.",
+        "CONFIRM_CURRENT is provenance-only: exact magnitude, preserved persisted direction, no",
+        "  analysis staleness when the canonical hash is unchanged. SET may preserve direction or",
+        "  carry an explicit positive/negative choice; a genuine value change must stale normally.",
+        "ZERO-DIRECTION PREREQUISITE: deployed CEE currently derives mean zero as positive. The",
+        "  later CEE writer train must extend the canonical handler's direction policy; invoking",
+        "  that handler unchanged is not sufficient for this contract's zero-negative case."
+      ]
+    },
+    {
       "field": "system_event.event[kind=edge_adjudication]",
       "declared_in": "schemas:src/boundary/turn-payload.ts::EdgeAdjudicationEvent (0.34.0) — the contested-edge verdict, a new member of SystemEventSchema (P4 transport lane 2026-08-05; ROADMAP 2.396-adjacent)",
       "producer": null,
