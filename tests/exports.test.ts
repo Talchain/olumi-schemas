@@ -132,6 +132,31 @@ describe('package exports — boundary subpath (dist/boundary/index.js)', () => 
     expect(boundaryDist.SystemEventSchema.safeParse(event).success).toBe(true);
   });
 
+  // 0.42.0 — server-authoritative edge-strength edit contract.
+  it('exposes edge-strength intent vocabularies + refinement from the built boundary entry', () => {
+    expect(boundaryDist.EdgeStrengthDirectionIntent.options).toStrictEqual([
+      'preserve',
+      'positive',
+      'negative',
+    ]);
+    expect(boundaryDist.EdgeStrengthEditIntent.options).toStrictEqual([
+      'set',
+      'confirm_current',
+    ]);
+    expect(boundaryDist.refineEdgeStrengthEdit).toBeTypeOf('function');
+    expect(
+      boundaryDist.SystemEventSchema.safeParse({
+        kind: 'edge_strength_edit',
+        from: 'fac_price',
+        to: 'out_retention',
+        magnitude: 0.85,
+        direction_intent: 'preserve',
+        expected: { mean: -0.55, effect_direction: 'negative' },
+        intent: 'set',
+      }).success,
+    ).toBe(true);
+  });
+
   // 0.15.0 — MessageTurnPayloadSchema accepts the new optional selected_elements.
   it('MessageTurnPayloadSchema (boundary entry) accepts the new optional selected_elements field', () => {
     const base = {

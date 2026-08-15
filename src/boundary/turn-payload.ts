@@ -6,6 +6,8 @@ import {
   Intent,
   TurnSource,
   EdgeAdjudicationVerdict,
+  EdgeStrengthDirectionIntent,
+  EdgeStrengthEditIntent,
 } from './enums.js';
 import { GraphV3Schema } from '../graph.js';
 import { RoundParticipantRefSchema } from './collab.js';
@@ -460,6 +462,127 @@ const PriorRangeEditEvent = z.object({
   distribution: z.string().min(1).optional(),
 }).strict();
 
+// `edge_strength_edit` (0.42.0) — the inspector's value-carrying edge edit,
+// addressed by the canonical GraphV3 identity `(from, to)`.
+//
+// WHY A NEW MEMBER. `direct_graph_edit` is deliberately a value-less BATCH
+// notification whose singular target is only a representative. It cannot
+// truthfully carry an authoritative mutation. `chip_click` can invoke the
+// existing CEE writer, but its parameter bag is intentionally open and has no
+// expected-before guard; extending it would let an older reader silently strip
+// the new safety fields and still write. This strict event makes the mutation
+// and its stale-base guard one versioned contract.
+//
+// AUTHORITY. The client carries intent, never a graph, provenance, std, source,
+// operator, or trusted signed mean. CEE must resolve the unique `(from, to)` in
+// its persisted GraphV3, compare `expected` exactly, derive the signed target
+// from `magnitude` + `direction_intent`, and route the accepted write through
+// the canonical `adjust_edge_strength` writer. `preserve` always means the
+// direction on that persisted edge — never a client-side guess.
+//
+// CONFIRMATION. `confirm_current` is a provenance-only act: it requires
+// `direction_intent: 'preserve'` and the exact current magnitude
+// `abs(expected.mean)`. After verification, the existing canonical writer's
+// provenance semantics apply (`provenance.source: 'user_specified'`,
+// `provenance_display: 'user_set'`); mean, direction and std must not change,
+// and analysis must not stale when the canonical hash is unchanged. The root
+// refinement below makes contradictory payloads invalid before dispatch.
+//
+// ZERO IS DELIBERATE. `expected.effect_direction` remains required when mean is
+// zero, and explicit positive/negative direction intents remain legal at zero.
+// Direction cannot be recovered from the sign of zero; dropping this field or
+// forcing zero positive would erase a live negative direction. The deployed
+// canonical handler currently derives zero as positive, so the later CEE writer
+// train must extend that handler with an explicit direction policy; invoking it
+// unchanged is NOT sufficient implementation of this contract.
+//
+// SEQUENCING. Every SystemEventSchema member is strict and the union is
+// discriminated by kind. A pre-0.42 reader rejects this whole turn. Order:
+// publish schema -> CEE re-vendors/deploys a reader -> only then UI emits.
+const EdgeStrengthExpectedSchema = z.object({
+  mean: z.number().finite().min(-1).max(1).describe(
+    'The exact signed mean last read from the canonical persisted edge. This is an ' +
+      'optimistic-concurrency assertion, not the requested value.',
+  ),
+  effect_direction: z.enum(['positive', 'negative']).describe(
+    'The exact direction last read from the canonical persisted edge. Required even when ' +
+      'mean is zero, where sign cannot recover direction.',
+  ),
+}).strict();
+
+// CEE's persisted GraphV3 is the authority and its deployed node ids are open
+// strings, so do not narrow this to the root package's lowercase NodeV3 id
+// regex. We require exact, non-blank endpoint bytes and exclude the two
+// delimiters used by the existing canonical writer's composite adapter. No
+// trimming/coercion: changing an identity byte would be silent retargeting.
+const CanonicalEdgeEndpointIdSchema = z.string().min(1)
+  .refine((id) => id === id.trim(), 'edge endpoint ids must not have surrounding whitespace')
+  .refine(
+    (id) => !id.includes('→') && !id.includes('->'),
+    'edge endpoint ids must be separate ids, not delimiter-bearing composites',
+  );
+
+const EdgeStrengthEditEvent = z.object({
+  kind: z.literal('edge_strength_edit'),
+  from: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical source node id (edge identity, half 1).',
+  ),
+  to: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical target node id (edge identity, half 2).',
+  ),
+  magnitude: z.number().finite().min(0).max(1).describe(
+    'Requested absolute strength in [0, 1]. Direction is carried separately so a strength ' +
+      'change cannot reverse an edge accidentally.',
+  ),
+  direction_intent: EdgeStrengthDirectionIntent.describe(
+    '`preserve` uses the server-persisted direction; positive/negative are explicit user choices.',
+  ),
+  expected: EdgeStrengthExpectedSchema,
+  intent: EdgeStrengthEditIntent,
+}).strict();
+
+/**
+ * Cross-field rules for edge_strength_edit. CEE validates the root
+ * OrchestratorTurnPayloadSchema, where this is applied automatically. Exported
+ * for consumers that intentionally parse a bare SystemEventSchema.
+ */
+export function refineEdgeStrengthEdit(
+  ev: z.infer<typeof EdgeStrengthEditEvent>,
+  ctx: z.RefinementCtx,
+  pathPrefix: readonly (string | number)[] = [],
+): void {
+  const expectedDirection = ev.expected.mean < 0
+    ? 'negative'
+    : ev.expected.mean > 0
+      ? 'positive'
+      : null;
+
+  if (expectedDirection !== null && ev.expected.effect_direction !== expectedDirection) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'expected', 'effect_direction'],
+      message: 'non-zero expected.mean and expected.effect_direction must agree',
+    });
+  }
+
+  if (ev.intent === 'confirm_current') {
+    if (ev.direction_intent !== 'preserve') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [...pathPrefix, 'direction_intent'],
+        message: 'confirm_current must preserve the canonical persisted direction',
+      });
+    }
+    if (ev.magnitude !== Math.abs(ev.expected.mean)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [...pathPrefix, 'magnitude'],
+        message: 'confirm_current magnitude must exactly equal abs(expected.mean)',
+      });
+    }
+  }
+}
+
 /**
  * The prior_range_edit cross-field rule (min ≤ max), exported for bare
  * `SystemEventSchema` consumers — see {@link refineEdgeAdjudication}.
@@ -490,6 +613,7 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   FeedbackEvent,
   EdgeAdjudicationEvent,
   PriorRangeEditEvent,
+  EdgeStrengthEditEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 
@@ -514,6 +638,9 @@ export const OrchestratorTurnPayloadSchema = z
       }
       if (payload.event.kind === 'prior_range_edit') {
         refinePriorRangeEdit(payload.event, ctx, ['event']);
+      }
+      if (payload.event.kind === 'edge_strength_edit') {
+        refineEdgeStrengthEdit(payload.event, ctx, ['event']);
       }
       return;
     }

@@ -208,6 +208,10 @@ export type IntentLiteral = z.infer<typeof Intent>;
 // carries the inspector's prior-range edit. Mirrors the members added to the
 // `SystemEventSchema` union in turn-payload.ts; parity pinned by
 // `tests/boundary/turn-payload-0.22.test.ts` as for every earlier addition.
+// 0.42.0: `edge_strength_edit` added — the value-carrying, canonical-pair-
+// addressed edge-strength edit. It is deliberately separate from the
+// representative-only `direct_graph_edit` notification. Reader-first adoption
+// is mandatory: an older strict union rejects the new kind.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
@@ -220,8 +224,21 @@ export const SystemEventKind = z.enum([
   'feedback',
   'edge_adjudication',
   'prior_range_edit',
+  'edge_strength_edit',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
+
+// 0.42.0 — closed vocabularies for `edge_strength_edit`. These are exported so
+// UI and CEE derive their switches from the contract rather than minting two
+// near-identical string unions. `preserve` means preserve the direction on the
+// server's canonical persisted edge; it is not a direction supplied by the
+// client. `confirm_current` is provenance-only and is constrained further by
+// `refineEdgeStrengthEdit` in turn-payload.ts.
+export const EdgeStrengthDirectionIntent = z.enum(['preserve', 'positive', 'negative']);
+export type EdgeStrengthDirectionIntentLiteral = z.infer<typeof EdgeStrengthDirectionIntent>;
+
+export const EdgeStrengthEditIntent = z.enum(['set', 'confirm_current']);
+export type EdgeStrengthEditIntentLiteral = z.infer<typeof EdgeStrengthEditIntent>;
 
 // 0.34.0 — the verdict vocabulary for `edge_adjudication`. Transcribed from
 // the UI's `UserAction` union (DecisionGuideAI `canvas/domain/validation`)
