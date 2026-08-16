@@ -207,7 +207,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   factor_value_edit.applied_from.
     // 0.42.0 (+1): boundary/SystemEventSchema#edge_strength_edit — one new
     //   branch on the existing strict union, with its own maximal exemplar.
-    expect(MAXIMAL_FIXTURES.length).toBe(161);
+    // 0.43.0 (+2): the strict canonical committed-graph block and its
+    //   discriminator-free response receipt projection.
+    expect(MAXIMAL_FIXTURES.length).toBe(163);
   });
 
   it('family keys are unique', () => {

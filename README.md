@@ -144,6 +144,25 @@ table, when it matters.
 Where a schema *is* `.passthrough()`, consumers should handle unknown fields
 gracefully. Where it is `.strict()`, they must not receive them at all.
 
+### Canonical committed-graph receipts
+
+`DraftGraphBlockSchema` is the backwards-compatible reader for the existing
+`OlumiResponse.draft_graph` field. Older producers may omit `options`,
+`goal_node_id`, and `goal_constraints`; that omission means the receipt is
+partial, not that the corresponding committed state is empty.
+
+Transactional producers use `CanonicalCommittedGraphReceiptSchema` (or its
+block-discriminated twin). It requires own keys for all five canonical hash
+carriers. Explicit absence is `options: []`, `goal_node_id: null`, and
+`goal_constraints: []`. Counts are derived metadata and must describe the same
+node/edge arrays; they are not a second graph identity. The contract exports a
+complete hash-carrier/derived-metadata classification but intentionally no hash
+or readiness implementation. The versioned
+`CANONICAL_GRAPH_HASH_NESTED_PROJECTION` is the one nested field vocabulary;
+CEE's canonical digest imports it, while clients can use it for receipt
+reconciliation without mirroring CEE source. Ordering, canonical JSON and the
+digest remain CEE-owned.
+
 ## Adding new schemas
 
 **First check whether the vocabulary already exists as a checked-in artefact

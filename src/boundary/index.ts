@@ -59,6 +59,11 @@ export {
   ComparisonBlockSchema,
   FlipAnalysisBlockSchema,
   DraftGraphBlockSchema,
+  // 0.43.0 — canonical committed-graph receipt. DraftGraphBlockSchema keeps
+  // legacy partial reads additive; this producer schema requires all five
+  // canonical hash carriers with explicit null/[] absence.
+  CanonicalCommittedGraphBlockSchema,
+  CanonicalCommittedGraphReceiptSchema,
   // Draft-time goal constraints (0.18.0). NOT the legacy run-stub constraint
   // (`LegacyGoalConstraintStubSchema` in ./run.ts) — see the note on the
   // schema for why the two are distinct.
@@ -104,6 +109,8 @@ export type {
   ComparisonBlock,
   FlipAnalysisBlock,
   DraftGraphBlock,
+  CanonicalCommittedGraphBlock,
+  CanonicalCommittedGraphReceipt,
   DraftGoalConstraint,
   // Phase 3 — Analysis tab data contract v1.3
   ReviewCardBlock,
@@ -315,8 +322,12 @@ export {
   CANONICAL_GRAPH_HASH_KEEP_LIST,
   CANONICAL_GRAPH_HASH_GRAPHV3_FIELDS,
   CANONICAL_GRAPH_HASH_ANALYSIS_STATE_FIELDS,
+  CANONICAL_GRAPH_HASH_PROJECTION_VERSION,
+  CANONICAL_GRAPH_HASH_NESTED_PROJECTION,
   GRAPH_HASH_EXCLUDED_GRAPHV3_FIELDS,
+  CANONICAL_COMMITTED_RECEIPT_FIELD_CLASSIFICATION,
   graphV3TopLevelFields,
+  canonicalCommittedReceiptTopLevelFields,
 } from './graph-hash-contract.js';
 export type { CanonicalGraphHashKeepKey } from './graph-hash-contract.js';
 

@@ -122,6 +122,8 @@ import {
   ComparisonBlockSchema,
   FlipAnalysisBlockSchema,
   DraftGraphBlockSchema,
+  CanonicalCommittedGraphBlockSchema,
+  CanonicalCommittedGraphReceiptSchema,
   DraftGoalConstraintSchema,
   ReviewCardBlockSchema,
   CoachingBlockSchema,
@@ -1283,6 +1285,23 @@ export const maximalDraftGraphBlock = deepFreeze({
   edges: maximalGraphV3.edges,
   node_count: 4,
   edge_count: 2,
+  options: [maximalOptionForAnalysis],
+  goal_node_id: ID_GOAL,
+  goal_constraints: [maximalDraftGoalConstraint],
+});
+
+// 0.43.0 canonical committed-state receipt. The block and response projection
+// intentionally share the same five hash carriers; only the block discriminator
+// differs. Keeping explicit fixtures for both schema identities makes silent
+// field loss visible to old consumers at either boundary.
+export const maximalCanonicalCommittedGraphBlock = maximalDraftGraphBlock;
+export const maximalCanonicalCommittedGraphReceipt = deepFreeze({
+  nodes: maximalGraphV3.nodes,
+  edges: maximalGraphV3.edges,
+  node_count: 4,
+  edge_count: 2,
+  options: [maximalOptionForAnalysis],
+  goal_node_id: ID_GOAL,
   goal_constraints: [maximalDraftGoalConstraint],
 });
 
@@ -1750,6 +1769,8 @@ export const maximalOlumiResponse = deepFreeze({
     edges: maximalGraphV3.edges,
     node_count: 4,
     edge_count: 2,
+    options: [maximalOptionForAnalysis],
+    goal_node_id: ID_GOAL,
     // `OlumiResponseSchema.draft_graph` is DraftGraphBlockSchema.omit({type}),
     // a distinct schema identity from the block itself — the walker tracks it
     // separately, so this is the site that proves goal_constraints survives on
@@ -2377,6 +2398,16 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'boundary/ComparisonBlockSchema', schema: ComparisonBlockSchema, fixture: maximalComparisonBlock },
   { family: 'boundary/FlipAnalysisBlockSchema', schema: FlipAnalysisBlockSchema, fixture: maximalFlipAnalysisBlock },
   { family: 'boundary/DraftGraphBlockSchema', schema: DraftGraphBlockSchema, fixture: maximalDraftGraphBlock },
+  {
+    family: 'boundary/CanonicalCommittedGraphBlockSchema',
+    schema: CanonicalCommittedGraphBlockSchema,
+    fixture: maximalCanonicalCommittedGraphBlock,
+  },
+  {
+    family: 'boundary/CanonicalCommittedGraphReceiptSchema',
+    schema: CanonicalCommittedGraphReceiptSchema,
+    fixture: maximalCanonicalCommittedGraphReceipt,
+  },
   {
     family: 'boundary/DraftGoalConstraintSchema',
     schema: DraftGoalConstraintSchema,

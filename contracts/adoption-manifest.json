@@ -709,6 +709,28 @@
         "  normalising it: five fields (node data / goal_constraints / encoding_map / intercept, edge",
         "  edge_type) are AI-editable with no human field setter, and are classed `ai_only`."
       ]
+    },
+    {
+      "field": "draft_graph canonical committed receipt (options, goal_node_id, goal_constraints)",
+      "declared_in": "schemas:src/boundary/blocks.ts::CanonicalCommittedGraphReceiptSchema (0.43.0)",
+      "producer": "cee — canonical transactional commit receipts (separate reader-first adoption train)",
+      "consumer": "ui — canonical transactional reconciliation (separate post-CEE adoption train)",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED at the schema boundary; emission remains off until CEE re-vendors this strict reader.",
+        "The old DraftGraphBlock shape remains valid. Its omitted analysis-state keys mean partial /",
+        "  unattested, never delete. Canonical CEE producers must emit own options and",
+        "  goal_constraints keys including [], and own goal_node_id with null for explicit absence.",
+        "READER-FIRST ORDER IS LOAD-BEARING because DraftGraphBlockSchema is strict: publish schemas,",
+        "  re-vendor CEE and UI readers, enable CEE canonical receipt production, then delete the UI's",
+        "  provisional sidecar expectation and consume this singular receipt.",
+        "No readiness field is added. CEE #983's canonical readiness builder remains the sole",
+        "  whole-status authority; this row governs committed graph carriage only."
+      ]
     }
   ]
 }

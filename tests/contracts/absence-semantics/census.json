@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 56,
+    "distinct": 62,
     "same": 8,
     "unresolved": 387
   },
@@ -437,6 +437,22 @@
       "note": "Absence carries a meaning no value can express: this directive is a GRAPH gesture (highlight/focus/open_inspector) whose target lives in `targets`; presence means a PANEL gesture (open_panel/open_section). Like p_win_sensitivity, the DISCRIMINATOR EXISTS ON THE WIRE - `verb` - and unlike that row it is TIED by the contract itself: applyUiDirectiveConsistencyRule (public schema AND BlockSchema union) makes ui_target REQUIRED with the verb-matching kind on panel verbs and FORBIDDEN on graph verbs, so a consumer can never observe an ambiguous absence. Residual debt: none - the enforcement ships in the same 0.32.0 train as the field.",
       "ref": "src/boundary/blocks.ts - UiDirectiveBlockObjectSchema.ui_target doc comment + applyUiDirectiveConsistencyRule (0.32.0)"
     },
+    "boundary/CanonicalCommittedGraphBlockSchema.goal_node_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required for canonical producers, so omission is rejected. `null` is the sole explicit canonical no-goal value and never aliases an omitted wire state.",
+      "ref": "src/boundary/blocks.ts — CanonicalCommittedGraphBlockSchema.goal_node_id required nullable contract (0.43.0)"
+    },
+    "boundary/CanonicalCommittedGraphReceiptSchema.goal_node_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The receipt projection preserves requiredness: omission is invalid, while `null` is the only canonical attestation that the committed graph has no goal.",
+      "ref": "src/boundary/blocks.ts — CanonicalCommittedGraphReceiptSchema.goal_node_id required nullable contract (0.43.0)"
+    },
     "boundary/ChipSchema.action": {
       "markers": [
         "optional"
@@ -754,9 +770,26 @@
       "markers": [
         "optional"
       ],
-      "verdict": "same",
-      "note": "Schema comment is explicit and leaves nothing to infer: \"Absent when the brief carried none; consumers must treat absence and `[]` as equivalent.\" This is the SAME SHAPE as seed instance #3 (PLoT `_meta.constraint_sources` present-empty vs absent) — and it is the resolved case: the contract answers the question rather than leaving the consumer to guess.",
-      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_constraints doc comment (0.18.0)"
+      "verdict": "distinct",
+      "note": "0.43.0 makes the legacy/canonical split explicit: omission means a legacy partial producer made no constraints attestation, while `[]` is the canonical producer's positive attestation that the committed graph has no constraints. Omission therefore cannot authorise deletion.",
+      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_constraints doc comment (0.43.0 canonical receipt semantics)"
+    },
+    "boundary/DraftGraphBlockSchema.goal_node_id": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "Omission means a legacy partial producer did not carry the goal hash field. `null` is a canonical attestation that the committed graph has no goal. Those states are deliberately different so omission never masquerades as deletion.",
+      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_node_id doc comment (0.43.0)"
+    },
+    "boundary/DraftGraphBlockSchema.options": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Omission means a legacy partial producer made no complete options attestation. `[]` is the canonical producer's positive attestation that the committed graph has no options, so omission must not clear state.",
+      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.options doc comment (0.43.0)"
     },
     "boundary/DskClaimProvenanceSchema.protocol_id": {
       "markers": [
@@ -2014,9 +2047,26 @@
       "markers": [
         "optional"
       ],
-      "verdict": "same",
-      "note": "The `.omit({type: true})` twin of DraftGraphBlockSchema.goal_constraints — a SEPARATE ZodObject identity (Zod `.omit()` clones the shape) reached through OlumiResponseSchema.draft_graph, carrying the same field declaration and therefore the same doctrine: absence and `[]` are equivalent. Listed separately because the census keys declaration SITES, and a future edit to one shape does not follow the other.",
-      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_constraints doc comment, reached via src/boundary/olumi-response.ts OlumiResponseSchema.draft_graph"
+      "verdict": "distinct",
+      "note": "The response projection carries the 0.43.0 legacy/canonical split unchanged: omission is an unattested legacy partial receipt, while `[]` explicitly attests and clears the canonical committed constraint set.",
+      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_constraints comment, reached via OlumiResponseSchema.draft_graph"
+    },
+    "boundary/OlumiResponseSchema.draft_graph.goal_node_id": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "The response projection preserves the canonical distinction: omission is an unattested legacy goal field; `null` explicitly attests that the committed graph has no goal. Omission is never a deletion instruction.",
+      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_node_id comment, reached via OlumiResponseSchema.draft_graph"
+    },
+    "boundary/OlumiResponseSchema.draft_graph.options": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "The response projection preserves the canonical distinction: omission is an unattested legacy options field; `[]` explicitly attests that the committed graph has no options and may clear prior state.",
+      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.options comment, reached via OlumiResponseSchema.draft_graph"
     },
     "boundary/OlumiResponseSchema.framing_quality": {
       "markers": [

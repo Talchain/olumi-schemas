@@ -247,12 +247,13 @@ export const DraftGoalConstraintSchema = z.object({
 }).passthrough();
 export type DraftGoalConstraint = z.infer<typeof DraftGoalConstraintSchema>;
 
-// DraftGraphBlock — emitted by the draft_graph pre-Sonnet dispatcher (v0.8.0).
-// Carries the full initial graph inline so the UI can render it directly from
-// the response without a Supabase re-fetch. nodes/edges are permissive arrays
-// (z.unknown() elements) so CEE-format node/edge shapes pass without a
-// schema bump when node fields evolve. node_count/edge_count are authoritative
-// counts derived from the FINAL post-repair graph.
+// DraftGraphBlock — emitted by the draft_graph pre-Sonnet dispatcher (v0.8.0)
+// and, from 0.43.0, used as the canonical committed-graph receipt after a
+// transactional mutation. Carries the full graph inline so the UI can apply
+// the exact committed state without a Supabase re-fetch. nodes/edges/options
+// are permissive arrays (z.unknown() elements) so CEE-format shapes pass
+// without a schema bump when their nested fields evolve. node_count/edge_count
+// are receipt metadata derived from the SAME node/edge arrays.
 //
 // `.strict()` is retained deliberately. It is why `goal_constraints` had to be
 // declared here before CEE could emit it (an undeclared key produces
@@ -266,16 +267,66 @@ export const DraftGraphBlockSchema = z.object({
   node_count: z.number().int().min(0),
   edge_count: z.number().int().min(0),
   /**
+   * Canonical option records, including status/baseline and the complete
+   * intervention tuple. Added in 0.43.0 as additive-optional so pre-0.43.0
+   * four-field draft blocks still parse unchanged.
+   *
+   * ABSENCE SEMANTICS ARE LOAD-BEARING. On a legacy partial block, omission
+   * means "this producer made no complete options attestation"; it is NOT a
+   * request to delete options. A canonical transactional producer MUST own
+   * this key and emit `[]` to attest that the committed graph has no options.
+   */
+  options: z.array(z.unknown()).optional(),
+  /**
+   * Identity of the committed goal node. Added in 0.43.0 as
+   * additive-optional for legacy-reader compatibility.
+   *
+   * Canonical absence is explicitly `null`: it means the producer inspected
+   * the committed graph and attests that it has no goal. Omission means only
+   * that a legacy/partial producer did not carry this hash field. Consumers
+   * MUST NOT interpret omission as deletion, and an empty string is never a
+   * goal identity.
+   */
+  goal_node_id: z.string().min(1).nullable().optional(),
+  /**
    * Hard constraints extracted from the brief (v0.18.0, additive/optional).
    * Constraints are METADATA, not causal structure — CEE deliberately does not
    * emit them as graph nodes or edges, so this array is the ONLY channel by
-   * which a user's stated constraint reaches the client on the drafting path.
-   * Absent when the brief carried none; consumers must treat absence and `[]`
-   * as equivalent.
+   * which a user's stated constraint reaches the client.
+   *
+   * 0.43.0 tightens the producer doctrine without breaking old readers:
+   * omission on a legacy partial block means "not attested", never "clear the
+   * constraints". A canonical transactional producer MUST own this key and
+   * emit `[]` to attest that the committed graph has no constraints.
    */
   goal_constraints: z.array(DraftGoalConstraintSchema).optional(),
 }).strict();
 export type DraftGraphBlock = z.infer<typeof DraftGraphBlockSchema>;
+
+/**
+ * The strict producer contract for a canonical committed-graph receipt.
+ *
+ * `DraftGraphBlockSchema` keeps the three analysis-state fields optional so
+ * legacy draft responses remain readable. Transactional producers use THIS
+ * derived schema: all five canonical graph-hash carrier fields are required,
+ * including own-key `options: []`, `goal_node_id: null`, and
+ * `goal_constraints: []` for explicit absence. It intentionally contains no
+ * readiness member; whole-status readiness has a separate single authority.
+ */
+export const CanonicalCommittedGraphBlockSchema = DraftGraphBlockSchema.extend({
+  options: z.array(z.unknown()),
+  goal_node_id: z.string().min(1).nullable(),
+  goal_constraints: z.array(DraftGoalConstraintSchema),
+}).strict();
+export type CanonicalCommittedGraphBlock = z.infer<typeof CanonicalCommittedGraphBlockSchema>;
+
+/** The top-level `OlumiResponse.draft_graph` form (block discriminator omitted). */
+export const CanonicalCommittedGraphReceiptSchema = CanonicalCommittedGraphBlockSchema.omit({
+  type: true,
+}).strict();
+export type CanonicalCommittedGraphReceipt = z.infer<
+  typeof CanonicalCommittedGraphReceiptSchema
+>;
 
 // ----------------------------------------------------------------------------
 // V5 Phase 3 block types — Analysis tab data contract v1.3
