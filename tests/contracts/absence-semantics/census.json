@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 64,
+    "distinct": 65,
     "same": 8,
     "unresolved": 393
   },
@@ -2145,6 +2145,14 @@
       "verdict": "distinct",
       "note": "Schema comment: \"Optional so pinned consumers are unaffected until they re-vendor 0.22.0; absent = no handshake asserted.\" Absence disables the GRAPH_DIVERGED check entirely; a defaulted value would silently assert a handshake the producer never made.",
       "ref": "src/boundary/olumi-response.ts \u2014 OlumiResponseSchema.graph_hash comment (0.22.0 S1)"
+    },
+    "boundary/OlumiResponseSchema.model_building_notices": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: absence means no notice attestation was supplied by this response (the legacy producer state), never zero notices. A present carrier cannot encode zero and must account for every notice exactly once.",
+      "ref": "src/boundary/olumi-response.ts \u2014 OlumiResponseSchema.model_building_notices comment (0.45.0)"
     },
     "boundary/OlumiResponseSchema.reasoning": {
       "markers": [

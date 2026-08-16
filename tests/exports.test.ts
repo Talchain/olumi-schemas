@@ -119,6 +119,25 @@ describe('package exports — boundary subpath (dist/boundary/index.js)', () => 
     expect(parsed.success).toBe(true);
   });
 
+  // 0.45.0 — response-only, aggregate model-building notices.
+  it('exposes the model-building notice schemas at the built boundary entry', () => {
+    expect(boundaryDist.ModelBuildingNoticeKindSchema.options).toStrictEqual([
+      'detail_not_connected',
+      'relationship_not_used',
+      'alternative_consolidated',
+      'conflict_resolved_conservatively',
+      'target_not_modelled_as_threshold',
+      'other',
+    ]);
+    expect(
+      boundaryDist.ModelBuildingNoticesSchema.safeParse({
+        total_count: 1,
+        groups: [{ kind: 'detail_not_connected', count: 1 }],
+        details_redacted: true,
+      }).success,
+    ).toBe(true);
+  });
+
   // 0.15.0 — seamlessness R4 keystone.
   it('exposes UiDirectiveBlockSchema + its enum at the boundary entry', () => {
     expect(boundaryDist.UiDirectiveBlockSchema).toBeDefined();

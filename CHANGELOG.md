@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.45.0] — 2026-08-16 (candidate; unpublished)
+
+**The shared reader for a small, response-only model-building notice.** This is
+the contract foundation only: it adds no producer, UI surface, persistence,
+provider call, prompt, cache or configuration change.
+
+### Added
+
+- `ModelBuildingNoticeKindSchema`, a closed six-code vocabulary for conservative
+  model-building operations.
+- `ModelBuildingNoticesSchema`, a strict aggregate-only carrier:
+
+  ```ts
+  {
+    total_count: positiveSafeInteger,
+    groups: Array<{ kind: ModelBuildingNoticeKind; count: positiveSafeInteger }>,
+    details_redacted: true
+  }
+  ```
+
+- Optional top-level `OlumiResponse.model_building_notices`.
+
+Kinds must be unique, `groups` must be non-empty, and group counts must sum
+exactly to `total_count`. Unknown kinds and unknown keys at either object level
+fail validation. Zero, fractional and non-finite counts fail validation.
+
+### Safety, authorship and scope
+
+This carrier describes how the current response's model was built. It is not a
+conclusion about the user's situation and not a quotation or claim of human
+authorship; UI copy must remain neutral and must not say “you said”. It also
+carries no label, value, node id, source text or raw reason. Guest-scenario
+access is not evidence that record-level construction detail is safe to reveal,
+so `details_redacted` is required as literal `true`.
+
+The field exists only on `OlumiResponse`. `DraftGraphBlockSchema` and
+`CanonicalCommittedGraphReceiptSchema` stay strict and continue to reject it,
+which keeps the notice outside the governed graph/receipt routes used for
+persistence, graph hashing, compute and context. Negative controls pin both
+boundaries.
+
+### Absence, compatibility and rollout
+
+Absence means **no notice attestation was supplied**, including every legacy
+producer. It never means zero. A present carrier cannot encode zero; malformed
+carriers fail closed and consumers render no inferred substitute.
+
+This is additive-optional and `response_version` remains `2`. Responses that
+omit the field parse to byte-identical output. The package takes the next 0.x
+minor (`0.45.0`) because the repository's release-line policy treats a new
+optional wire field as a minor contract change.
+
+Reader-first ordering remains required because `OlumiResponseSchema` is strict:
+publish the eventual 0.45.0 release, re-vendor CEE and UI readers, then ship the
+deterministic aggregate producer and neutral UI notice in separate changes with
+real producer/consumer tests. This candidate is not published, tagged or pushed;
+its adoption-manifest state is honestly `declared`.
+
 ## [0.44.0] — 2026-08-16
 
 **The `conditional_winners` transport key, and the claim-safety ruling that

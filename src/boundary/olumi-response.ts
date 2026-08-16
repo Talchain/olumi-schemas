@@ -112,6 +112,74 @@ export const DecisionClassificationSchema = z.object({
 }).strict();
 export type DecisionClassification = z.infer<typeof DecisionClassificationSchema>;
 
+// ----------------------------------------------------------------------------
+// Model-building notices (0.45.0) — response-only, redacted construction facts.
+//
+// These codes describe conservative choices made while building THIS response's
+// model. They are notices about the modelling process, not conclusions about the
+// user's situation and not quotations or claims of human authorship. A consumer
+// owns the neutral display copy and MUST NOT render them as “you said”.
+//
+// The carrier is deliberately aggregate-only. Labels, values, node ids, source
+// text and raw refusal reasons are not on this wire: guest-scenario permission
+// does not establish that those details are safe to disclose. `details_redacted`
+// is required and can only be true, so a present carrier explicitly attests that
+// the detail-bearing records stayed internal.
+//
+// Counts are positive safe integers, kinds are unique, and the group sum must
+// equal `total_count`. Therefore every present notice is accounted for exactly
+// once without manufacturing a zero/empty attestation.
+export const ModelBuildingNoticeKindSchema = z.enum([
+  'detail_not_connected',
+  'relationship_not_used',
+  'alternative_consolidated',
+  'conflict_resolved_conservatively',
+  'target_not_modelled_as_threshold',
+  'other',
+]);
+export type ModelBuildingNoticeKind = z.infer<typeof ModelBuildingNoticeKindSchema>;
+
+const PositiveModelBuildingNoticeCountSchema = z.number()
+  .int()
+  .positive()
+  .finite()
+  .safe();
+
+const ModelBuildingNoticeGroupSchema = z.object({
+  kind: ModelBuildingNoticeKindSchema,
+  count: PositiveModelBuildingNoticeCountSchema,
+}).strict();
+
+export const ModelBuildingNoticesSchema = z.object({
+  total_count: PositiveModelBuildingNoticeCountSchema,
+  groups: z.array(ModelBuildingNoticeGroupSchema)
+    .min(1)
+    .max(ModelBuildingNoticeKindSchema.options.length),
+  details_redacted: z.literal(true),
+}).strict().superRefine((value, ctx) => {
+  const seenKinds = new Set<ModelBuildingNoticeKind>();
+  for (const [index, group] of value.groups.entries()) {
+    if (seenKinds.has(group.kind)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['groups', index, 'kind'],
+        message: 'model-building notice kinds must be unique',
+      });
+    }
+    seenKinds.add(group.kind);
+  }
+
+  const groupedCount = value.groups.reduce((sum, group) => sum + group.count, 0);
+  if (groupedCount !== value.total_count) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['total_count'],
+      message: 'must equal the sum of model-building notice group counts',
+    });
+  }
+});
+export type ModelBuildingNotices = z.infer<typeof ModelBuildingNoticesSchema>;
+
 // OlumiResponse — the only response shape produced by /orchestrate/v2/turn.
 // Egress validator must pass this schema; failure falls back to a typed error
 // envelope, never a 500 (per Boundary Contract v1.1 §3.2.3).
@@ -159,6 +227,18 @@ export const OlumiResponseSchema = z.object({
     goal_node_id: z.string(),
   }).passthrough().optional(),
   reasoning: z.string().optional(),
+  // 0.45.0 additive ----------------------------------------------------------
+  // Aggregate, redacted notices about conservative model-building choices for
+  // this response. Response-only by contract: this field is deliberately NOT
+  // declared on DraftGraphBlockSchema or CanonicalCommittedGraphReceiptSchema,
+  // so it cannot enter graph persistence, graph hashing or compute/context
+  // inputs through those governed shapes.
+  //
+  // ABSENCE IS DISTINCT: absent means no notice attestation was supplied (the
+  // legacy producer state), never zero notices. Present carriers cannot encode
+  // zero and must account for every notice exactly once. Consumers fail closed:
+  // render no notice when absent or when validation fails, and never infer one.
+  model_building_notices: ModelBuildingNoticesSchema.optional(),
   // 0.19.0 additive (wave-2 producer fields) ---------------------------------
   // Explicit producer-authored framing question (UI-SEM-078). The "Olumi's
   // framing question" slot previously promoted a guidance item and derived a
