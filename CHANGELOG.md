@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.44.0] — 2026-08-16
+
+**The `conditional_winners` transport key, and the claim-safety ruling that
+comes with it.** PLoT already emits per-factor conditional winners at the top
+level of the `/v2/run` envelope; this key's absence from
+`CEE_UI_ENRICHMENT_KEEP_LIST` is where it stopped, one hop before the browser —
+the same death the 0.30.0 VOI family and 0.31.0 `critiques` each had.
+
+### Added
+
+- `EnrichmentConditionalWinnerSchema` and `EnrichmentConditionalBucketSchema`,
+  typed from PLoT's producer interfaces (`src/types/engine-v3.ts`
+  `ConditionalWinner` / `ConditionalBucket`, derived at PLoT staging
+  `a5345a5e`), exported from `@talchain/schemas/boundary`.
+- `AnalysisEnrichment.conditional_winners`, optional.
+- `'conditional_winners'` in `CEE_UI_ENRICHMENT_KEEP_LIST`.
+
+### Claim safety — this key names OPTIONS, and its ruling is `projected`
+
+The 0.30.0 VOI family is licensed to pass through a withheld-leader turn
+unchanged precisely BECAUSE no field of those shapes names an option. **That
+licence does not transfer here.** Each bucket carries `winner_id`,
+`winner_label`, `runner_up_id` and `runner_up_label` — raw option identity — so
+forwarding a row verbatim on a turn whose verdict withholds the leading-option
+claim would name which option leads in each bucket.
+
+The ruling is therefore `projected`: the four identity members are stripped per
+bucket and the factor-level science is kept (`factor_id`, `factor_label`,
+`split_value`, `split_unit`, `winner_flips`, and the now-anonymous
+`win_probability` / `mean_outcome`). Dropping the key whole on a withheld turn
+would be the over-suppression failure, which the acceptance criteria weight
+equally with the leak. `winner_flips` says THAT the winner changes across the
+split, never WHICH option it changes to.
+
+### Absence semantics
+
+`winner_id` and `winner_label` are **optional in this contract while PLoT emits
+them as required**, and that is a consequence of the ruling above, not a
+loosening. On the PLoT→CEE seam they are always present. On the CEE→UI seam
+their absence means **the leading option was withheld on this turn** — never
+"no option won", and never a deletion instruction. The discriminator is the
+turn's own withheld disclosure, which rides the same block. A required member
+here would make a conforming withheld projection unparseable at the consumer.
+
+Absence is used rather than a synthesised `withheld` marker, following the
+ruling already settled for `decision_brief.headline_banded`: a synthesised
+literal invents a vocabulary no verified consumer handles, whereas absence is a
+shape optional-member reads already tolerate.
+
+`low_bucket` and `high_bucket` stay **required** — the projection removes
+members from a bucket, never the bucket itself, and `win_probability` is
+required upstream so a projected bucket is never empty.
+
+### Compatibility and rollout
+
+Additive: new optional envelope field, two new exported schemas, one appended
+keep-list entry. No field is made required, no vocabulary narrows, nothing is
+removed.
+
+Reader-first, and the order matters because the keep-list is a two-sided
+contract: publish 0.44.0 → re-vendor CEE and add `'conditional_winners'` to
+`P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP` in the same change (CEE's drift bolt
+asserts the two lists element-for-element, so they move together or CI goes
+red) → the key then reaches the UI on the next CEE deploy.
+
+The UI half is already in place and is what makes this key worth transporting:
+DecisionGuideAI #728 (staging `8e6f7629`) reads the top-level slot in
+`mapV5AnalysisToReport` with a nested fallback and mounts
+`ConditionalWinnerCards` on the live arm, gated on `length > 0`. Nothing in
+this release changes UI behaviour on its own; a CEE re-vendor plus keep-list
+change is required before any of it is user-reachable.
+
+⚠ Known consumer gap, recorded so it is not mistaken for a transport defect:
+that component derives "the winner flips" by comparing the two buckets'
+`winner_label`s rather than reading `winner_flips`. On a withheld turn the
+projected rows therefore render as nothing. The transport is correct and the
+science is on the wire; honouring `winner_flips` is a UI-side change.
+
 ## [0.43.0] — 2026-08-16
 
 **Canonical committed-graph receipts without a second graph or readiness

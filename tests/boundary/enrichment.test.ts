@@ -364,7 +364,7 @@ describe('F6 (schemas #16) — constraint margins + scale/decision-grade provena
 });
 
 describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
-  it('matches the CEE compose.ts P0B keep-list exactly (17 keys)', () => {
+  it('matches the CEE compose.ts P0B keep-list exactly (18 keys)', () => {
     // Mirrored from olumi-assistants-service
     // src/orchestrator-v5/compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP.
     // The CEE-side contract test asserts the same list against its own
@@ -378,8 +378,13 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
     // P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP. UNTIL THAT LANDS THE TWO LISTS ARE
     // DELIBERATELY OUT OF STEP, and the CEE-side parity test is what reports
     // it — that RED is the intended signal, not a regression here.
+    // 0.44.0 adds `conditional_winners` (ROADMAP 2.177); the paired CEE change
+    // is the 0.44.0 re-vendor PR, which adds it to
+    // P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP and rules it `projected` in the
+    // withheld-claim registry. Same deliberate out-of-step window as 0.31.0.
     expect([...CEE_UI_ENRICHMENT_KEEP_LIST].sort()).toEqual([
       'conditional_probabilities',
+      'conditional_winners',
       'confidence_tier',
       'correlation_model',
       'critiques',
@@ -435,27 +440,61 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
   ] as const;
   // 0.31.0 — critiques transport (M3 step 1).
   const ADDED_0_31_0 = ['critiques'] as const;
+  // 0.44.0 — conditional_winners (ROADMAP 2.177).
+  const ADDED_0_44_0 = ['conditional_winners'] as const;
+
+  /**
+   * The ledger, one row per release. 0.44.0 turns the per-release assertion
+   * below into a DERIVED walk over this array.
+   *
+   * WHY. The 0.31.0 form hard-coded one release's delta as
+   * "everything not in the 0.30.0 set", which is only true while 0.31.0 is the
+   * LAST release — the next additive release makes that filter pick up its keys
+   * too, so the only way to keep it green was to edit the previous release's
+   * claim away. That is precisely the failure the 0.31.0 comment above warns
+   * about ("an additive ledger quietly becomes a snapshot that proves nothing
+   * about history"), and it fired on schedule here. Walking the ledger keeps
+   * every release's claim independently asserted and makes the next release an
+   * APPENDED ROW rather than an edit to history.
+   */
+  const KEEP_LIST_LEDGER = [
+    { release: 'pre-0.30.0', added: PRE_0_30_0 },
+    { release: '0.30.0', added: ADDED_0_30_0 },
+    { release: '0.31.0', added: ADDED_0_31_0 },
+    { release: '0.44.0', added: ADDED_0_44_0 },
+  ] as const;
 
   it('every release is PURELY ADDITIVE (no key ever changed or lost)', () => {
     const current = new Set<string>(CEE_UI_ENRICHMENT_KEEP_LIST);
-    for (const key of [...PRE_0_30_0, ...ADDED_0_30_0, ...ADDED_0_31_0]) {
+    const ledgerKeys = KEEP_LIST_LEDGER.flatMap((row) => [...row.added]);
+    for (const key of ledgerKeys) {
       expect(current.has(key), `a later release must not drop ${key}`).toBe(true);
     }
     // The reconstruction check: the ledger must account for the WHOLE list.
     // Without this, a key added without a ledger row would sail through the
     // loop above, and a removal disguised as a re-sort would too.
-    expect([...current].sort()).toEqual(
-      [...PRE_0_30_0, ...ADDED_0_30_0, ...ADDED_0_31_0].slice().sort(),
-    );
+    expect([...current].sort()).toEqual(ledgerKeys.slice().sort());
   });
 
-  it('0.31.0 adds exactly `critiques` over the 0.30.0 list', () => {
-    const through_0_30_0 = new Set<string>([...PRE_0_30_0, ...ADDED_0_30_0]);
-    const added = [...CEE_UI_ENRICHMENT_KEEP_LIST].filter(
-      (key) => !through_0_30_0.has(key),
-    );
-    expect(added.sort()).toEqual(['critiques']);
-  });
+  it.each(KEEP_LIST_LEDGER.map((row, index) => [index, row.release] as const))(
+    'ledger row %i (%s) adds exactly what it claims, and nothing earlier is lost',
+    (index) => {
+      const throughRelease = KEEP_LIST_LEDGER.slice(0, index + 1).flatMap((row) => [
+        ...row.added,
+      ]);
+      const addedLater = new Set<string>(
+        KEEP_LIST_LEDGER.slice(index + 1).flatMap((row) => [...row.added]),
+      );
+      // The live list with every LATER release's additions removed must be
+      // exactly the cumulative ledger through this release. Reconstructing from
+      // the live constant (not from the ledger alone) is what keeps this a real
+      // check rather than the ledger agreeing with itself.
+      const liveThroughRelease = [...CEE_UI_ENRICHMENT_KEEP_LIST].filter(
+        (key) => !addedLater.has(key),
+      );
+      expect(liveThroughRelease.sort()).toEqual(throughRelease.slice().sort());
+    },
+  );
 
   it('every keep-list key is a typed field on the envelope', () => {
     const shape = AnalysisEnrichmentSchema._def.shape();

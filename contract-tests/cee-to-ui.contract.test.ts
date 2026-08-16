@@ -204,8 +204,12 @@ describe('CEE→UI: keep-list membership pins', () => {
     expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('critiques');
   });
 
-  it('keep-list is exactly the CEE compose.ts P0B list (17 keys)', () => {
-    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(17);
+  it('conditional_winners is keep-listed (0.44.0, ROADMAP 2.177)', () => {
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('conditional_winners');
+  });
+
+  it('keep-list is exactly the CEE compose.ts P0B list (18 keys)', () => {
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(18);
   });
 });
 
