@@ -212,7 +212,10 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.44.0 (+2): EnrichmentConditionalWinnerSchema and its nested
     //   EnrichmentConditionalBucketSchema — the conditional-winners transport
     //   key (ROADMAP 2.177).
-    expect(MAXIMAL_FIXTURES.length).toBe(165);
+    // 0.45.0 (+1): boundary/ModelBuildingNoticesSchema — the aggregate-only,
+    //   response-only model-construction notice carrier. Its nested group is
+    //   deliberately internal; the kind enum is scalar and auto-exempt.
+    expect(MAXIMAL_FIXTURES.length).toBe(166);
   });
 
   it('family keys are unique', () => {

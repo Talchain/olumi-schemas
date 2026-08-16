@@ -197,6 +197,7 @@ import {
   // olumi response
   ActionSchema,
   InsightSchema,
+  ModelBuildingNoticesSchema,
   OlumiResponseSchema,
   DecisionClassificationSchema,
   // run
@@ -1770,6 +1771,21 @@ export const maximalDecisionClassification = deepFreeze({
   risk: 'balanced',
 });
 
+// 0.45.0 — synthetic aggregate-only construction notices. Every closed kind
+// is exercised, the counts are exact, and no detail-bearing field exists.
+export const maximalModelBuildingNotices = deepFreeze({
+  total_count: 21,
+  groups: [
+    { kind: 'detail_not_connected', count: 1 },
+    { kind: 'relationship_not_used', count: 2 },
+    { kind: 'alternative_consolidated', count: 3 },
+    { kind: 'conflict_resolved_conservatively', count: 4 },
+    { kind: 'target_not_modelled_as_threshold', count: 5 },
+    { kind: 'other', count: 6 },
+  ],
+  details_redacted: true,
+});
+
 export const maximalOlumiResponse = deepFreeze({
   response_version: 2,
   assistant_text: 'FIXTURE synthetic assistant text.',
@@ -1820,6 +1836,8 @@ export const maximalOlumiResponse = deepFreeze({
     [PROBE]: true,
   },
   reasoning: 'FIXTURE synthetic verbatim model reasoning.',
+  // 0.45.0 — response-only redacted construction notices.
+  model_building_notices: maximalModelBuildingNotices,
   // 0.19.0 — wave-2 producer fields (asks 4 + 5).
   framing_question: 'FIXTURE what would it take to reach the synthetic goal?',
   decision_classification: maximalDecisionClassification,
@@ -2826,11 +2844,18 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalDecisionClassification,
   },
   {
+    family: 'boundary/ModelBuildingNoticesSchema',
+    schema: ModelBuildingNoticesSchema,
+    fixture: maximalModelBuildingNotices,
+    notes:
+      'Aggregate-only response carrier: every closed kind is present once, counts sum exactly, and details_redacted is the required true attestation. No label, value, id or raw reason exists on the wire.',
+  },
+  {
     family: 'boundary/OlumiResponseSchema',
     schema: OlumiResponseSchema,
     fixture: maximalOlumiResponse,
     notes:
-      'The /orchestrate/v2/turn egress. Carries every top-level optional (draft_graph, analysis_ready, reasoning) AND one block of every union member — the fields consumers have historically lost (coaching, evidence, enrichment, held_proposal, ui_directive) are all present.',
+      'The /orchestrate/v2/turn egress. Carries every top-level optional, including the response-only model_building_notices carrier, AND one block of every union member — the fields consumers have historically lost are all present.',
   },
   // --- v2 run + patch ---------------------------------------------------------------
   { family: 'boundary/LegacyGoalConstraintStubSchema', schema: LegacyGoalConstraintStubSchema, fixture: maximalLegacyGoalConstraintStub },

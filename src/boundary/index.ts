@@ -363,6 +363,9 @@ export type {
 export {
   ActionSchema,
   InsightSchema,
+  // 0.45.0 — response-only redacted model-building notices.
+  ModelBuildingNoticeKindSchema,
+  ModelBuildingNoticesSchema,
   OlumiResponseSchema,
   // 0.19.0 — decision classification (wave-2 ask 5, UI-SEM-077)
   DecisionClassificationSchema,
@@ -375,6 +378,9 @@ export {
 export type {
   Action,
   Insight,
+  // 0.45.0 — response-only redacted model-building notices.
+  ModelBuildingNoticeKind,
+  ModelBuildingNotices,
   OlumiResponse,
   // 0.19.0 — decision classification (wave-2 ask 5, UI-SEM-077)
   DecisionClassification,

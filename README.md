@@ -164,6 +164,22 @@ CEE's canonical digest imports it, while clients can use it for receipt
 reconciliation without mirroring CEE source. Ordering, canonical JSON and the
 digest remain CEE-owned.
 
+### Response-only model-building notices
+
+`ModelBuildingNoticesSchema` is the strict aggregate-only carrier for optional
+`OlumiResponse.model_building_notices`. It exposes closed construction-kind
+codes and positive counts only, requires unique kinds and exact sum equality,
+and requires `details_redacted: true`. It deliberately has no labels, values,
+node ids, source text or raw reasons.
+
+The notice is ephemeral response metadata, not part of the living model's
+authored graph. It is not declared on `DraftGraphBlockSchema` or
+`CanonicalCommittedGraphReceiptSchema`, so those strict schemas reject any
+attempt to carry it into graph/receipt persistence, hashing, compute or context.
+Absence means no attestation was supplied, never zero. A UI maps kind codes to
+neutral model-building copy; they are not conclusions and must not be rendered
+as human-authored “you said” claims.
+
 ## Adding new schemas
 
 **First check whether the vocabulary already exists as a checked-in artefact
