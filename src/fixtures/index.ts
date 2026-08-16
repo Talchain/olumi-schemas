@@ -200,6 +200,13 @@ import {
   ModelBuildingNoticesSchema,
   OlumiResponseSchema,
   DecisionClassificationSchema,
+  // 0.46.0 — composed analysis-state verdict
+  AnalysisStateV1Schema,
+  AnalysisRunStateSchema,
+  AnalysisBlockerSchema,
+  AnalysisReadinessSchema,
+  AnalysisLeaderClaimSchema,
+  AnalysisRobustnessSchema,
   // run
   LegacyGoalConstraintStubSchema,
   V2OptionSchema,
@@ -1786,6 +1793,181 @@ export const maximalModelBuildingNotices = deepFreeze({
   details_redacted: true,
 });
 
+// ----------------------------------------------------------------------------
+// 0.46.0 — AnalysisStateV1, the composed analysis-state verdict.
+//
+// SEVEN VARIANTS, NOT ONE. `run_state` is a seven-branch discriminated union
+// on a single (non-array) field, so ONE fixture can exercise exactly ONE
+// branch — the maximality walker would report six `unexercised-union-branch`
+// gaps. The variants below are registered against the same schema identity,
+// the UiDirectiveBlockSchema#open_panel / #open_section precedent, and the
+// walker aggregates their coverage by identity.
+//
+// The optional members are spread across the variants where each is HONEST,
+// rather than force-populated everywhere: `withheld_reason` rides the variants
+// whose leader claim is genuinely withheld, `separation` rides the ones with a
+// computed comparison, and `#never_run` carries an empty `robustness` because
+// nothing has been computed for it to describe.
+// ----------------------------------------------------------------------------
+
+// Both scopes populated: a missing value for one factor ON one option, which
+// is exactly the per-option/per-factor case the draft-missing-values
+// affordance consumes.
+export const maximalAnalysisBlocker = deepFreeze({
+  code: 'FIXTURE_BLOCKER_MISSING_VALUE',
+  category: 'FIXTURE_missing_input',
+  message: 'FIXTURE synthetic blocker: this factor needs a value before the model can run.',
+  repairability: 'FIXTURE_user_supplies_value',
+  option_id: 'fixture_option_a',
+  option_label: 'FIXTURE_Option A',
+  factor_id: 'fixture_factor_churn',
+  factor_label: 'FIXTURE_Churn rate',
+});
+
+// Model-level: neither scope populated. Registered nowhere on its own — it
+// exists so the blocker LISTS carry the unscoped case beside the scoped one,
+// because a consumer that only ever sees scoped blockers will bind to a scope
+// that is not guaranteed.
+const modelLevelAnalysisBlocker = deepFreeze({
+  code: 'FIXTURE_BLOCKER_NO_GOAL',
+  category: 'FIXTURE_structural',
+  message: 'FIXTURE synthetic blocker: the model has no goal to optimise towards.',
+  repairability: 'FIXTURE_user_defines_goal',
+});
+
+export const maximalAnalysisReadiness = deepFreeze({
+  status: 'FIXTURE_not_ready',
+  blockers: [maximalAnalysisBlocker, modelLevelAnalysisBlocker],
+});
+
+// Maximal AND coherent: the claim was withheld, the reason says why, and the
+// separation statement is the evidence behind it. Note this is NOT the
+// permitted:true + withheld_reason pair — that combination parses (DISCLOSED
+// LIMIT L1) but is contradictory, and a fixture library must not model a
+// contradiction as the canonical shape.
+export const maximalAnalysisLeaderClaim = deepFreeze({
+  permitted: false,
+  withheld_reason: 'FIXTURE_INSUFFICIENT_SEPARATION',
+  separation: 'FIXTURE the top two options overlap within the sampling band.',
+});
+
+export const maximalAnalysisRobustness = deepFreeze({
+  aggregate_level: 'FIXTURE_moderate',
+  factors_that_flip_leader: ['fixture_factor_churn', 'fixture_factor_price'],
+});
+
+export const maximalAnalysisStateNeverRun = deepFreeze({
+  run_state: { kind: 'never_run' },
+  readiness: { status: 'FIXTURE_ready', blockers: [] },
+  leader_claim: { permitted: false, withheld_reason: 'FIXTURE_NO_RESULT' },
+  // Empty on purpose: nothing has been computed, so there is no robustness to
+  // describe. Absent (not empty-valued) fields — the honest degenerate case.
+  robustness: {},
+  usable_for_prose: false,
+  usable_for_chips: false,
+  usable_for_followup: false,
+  requires_rerun: false,
+  blocked_unusable: false,
+  contradictions: [],
+});
+
+export const maximalAnalysisStateRunning = deepFreeze({
+  run_state: { kind: 'running', started_at: '2026-08-16T10:00:00.000Z' },
+  readiness: { status: 'FIXTURE_ready', blockers: [] },
+  leader_claim: { permitted: false, withheld_reason: 'FIXTURE_RUN_IN_FLIGHT' },
+  robustness: {},
+  usable_for_prose: false,
+  usable_for_chips: false,
+  usable_for_followup: false,
+  requires_rerun: false,
+  blocked_unusable: false,
+  contradictions: [],
+});
+
+export const maximalAnalysisStateBlocked = deepFreeze({
+  run_state: {
+    kind: 'blocked',
+    reason_code: 'FIXTURE_MODEL_NOT_ANALYSABLE',
+    blockers: [maximalAnalysisBlocker, modelLevelAnalysisBlocker],
+  },
+  readiness: maximalAnalysisReadiness,
+  leader_claim: { permitted: false, withheld_reason: 'FIXTURE_MODEL_NOT_ANALYSABLE' },
+  robustness: {},
+  usable_for_prose: false,
+  usable_for_chips: false,
+  usable_for_followup: false,
+  requires_rerun: false,
+  blocked_unusable: true,
+  contradictions: [],
+});
+
+export const maximalAnalysisStateRefused = deepFreeze({
+  run_state: { kind: 'refused', reason_code: 'FIXTURE_TURN_DECLINED_TO_ANALYSE' },
+  readiness: { status: 'FIXTURE_ready', blockers: [] },
+  leader_claim: { permitted: false, withheld_reason: 'FIXTURE_CURRENCY_NOT_VOUCHED' },
+  robustness: {},
+  usable_for_prose: false,
+  usable_for_chips: false,
+  usable_for_followup: false,
+  requires_rerun: true,
+  blocked_unusable: false,
+  contradictions: [],
+});
+
+// The variant hosted on `maximalOlumiResponse`: the only kind under which a
+// leader may be named, so it is the one carrying `permitted: true` and a
+// populated `robustness`.
+export const maximalAnalysisStateCompleteCurrent = deepFreeze({
+  run_state: { kind: 'complete_current', computed_at: '2026-08-16T10:05:00.000Z' },
+  readiness: { status: 'FIXTURE_ready', blockers: [] },
+  leader_claim: {
+    permitted: true,
+    separation: 'FIXTURE the leading option clears the runner-up by more than the band.',
+  },
+  robustness: maximalAnalysisRobustness,
+  usable_for_prose: true,
+  usable_for_chips: true,
+  usable_for_followup: true,
+  requires_rerun: false,
+  blocked_unusable: false,
+  contradictions: [],
+});
+
+export const maximalAnalysisStateCompleteStale = deepFreeze({
+  run_state: {
+    kind: 'complete_stale',
+    computed_at: '2026-08-16T09:30:00.000Z',
+    cause: 'graph_changed',
+  },
+  readiness: { status: 'FIXTURE_ready', blockers: [] },
+  leader_claim: { permitted: false, withheld_reason: 'FIXTURE_RESULT_STALE' },
+  robustness: maximalAnalysisRobustness,
+  usable_for_prose: true,
+  usable_for_chips: false,
+  usable_for_followup: false,
+  requires_rerun: true,
+  blocked_unusable: false,
+  contradictions: [],
+});
+
+// Carries the non-empty `contradictions` case: the producer noticed its own
+// composition disagreeing with itself and said so rather than resolving it by
+// guess. `options_changed` is the stale cause this variant does NOT exercise —
+// see the complete_stale variant above; both members of that enum are reached
+// across the pair.
+export const maximalAnalysisStateUnknownDegraded = deepFreeze({
+  run_state: { kind: 'unknown_degraded', cause: 'refusal_unverified' },
+  readiness: { status: 'FIXTURE_unknown', blockers: [] },
+  leader_claim: { permitted: false, withheld_reason: 'FIXTURE_STATE_UNKNOWN' },
+  robustness: {},
+  usable_for_prose: false,
+  usable_for_chips: false,
+  usable_for_followup: false,
+  requires_rerun: false,
+  blocked_unusable: true,
+  contradictions: ['FIXTURE_REFUSAL_REPORTED_BUT_UNCORROBORATED'],
+});
+
 export const maximalOlumiResponse = deepFreeze({
   response_version: 2,
   assistant_text: 'FIXTURE synthetic assistant text.',
@@ -1836,6 +2018,10 @@ export const maximalOlumiResponse = deepFreeze({
     [PROBE]: true,
   },
   reasoning: 'FIXTURE synthetic verbatim model reasoning.',
+  // 0.46.0 — the composed analysis-state verdict. The complete_current variant
+  // is hosted here because it is the only kind under which a leader claim may
+  // be permitted, so the response fixture carries the fully-usable shape.
+  analysis_state: maximalAnalysisStateCompleteCurrent,
   // 0.45.0 — response-only redacted construction notices.
   model_building_notices: maximalModelBuildingNotices,
   // 0.19.0 — wave-2 producer fields (asks 4 + 5).
@@ -2850,12 +3036,95 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     notes:
       'Aggregate-only response carrier: every closed kind is present once, counts sum exactly, and details_redacted is the required true attestation. No label, value, id or raw reason exists on the wire.',
   },
+  // --- 0.46.0 composed analysis-state verdict ---------------------------------------
+  {
+    family: 'boundary/AnalysisBlockerSchema',
+    schema: AnalysisBlockerSchema,
+    fixture: maximalAnalysisBlocker,
+    notes:
+      'Both scopes populated — a missing value for one factor ON one option, the per-option/per-factor case the draft-missing-values affordance consumes. The unscoped model-level blocker rides the readiness/blocked lists beside it.',
+  },
+  {
+    family: 'boundary/AnalysisReadinessSchema',
+    schema: AnalysisReadinessSchema,
+    fixture: maximalAnalysisReadiness,
+    notes:
+      'Carries TWO blockers: a scoped one and a model-level one. A single scoped blocker would leave the unscoped case unexercised, and a consumer would bind to a scope the contract does not guarantee.',
+  },
+  {
+    family: 'boundary/AnalysisLeaderClaimSchema',
+    schema: AnalysisLeaderClaimSchema,
+    fixture: maximalAnalysisLeaderClaim,
+    notes:
+      'Maximal AND coherent: withheld, with the reason and the separation evidence behind it. Deliberately NOT permitted:true + withheld_reason — that pair parses (DISCLOSED LIMIT L1) but is contradictory, and the library must not model a contradiction as canonical.',
+  },
+  {
+    family: 'boundary/AnalysisRobustnessSchema',
+    schema: AnalysisRobustnessSchema,
+    fixture: maximalAnalysisRobustness,
+    notes:
+      'Both named fields populated. They answer two different questions (whole-result stability vs per-factor flips) and each carries its scope in its own .describe(), so copy cannot borrow the other\'s claim.',
+  },
+  {
+    family: 'boundary/AnalysisRunStateSchema',
+    schema: AnalysisRunStateSchema,
+    fixture: maximalAnalysisStateCompleteCurrent.run_state,
+    notes:
+      'The union exported in its own right. Branch COVERAGE comes from the seven AnalysisStateV1Schema variants below, which reach this same schema identity through the run_state field — this row satisfies the completeness ratchet, not the maximality walker.',
+  },
+  {
+    family: 'boundary/AnalysisStateV1Schema#never_run',
+    schema: AnalysisStateV1Schema,
+    fixture: maximalAnalysisStateNeverRun,
+    notes:
+      'Empty robustness on purpose: nothing has been computed, so there is nothing to describe. The honest degenerate case.',
+  },
+  {
+    family: 'boundary/AnalysisStateV1Schema#running',
+    schema: AnalysisStateV1Schema,
+    fixture: maximalAnalysisStateRunning,
+  },
+  {
+    family: 'boundary/AnalysisStateV1Schema#blocked',
+    schema: AnalysisStateV1Schema,
+    fixture: maximalAnalysisStateBlocked,
+    notes:
+      'The only variant populating run_state.blockers. That array is a distinct schema identity from readiness.blockers, so both must be non-empty somewhere or the maximality walker reports an empty collection.',
+  },
+  {
+    family: 'boundary/AnalysisStateV1Schema#refused',
+    schema: AnalysisStateV1Schema,
+    fixture: maximalAnalysisStateRefused,
+    notes:
+      'THE NEW STATE. Carries no timestamp by construction: the branch does not declare one and is .strict(), so a refusal cannot hand a consumer a currency signal it is explicitly declining to give.',
+  },
+  {
+    family: 'boundary/AnalysisStateV1Schema#complete_current',
+    schema: AnalysisStateV1Schema,
+    fixture: maximalAnalysisStateCompleteCurrent,
+    notes:
+      'The variant hosted on maximalOlumiResponse, and the only one with leader_claim.permitted true — the sole kind under which a ranked leader may render.',
+  },
+  {
+    family: 'boundary/AnalysisStateV1Schema#complete_stale',
+    schema: AnalysisStateV1Schema,
+    fixture: maximalAnalysisStateCompleteStale,
+    notes:
+      'cause: graph_changed. The sibling options_changed member is exercised by the negative/vocabulary assertions in tests/boundary/analysis-state-0.46.test.ts; the enum is scalar and auto-exempt from fixture coverage.',
+  },
+  {
+    family: 'boundary/AnalysisStateV1Schema#unknown_degraded',
+    schema: AnalysisStateV1Schema,
+    fixture: maximalAnalysisStateUnknownDegraded,
+    notes:
+      'The only variant with a non-empty contradictions list — the producer self-report channel. Every other variant carries [], which is the "found none" claim, not a consistency guarantee.',
+  },
   {
     family: 'boundary/OlumiResponseSchema',
     schema: OlumiResponseSchema,
     fixture: maximalOlumiResponse,
     notes:
-      'The /orchestrate/v2/turn egress. Carries every top-level optional, including the response-only model_building_notices carrier, AND one block of every union member — the fields consumers have historically lost are all present.',
+      'The /orchestrate/v2/turn egress. Carries every top-level optional, including the response-only model_building_notices carrier and the 0.46.0 composed analysis_state verdict, AND one block of every union member — the fields consumers have historically lost are all present.',
   },
   // --- v2 run + patch ---------------------------------------------------------------
   { family: 'boundary/LegacyGoalConstraintStubSchema', schema: LegacyGoalConstraintStubSchema, fixture: maximalLegacyGoalConstraintStub },

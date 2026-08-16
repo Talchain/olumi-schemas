@@ -7,7 +7,113 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.45.0] — 2026-08-16 (candidate; unpublished)
+## [0.46.0] — 2026-08-16 (candidate)
+
+**One composed analysis-state verdict — the analysis-state authority migration,
+STEP 2.** Contract only: this adds no producer, no consumer, no UI surface, no
+persistence, no provider call, prompt, cache or configuration change.
+
+### Why
+
+Each surface currently derives its own answer to *"what is the state of the
+analysis, and what may I say about it"* from a different subset of the payload,
+and the derivations disagree. The measured instance: a confirmation withheld a
+leading option while the coaching sentence directly beneath it named one —
+neither change was wrong, and nothing in the code, the names or the reviews said
+the two were answering different questions. A verdict composed ONCE by the
+producer is the structural fix: every surface reads the same fields, so two
+surfaces cannot disagree about a fact neither of them derives.
+
+### Added
+
+- `AnalysisStateV1Schema` (`src/boundary/analysis-state.ts`), strict, with:
+  - `run_state` — a seven-branch `z.discriminatedUnion('kind', …)`:
+    `never_run` · `running {started_at}` · `blocked {reason_code, blockers[]}` ·
+    **`refused {reason_code}`** · `complete_current {computed_at}` ·
+    `complete_stale {computed_at, cause}` · `unknown_degraded {cause}`.
+  - `readiness {status, blockers[]}`, `leader_claim {permitted, withheld_reason?,
+    separation?}`, `robustness {aggregate_level?, factors_that_flip_leader?}`.
+  - `usable_for_prose` · `usable_for_chips` · `usable_for_followup` ·
+    `requires_rerun` · `blocked_unusable` · `contradictions[]`.
+- `AnalysisBlockerSchema`, carrying `option_id?` · `option_label?` ·
+  `factor_id?` · `factor_label?` so a blocker is actionable at the exact element
+  rather than as a page-level banner — the per-option/per-factor scope the UI's
+  draft-missing-values affordance consumes.
+- `AnalysisRunStateSchema`, `AnalysisReadinessSchema`,
+  `AnalysisLeaderClaimSchema`, `AnalysisRobustnessSchema`, the closed
+  `ANALYSIS_RUN_STATE_KINDS` / `AnalysisRunStateKindSchema`,
+  `AnalysisStaleCauseSchema`, `AnalysisDegradedCauseSchema`, and their types.
+- Optional top-level `OlumiResponse.analysis_state`.
+
+### `refused` is the new state, and it is not a synonym for anything
+
+`refused` says **this turn declined to analyse, so any visible result is from an
+earlier run whose currency is NOT vouched for**. It is materially different from
+`blocked` (the model is not analysable) and from `complete_stale` (out of date,
+and the producer knows why). The branch declares **no timestamp** and is
+`.strict()`, so a refusal cannot hand a consumer a currency signal it is
+explicitly declining to give — the rule lives in the type system, not in
+producer discipline.
+
+### The `.describe()` strings ARE the spec
+
+This contract is earmarked for a **one-shot external adjudication before UI
+consumers migrate**, and what gets adjudicated is the describe text. Two clauses
+are load-bearing and pinned by tests:
+
+- **Leader claim.** `permitted` is a CONJUNCTION of CEE's constraint entitlement
+  and the engine's statistical separation. A ranked leader, ordinal or "best
+  option" may render **only when `permitted` is true AND `run_state.kind` is
+  `complete_current`** — both conditions, every time. **Withholding drops the
+  DESIGNATION and keeps the DATA:** win probabilities remain showable and must
+  still be shown. A consumer that hides the numbers has over-applied the rule; a
+  consumer that names a leader by reading the numbers itself has defeated it.
+- **Robustness is two fields answering two questions.** `aggregate_level` scopes
+  to the result as a whole; `factors_that_flip_leader` scopes to individual
+  inputs. Each `.describe()` states its scope and disclaims the other's, so
+  consumer copy cannot borrow the other's claim.
+
+### Disclosed limits (the parser does NOT enforce these)
+
+Recorded here and pinned by named tests, so they are visible in a green suite
+rather than assumed closed. No cross-field refinement is encoded, because
+deriving one with no producer in existence would be this package guessing CEE's
+semantics.
+
+- **L1** `leader_claim.permitted: true` alongside `withheld_reason` parses.
+- **L2** the five usability booleans are not cross-checked against `run_state`.
+- **L3** an empty `contradictions` array is the producer's "found none", not a
+  consistency guarantee.
+- **Census debt.** `robustness.factors_that_flip_leader` is a genuine
+  two-states-one-byte field: **absent** = the flip analysis was not computed;
+  **`[]`** = it was computed and nothing flips the leader. Both are reachable
+  and there is no discriminator on the wire. Recorded as a `distinct` census row
+  (debt, not a fix); the discriminator rides its own train and is the first
+  question for the adjudication.
+
+### Absence, compatibility and rollout
+
+Absence of `analysis_state` means **no composed verdict was supplied by this
+turn** — the state of every producer until CEE ships the emitter — never
+`never_run` and never a neutral default. It is not permission to fall back to a
+client-side derivation of the same question.
+
+Additive-optional; `response_version` remains `2`. Responses that omit the field
+parse to byte-identical output (asserted by the 0.39.0 and 0.40.0 additivity
+corpora). Reader-first order: publish, re-vendor the CEE and UI readers, then
+separately ship the CEE composer and the UI consumption with discriminating
+adoption tests. The adoption-manifest row is `declared`, with
+`producer_test`/`consumer_test` null — this PR's tests are transport tests, and
+transport evidence is not adoption evidence.
+
+### Fixture registry
+
+166 → 178 (+12), structural: `run_state` is a seven-branch union on a single
+non-array field, so one fixture exercises exactly one branch — seven
+`AnalysisStateV1Schema#<kind>` variants against one schema identity, plus the
+four composed sub-shapes and the union itself, all exported in their own right.
+
+## [0.45.0] — 2026-08-16
 
 **The shared reader for a small, response-only model-building notice.** This is
 the contract foundation only: it adds no producer, UI surface, persistence,

@@ -215,7 +215,21 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.45.0 (+1): boundary/ModelBuildingNoticesSchema — the aggregate-only,
     //   response-only model-construction notice carrier. Its nested group is
     //   deliberately internal; the kind enum is scalar and auto-exempt.
-    expect(MAXIMAL_FIXTURES.length).toBe(166);
+    // 0.46.0 (+12): the composed analysis-state verdict. The count is
+    //   STRUCTURAL, not generous. `run_state` is a SEVEN-branch discriminated
+    //   union on a single (non-array) field, so one fixture exercises exactly
+    //   one branch and the maximality walker would report six
+    //   `unexercised-union-branch` gaps — hence seven
+    //   boundary/AnalysisStateV1Schema#<kind> variants against one schema
+    //   identity (the UiDirectiveBlockSchema#open_panel precedent). Plus the
+    //   four composed sub-shapes exported in their own right
+    //   (AnalysisBlockerSchema, AnalysisReadinessSchema,
+    //   AnalysisLeaderClaimSchema, AnalysisRobustnessSchema) and
+    //   boundary/AnalysisRunStateSchema, which is exported and so needs a row
+    //   to satisfy THIS ratchet even though its branch coverage comes from the
+    //   seven variants above. The three `kind`/`cause` vocabularies are enums
+    //   and auto-exempt.
+    expect(MAXIMAL_FIXTURES.length).toBe(178);
   });
 
   it('family keys are unique', () => {

@@ -171,6 +171,34 @@ export type {
   RunDeltaFlipThresholdDelta,
 } from './run-delta.js';
 
+// Composed analysis-state verdict (0.46.0 — analysis-state authority
+// migration, step 2). Carried on `OlumiResponseSchema.analysis_state`; see
+// ./analysis-state.ts for the doctrine, the per-field licence, and the three
+// DISCLOSED LIMITS the parser does not enforce.
+export {
+  AnalysisStateV1Schema,
+  AnalysisRunStateSchema,
+  ANALYSIS_RUN_STATE_KINDS,
+  AnalysisRunStateKindSchema,
+  AnalysisStaleCauseSchema,
+  AnalysisDegradedCauseSchema,
+  AnalysisBlockerSchema,
+  AnalysisReadinessSchema,
+  AnalysisLeaderClaimSchema,
+  AnalysisRobustnessSchema,
+} from './analysis-state.js';
+export type {
+  AnalysisStateV1,
+  AnalysisRunState,
+  AnalysisRunStateKind,
+  AnalysisStaleCause,
+  AnalysisDegradedCause,
+  AnalysisBlocker,
+  AnalysisReadiness,
+  AnalysisLeaderClaim,
+  AnalysisRobustness,
+} from './analysis-state.js';
+
 // Collaborative elicitation + disagreement (0.39.0 car 4 — ROADMAP 2.686
 // U-S0 / 2.968 build-list item 1). See ./collab.ts for the ratified-ruling
 // doctrine (composed disagreement typing, doubt first-class, one authorship
