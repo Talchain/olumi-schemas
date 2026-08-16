@@ -7,6 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.47.0] — 2026-08-17 (candidate)
+
+**AnalysisStateV1 cross-checks — disclosed limit L2 narrowed to what the
+producer can actually emit (ROADMAP 2.1259).** Validation tightening only: no
+new field, no removed field, no vocabulary change, no producer, consumer or UI
+change.
+
+### Why
+
+0.46.0 disclosed L2: the five usability booleans were not cross-checked against
+`run_state`, so `blocked_unusable: true` under `kind: 'complete_current'`
+PARSED. The UI (DecisionGuideAI #737) honours `blocked_unusable` as its own
+fact, per its `.describe()` — which is only safe if the producer can never pair
+it with a complete verdict. A derivation at the producer's bytes (CEE staging
+`c5e24307`: `context/canonical-analysis-state.ts` `assembleCanonicalState`,
+lines 469–541, and `compose/analysis-state-v1.ts` `composeRunState`, lines
+191–262 — both read ONE canonical object) proved the pair, and five sibling
+combinations, **unreachable on every input**. A contract that parses a
+combination its producer cannot emit invites a client-side reconciliation —
+exactly the divergence this contract exists to close — so the schema now
+refuses them.
+
+### Changed
+
+- `AnalysisStateV1Schema` is now the bare strict shape **plus
+  `refineAnalysisStateV1`** (a `superRefine`, the `RunDeltaSchema` precedent;
+  the bare object is module-private). Six rules, each refusing only a
+  producer-unreachable combination, each raising a named issue at the offending
+  path:
+  - **CC-A** `kind: 'blocked'` requires `blocked_unusable: true`
+    (`analysis_state_blocked_requires_blocked_unusable`) — structural: the same
+    `status === 'blocked'` selects the branch and forces the boolean.
+  - **CC-B** `kind: 'complete_current' | 'complete_stale'` forbids
+    `blocked_unusable: true`
+    (`analysis_state_complete_forbids_blocked_unusable`) — **the former L2
+    pair**: a complete verdict requires a selected, non-blocked analysis, and
+    every producer path to `blocked_unusable` excludes exactly that.
+  - **CC-C** `kind: 'never_run'` forbids `usable_for_prose` /
+    `usable_for_chips` / `usable_for_followup` / `requires_rerun`
+    (`analysis_state_never_run_forbids_usability`) — no fact exists to derive
+    any of them from.
+  - **CC-D** `blocked_unusable: true` forbids `usable_for_prose` /
+    `usable_for_chips` / `usable_for_followup`
+    (`analysis_state_blocked_unusable_forbids_usability`) — every `usable_for_*`
+    predicate carries a not-blocked conjunct. **`requires_rerun` is
+    deliberately exempt**: a blocked model whose prior fact is stale emits
+    `requires_rerun` beside `blocked_unusable` — a reachable pair, pinned by a
+    positive control.
+  - **CC-E** `usable_for_chips: true` forbids `requires_rerun: true`
+    (`analysis_state_chips_forbid_rerun`) — chips require fresh +
+    trust-intact; rerun requires stale or trust-downgraded.
+  - **CC-F** `kind: 'complete_stale'` forbids `usable_for_chips: true`
+    (`analysis_state_stale_forbids_chips`).
+- The header's **L2 disclosure is narrowed, not closed** — what remains open is
+  named there and pinned by tests: `blocked_unusable` under `never_run` /
+  `unknown_degraded` / `refused` / `running` still parses (the first two are
+  the coherent future encoding of CEE's `scenario_claims_analysis_no_fact`
+  contradiction; refusal pairing is CEE policy whose freshness clamp retires at
+  migration step 6; `running` has no producer); `usable_for_chips` under
+  `unknown_degraded` still parses (reachable: a hash-proven fresh verdict whose
+  fact carries a non-UTC `computed_at`); and **no positive is forced** — the
+  producer's predicates may legitimately tighten without a contract break.
+
+### Compatibility
+
+**Tightening, and provably unable to break either consumer of this field.**
+CEE (the only producer) vendors 0.46.0 and validates egress against its own
+vendored copy, so nothing changes there until it re-vendors — and when it does,
+every payload its composer can emit satisfies all six rules, because the rules
+were derived FROM that composer's own predicates (the Phase-1 derivation,
+ROADMAP 2.1259). The UI's pin rides DecisionGuideAI #737 and only ever parses
+what CEE emits, so no user-reachable payload can newly fail. Any payload that
+DOES newly fail was, by the derivation, fabricated by something other than the
+producer — refusing it is the contract doing its job. Per the 0.x policy
+(MINOR is the breaking axis), a validator-behaviour change rides a minor bump.
+
+### Tests
+
+- Eight enforcement tests (`tests/boundary/analysis-state-0.46.test.ts`,
+  `0.47.0 cross-checks` block), RED-first against 0.46.0: each refused pair
+  REDs with its named issue at its named path; each rule carries a positive
+  control drawn from the composer's real output domain; one test proves the
+  refinement survives the `OlumiResponse.analysis_state` `.optional()` hosting
+  seam.
+- The former L2 limit test is rewritten as the NARROWED pin: the still-open
+  pairs above parse, each with the producer-side reason recorded beside it.
+
 ## [0.46.0] — 2026-08-16 (candidate)
 
 **One composed analysis-state verdict — the analysis-state authority migration,

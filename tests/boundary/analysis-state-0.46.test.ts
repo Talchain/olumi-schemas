@@ -143,7 +143,17 @@ describe('AnalysisStateV1 · an unknown run_state kind is REFUSED', () => {
    * evidence about the kind and not about a broken fixture.
    */
   it('POSITIVE CONTROL: the same construction with a known kind is ACCEPTED', () => {
-    const ok = { ...base, run_state: { kind: 'never_run' } };
+    // 0.47.0: the booleans are lowered to a coherent never_run pairing — the
+    // cross-checks now (correctly) refuse a never_run that claims usability,
+    // and this control's job is only to prove a KNOWN kind parses.
+    const ok = {
+      ...base,
+      run_state: { kind: 'never_run' },
+      usable_for_prose: false,
+      usable_for_chips: false,
+      usable_for_followup: false,
+      requires_rerun: false,
+    };
     expect(AnalysisStateV1Schema.safeParse(ok).success).toBe(true);
   });
 
@@ -367,16 +377,56 @@ describe('AnalysisStateV1 · DISCLOSED LIMITS (the parser does NOT enforce these
     expect(AnalysisLeaderClaimSchema.safeParse(contradictory).success).toBe(true);
   });
 
-  it('L2: the usability booleans are NOT cross-checked against run_state', () => {
-    // blocked_unusable true under a current, complete run is incoherent, and
-    // parses. The composed booleans are producer-computed facts the contract
-    // carries; it does not adjudicate between them.
-    const incoherent = {
-      ...maximalAnalysisStateCompleteCurrent,
-      blocked_unusable: true,
-      usable_for_prose: true,
-    };
-    expect(AnalysisStateV1Schema.safeParse(incoherent).success).toBe(true);
+  it('L2 (NARROWED in 0.47.0): the pairs the producer CAN emit still parse un-adjudicated', () => {
+    // The original L2 test pinned `blocked_unusable: true` under
+    // `complete_current` as PARSING. That flip was the intended signal
+    // (see this block's header): 0.47.0 derived at the producer's bytes
+    // (CEE c5e24307, ROADMAP 2.1259) that the pair is unreachable, and the
+    // parser now refuses it — see the CROSS-CHECK enforcement block below.
+    // What REMAINS open is pinned here: pairs the producer could coherently
+    // emit under a future wiring stay un-adjudicated by the parser.
+    //
+    // never_run + blocked_unusable is the coherent future encoding of CEE's
+    // `scenario_claims_analysis_no_fact` contradiction (a scenario claims an
+    // analysis exists while no fact is selectable) — refusing it would make
+    // that contradiction unsayable. It PARSES.
+    expect(
+      AnalysisStateV1Schema.safeParse({
+        ...maximalAnalysisStateNeverRun,
+        blocked_unusable: true,
+      }).success,
+    ).toBe(true);
+    // unknown_degraded + blocked_unusable is a registered fixture (a refusal
+    // reported but uncorroborated, composed with the producer's own
+    // contradiction self-report). It PARSES.
+    expect(
+      AnalysisStateV1Schema.safeParse(maximalAnalysisStateUnknownDegraded).success,
+    ).toBe(true);
+    // unknown_degraded + usable_for_chips is REACHABLE at the producer: a
+    // hash-proven fresh verdict whose fact carries a non-UTC computed_at
+    // string maps to unknown_degraded(legacy_fact) while the chip predicate
+    // (which reads freshness, not the timestamp format) stays true. It PARSES.
+    expect(
+      AnalysisStateV1Schema.safeParse({
+        ...maximalAnalysisStateUnknownDegraded,
+        blocked_unusable: false,
+        usable_for_prose: true,
+        usable_for_chips: true,
+        usable_for_followup: true,
+      }).success,
+    ).toBe(true);
+    // refused × the five booleans stays open: today's producer pairs every
+    // refusal with a blocked readiness and a freshness clamp, but both are
+    // CEE policy (the clamp is scheduled to retire at migration step 6), not
+    // contract structure. Today's ACTUAL refusal emission — blocked_unusable
+    // true with a stale prior fact surfacing requires_rerun — PARSES.
+    expect(
+      AnalysisStateV1Schema.safeParse({
+        ...maximalAnalysisStateRefused,
+        blocked_unusable: true,
+        requires_rerun: true,
+      }).success,
+    ).toBe(true);
   });
 
   it('L3: an empty contradictions array is "found none", not a guarantee', () => {
@@ -388,6 +438,187 @@ describe('AnalysisStateV1 · DISCLOSED LIMITS (the parser does NOT enforce these
       maximalAnalysisStateUnknownDegraded,
     );
     expect(withContradiction.contradictions.length).toBeGreaterThan(0);
+  });
+});
+
+// ============================================================================
+// 0.47.0 CROSS-CHECKS — the pairs the producer provably cannot emit are REFUSED
+// ============================================================================
+
+describe('AnalysisStateV1 · 0.47.0 cross-checks refuse producer-unreachable pairs', () => {
+  /**
+   * Every rule here refuses ONLY a combination derived UNREACHABLE at the
+   * producer's bytes (CEE `c5e24307`, ROADMAP 2.1259 — file:line derivation in
+   * the 0.47.0 CHANGELOG entry). Each refusal asserts the NAMED issue at the
+   * named path (identity-bound, trap 19 — "it failed" could be any rule), and
+   * each is paired with a positive control drawn from the producer's real
+   * output domain, so a refusal is evidence about the rule and not about a
+   * broken fixture (trap 13).
+   */
+  const namedIssueAt = (
+    value: unknown,
+    ruleName: string,
+    path: string,
+  ): boolean => {
+    const result = AnalysisStateV1Schema.safeParse(value);
+    if (result.success) return false;
+    return result.error.issues.some(
+      (issue) => issue.message.includes(ruleName) && issue.path.join('.') === path,
+    );
+  };
+
+  it('CC-A: run_state.kind "blocked" with blocked_unusable=false is REFUSED', () => {
+    // Structural at the producer: the same `status === 'blocked'` that selects
+    // the blocked run-state branch forces blockedUnusable true in the same
+    // canonical object. A payload asserting otherwise cannot come from CEE.
+    expect(
+      namedIssueAt(
+        { ...maximalAnalysisStateBlocked, blocked_unusable: false },
+        'analysis_state_blocked_requires_blocked_unusable',
+        'blocked_unusable',
+      ),
+    ).toBe(true);
+    // POSITIVE CONTROL: the coherent blocked verdict parses.
+    expect(AnalysisStateV1Schema.safeParse(maximalAnalysisStateBlocked).success).toBe(true);
+    // POSITIVE CONTROL for the deliberate NON-rule: a blocked model whose
+    // prior fact is stale surfaces requires_rerun=true beside
+    // blocked_unusable=true — a REACHABLE emission, so it must parse.
+    expect(
+      AnalysisStateV1Schema.safeParse({
+        ...maximalAnalysisStateBlocked,
+        requires_rerun: true,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('CC-B: blocked_unusable=true under complete_current is REFUSED (THE ROADMAP 2.1259 PAIR)', () => {
+    // Isolated: the other usability booleans are lowered so ONLY CC-B can
+    // fire — this proves CC-B bites on its own, not through CC-D.
+    expect(
+      namedIssueAt(
+        {
+          ...maximalAnalysisStateCompleteCurrent,
+          blocked_unusable: true,
+          usable_for_prose: false,
+          usable_for_chips: false,
+          usable_for_followup: false,
+        },
+        'analysis_state_complete_forbids_blocked_unusable',
+        'blocked_unusable',
+      ),
+    ).toBe(true);
+    expect(
+      AnalysisStateV1Schema.safeParse(maximalAnalysisStateCompleteCurrent).success,
+    ).toBe(true);
+  });
+
+  it('CC-B: blocked_unusable=true under complete_stale is REFUSED (same proof shape)', () => {
+    expect(
+      namedIssueAt(
+        {
+          ...maximalAnalysisStateCompleteStale,
+          blocked_unusable: true,
+          usable_for_prose: false,
+        },
+        'analysis_state_complete_forbids_blocked_unusable',
+        'blocked_unusable',
+      ),
+    ).toBe(true);
+    expect(
+      AnalysisStateV1Schema.safeParse(maximalAnalysisStateCompleteStale).success,
+    ).toBe(true);
+  });
+
+  it('CC-C: never_run claiming any usability or a rerun is REFUSED (four paths, individually)', () => {
+    for (const field of [
+      'usable_for_prose',
+      'usable_for_chips',
+      'usable_for_followup',
+      'requires_rerun',
+    ]) {
+      expect(
+        namedIssueAt(
+          { ...maximalAnalysisStateNeverRun, [field]: true },
+          'analysis_state_never_run_forbids_usability',
+          field,
+        ),
+        `${field} must be refused under never_run`,
+      ).toBe(true);
+    }
+    expect(AnalysisStateV1Schema.safeParse(maximalAnalysisStateNeverRun).success).toBe(true);
+  });
+
+  it('CC-D: blocked_unusable=true claiming prose/chips/followup is REFUSED — rerun deliberately allowed', () => {
+    // Host on unknown_degraded (its fixture carries blocked_unusable=true and
+    // CC-B does not apply there), so CC-D is proven to bite on its own.
+    for (const field of ['usable_for_prose', 'usable_for_chips', 'usable_for_followup']) {
+      expect(
+        namedIssueAt(
+          { ...maximalAnalysisStateUnknownDegraded, [field]: true },
+          'analysis_state_blocked_unusable_forbids_usability',
+          field,
+        ),
+        `${field} must be refused beside blocked_unusable`,
+      ).toBe(true);
+    }
+    // POSITIVE CONTROL for the carve-out: requires_rerun beside
+    // blocked_unusable PARSES (reachable: blocked status + stale prior fact).
+    expect(
+      AnalysisStateV1Schema.safeParse({
+        ...maximalAnalysisStateUnknownDegraded,
+        requires_rerun: true,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('CC-E: usable_for_chips=true with requires_rerun=true is REFUSED (mutually exclusive at the producer)', () => {
+    expect(
+      namedIssueAt(
+        { ...maximalAnalysisStateCompleteCurrent, requires_rerun: true },
+        'analysis_state_chips_forbid_rerun',
+        'requires_rerun',
+      ),
+    ).toBe(true);
+    // POSITIVE CONTROLS: each boolean alone, in its real emission.
+    expect(
+      AnalysisStateV1Schema.safeParse(maximalAnalysisStateCompleteCurrent).success,
+    ).toBe(true); // chips=true, rerun=false
+    expect(
+      AnalysisStateV1Schema.safeParse(maximalAnalysisStateCompleteStale).success,
+    ).toBe(true); // chips=false, rerun=true
+  });
+
+  it('CC-F: usable_for_chips=true under complete_stale is REFUSED', () => {
+    // requires_rerun lowered so CC-E cannot fire — CC-F proven on its own.
+    expect(
+      namedIssueAt(
+        {
+          ...maximalAnalysisStateCompleteStale,
+          usable_for_chips: true,
+          requires_rerun: false,
+        },
+        'analysis_state_stale_forbids_chips',
+        'usable_for_chips',
+      ),
+    ).toBe(true);
+  });
+
+  it('the cross-checks run when analysis_state is hosted on OlumiResponse', () => {
+    // The refinement must survive the `.optional()` hosting seam — a wrapper
+    // that validated standalone but not in situ would be a guard watching the
+    // wrong door.
+    const hosted = {
+      ...maximalOlumiResponse,
+      analysis_state: {
+        ...maximalAnalysisStateCompleteCurrent,
+        blocked_unusable: true,
+        usable_for_prose: false,
+        usable_for_chips: false,
+        usable_for_followup: false,
+      },
+    };
+    expect(OlumiResponseSchema.safeParse(hosted).success).toBe(false);
+    expect(OlumiResponseSchema.safeParse(maximalOlumiResponse).success).toBe(true);
   });
 });
 
@@ -410,8 +641,11 @@ describe('AnalysisStateV1 · the licence a consumer may quote', () => {
   };
 
   it('EVERY field of every composed member carries a .describe()', () => {
+    // 0.47.0: the public schema is the bare object plus the cross-check
+    // refinement (ZodEffects), so the field shape lives on the inner object.
+    const analysisStateInner = AnalysisStateV1Schema.innerType();
     const shapes: ReadonlyArray<readonly [string, z.ZodRawShape]> = [
-      ['AnalysisStateV1Schema', AnalysisStateV1Schema.shape],
+      ['AnalysisStateV1Schema', analysisStateInner.shape],
       ['AnalysisBlockerSchema', AnalysisBlockerSchema.shape],
       ['AnalysisLeaderClaimSchema', AnalysisLeaderClaimSchema.shape],
       ['AnalysisRobustnessSchema', AnalysisRobustnessSchema.shape],
