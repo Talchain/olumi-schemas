@@ -952,6 +952,82 @@ export type EnrichmentConditionalProbability =
   z.infer<typeof EnrichmentConditionalProbabilitySchema>;
 
 // ----------------------------------------------------------------------------
+// conditional_winners — [F8] ConditionalWinner / ConditionalBucket (0.44.0)
+// ----------------------------------------------------------------------------
+
+/**
+ * One bucket of a conditional-winner split: which option wins on this side of
+ * the factor's split value, and how strongly.
+ *
+ * ⚠ THE FOUR IDENTITY MEMBERS ARE OPTIONAL BY CONTRACT, AND THAT IS A RULING,
+ * NOT A LOOSENING. PLoT emits `winner_id` / `winner_label` as REQUIRED
+ * (`src/types/engine-v3.ts` `ConditionalBucket`, derived at PLoT staging
+ * `a5345a5e`), so on the PLoT→CEE seam they are always present. They are
+ * optional here because the CEE→UI seam has a second, legitimate producer
+ * state: on a turn whose verdict WITHHOLDS the leading-option claim, CEE's
+ * withheld-claim projection strips exactly these four members and forwards the
+ * factor-level science — split, probabilities, and whether the winner flips —
+ * without naming which option leads in either bucket.
+ *
+ * ABSENCE SEMANTICS, stated because the value of the field depends on it:
+ * absence of `winner_id` / `winner_label` on this seam means **the leading
+ * option was withheld on this turn**. It never means "no option won" and it is
+ * never a deletion instruction. The discriminator is the turn's own withheld
+ * disclosure, which rides the same block.
+ *
+ * WHY ABSENCE AND NOT A SYNTHESISED `withheld` MARKER. The same question was
+ * settled for `decision_brief.headline_banded` in CEE
+ * (`compose/withheld-claim-projection.ts`): a synthesised literal would have to
+ * invent a vocabulary no verified consumer handles, whereas ABSENCE is a shape
+ * the consumer's optional-member reads already tolerate. This schema follows
+ * that ruling rather than opening a second one.
+ *
+ * `win_probability` stays REQUIRED: it names no option once the identity
+ * members are gone, and the 2026-07-27 anti-over-suppression ruling keeps
+ * per-option probabilities on a withheld turn deliberately. Dropping it would
+ * be the over-suppression failure, which the acceptance criteria weight equally
+ * with the leak.
+ */
+export const EnrichmentConditionalBucketSchema = z.object({
+  /** Winning option id. Absent ⇒ withheld on this turn (see the note above). */
+  winner_id: z.string().optional(),
+  /** Winning option label. Absent ⇒ withheld on this turn. */
+  winner_label: z.string().optional(),
+  /** Runner-up option id. Optional at the producer too. */
+  runner_up_id: z.string().optional(),
+  /** Runner-up option label. Optional at the producer too. */
+  runner_up_label: z.string().optional(),
+  /** Win probability of the bucket's winner. Names no option on its own. */
+  win_probability: z.number(),
+  /** Mean outcome for the bucket's winner. Optional at the producer. */
+  mean_outcome: z.number().optional(),
+}).passthrough();
+export type EnrichmentConditionalBucket =
+  z.infer<typeof EnrichmentConditionalBucketSchema>;
+
+/**
+ * Per-factor conditional-winner analysis: how the winning option changes
+ * conditional on the factor's value bucket. [F8] ConditionalWinner.
+ *
+ * Every member outside the two buckets is factor-level and names no option —
+ * `winner_flips` says THAT the winner changes across the split, never WHICH
+ * option it changes to — so the whole row survives a withheld turn with only
+ * the bucket identity members removed.
+ */
+export const EnrichmentConditionalWinnerSchema = z.object({
+  factor_id: z.string(),
+  factor_label: z.string(),
+  split_value: z.number(),
+  split_unit: z.string().optional(),
+  low_bucket: EnrichmentConditionalBucketSchema,
+  high_bucket: EnrichmentConditionalBucketSchema,
+  winner_flips: z.boolean(),
+  _normalised: z.boolean().optional(),
+}).passthrough();
+export type EnrichmentConditionalWinner =
+  z.infer<typeof EnrichmentConditionalWinnerSchema>;
+
+// ----------------------------------------------------------------------------
 // The envelope
 // ----------------------------------------------------------------------------
 
@@ -1066,6 +1142,8 @@ export const AnalysisEnrichmentSchema = z.object({
   // --- constraints (PR #203/#204/#205 vocabulary) --------------------------
   constraint_results: z.array(EnrichmentConstraintResultSchema).optional(),
   conditional_probabilities: z.array(EnrichmentConditionalProbabilitySchema).optional(),
+  /** 0.44.0 — see {@link EnrichmentConditionalWinnerSchema}. */
+  conditional_winners: z.array(EnrichmentConditionalWinnerSchema).optional(),
 
   // --- coaching / review ---------------------------------------------------
   m1_coaching: EnrichmentM1CoachingSchema.nullable().optional(),
@@ -1160,6 +1238,34 @@ export const CEE_UI_ENRICHMENT_KEEP_LIST = [
   // check. Forwarding the row verbatim would leak internal wording and
   // leading-option identity in one step.
   'critiques',
+  // 0.44.0 (ROADMAP 2.177): per-factor conditional winners. PLoT emits this at
+  // the TOP LEVEL of the /v2/run envelope (`src/routes/v2/run.ts`, sibling of
+  // `edge_e_values`; row shape `src/types/engine-v3.ts` ConditionalWinner /
+  // ConditionalBucket, derived at PLoT staging `a5345a5e`), and this key's
+  // absence from the list was where it died — one hop before the browser, the
+  // same death the 0.30.0 VOI family and 0.31.0 `critiques` each had.
+  //
+  // The UI consumer shipped FIRST and is waiting: DGAI #728 reads the top-level
+  // slot (`mapV5AnalysisToReport`) with a nested fallback, and mounts
+  // `ConditionalWinnerCards` on the live arm gated on `length > 0`.
+  //
+  // ⚠ CLAIM-SAFETY: THIS KEY NAMES OPTIONS, AND ITS RULING IS `projected`, NOT
+  // PASS-THROUGH. The 0.30.0 VOI family is pass-through precisely BECAUSE no
+  // field of those shapes names an option; that licence does NOT transfer here.
+  // Each bucket carries `winner_id` / `winner_label` / `runner_up_id` /
+  // `runner_up_label` — raw option identity — so on a turn whose verdict
+  // withholds the leading-option claim, forwarding a row verbatim would name
+  // which option leads in each bucket, which is the claim CEE just declined to
+  // make. CEE's withheld-claim projection therefore strips exactly those four
+  // members per bucket and keeps the factor-level science (`factor_id`,
+  // `split_value`, `winner_flips`, and the anonymous bucket probabilities).
+  // Dropping the key whole would be the over-suppression failure instead.
+  //
+  // That is why the four identity members are OPTIONAL in
+  // `EnrichmentConditionalBucketSchema` while PLoT emits them as required —
+  // see the absence-semantics note on that schema. A required member there
+  // would make CEE's own projected shape unparseable at the consumer.
+  'conditional_winners',
 ] as const;
 export type CeeUiEnrichmentKeepKey = (typeof CEE_UI_ENRICHMENT_KEEP_LIST)[number];
 

@@ -209,7 +209,10 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   branch on the existing strict union, with its own maximal exemplar.
     // 0.43.0 (+2): the strict canonical committed-graph block and its
     //   discriminator-free response receipt projection.
-    expect(MAXIMAL_FIXTURES.length).toBe(163);
+    // 0.44.0 (+2): EnrichmentConditionalWinnerSchema and its nested
+    //   EnrichmentConditionalBucketSchema — the conditional-winners transport
+    //   key (ROADMAP 2.177).
+    expect(MAXIMAL_FIXTURES.length).toBe(165);
   });
 
   it('family keys are unique', () => {

@@ -246,6 +246,9 @@ export {
   EnrichmentDecisionReviewSchema,
   EnrichmentConstraintResultSchema,
   EnrichmentConditionalProbabilitySchema,
+  // 0.44.0 — per-factor conditional winners (ROADMAP 2.177)
+  EnrichmentConditionalWinnerSchema,
+  EnrichmentConditionalBucketSchema,
   // F6 — constraint margin + scale/decision-grade provenance (schemas #16)
   EnrichmentConstraintMarginSchema,
   EnrichmentScaleProvenanceSchema,
@@ -279,6 +282,8 @@ export type {
   EnrichmentDecisionReview,
   EnrichmentConstraintResult,
   EnrichmentConditionalProbability,
+  EnrichmentConditionalWinner,
+  EnrichmentConditionalBucket,
   // F6 — constraint margin + scale/decision-grade provenance (schemas #16)
   EnrichmentConstraintMargin,
   EnrichmentScaleProvenance,

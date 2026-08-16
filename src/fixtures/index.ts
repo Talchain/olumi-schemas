@@ -178,6 +178,8 @@ import {
   EnrichmentDecisionReviewSchema,
   EnrichmentConstraintResultSchema,
   EnrichmentConditionalProbabilitySchema,
+  EnrichmentConditionalWinnerSchema,
+  EnrichmentConditionalBucketSchema,
   // F6 — constraint margin + scale/decision-grade provenance (schemas #16)
   EnrichmentConstraintMarginSchema,
   EnrichmentScaleProvenanceSchema,
@@ -1110,6 +1112,39 @@ export const maximalEnrichmentConditionalProbability = deepFreeze({
   [PROBE]: true,
 });
 
+/**
+ * One conditional-winner bucket, MAXIMAL — every optional member populated,
+ * including the four option-identity members.
+ *
+ * ⚠ THIS IS THE PERMITTED-TURN SHAPE ON PURPOSE. The maximality ratchet needs
+ * every optional field populated, and the four identity members are optional in
+ * the contract only because CEE's withheld-claim projection strips them on a
+ * withheld-leader turn. A fixture is not evidence about the wire (parent
+ * CLAUDE.md trap 16-inverse), and the WITHHELD shape is pinned where it is
+ * produced — in CEE, against the real projection — not here.
+ */
+export const maximalEnrichmentConditionalBucket = deepFreeze({
+  winner_id: 'fixture_option_alpha',
+  winner_label: 'Fixture Option Alpha',
+  runner_up_id: 'fixture_option_bravo',
+  runner_up_label: 'Fixture Option Bravo',
+  win_probability: 0.62,
+  mean_outcome: 128000,
+  [PROBE]: true,
+});
+
+export const maximalEnrichmentConditionalWinner = deepFreeze({
+  factor_id: 'fixture_factor_unit_cost',
+  factor_label: 'Fixture unit cost',
+  split_value: 42.5,
+  split_unit: 'GBP',
+  low_bucket: maximalEnrichmentConditionalBucket,
+  high_bucket: maximalEnrichmentConditionalBucket,
+  winner_flips: true,
+  _normalised: false,
+  [PROBE]: true,
+});
+
 export const maximalAnalysisEnrichment = deepFreeze({
   analysis_status: 'computed',
   status_reason: 'FIXTURE_computed_normally',
@@ -1135,6 +1170,7 @@ export const maximalAnalysisEnrichment = deepFreeze({
   },
   constraint_results: [maximalEnrichmentConstraintResult],
   conditional_probabilities: [maximalEnrichmentConditionalProbability],
+  conditional_winners: [maximalEnrichmentConditionalWinner],
   m1_coaching: maximalEnrichmentM1Coaching,
   decision_review: maximalEnrichmentDecisionReview,
   // 0.19.0 (wave-2 ask 3) — PLoT #200 leader band, typed open. The
@@ -2682,6 +2718,18 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/EnrichmentConditionalProbabilitySchema',
     schema: EnrichmentConditionalProbabilitySchema,
     fixture: maximalEnrichmentConditionalProbability,
+  },
+  {
+    family: 'boundary/EnrichmentConditionalWinnerSchema',
+    schema: EnrichmentConditionalWinnerSchema,
+    fixture: maximalEnrichmentConditionalWinner,
+    notes:
+      'The fixture is the PERMITTED-turn shape, with all four bucket identity members populated, because the maximality ratchet requires every optional field exercised. Those members are optional in the contract solely so a conforming WITHHELD projection parses: CEE strips winner_id / winner_label / runner_up_id / runner_up_label per bucket on a turn whose verdict withholds the leading-option claim, and keeps the factor-level science. The withheld shape is pinned against the real projection in CEE, not by a fixture here.',
+  },
+  {
+    family: 'boundary/EnrichmentConditionalBucketSchema',
+    schema: EnrichmentConditionalBucketSchema,
+    fixture: maximalEnrichmentConditionalBucket,
   },
   {
     family: 'boundary/EnrichmentFactorEvppiEntrySchema',

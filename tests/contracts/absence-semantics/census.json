@@ -1,18 +1,18 @@
 {
   "_doc": [
-    "ABSENCE-SEMANTICS CENSUS — the annotation half of the two-states-one-byte gate.",
+    "ABSENCE-SEMANTICS CENSUS \u2014 the annotation half of the two-states-one-byte gate.",
     "",
     "ONE QUESTION PER ROW: does the ABSENCE of this field mean something DIFFERENT from its",
     "default / empty / null value? If yes the wire needs a discriminator (or the field needs to",
     "be required), because absence and default are otherwise the same byte to a consumer.",
     "",
-    "  distinct   — absence carries a meaning no value can express. NEEDS a discriminator or",
+    "  distinct   \u2014 absence carries a meaning no value can express. NEEDS a discriminator or",
     "               required-ness. `ref` must point at the evidence (schema comment, seed",
     "               instance, PR/row reference). This is a DEBT ROW, not a resolved one: the",
     "               fix rides its own train (most ride 0.28 adoption).",
-    "  same       — absence is equivalent to the default/empty value. Harmless. `note` must say",
+    "  same       \u2014 absence is equivalent to the default/empty value. Harmless. `note` must say",
     "               why, quoting the contract where it says so.",
-    "  unresolved — nobody has answered yet. ALLOWED, COUNTED, and pinned by `unresolved_count`",
+    "  unresolved \u2014 nobody has answered yet. ALLOWED, COUNTED, and pinned by `unresolved_count`",
     "               so the debt can shrink but not silently grow.",
     "",
     "NEVER GUESS. `distinct` and `same` are seeded ONLY where one of the six seed instances or the",
@@ -22,7 +22,7 @@
     "THE `fields` KEYS AND `markers` ARE DERIVED, NOT AUTHORED. tests/contracts/absence-semantics/",
     "absence-walk.ts walks the exported Zod graph; the gate diffs this table against that walk and",
     "REDs on any difference in either direction. Editing a key or a marker by hand only breaks the",
-    "gate — including changing `optional` to `optional`+`default` on an existing field, which is a",
+    "gate \u2014 including changing `optional` to `optional`+`default` on an existing field, which is a",
     "SILENT ABSENCE-SEMANTICS CHANGE and the single most valuable thing this table catches."
   ],
   "seed_instances": {
@@ -34,12 +34,12 @@
     "1_cee_may_name_leading_option_provenance": {
       "shape": "a `true` from \"permitted\" and a `true` from \"blind\" are one wire byte",
       "visible_to_this_gate": false,
-      "why": "ConstraintVerdictSchema.may_name_leading_option is a REQUIRED z.boolean() — no optionality marker, so it is outside this census by construction. The provenance distinction lives in CEE doctrine (MAY_NAME_LEADING_OPTION[state]), which src/orchestrator/handler-results.ts deliberately does not mirror. A required-field-provenance census is a DIFFERENT instrument."
+      "why": "ConstraintVerdictSchema.may_name_leading_option is a REQUIRED z.boolean() \u2014 no optionality marker, so it is outside this census by construction. The provenance distinction lives in CEE doctrine (MAY_NAME_LEADING_OPTION[state]), which src/orchestrator/handler-results.ts deliberately does not mirror. A required-field-provenance census is a DIFFERENT instrument."
     },
     "2_cee_fail_closed_uninterpretable": {
       "shape": "fail-closed marker whose absence and whose false are not the same claim",
       "visible_to_this_gate": false,
-      "why": "No field of this name exists in @talchain/schemas at 0.28.0 (grepped). It is CEE-internal, so no schema-side instrument in THIS repo can see it. The same SHAPE is visible here and IS caught — see the ABSENCE_FAIL_CLOSED_RULE rows, which are exactly this pattern typed into the contract."
+      "why": "No field of this name exists in @talchain/schemas at 0.28.0 (grepped). It is CEE-internal, so no schema-side instrument in THIS repo can see it. The same SHAPE is visible here and IS caught \u2014 see the ABSENCE_FAIL_CLOSED_RULE rows, which are exactly this pattern typed into the contract."
     },
     "3_plot_meta_constraint_sources": {
       "shape": "present-but-empty vs absent are different claims, no discriminator",
@@ -47,14 +47,14 @@
       "why": "Every optional array/record in the contract has this shape. Caught as a row; boundary/DraftGraphBlockSchema.goal_constraints is now the resolved `distinct` example: omission is an unattested legacy partial while `[]` is an explicit canonical clear. EnrichmentOptionComparisonEntrySchema.constraint_probabilities remains open."
     },
     "4_plot_fabricate_on_absence": {
-      "shape": "`?? 0` — absence coalesced into a real-looking measurement",
+      "shape": "`?? 0` \u2014 absence coalesced into a real-looking measurement",
       "visible_to_this_gate": true,
-      "why": "Two forms are visible: an optional numeric field a consumer may coalesce (EnrichmentConstraintMarginSchema.failure_margin_median, EnrichmentRobustnessEdgeSchema.switch_probability), and the contract-side twin where the VALIDATOR does the coalescing — a `.default()`, which no consumer can even detect. The census marks the latter with the `default` marker; there is exactly one in the contract today."
+      "why": "Two forms are visible: an optional numeric field a consumer may coalesce (EnrichmentConstraintMarginSchema.failure_margin_median, EnrichmentRobustnessEdgeSchema.switch_probability), and the contract-side twin where the VALIDATOR does the coalescing \u2014 a `.default()`, which no consumer can even detect. The census marks the latter with the `default` marker; there is exactly one in the contract today."
     },
     "5_plot_denormalise_absence_in_absence_out": {
       "shape": "a transform that passes absence through, so the output shape is not the input shape",
       "visible_to_this_gate": "partially",
-      "why": "The transform itself is PLoT code. Its schema-side signature — a `.transform()` between a declaration and its shape, where the OUTPUT a consumer receives is not derivable from the input schema — is detected by the walker as UNPARSEABLE kind `effects-transform`. There are ZERO such constructs in the contract at 0.28.0, which is itself the finding: the contract never transforms, so every absence it declares reaches the consumer as absence."
+      "why": "The transform itself is PLoT code. Its schema-side signature \u2014 a `.transform()` between a declaration and its shape, where the OUTPUT a consumer receives is not derivable from the input schema \u2014 is detected by the walker as UNPARSEABLE kind `effects-transform`. There are ZERO such constructs in the contract at 0.28.0, which is itself the finding: the contract never transforms, so every absence it declares reaches the consumer as absence."
     },
     "6_ui_leading_option_id_null": {
       "shape": "null treated as the entire withheld contract",
@@ -63,18 +63,18 @@
     }
   },
   "counts": {
-    "distinct": 62,
+    "distinct": 64,
     "same": 8,
-    "unresolved": 387
+    "unresolved": 393
   },
   "open_objects": {
     "_doc": [
       "Objects that accept keys OUTSIDE their declared shape (`.passthrough()` or a catchall), so",
-      "the census CANNOT be complete over them by construction — an undeclared key is an",
+      "the census CANNOT be complete over them by construction \u2014 an undeclared key is an",
       "un-enumerable absence. This is workspace-CLAUDE.md hazard 2 (the untyped PLoT->CEE",
       "enrichment seam) measured field by field. The set is PINNED: a new passthrough object is a",
       "new hole in the census and REDs this gate. It shrinks as namespaces are tightened.",
-      "By contrast /orchestrator is 100% `.strict()` — every open object below is elsewhere."
+      "By contrast /orchestrator is 100% `.strict()` \u2014 every open object below is elsewhere."
     ],
     "keys": [
       "boundary/AnalysisEnrichmentSchema",
@@ -96,7 +96,9 @@
       "boundary/DraftGoalConstraintSchema.deadline_metadata",
       "boundary/DraftGoalConstraintSchema.provenance_unit_normalised",
       "boundary/EdgeV3Schema",
+      "boundary/EnrichmentConditionalBucketSchema",
       "boundary/EnrichmentConditionalProbabilitySchema",
+      "boundary/EnrichmentConditionalWinnerSchema",
       "boundary/EnrichmentConfidenceProvenanceSchema",
       "boundary/EnrichmentConstraintMarginSchema",
       "boundary/EnrichmentConstraintResultSchema",
@@ -198,6 +200,12 @@
       ],
       "verdict": "unresolved"
     },
+    "boundary/AnalysisEnrichmentSchema.conditional_winners": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
     "boundary/AnalysisEnrichmentSchema.confidence_tier": {
       "markers": [
         "optional"
@@ -222,7 +230,7 @@
         "nullable"
       ],
       "verdict": "unresolved",
-      "note": "Absent vs present-and-empty is unestablished. ISL owns the shape and the only member evidenced at 0.30.0 is `suppressed_attributions`; nothing states whether an emitted-but-empty disclosure differs from no disclosure. Load-bearing because this object is the DISCRIMINATOR for p_win_sensitivity's absence (see that row) — if `{}` and absent mean different things, the discriminator itself has the defect it resolves."
+      "note": "Absent vs present-and-empty is unestablished. ISL owns the shape and the only member evidenced at 0.30.0 is `suppressed_attributions`; nothing states whether an emitted-but-empty disclosure differs from no disclosure. Load-bearing because this object is the DISCRIMINATOR for p_win_sensitivity's absence (see that row) \u2014 if `{}` and absent mean different things, the discriminator itself has the defect it resolves."
     },
     "boundary/AnalysisEnrichmentSchema.critiques": {
       "markers": [
@@ -350,8 +358,8 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Schema comment: \"Optional so pinned consumers are unaffected until re-vendored; absent = no computed-against assertion.\" Absence means NO CLAIM WAS MADE, which is not the same as any hash value — the freshness check must branch on presence, never compare against a fabricated one.",
-      "ref": "src/boundary/blocks.ts — AnalysisResultBlockSchema.computed_against_hash comment (0.22.0 S1)"
+      "note": "Schema comment: \"Optional so pinned consumers are unaffected until re-vendored; absent = no computed-against assertion.\" Absence means NO CLAIM WAS MADE, which is not the same as any hash value \u2014 the freshness check must branch on presence, never compare against a fabricated one.",
+      "ref": "src/boundary/blocks.ts \u2014 AnalysisResultBlockSchema.computed_against_hash comment (0.22.0 S1)"
     },
     "boundary/AnalysisResultBlockSchema.enrichment": {
       "markers": [
@@ -364,8 +372,8 @@
         "nullable"
       ],
       "verdict": "distinct",
-      "note": "SEED INSTANCE #6 (UI). `z.string().nullable()` — the key is REQUIRED, so `null` is the only channel for every withholding reason at once: a genuine tie, a constraint verdict that forbids naming a leader, and \"no analysis ran\" are one byte. The discriminator that resolves it already exists on the same wire (ConstraintVerdictSchema.constraint_verdict_state, 0.25.0), but nothing in the contract ties the two together.",
-      "ref": "src/boundary/blocks.ts:58 — AnalysisResultBlockSchema.leading_option_id; seed instance #6; discriminator candidate: src/orchestrator/handler-results.ts ConstraintVerdictSchema"
+      "note": "SEED INSTANCE #6 (UI). `z.string().nullable()` \u2014 the key is REQUIRED, so `null` is the only channel for every withholding reason at once: a genuine tie, a constraint verdict that forbids naming a leader, and \"no analysis ran\" are one byte. The discriminator that resolves it already exists on the same wire (ConstraintVerdictSchema.constraint_verdict_state, 0.25.0), but nothing in the contract ties the two together.",
+      "ref": "src/boundary/blocks.ts:58 \u2014 AnalysisResultBlockSchema.leading_option_id; seed instance #6; discriminator candidate: src/orchestrator/handler-results.ts ConstraintVerdictSchema"
     },
     "boundary/AnalysisResultBlockSchema.win_probabilities": {
       "markers": [
@@ -427,7 +435,7 @@
       ],
       "verdict": "distinct",
       "note": "Absence <=> the producing path does not stamp gesture-source provenance (every pre-0.39 directive, and any future producer that omits it). No enum member expresses that: a consumer MUST NOT infer 'ladder' from absence - absence is 'not stamped', never a source claim. Never null, no default (the 0.32.0 ui_target convention, applied verbatim).",
-      "ref": "src/boundary/blocks.ts - UiDirectiveSource doc comment (0.39.0 car 2, ROADMAP 2.701; UI-DIRECTIVE-0.38-DESIGN §2.3)"
+      "ref": "src/boundary/blocks.ts - UiDirectiveSource doc comment (0.39.0 car 2, ROADMAP 2.701; UI-DIRECTIVE-0.38-DESIGN \u00a72.3)"
     },
     "boundary/BlockSchema|type=ui_directive.ui_target": {
       "markers": [
@@ -443,7 +451,7 @@
       ],
       "verdict": "same",
       "note": "The key is required for canonical producers, so omission is rejected. `null` is the sole explicit canonical no-goal value and never aliases an omitted wire state.",
-      "ref": "src/boundary/blocks.ts — CanonicalCommittedGraphBlockSchema.goal_node_id required nullable contract (0.43.0)"
+      "ref": "src/boundary/blocks.ts \u2014 CanonicalCommittedGraphBlockSchema.goal_node_id required nullable contract (0.43.0)"
     },
     "boundary/CanonicalCommittedGraphReceiptSchema.goal_node_id": {
       "markers": [
@@ -451,7 +459,7 @@
       ],
       "verdict": "same",
       "note": "The receipt projection preserves requiredness: omission is invalid, while `null` is the only canonical attestation that the committed graph has no goal.",
-      "ref": "src/boundary/blocks.ts — CanonicalCommittedGraphReceiptSchema.goal_node_id required nullable contract (0.43.0)"
+      "ref": "src/boundary/blocks.ts \u2014 CanonicalCommittedGraphReceiptSchema.goal_node_id required nullable contract (0.43.0)"
     },
     "boundary/ChipSchema.action": {
       "markers": [
@@ -580,7 +588,7 @@
       ],
       "verdict": "distinct",
       "note": "Same block comment as stakes: \"absence is never defaulted\". Horizon is the user's OWN wording, so an empty string and an unassessed horizon are different claims about the user.",
-      "ref": "src/boundary/olumi-response.ts — DecisionClassificationSchema block comment"
+      "ref": "src/boundary/olumi-response.ts \u2014 DecisionClassificationSchema block comment"
     },
     "boundary/DecisionClassificationSchema.reversibility": {
       "markers": [
@@ -588,7 +596,7 @@
       ],
       "verdict": "distinct",
       "note": "Same block comment as stakes: \"absence is never defaulted\". A defaulted `reversible` on an unassessed decision is a fabricated safety claim.",
-      "ref": "src/boundary/olumi-response.ts — DecisionClassificationSchema block comment"
+      "ref": "src/boundary/olumi-response.ts \u2014 DecisionClassificationSchema block comment"
     },
     "boundary/DecisionClassificationSchema.risk": {
       "markers": [
@@ -596,15 +604,15 @@
       ],
       "verdict": "distinct",
       "note": "Same block comment as stakes: \"absence is never defaulted\". Defaulting risk appetite to `balanced` asserts a user stance nobody elicited.",
-      "ref": "src/boundary/olumi-response.ts — DecisionClassificationSchema block comment"
+      "ref": "src/boundary/olumi-response.ts \u2014 DecisionClassificationSchema block comment"
     },
     "boundary/DecisionClassificationSchema.stakes": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Block comment on DecisionClassificationSchema: \"a producer states only what it actually assessed, and a consumer renders 'not set' for absent dimensions — partial classification is honest, absence is never defaulted.\" Per-dimension absence is a first-class state.",
-      "ref": "src/boundary/olumi-response.ts — DecisionClassificationSchema block comment"
+      "note": "Block comment on DecisionClassificationSchema: \"a producer states only what it actually assessed, and a consumer renders 'not set' for absent dimensions \u2014 partial classification is honest, absence is never defaulted.\" Per-dimension absence is a first-class state.",
+      "ref": "src/boundary/olumi-response.ts \u2014 DecisionClassificationSchema block comment"
     },
     "boundary/DecisionRecordAnalysisSummarySchema.goal_fit": {
       "markers": [
@@ -641,8 +649,8 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Schema comment: \"Optional; absent means the record predates the commit action (or was auto-captured) — a disclosed inference, never a fabricated value.\" Absence is explicitly NOT equal to `false`: false asserts ambient capture, absence asserts we cannot tell.",
-      "ref": "src/boundary/decision-record.ts — DecisionRecordDecisionSchema.committed_by_user comment (0.16.0 lane 3a)"
+      "note": "Schema comment: \"Optional; absent means the record predates the commit action (or was auto-captured) \u2014 a disclosed inference, never a fabricated value.\" Absence is explicitly NOT equal to `false`: false asserts ambient capture, absence asserts we cannot tell.",
+      "ref": "src/boundary/decision-record.ts \u2014 DecisionRecordDecisionSchema.committed_by_user comment (0.16.0 lane 3a)"
     },
     "boundary/DecisionRecordOutcomeSchema.brier_component": {
       "markers": [
@@ -674,7 +682,7 @@
       ],
       "verdict": "distinct",
       "note": "Schema comment: \"Both optional-forward: absent whenever no goal target existed at capture.\" Absence means NO GOAL EXISTED; 0 means the option was measured to miss it. Coalescing the two corrupts every calibration score computed off this record.",
-      "ref": "src/boundary/decision-record.ts — DecisionRecordPredictionSchema block comment (0.16.0, D-N Option-B)"
+      "ref": "src/boundary/decision-record.ts \u2014 DecisionRecordPredictionSchema block comment (0.16.0, D-N Option-B)"
     },
     "boundary/DecisionRecordPredictionSchema.probability_of_joint_goal": {
       "markers": [
@@ -682,7 +690,7 @@
       ],
       "verdict": "distinct",
       "note": "Same comment as probability_of_goal: \"absent whenever no goal target existed at capture.\" Absence is a statement about the DECISION, not about the probability.",
-      "ref": "src/boundary/decision-record.ts — DecisionRecordPredictionSchema block comment (0.16.0, D-N Option-B)"
+      "ref": "src/boundary/decision-record.ts \u2014 DecisionRecordPredictionSchema block comment (0.16.0, D-N Option-B)"
     },
     "boundary/DecisionRecordSchema.outcome": {
       "markers": [
@@ -772,7 +780,7 @@
       ],
       "verdict": "distinct",
       "note": "0.43.0 makes the legacy/canonical split explicit: omission means a legacy partial producer made no constraints attestation, while `[]` is the canonical producer's positive attestation that the committed graph has no constraints. Omission therefore cannot authorise deletion.",
-      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_constraints doc comment (0.43.0 canonical receipt semantics)"
+      "ref": "src/boundary/blocks.ts \u2014 DraftGraphBlockSchema.goal_constraints doc comment (0.43.0 canonical receipt semantics)"
     },
     "boundary/DraftGraphBlockSchema.goal_node_id": {
       "markers": [
@@ -781,7 +789,7 @@
       ],
       "verdict": "distinct",
       "note": "Omission means a legacy partial producer did not carry the goal hash field. `null` is a canonical attestation that the committed graph has no goal. Those states are deliberately different so omission never masquerades as deletion.",
-      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_node_id doc comment (0.43.0)"
+      "ref": "src/boundary/blocks.ts \u2014 DraftGraphBlockSchema.goal_node_id doc comment (0.43.0)"
     },
     "boundary/DraftGraphBlockSchema.options": {
       "markers": [
@@ -789,7 +797,7 @@
       ],
       "verdict": "distinct",
       "note": "Omission means a legacy partial producer made no complete options attestation. `[]` is the canonical producer's positive attestation that the committed graph has no options, so omission must not clear state.",
-      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.options doc comment (0.43.0)"
+      "ref": "src/boundary/blocks.ts \u2014 DraftGraphBlockSchema.options doc comment (0.43.0)"
     },
     "boundary/DskClaimProvenanceSchema.protocol_id": {
       "markers": [
@@ -805,7 +813,7 @@
         "default"
       ],
       "verdict": "unresolved",
-      "note": "LEAD — the only `.default()` in the whole contract (src/graph.ts:67, `EdgeType.optional().default('directed')`). A default is `?? 0` promoted into the contract: the VALIDATOR materialises `directed` on absence, so no consumer can ever observe the difference between \"the producer modelled this edge as directed\" and \"the producer said nothing about direction\". Whether that difference MATTERS is the unanswered question — record the answer here, do not guess it."
+      "note": "LEAD \u2014 the only `.default()` in the whole contract (src/graph.ts:67, `EdgeType.optional().default('directed')`). A default is `?? 0` promoted into the contract: the VALIDATOR materialises `directed` on absence, so no consumer can ever observe the difference between \"the producer modelled this edge as directed\" and \"the producer said nothing about direction\". Whether that difference MATTERS is the unanswered question \u2014 record the answer here, do not guess it."
     },
     "boundary/EdgeV3Schema.effect_direction": {
       "markers": [
@@ -825,7 +833,7 @@
       ],
       "verdict": "distinct",
       "note": "Present iff the author STATED WORDS (verbatim, never normalised); absent = numeric/derived input - never 'words lost'. No string value can express 'no words were stated'.",
-      "ref": "src/boundary/collab.ts - ElicitationProvenanceSchema doc comment (0.39.0 car 4, G2 §4.2)"
+      "ref": "src/boundary/collab.ts - ElicitationProvenanceSchema doc comment (0.39.0 car 4, G2 \u00a74.2)"
     },
     "boundary/ElicitationRoundSchema.context_note": {
       "markers": [
@@ -833,9 +841,55 @@
       ],
       "verdict": "distinct",
       "note": "Present iff the owner authored shared framing (participant-visible by design); absent = the owner authored none. Never defaulted - an empty-string note is unparseable (min 1), so absence is the only 'no framing' state.",
-      "ref": "src/boundary/collab.ts - ElicitationRoundSchema doc comment (0.39.0 car 4, G2 §4.1)"
+      "ref": "src/boundary/collab.ts - ElicitationRoundSchema doc comment (0.39.0 car 4, G2 \u00a74.1)"
+    },
+    "boundary/EnrichmentConditionalBucketSchema.mean_outcome": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentConditionalBucketSchema.runner_up_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentConditionalBucketSchema.runner_up_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentConditionalBucketSchema.winner_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "ABSENCE MEANS WITHHELD, AND NO VALUE CAN SAY SO. PLoT emits this member as REQUIRED (src/types/engine-v3.ts ConditionalBucket, derived at PLoT staging a5345a5e), so on the PLoT->CEE seam it is always present. On the CEE->UI seam CEE's withheld-claim projection strips it on a turn whose verdict withholds the leading-option claim. Absence therefore means 'the leading option was withheld on this turn' - never 'no option won', and never a deletion instruction. There is no discriminator ON THE ROW; the turn's own withheld disclosure rides the same block and is what separates the states today. THIS IS DEBT, NOT A FIX: it is recorded here per the census rule that a distinct row's fix rides its own train. The conflation is not hypothetical - the shipped UI consumer coerces the missing member to the empty string (DecisionGuideAI useResultsSectionData.ts, staging 8e6f7629: String(w.high_bucket?.winner_label ?? w.high_bucket?.label ?? '')) and then compares the two buckets' labels for equality, so a withheld row is indistinguishable from a row whose winner is genuinely unlabelled.",
+      "ref": "src/boundary/enrichment.ts - EnrichmentConditionalBucketSchema absence-semantics note (0.44.0) + CEE src/orchestrator-v5/compose/withheld-claim-projection.ts projectConditionalWinnersForWithheldClaim"
+    },
+    "boundary/EnrichmentConditionalBucketSchema.winner_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "ABSENCE MEANS WITHHELD, AND NO VALUE CAN SAY SO. PLoT emits this member as REQUIRED (src/types/engine-v3.ts ConditionalBucket, derived at PLoT staging a5345a5e), so on the PLoT->CEE seam it is always present. On the CEE->UI seam CEE's withheld-claim projection strips it on a turn whose verdict withholds the leading-option claim. Absence therefore means 'the leading option was withheld on this turn' - never 'no option won', and never a deletion instruction. There is no discriminator ON THE ROW; the turn's own withheld disclosure rides the same block and is what separates the states today. THIS IS DEBT, NOT A FIX: it is recorded here per the census rule that a distinct row's fix rides its own train. The conflation is not hypothetical - the shipped UI consumer coerces the missing member to the empty string (DecisionGuideAI useResultsSectionData.ts, staging 8e6f7629: String(w.high_bucket?.winner_label ?? w.high_bucket?.label ?? '')) and then compares the two buckets' labels for equality, so a withheld row is indistinguishable from a row whose winner is genuinely unlabelled.",
+      "ref": "src/boundary/enrichment.ts - EnrichmentConditionalBucketSchema absence-semantics note (0.44.0) + CEE src/orchestrator-v5/compose/withheld-claim-projection.ts projectConditionalWinnersForWithheldClaim"
     },
     "boundary/EnrichmentConditionalProbabilitySchema.effective_sample_size": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentConditionalWinnerSchema._normalised": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentConditionalWinnerSchema.split_unit": {
       "markers": [
         "optional"
       ],
@@ -846,24 +900,24 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Schema block comment: \"Absent margin fields are OMITTED, never zeroed — missing != zero (a fabricated 0 read by a live consumer was the exact defect PLoT's producer-honesty gate closed).\" This is the contract-side twin of seed instance #4 (PLoT `?? 0` fabricate-on-absence).",
-      "ref": "src/boundary/enrichment.ts — EnrichmentConstraintMarginSchema block comment; seed instance #4 (PLoT `?? 0`)"
+      "note": "Schema block comment: \"Absent margin fields are OMITTED, never zeroed \u2014 missing != zero (a fabricated 0 read by a live consumer was the exact defect PLoT's producer-honesty gate closed).\" This is the contract-side twin of seed instance #4 (PLoT `?? 0` fabricate-on-absence).",
+      "ref": "src/boundary/enrichment.ts \u2014 EnrichmentConstraintMarginSchema block comment; seed instance #4 (PLoT `?? 0`)"
     },
     "boundary/EnrichmentConstraintMarginSchema.margin_precision": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Field .describe(): \"Absent means precision is unknown; consumers MUST NOT assume exactness.\" Absence names a third state the enum cannot express — the vocabulary is {exact, lower_bound} and \"unknown\" exists only as key-absence.",
-      "ref": "src/boundary/enrichment.ts — EnrichmentConstraintMarginSchema.margin_precision .describe()"
+      "note": "Field .describe(): \"Absent means precision is unknown; consumers MUST NOT assume exactness.\" Absence names a third state the enum cannot express \u2014 the vocabulary is {exact, lower_bound} and \"unknown\" exists only as key-absence.",
+      "ref": "src/boundary/enrichment.ts \u2014 EnrichmentConstraintMarginSchema.margin_precision .describe()"
     },
     "boundary/EnrichmentConstraintMarginSchema.near_miss_fraction": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Same block comment as failure_margin_median: \"Absent margin fields are OMITTED, never zeroed — missing != zero.\" A rate in [0,1] whose absence is indistinguishable from a measured 0 unless the consumer branches on key presence.",
-      "ref": "src/boundary/enrichment.ts — EnrichmentConstraintMarginSchema block comment; seed instance #4 (PLoT `?? 0`)"
+      "note": "Same block comment as failure_margin_median: \"Absent margin fields are OMITTED, never zeroed \u2014 missing != zero.\" A rate in [0,1] whose absence is indistinguishable from a measured 0 unless the consumer branches on key presence.",
+      "ref": "src/boundary/enrichment.ts \u2014 EnrichmentConstraintMarginSchema block comment; seed instance #4 (PLoT `?? 0`)"
     },
     "boundary/EnrichmentConstraintResultSchema.probability": {
       "markers": [
@@ -876,8 +930,8 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "The field carries the contract-frozen ABSENCE_FAIL_CLOSED_RULE .describe() text: \"Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy.\" Absence is therefore a TRUST VERDICT, not a missing convenience — and it is carried by the absence of a boolean whose only other state is `true`, so a consumer that defaults it reads untrusted data as trusted.",
-      "ref": "src/boundary/enrichment.ts — ABSENCE_FAIL_CLOSED_RULE .describe()"
+      "note": "The field carries the contract-frozen ABSENCE_FAIL_CLOSED_RULE .describe() text: \"Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy.\" Absence is therefore a TRUST VERDICT, not a missing convenience \u2014 and it is carried by the absence of a boolean whose only other state is `true`, so a consumer that defaults it reads untrusted data as trusted.",
+      "ref": "src/boundary/enrichment.ts \u2014 ABSENCE_FAIL_CLOSED_RULE .describe()"
     },
     "boundary/EnrichmentCritiqueSchema.affected_node_ids": {
       "markers": [
@@ -980,104 +1034,104 @@
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.clamped_high": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.clamped_low": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.conditional_max_expected_utility": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.correlation_active": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.evppi": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.evppi_raw": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.method": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.n_samples": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.noise_floor": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.regression_degree": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.status": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorEvppiEntrySchema.units": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire — which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
-      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 — the row that must be read to resolve this)"
+      "note": "0.30.0 transport-tolerance, not a producer state. Every field on an ISL FactorEvppiEntryV2 row appears to be carried by every emission, but this repo typed them OPTIONAL deliberately: the cost of being wrong in the REQUIRED direction is that one missing audit leg fails the parse of the WHOLE enrichment envelope at CEE's plot-client, while the cost of being wrong in the OPTIONAL direction is this row. The optionality is therefore this package's choice and carries NO claim about absence semantics on the wire \u2014 which is exactly why the verdict is `unresolved` and not a guess. Resolving it means reading ISL's own model, not this file: the per-field Optional[...] markers on FactorEvppiEntryV2 in Inference-Service-Layer src/models/response_v2.py.",
+      "ref": "isl:src/models/response_v2.py::FactorEvppiEntryV2 (unread at 0.30.0 \u2014 the row that must be read to resolve this)"
     },
     "boundary/EnrichmentFactorSensitivityEntrySchema._normalised": {
       "markers": [
@@ -1480,16 +1534,16 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Same suppression rule as probability_of_joint_goal. Note the SECOND edge here: this is a record, so \"suppressed\" (absent) and \"evaluated, no constraints\" (present-and-empty) are two states — the shape of seed instance #3 (PLoT `_meta.constraint_sources` present-empty vs absent).",
-      "ref": "src/boundary/enrichment.ts — EnrichmentOptionComparisonEntrySchema block comment; seed instance #3"
+      "note": "Same suppression rule as probability_of_joint_goal. Note the SECOND edge here: this is a record, so \"suppressed\" (absent) and \"evaluated, no constraints\" (present-and-empty) are two states \u2014 the shape of seed instance #3 (PLoT `_meta.constraint_sources` present-empty vs absent).",
+      "ref": "src/boundary/enrichment.ts \u2014 EnrichmentOptionComparisonEntrySchema block comment; seed instance #3"
     },
     "boundary/EnrichmentOptionComparisonEntrySchema.constraints_decision_grade": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "The field carries the contract-frozen ABSENCE_FAIL_CLOSED_RULE .describe() text: \"Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy.\" Absence is therefore a TRUST VERDICT, not a missing convenience — and it is carried by the absence of a boolean whose only other state is `true`, so a consumer that defaults it reads untrusted data as trusted.",
-      "ref": "src/boundary/enrichment.ts — ABSENCE_FAIL_CLOSED_RULE .describe()"
+      "note": "The field carries the contract-frozen ABSENCE_FAIL_CLOSED_RULE .describe() text: \"Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy.\" Absence is therefore a TRUST VERDICT, not a missing convenience \u2014 and it is carried by the absence of a boolean whose only other state is `true`, so a consumer that defaults it reads untrusted data as trusted.",
+      "ref": "src/boundary/enrichment.ts \u2014 ABSENCE_FAIL_CLOSED_RULE .describe()"
     },
     "boundary/EnrichmentOptionComparisonEntrySchema.expected_outcome": {
       "markers": [
@@ -1539,7 +1593,7 @@
       ],
       "verdict": "distinct",
       "note": "Schema block comment: the field is \"SUPPRESSED (absent) when any constraint target is unreliable\". Absence is a SUPPRESSION SIGNAL carrying a trust verdict, not a missing number; a consumer defaulting it to 0 renders a suppressed metric as a confident zero.",
-      "ref": "src/boundary/enrichment.ts — EnrichmentOptionComparisonEntrySchema block comment (PR #204/#205)"
+      "ref": "src/boundary/enrichment.ts \u2014 EnrichmentOptionComparisonEntrySchema block comment (PR #204/#205)"
     },
     "boundary/EnrichmentOptionComparisonEntrySchema.status": {
       "markers": [
@@ -1660,8 +1714,8 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Field .describe(): \"Absence means NOT COMPUTED — never 0 and never 1. A measured 0 is a real measurement and must be preserved.\" Absence and the numeric 0 are DIFFERENT CLAIMS and the wire carries no discriminator between them beyond key presence — so any consumer coalescing with `?? 0` converts \"we did not compute this\" into \"we measured zero fragility\".",
-      "ref": "src/boundary/enrichment.ts — EnrichmentRobustnessEdgeSchema.switch_probability .describe(); shipped 0.28.0 (PR #26, PLoT #278)"
+      "note": "Field .describe(): \"Absence means NOT COMPUTED \u2014 never 0 and never 1. A measured 0 is a real measurement and must be preserved.\" Absence and the numeric 0 are DIFFERENT CLAIMS and the wire carries no discriminator between them beyond key presence \u2014 so any consumer coalescing with `?? 0` converts \"we did not compute this\" into \"we measured zero fragility\".",
+      "ref": "src/boundary/enrichment.ts \u2014 EnrichmentRobustnessEdgeSchema.switch_probability .describe(); shipped 0.28.0 (PR #26, PLoT #278)"
     },
     "boundary/EnrichmentRobustnessEdgeSchema.to_label": {
       "markers": [
@@ -1735,7 +1789,7 @@
         "any-or-unknown"
       ],
       "verdict": "unresolved",
-      "note": "LEAD — `z.unknown().optional()` on a field named raw_value inside an error record. Two open questions, not one: (a) absence vs a present-but-undefined value, and (b) whether a raw upstream value belongs on this wire at all (cf. the R2 raw-value leak brief). Answer both before promoting this row out of unresolved."
+      "note": "LEAD \u2014 `z.unknown().optional()` on a field named raw_value inside an error record. Two open questions, not one: (a) absence vs a present-but-undefined value, and (b) whether a raw upstream value belongs on this wire at all (cf. the R2 raw-value leak brief). Answer both before promoting this row out of unresolved."
     },
     "boundary/EnrichmentRobustnessSchema.recommendation_stability": {
       "markers": [
@@ -1796,8 +1850,8 @@
         "optional"
       ],
       "verdict": "same",
-      "note": "Absence is harmless because NO value of this field can express it. The field is a strict object whose three members are all REQUIRED, so there is no empty/partial form to confuse absence with — `{}` and a lone `protocol_id` are both parse errors, by design. The contract says so directly: \"OPTIONAL by design: an exercise whose selection rules predate the bundle (CEE's `pre_mortem` lens) must be able to ship with NO provenance rather than claim one it does not have. Absence means 'not attributed', never 'unknown protocol'.\" Absence is therefore a POSITIVE editorial statement (this exercise claims no DSK protocol) and the only way to make it — which is the point: the atomicity that removes the id-without-verifiable-text shape (CEE #830) is the same property that removes this row's ambiguity.",
-      "ref": "src/boundary/blocks.ts — DskProtocolProvenanceSchema doc comment (0.37.0)"
+      "note": "Absence is harmless because NO value of this field can express it. The field is a strict object whose three members are all REQUIRED, so there is no empty/partial form to confuse absence with \u2014 `{}` and a lone `protocol_id` are both parse errors, by design. The contract says so directly: \"OPTIONAL by design: an exercise whose selection rules predate the bundle (CEE's `pre_mortem` lens) must be able to ship with NO provenance rather than claim one it does not have. Absence means 'not attributed', never 'unknown protocol'.\" Absence is therefore a POSITIVE editorial statement (this exercise claims no DSK protocol) and the only way to make it \u2014 which is the point: the atomicity that removes the id-without-verifiable-text shape (CEE #830) is the same property that removes this row's ambiguity.",
+      "ref": "src/boundary/blocks.ts \u2014 DskProtocolProvenanceSchema doc comment (0.37.0)"
     },
     "boundary/ExerciseBlockSchema.failure_scenario": {
       "markers": [
@@ -2035,7 +2089,7 @@
       ],
       "verdict": "distinct",
       "note": "Schema comment: \"Absent until the producing turn has actually assessed the decision; consumers MUST NOT default absent dimensions.\" Absence = unassessed, distinct from any classification.",
-      "ref": "src/boundary/olumi-response.ts — OlumiResponseSchema.decision_classification comment (0.19.0, UI-SEM-077)"
+      "ref": "src/boundary/olumi-response.ts \u2014 OlumiResponseSchema.decision_classification comment (0.19.0, UI-SEM-077)"
     },
     "boundary/OlumiResponseSchema.draft_graph": {
       "markers": [
@@ -2049,7 +2103,7 @@
       ],
       "verdict": "distinct",
       "note": "The response projection carries the 0.43.0 legacy/canonical split unchanged: omission is an unattested legacy partial receipt, while `[]` explicitly attests and clears the canonical committed constraint set.",
-      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_constraints comment, reached via OlumiResponseSchema.draft_graph"
+      "ref": "src/boundary/blocks.ts \u2014 DraftGraphBlockSchema.goal_constraints comment, reached via OlumiResponseSchema.draft_graph"
     },
     "boundary/OlumiResponseSchema.draft_graph.goal_node_id": {
       "markers": [
@@ -2058,7 +2112,7 @@
       ],
       "verdict": "distinct",
       "note": "The response projection preserves the canonical distinction: omission is an unattested legacy goal field; `null` explicitly attests that the committed graph has no goal. Omission is never a deletion instruction.",
-      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.goal_node_id comment, reached via OlumiResponseSchema.draft_graph"
+      "ref": "src/boundary/blocks.ts \u2014 DraftGraphBlockSchema.goal_node_id comment, reached via OlumiResponseSchema.draft_graph"
     },
     "boundary/OlumiResponseSchema.draft_graph.options": {
       "markers": [
@@ -2066,7 +2120,7 @@
       ],
       "verdict": "distinct",
       "note": "The response projection preserves the canonical distinction: omission is an unattested legacy options field; `[]` explicitly attests that the committed graph has no options and may clear prior state.",
-      "ref": "src/boundary/blocks.ts — DraftGraphBlockSchema.options comment, reached via OlumiResponseSchema.draft_graph"
+      "ref": "src/boundary/blocks.ts \u2014 DraftGraphBlockSchema.options comment, reached via OlumiResponseSchema.draft_graph"
     },
     "boundary/OlumiResponseSchema.framing_quality": {
       "markers": [
@@ -2074,15 +2128,15 @@
       ],
       "verdict": "distinct",
       "note": "Schema comment: \"Absent until the producing turn has actually assessed the framing; consumers MUST NOT derive a verdict client-side when it is absent.\" Absence = not assessed, which is a different claim from every value in {ready, thin, conflict}.",
-      "ref": "src/boundary/olumi-response.ts — OlumiResponseSchema.framing_quality comment (0.20.0, UI-SEM-079)"
+      "ref": "src/boundary/olumi-response.ts \u2014 OlumiResponseSchema.framing_quality comment (0.20.0, UI-SEM-079)"
     },
     "boundary/OlumiResponseSchema.framing_question": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Schema comment: \"when absent, the slot stays empty (fail closed — the UI's heuristic derivation retires rather than remaining as a fallback).\" Absence must NOT be filled by a client-side derivation; the whole point of the field is that a derived question was a measured leak.",
-      "ref": "src/boundary/olumi-response.ts — OlumiResponseSchema.framing_question comment (0.19.0, UI-SEM-078)"
+      "note": "Schema comment: \"when absent, the slot stays empty (fail closed \u2014 the UI's heuristic derivation retires rather than remaining as a fallback).\" Absence must NOT be filled by a client-side derivation; the whole point of the field is that a derived question was a measured leak.",
+      "ref": "src/boundary/olumi-response.ts \u2014 OlumiResponseSchema.framing_question comment (0.19.0, UI-SEM-078)"
     },
     "boundary/OlumiResponseSchema.graph_hash": {
       "markers": [
@@ -2090,7 +2144,7 @@
       ],
       "verdict": "distinct",
       "note": "Schema comment: \"Optional so pinned consumers are unaffected until they re-vendor 0.22.0; absent = no handshake asserted.\" Absence disables the GRAPH_DIVERGED check entirely; a defaulted value would silently assert a handshake the producer never made.",
-      "ref": "src/boundary/olumi-response.ts — OlumiResponseSchema.graph_hash comment (0.22.0 S1)"
+      "ref": "src/boundary/olumi-response.ts \u2014 OlumiResponseSchema.graph_hash comment (0.22.0 S1)"
     },
     "boundary/OlumiResponseSchema.reasoning": {
       "markers": [
@@ -2112,7 +2166,7 @@
       ],
       "verdict": "distinct",
       "note": "Absent = the prior fact predates edit tracking, so the list is underivable - C1's edit clause degrades honestly to 'you changed the model'. Present => the COMPLETE projection diff under the hash whitelist, never empty and never on an equal-hash pair (both refused by refineRunDelta) - so no array value, including [], can express 'underivable'.",
-      "ref": "src/boundary/run-delta.ts - edit_list doc comment + refineRunDelta (0.39.0 car 3, RUN-DELTA-DESIGN §b rule 2 / §d)"
+      "ref": "src/boundary/run-delta.ts - edit_list doc comment + refineRunDelta (0.39.0 car 3, RUN-DELTA-DESIGN \u00a7b rule 2 / \u00a7d)"
     },
     "boundary/OptimiseResponseSchema.meta.constraints_resolved.*.value": {
       "markers": [
@@ -2169,8 +2223,8 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absence means 'this apply cited no evidence' — which is every apply written before 0.41.0 and every ordinary one after it — and it NEVER means 'the citation was lost' (the field's own doc comment states both halves). No value can express absence: any present id NAMES an evidence row, i.e. asserts that a specific piece of somebody's reasoning moved the model. Presence changes SERVER behaviour rather than display: present => CEE MUST verify the cited event exists, is an evidence_attached row, is on THAT round and is about THAT target, and refuse loudly otherwise, before stamping it onto observed_state.elicited_from; absent => the 0.40.0 attributed-apply path, byte-unchanged. A consumer or server substituting a default id for absence would manufacture a citation nobody made — attributing a model change to evidence that never motivated it, which is the fabrication class this loop exists to kill, one field to the right of the attribution it already guards.",
-      "ref": "src/boundary/collab.ts — RoundParticipantRefSchema.evidence_event_id doc comment (0.41.0, canonical-mutation hop)"
+      "note": "Absence means 'this apply cited no evidence' \u2014 which is every apply written before 0.41.0 and every ordinary one after it \u2014 and it NEVER means 'the citation was lost' (the field's own doc comment states both halves). No value can express absence: any present id NAMES an evidence row, i.e. asserts that a specific piece of somebody's reasoning moved the model. Presence changes SERVER behaviour rather than display: present => CEE MUST verify the cited event exists, is an evidence_attached row, is on THAT round and is about THAT target, and refuse loudly otherwise, before stamping it onto observed_state.elicited_from; absent => the 0.40.0 attributed-apply path, byte-unchanged. A consumer or server substituting a default id for absence would manufacture a citation nobody made \u2014 attributing a model change to evidence that never motivated it, which is the fabrication class this loop exists to kill, one field to the right of the attribution it already guards.",
+      "ref": "src/boundary/collab.ts \u2014 RoundParticipantRefSchema.evidence_event_id doc comment (0.41.0, canonical-mutation hop)"
     },
     "boundary/RunDeltaFlipThresholdDeltaSchema.current_median": {
       "markers": [
@@ -2283,48 +2337,48 @@
         "optional"
       ],
       "verdict": "same",
-      "note": "Absence means 'the client supplied no edge id of its own', and the persisted record spells exactly that as null (EdgeAdjudicationResultSchema.edge_id: 'The client's own edge id as sent, or null when it sent none'). Nothing DECIDES on this field — edge identity is the required from+to pair — so absence and the null it maps to are equivalent by construction.",
-      "ref": "src/boundary/turn-payload.ts — EdgeAdjudicationEvent.edge_id doc (0.34.0); src/orchestrator/handler-results.ts — EdgeAdjudicationResultSchema.edge_id"
+      "note": "Absence means 'the client supplied no edge id of its own', and the persisted record spells exactly that as null (EdgeAdjudicationResultSchema.edge_id: 'The client's own edge id as sent, or null when it sent none'). Nothing DECIDES on this field \u2014 edge identity is the required from+to pair \u2014 so absence and the null it maps to are equivalent by construction.",
+      "ref": "src/boundary/turn-payload.ts \u2014 EdgeAdjudicationEvent.edge_id doc (0.34.0); src/orchestrator/handler-results.ts \u2014 EdgeAdjudicationResultSchema.edge_id"
     },
     "boundary/SystemEventSchema|kind=edge_adjudication.resolved_strength_mean": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absence means 'no value asserted', which no number can express — 0 is a legitimate signed mean. The coupling is enforced ON THE WIRE at the union-root superRefine: 'overridden' REQUIRES the value (an override asserts a number), 'dismissed' FORBIDS it (a dismissal asserts none), accepted_pass1/2 may omit it because the authoritative copy lives in the edge's validation metadata. A consumer substituting a default for absence would manufacture a strength the user never stated.",
-      "ref": "src/boundary/turn-payload.ts — refineEdgeAdjudication + OrchestratorTurnPayloadSchema superRefine (0.34.0); pinned by tests/boundary/turn-payload-0.34.test.ts"
+      "note": "Absence means 'no value asserted', which no number can express \u2014 0 is a legitimate signed mean. The coupling is enforced ON THE WIRE at the union-root superRefine: 'overridden' REQUIRES the value (an override asserts a number), 'dismissed' FORBIDS it (a dismissal asserts none), accepted_pass1/2 may omit it because the authoritative copy lives in the edge's validation metadata. A consumer substituting a default for absence would manufacture a strength the user never stated.",
+      "ref": "src/boundary/turn-payload.ts \u2014 refineEdgeAdjudication + OrchestratorTurnPayloadSchema superRefine (0.34.0); pinned by tests/boundary/turn-payload-0.34.test.ts"
     },
     "boundary/SystemEventSchema|kind=factor_value_edit.applied_from": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absence means 'an ordinary inspector/panel-free edit' — it NEVER means 'attribution lost', and no value can express it (the field's own .describe() states both halves). Presence changes SERVER behaviour, not just display: present => CEE MUST verify the claim against its own collab store (round closed, participant belongs to it, that participant's latest belief for the target equals the value) and refuse loudly on mismatch, then stamp observed_state.elicited_from + source 'panel_elicited'; absent => the existing 0.29.0 edit path, stamping user provenance. A consumer or server substituting a default ref for absence would manufacture an attribution nobody made — the exact fabrication class the evidence loop exists to kill.",
-      "ref": "src/boundary/turn-payload.ts — FactorValueEditEvent.applied_from .describe() + member comment (0.40.0, PR4 evidence loop; EVIDENCE-LOOP-DERIVATION.md Q5/Q6)"
+      "note": "Absence means 'an ordinary inspector/panel-free edit' \u2014 it NEVER means 'attribution lost', and no value can express it (the field's own .describe() states both halves). Presence changes SERVER behaviour, not just display: present => CEE MUST verify the claim against its own collab store (round closed, participant belongs to it, that participant's latest belief for the target equals the value) and refuse loudly on mismatch, then stamp observed_state.elicited_from + source 'panel_elicited'; absent => the existing 0.29.0 edit path, stamping user provenance. A consumer or server substituting a default ref for absence would manufacture an attribution nobody made \u2014 the exact fabrication class the evidence loop exists to kill.",
+      "ref": "src/boundary/turn-payload.ts \u2014 FactorValueEditEvent.applied_from .describe() + member comment (0.40.0, PR4 evidence loop; EVIDENCE-LOOP-DERIVATION.md Q5/Q6)"
     },
     "boundary/SystemEventSchema|kind=factor_value_edit.field": {
       "markers": [
         "optional"
       ],
       "verdict": "same",
-      "note": "TRIVIALLY the same, and enforced by the TYPE rather than promised by prose: the field is z.literal('value'), so 'value' is the only value it can take, and absence is therefore equivalent to the only possible presence. It was z.string().min(1) in review, where this verdict rested on a doc-comment promise that only ONE reader (CEE's dispatch) actually kept — a permissive string would have let a future producer emit field:'baseline' that PARSES at every pin >=0.29.0 with the verdict differing per consumer version. Tightening to a literal moved the guarantee from prose into the wire; adding a second field later is a loud versioned widening, not a silent divergence.",
-      "ref": "src/boundary/turn-payload.ts — FactorValueEditEvent.field .describe() (0.29.0, ROADMAP 1.346)"
+      "note": "TRIVIALLY the same, and enforced by the TYPE rather than promised by prose: the field is z.literal('value'), so 'value' is the only value it can take, and absence is therefore equivalent to the only possible presence. It was z.string().min(1) in review, where this verdict rested on a doc-comment promise that only ONE reader (CEE's dispatch) actually kept \u2014 a permissive string would have let a future producer emit field:'baseline' that PARSES at every pin >=0.29.0 with the verdict differing per consumer version. Tightening to a literal moved the guarantee from prose into the wire; adding a second field later is a loud versioned widening, not a silent divergence.",
+      "ref": "src/boundary/turn-payload.ts \u2014 FactorValueEditEvent.field .describe() (0.29.0, ROADMAP 1.346)"
     },
     "boundary/SystemEventSchema|kind=factor_value_edit.raw_value": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absence means \"the client did not state a user-unit magnitude\", which no numeric value can express — and specifically it is NOT 0, because 0 is a legitimate edit (the live probe's second trial set a factor 0 -> 7500). The server must branch on PRESENCE: present => use it as the user-unit input to normaliseFactorValue; absent => derive one from `value` and the server's own stored cap. DEBT, recorded as such: the honest fix is a discriminated input mode (\"user typed a magnitude\" vs \"client computed a model ratio\") rather than two optional numbers whose relationship is a convention. That fix rides its own train; this row is the marker.",
-      "ref": "src/boundary/turn-payload.ts — FactorValueEditEvent.raw_value .describe() (0.29.0); scale contract at src/orchestrator-v5/tools/handlers/d1-shared/normalise-factor-value.ts:14-18 in olumi-assistants-service"
+      "note": "Absence means \"the client did not state a user-unit magnitude\", which no numeric value can express \u2014 and specifically it is NOT 0, because 0 is a legitimate edit (the live probe's second trial set a factor 0 -> 7500). The server must branch on PRESENCE: present => use it as the user-unit input to normaliseFactorValue; absent => derive one from `value` and the server's own stored cap. DEBT, recorded as such: the honest fix is a discriminated input mode (\"user typed a magnitude\" vs \"client computed a model ratio\") rather than two optional numbers whose relationship is a convention. That fix rides its own train; this row is the marker.",
+      "ref": "src/boundary/turn-payload.ts \u2014 FactorValueEditEvent.raw_value .describe() (0.29.0); scale contract at src/orchestrator-v5/tools/handlers/d1-shared/normalise-factor-value.ts:14-18 in olumi-assistants-service"
     },
     "boundary/SystemEventSchema|kind=factor_value_edit.unit": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absence is not \"no unit\" — it is \"the client did not say\", and the two produce DIFFERENT server outcomes. A stated unit makes the number unit-bearing (inputHasUnit=true) and it is range-checked as `value_exceeds_cap`; an omitted unit makes the same number a BARE number, which against a capped factor is treated as ambiguous and can be refused outright as `bare_number_outside_cap`. Same digits, different verdict, decided purely by presence — so a consumer that substituted a default unit for absence would silently change which guard fires.",
-      "ref": "src/boundary/turn-payload.ts — FactorValueEditEvent.unit .describe() (0.29.0); the two-guard split at src/orchestrator-v5/tools/handlers/d1-shared/evaluate-factor-value-proposal.ts:61-62 in olumi-assistants-service"
+      "note": "Absence is not \"no unit\" \u2014 it is \"the client did not say\", and the two produce DIFFERENT server outcomes. A stated unit makes the number unit-bearing (inputHasUnit=true) and it is range-checked as `value_exceeds_cap`; an omitted unit makes the same number a BARE number, which against a capped factor is treated as ambiguous and can be refused outright as `bare_number_outside_cap`. Same digits, different verdict, decided purely by presence \u2014 so a consumer that substituted a default unit for absence would silently change which guard fires.",
+      "ref": "src/boundary/turn-payload.ts \u2014 FactorValueEditEvent.unit .describe() (0.29.0); the two-guard split at src/orchestrator-v5/tools/handlers/d1-shared/evaluate-factor-value-proposal.ts:61-62 in olumi-assistants-service"
     },
     "boundary/SystemEventSchema|kind=feedback.comment": {
       "markers": [
@@ -2337,8 +2391,8 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absence means 'the client did not say' — it NEVER means 'uniform' (or any other family). Same class as factor_value_edit.unit: a consumer substituting a default family for absence would silently convert an unstated choice into a stated one.",
-      "ref": "src/boundary/turn-payload.ts — PriorRangeEditEvent.distribution .describe() (0.34.0)"
+      "note": "Absence means 'the client did not say' \u2014 it NEVER means 'uniform' (or any other family). Same class as factor_value_edit.unit: a consumer substituting a default family for absence would silently convert an unstated choice into a stated one.",
+      "ref": "src/boundary/turn-payload.ts \u2014 PriorRangeEditEvent.distribution .describe() (0.34.0)"
     },
     "boundary/SystemEventSchema|kind=selection_change.cleared": {
       "markers": [
@@ -2496,16 +2550,16 @@
         "nullable"
       ],
       "verdict": "same",
-      "note": "Required-but-nullable: null is the modelled spelling of 'the client sent no id' (the wire field's absence maps to it 1:1). No reader keys off it — identity is from+to.",
-      "ref": "src/orchestrator/handler-results.ts — EdgeAdjudicationResultSchema.edge_id doc (0.34.0)"
+      "note": "Required-but-nullable: null is the modelled spelling of 'the client sent no id' (the wire field's absence maps to it 1:1). No reader keys off it \u2014 identity is from+to.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 EdgeAdjudicationResultSchema.edge_id doc (0.34.0)"
     },
     "orchestrator/EdgeAdjudicationResultSchema.resolved_strength_mean": {
       "markers": [
         "nullable"
       ],
       "verdict": "distinct",
-      "note": "null means 'no value asserted' (always on dismissed; on accepted_pass1/2 when the client did not echo the pass mean). No number can express it — 0 is a legitimate signed mean. Mirrors the wire field's verdict above; the wire-side cross-field rule is what keeps the two spellings consistent.",
-      "ref": "src/orchestrator/handler-results.ts — EdgeAdjudicationResultSchema.resolved_strength_mean doc (0.34.0)"
+      "note": "null means 'no value asserted' (always on dismissed; on accepted_pass1/2 when the client did not echo the pass mean). No number can express it \u2014 0 is a legitimate signed mean. Mirrors the wire field's verdict above; the wire-side cross-field rule is what keeps the two spellings consistent.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 EdgeAdjudicationResultSchema.resolved_strength_mean doc (0.34.0)"
     },
     "orchestrator/EditGraphResultSchema.graph_hash_after": {
       "markers": [
@@ -2604,8 +2658,8 @@
         "nullable"
       ],
       "verdict": "distinct",
-      "note": "null means 'the user stated no distribution family' — never 'uniform'. Mirrors the wire field's verdict above.",
-      "ref": "src/orchestrator/handler-results.ts — PriorRangeEditResultSchema.distribution doc (0.34.0)"
+      "note": "null means 'the user stated no distribution family' \u2014 never 'uniform'. Mirrors the wire field's verdict above.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 PriorRangeEditResultSchema.distribution doc (0.34.0)"
     },
     "orchestrator/RunAnalysisArgsSchema.seed": {
       "markers": [
@@ -2649,7 +2703,7 @@
       ],
       "verdict": "distinct",
       "note": "SEED INSTANCE #6 (UI), the persisted twin of the block field. Same `z.string().nullable()` shape and the same collapse of every withholding reason into one `null`. Listed separately because it is a SEPARATE declaration site: fixing the block field does not fix this one.",
-      "ref": "src/orchestrator/handler-results.ts:85 — RunAnalysisResultSchema.leading_option_id; seed instance #6"
+      "ref": "src/orchestrator/handler-results.ts:85 \u2014 RunAnalysisResultSchema.leading_option_id; seed instance #6"
     },
     "orchestrator/RunAnalysisResultSchema.win_probabilities": {
       "markers": [
@@ -2983,8 +3037,8 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absence means 'this value was not applied from a panel round' — which is every value written before 0.40.0 and every non-panel write after it — and it NEVER means 'attribution lost' (the field's own doc comment states both halves). No value can express that state: any present ref names a round and a participant, i.e. asserts an attribution. The producer rule couples it to source 'panel_elicited' (CEE stamps both together, server-verified, INV-F), so a consumer inferring panel provenance from source alone, or substituting any default ref for absence, would manufacture an attribution nobody made.",
-      "ref": "src/graph.ts — ObservedStateSchema.elicited_from doc comment (0.40.0, PR4 evidence loop; EVIDENCE-LOOP-DERIVATION.md Q5/Q6)"
+      "note": "Absence means 'this value was not applied from a panel round' \u2014 which is every value written before 0.40.0 and every non-panel write after it \u2014 and it NEVER means 'attribution lost' (the field's own doc comment states both halves). No value can express that state: any present ref names a round and a participant, i.e. asserts an attribution. The producer rule couples it to source 'panel_elicited' (CEE stamps both together, server-verified, INV-F), so a consumer inferring panel provenance from source alone, or substituting any default ref for absence, would manufacture an attribution nobody made.",
+      "ref": "src/graph.ts \u2014 ObservedStateSchema.elicited_from doc comment (0.40.0, PR4 evidence loop; EVIDENCE-LOOP-DERIVATION.md Q5/Q6)"
     },
     "root/ObservedStateSchema.source": {
       "markers": [
@@ -3057,7 +3111,7 @@
         "any-or-unknown"
       ],
       "verdict": "unresolved",
-      "note": "LEAD — `z.unknown()` with NO `.optional()` anywhere, yet Zod accepts `undefined` for it, so the inferred type is `after?: unknown`. A repair that DELETED a value and a repair whose result was dropped in serialisation are the same bytes. The optionality here is invisible at the declaration site — nothing in `z.unknown()` reads as optional."
+      "note": "LEAD \u2014 `z.unknown()` with NO `.optional()` anywhere, yet Zod accepts `undefined` for it, so the inferred type is `after?: unknown`. A repair that DELETED a value and a repair whose result was dropped in serialisation are the same bytes. The optionality here is invisible at the declaration site \u2014 nothing in `z.unknown()` reads as optional."
     },
     "root/RepairEntrySchema.before": {
       "markers": [
@@ -3065,7 +3119,7 @@
         "any-or-unknown"
       ],
       "verdict": "unresolved",
-      "note": "LEAD — `z.unknown().nullable()`. THREE states share one channel: key absent, `null`, and a real value. For a repair log specifically, \"there was no prior value\" and \"the prior value was null\" are different repairs. Compounded by JSON: `JSON.stringify` DROPS an `undefined` property, so absence is not even reliably authored by the producer."
+      "note": "LEAD \u2014 `z.unknown().nullable()`. THREE states share one channel: key absent, `null`, and a real value. For a repair log specifically, \"there was no prior value\" and \"the prior value was null\" are different repairs. Compounded by JSON: `JSON.stringify` DROPS an `undefined` property, so absence is not even reliably authored by the producer."
     },
     "root/ResponseMetaSchema.build": {
       "markers": [

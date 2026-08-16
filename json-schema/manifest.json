@@ -17,9 +17,19 @@
       "definition": "#/definitions/EnrichmentAnalysisStatus"
     },
     {
+      "export": "EnrichmentConditionalBucketSchema",
+      "file": "EnrichmentConditionalBucketSchema.json",
+      "definition": "#/definitions/EnrichmentConditionalBucketSchema"
+    },
+    {
       "export": "EnrichmentConditionalProbabilitySchema",
       "file": "EnrichmentConditionalProbabilitySchema.json",
       "definition": "#/definitions/EnrichmentConditionalProbabilitySchema"
+    },
+    {
+      "export": "EnrichmentConditionalWinnerSchema",
+      "file": "EnrichmentConditionalWinnerSchema.json",
+      "definition": "#/definitions/EnrichmentConditionalWinnerSchema"
     },
     {
       "export": "EnrichmentConfidenceProvenanceSchema",
