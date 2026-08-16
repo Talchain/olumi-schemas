@@ -180,6 +180,31 @@ Absence means no attestation was supplied, never zero. A UI maps kind codes to
 neutral model-building copy; they are not conclusions and must not be rendered
 as human-authored “you said” claims.
 
+### The composed analysis-state verdict
+
+`AnalysisStateV1Schema` is the optional top-level `OlumiResponse.analysis_state`
+— ONE composed verdict per turn covering run state, readiness, leader
+entitlement, robustness and usability. It exists because each surface currently
+derives its own answer to "what is the state of the analysis, and what may I say
+about it" from a different subset of the payload, and the derivations disagree.
+A verdict composed once by the producer is the structural fix.
+
+`run_state` is a seven-branch discriminated union on `kind`, every branch
+`.strict()` and declaring only what its kind can honestly carry — so a `refused`
+state cannot smuggle a `computed_at`. `refused` is the new state: this turn
+declined to analyse, so any visible result is from an earlier run whose currency
+is not vouched for. An unknown `kind` fails to parse.
+
+`leader_claim.permitted` is a CONJUNCTION verdict (CEE constraint entitlement ∧
+engine statistical separation). A ranked leader or ordinal may render only when
+it is true AND `run_state.kind` is `complete_current`; withholding drops the
+DESIGNATION and keeps the DATA, so win probabilities stay shown.
+
+The `.describe()` strings on this shape are the specification — a consumer may
+quote them as licence, and the contract is earmarked for a one-shot external
+adjudication before any UI consumer migrates. Three limits the parser does NOT
+enforce are named in the module header and pinned by tests.
+
 ## Adding new schemas
 
 **First check whether the vocabulary already exists as a checked-in artefact

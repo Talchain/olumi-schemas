@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 65,
+    "distinct": 74,
     "same": 8,
     "unresolved": 393
   },
@@ -187,6 +187,38 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/AnalysisBlockerSchema.factor_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"absent means the blocker is not scoped to any single factor, never 'all factors'.\" This is the field the draft-missing-values affordance focuses on, so a defaulted reading would focus an arbitrary input.",
+      "ref": "src/boundary/analysis-state.ts :: AnalysisBlockerSchema.factor_id .describe() (0.46.0)"
+    },
+    "boundary/AnalysisBlockerSchema.factor_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"absent means no label travelled, not that the factor is unnamed.\" Same rule as option_label; the field is .min(1) so empty-string cannot express it either.",
+      "ref": "src/boundary/analysis-state.ts :: AnalysisBlockerSchema.factor_label .describe() (0.46.0)"
+    },
+    "boundary/AnalysisBlockerSchema.option_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"ABSENCE IS DISTINCT: absent means the blocker is not scoped to any single option (it is model-level, or the producer could not attribute it), NEVER 'all options' and never a default.\" A defaulted or all-options reading would attach a model-level blocker to every option.",
+      "ref": "src/boundary/analysis-state.ts :: AnalysisBlockerSchema.option_id .describe() (0.46.0)"
+    },
+    "boundary/AnalysisBlockerSchema.option_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"absent means no label travelled, not that the option is unnamed - when it is absent and option_id is present, a consumer resolves the label from its own model or renders the blocker unscoped.\" The field is .min(1), so empty-string cannot express absence either.",
+      "ref": "src/boundary/analysis-state.ts :: AnalysisBlockerSchema.option_label .describe() (0.46.0)"
     },
     "boundary/AnalysisEnrichmentSchema.analysis_status": {
       "markers": [
@@ -353,6 +385,22 @@
       ],
       "verdict": "unresolved"
     },
+    "boundary/AnalysisLeaderClaimSchema.separation": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"absent means no separation statement was computed or was available, NEVER 'the options do not separate' and never zero separation. A consumer must not read absence as a negative result.\" Absence and a stated negative finding are opposite claims.",
+      "ref": "src/boundary/analysis-state.ts :: AnalysisLeaderClaimSchema.separation .describe() (0.46.0)"
+    },
+    "boundary/AnalysisLeaderClaimSchema.withheld_reason": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"absent means no withholding reason was supplied - the ordinary case when permitted is true - and NEVER an empty or generic reason. A consumer must not fabricate a reason when this is absent.\"",
+      "ref": "src/boundary/analysis-state.ts :: AnalysisLeaderClaimSchema.withheld_reason .describe() (0.46.0)"
+    },
     "boundary/AnalysisResultBlockSchema.computed_against_hash": {
       "markers": [
         "optional"
@@ -380,6 +428,22 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/AnalysisRobustnessSchema.aggregate_level": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"absent means no aggregate verdict was computed or available, NEVER 'not robust' and never a neutral default.\" Reading absence as a low-robustness verdict would state a finding the producer never made.",
+      "ref": "src/boundary/analysis-state.ts :: AnalysisRobustnessSchema.aggregate_level .describe() (0.46.0)"
+    },
+    "boundary/AnalysisRobustnessSchema.factors_that_flip_leader": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "THE TWO-STATES-ONE-BYTE SHAPE THIS GATE EXISTS FOR, declared rather than hidden. Field .describe(): \"ABSENCE AND EMPTY ARE DIFFERENT STATES AND BOTH ARE REACHABLE: absent means the flip analysis was NOT COMPUTED (nothing is known); [] means it WAS computed and no single factor flips the leader (a positive, meaningful finding) ... reporting 'no factor changes the outcome' from an absent field is a fabricated finding.\" There is no discriminator on the wire. Per this gate's own rule a distinct row is DEBT, not a fix: the discriminator rides its own train, and the 0.46.0 CHANGELOG names it as the first question for the external adjudication.",
+      "ref": "src/boundary/analysis-state.ts :: AnalysisRobustnessSchema.factors_that_flip_leader .describe() (0.46.0)"
     },
     "boundary/BlockSchema|type=evidence.action_intent": {
       "markers": [
@@ -2082,6 +2146,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/OlumiResponseSchema.analysis_state": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field comment: \"absent means NO composed verdict was supplied by this turn - the state of every producer until CEE ships the emitter - and NEVER never_run, never a neutral default, and never permission to fall back to a client-side derivation of the same question.\" Absence and the never_run run_state are different claims: one is the producer saying nothing, the other is the producer saying no run has happened.",
+      "ref": "src/boundary/olumi-response.ts :: OlumiResponseSchema.analysis_state comment (0.46.0)"
     },
     "boundary/OlumiResponseSchema.decision_classification": {
       "markers": [

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AnalysisStateV1Schema } from './analysis-state.js';
 import { BlockSchema, DraftGraphBlockSchema } from './blocks.js';
 import { ActionType, Stage } from './enums.js';
 import { RunDeltaSchema } from './run-delta.js';
@@ -226,6 +227,24 @@ export const OlumiResponseSchema = z.object({
     options: z.array(z.unknown()),
     goal_node_id: z.string(),
   }).passthrough().optional(),
+  // 0.46.0 additive — analysis-state authority migration, step 2 -------------
+  // The ONE composed analysis-state verdict for this turn, carried at the top
+  // level BESIDE `analysis_ready` (not inside it): `analysis_ready` is the
+  // pre-analysis readiness panel's own passthrough shape, whereas this is the
+  // composed authority spanning run state, readiness, leader entitlement,
+  // robustness and usability. Nesting it would have made a strict composed
+  // verdict a member of a passthrough object, and would have coupled its
+  // lifetime to a surface it is meant to outlive. See ./analysis-state.ts for
+  // the full doctrine, the licence each field carries, and the three DISCLOSED
+  // LIMITS the parser does not enforce.
+  //
+  // ABSENCE IS DISTINCT: absent means NO composed verdict was supplied by this
+  // turn — the state of every producer until CEE ships the emitter — and NEVER
+  // `never_run`, never a neutral default, and never permission to fall back to
+  // a client-side derivation of the same question. A consumer that cannot find
+  // this field keeps its existing behaviour unchanged; that is what makes this
+  // step safe to ship before any consumer migrates.
+  analysis_state: AnalysisStateV1Schema.optional(),
   reasoning: z.string().optional(),
   // 0.45.0 additive ----------------------------------------------------------
   // Aggregate, redacted notices about conservative model-building choices for

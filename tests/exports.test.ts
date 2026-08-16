@@ -138,6 +138,51 @@ describe('package exports — boundary subpath (dist/boundary/index.js)', () => 
     ).toBe(true);
   });
 
+  // 0.46.0 — the composed analysis-state verdict. Checked against the BUILT
+  // dist, because a consumer re-vendors the tarball, not the source tree: an
+  // export that exists in src/ and not in dist/ is dark to every consumer.
+  it('exposes the analysis-state schemas at the built boundary entry', () => {
+    expect(boundaryDist.ANALYSIS_RUN_STATE_KINDS).toStrictEqual([
+      'never_run',
+      'running',
+      'blocked',
+      'refused',
+      'complete_current',
+      'complete_stale',
+      'unknown_degraded',
+    ]);
+    // Named individually rather than indexed by string: the test tree is
+    // typechecked (tsconfig.test.json), so a renamed or dropped export is a
+    // COMPILE error here, which is a stronger guarantee than a runtime
+    // `toBeDefined()` over a string list could give.
+    const exported = [
+      boundaryDist.AnalysisStateV1Schema,
+      boundaryDist.AnalysisRunStateSchema,
+      boundaryDist.AnalysisRunStateKindSchema,
+      boundaryDist.AnalysisStaleCauseSchema,
+      boundaryDist.AnalysisDegradedCauseSchema,
+      boundaryDist.AnalysisBlockerSchema,
+      boundaryDist.AnalysisReadinessSchema,
+      boundaryDist.AnalysisLeaderClaimSchema,
+      boundaryDist.AnalysisRobustnessSchema,
+    ];
+    expect(exported).toHaveLength(9);
+    for (const schema of exported) expect(schema).toBeDefined();
+    // The new `refused` state parses through the built union, and an unknown
+    // kind does not — the fail-loud guarantee, asserted where consumers read.
+    expect(
+      boundaryDist.AnalysisRunStateSchema.safeParse({
+        kind: 'refused',
+        reason_code: 'DECLINED',
+      }).success,
+    ).toBe(true);
+    expect(
+      boundaryDist.AnalysisRunStateSchema.safeParse({ kind: 'not_a_kind' }).success,
+    ).toBe(false);
+    // The optional host field is reachable from the built response schema.
+    expect(boundaryDist.OlumiResponseSchema.shape.analysis_state).toBeDefined();
+  });
+
   // 0.15.0 — seamlessness R4 keystone.
   it('exposes UiDirectiveBlockSchema + its enum at the boundary entry', () => {
     expect(boundaryDist.UiDirectiveBlockSchema).toBeDefined();
