@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.43.0] — 2026-08-16
+
+**Canonical committed-graph receipts without a second graph or readiness
+authority.** This additive release lets the existing strict `draft_graph`
+transport carry every field in the canonical analysis-affecting graph hash.
+
+### Added
+
+- Legacy-optional `DraftGraphBlockSchema.options` and
+  `DraftGraphBlockSchema.goal_node_id`.
+- `CanonicalCommittedGraphBlockSchema` and
+  `CanonicalCommittedGraphReceiptSchema`, the strict producer forms that
+  require all five hash carriers: `nodes`, `edges`, `options`,
+  `goal_node_id`, and `goal_constraints`, and reject counts that do not equal
+  the corresponding carrier-array lengths.
+- A derived top-level receipt-field classification: the five canonical hash
+  carriers versus the two derived count fields. CI fails if a future receipt
+  field is left unclassified.
+- `CANONICAL_GRAPH_HASH_PROJECTION_VERSION` and the exact nested
+  `CANONICAL_GRAPH_HASH_NESTED_PROJECTION` vocabulary. CEE's one digest
+  implementation consumes this manifest; consumers no longer need a
+  serving-source SHA pin or a hand-copied nested field list.
+
+### Absence semantics
+
+Legacy partial blocks remain valid and may omit `options`, `goal_node_id`, or
+`goal_constraints`. Omission means only **not attested by this legacy
+producer**; it is never a deletion instruction. Canonical transactional
+producers must own all three keys and use `options: []`,
+`goal_node_id: null`, and `goal_constraints: []` to attest explicit absence.
+An empty goal id is invalid.
+
+### Compatibility and rollout
+
+This is additive for old payloads, but canonical producers are reader-first
+because `DraftGraphBlockSchema` is strict: publish 0.43.0, re-vendor CEE and
+the UI, then enable canonical receipt emission. CEE remains the sole runtime
+hash producer; this package adds no digest implementation. Whole-status
+readiness is deliberately absent from the receipt contract and remains behind
+CEE's singular canonical readiness authority.
+
 ## [0.42.0] — 2026-08-15
 
 **The contract-only prerequisite for a truthful, server-authoritative edge-strength

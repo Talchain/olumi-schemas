@@ -709,6 +709,49 @@
         "  normalising it: five fields (node data / goal_constraints / encoding_map / intercept, edge",
         "  edge_type) are AI-editable with no human field setter, and are classed `ai_only`."
       ]
+    },
+    {
+      "field": "draft_graph canonical committed receipt (options, goal_node_id, goal_constraints)",
+      "declared_in": "schemas:src/boundary/blocks.ts::CanonicalCommittedGraphReceiptSchema (0.43.0)",
+      "producer": "cee — canonical transactional commit receipts (separate reader-first adoption train)",
+      "consumer": "ui — canonical transactional reconciliation (separate post-CEE adoption train)",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED at the schema boundary; emission remains off until CEE re-vendors this strict reader.",
+        "The old DraftGraphBlock shape remains valid. Its omitted analysis-state keys mean partial /",
+        "  unattested, never delete. Canonical CEE producers must emit own options and",
+        "  goal_constraints keys including [], and own goal_node_id with null for explicit absence.",
+        "READER-FIRST ORDER IS LOAD-BEARING because DraftGraphBlockSchema is strict: publish schemas,",
+        "  re-vendor CEE and UI readers, enable CEE canonical receipt production, then delete the UI's",
+        "  provisional sidecar expectation and consume this singular receipt.",
+        "No readiness field is added. CEE #983's canonical readiness builder remains the sole",
+        "  whole-status authority; this row governs committed graph carriage only."
+      ]
+    },
+    {
+      "field": "canonical graph-hash nested projection vocabulary and version",
+      "declared_in": "schemas:src/boundary/graph-hash-contract.ts::CANONICAL_GRAPH_HASH_PROJECTION_VERSION + CANONICAL_GRAPH_HASH_NESTED_PROJECTION (0.43.0)",
+      "producer": "schemas — public versioned field vocabulary; CEE remains the sole projection/digest implementation",
+      "consumer": "cee and ui — derive nested receipt/hash reconciliation fields from the public vocabulary",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "SEPARATE LIFECYCLE from draft_graph carriage: this is a public cross-repo vocabulary and",
+        "  version signal, not a hidden implementation detail of the receipt schema.",
+        "CEE adoption replaces its nested hand-lists with imports from this manifest while retaining",
+        "  the ONE canonical projection algorithm, stable encoding and digest implementation.",
+        "UI adoption deletes its hand-copied nested list and serving-source SHA pin; it may reconcile",
+        "  receipt fields using this vocabulary but MUST NOT mint an independent graph hash authority.",
+        "Version 1 changes only when a nested inclusion or conditional rule changes. Top-level field",
+        "  carriage remains governed by the separate canonical committed-receipt adoption row."
+      ]
     }
   ]
 }

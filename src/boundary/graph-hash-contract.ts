@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { GraphV3Schema } from '../graph.js';
+import { CanonicalCommittedGraphReceiptSchema } from './blocks.js';
 
 // ============================================================================
 // Canonical graph-hash CONTRACT (0.22.0 — S1, ROADMAP 1.179/1.181).
@@ -85,6 +86,92 @@ export const CANONICAL_GRAPH_HASH_KEEP_LIST = [
 
 export type CanonicalGraphHashKeepKey =
   (typeof CANONICAL_GRAPH_HASH_KEEP_LIST)[number];
+
+/**
+ * Version of the nested analysis-affecting projection vocabulary.
+ *
+ * The digest implementation remains CEE's single
+ * `computeAnalysisAffectingGraphHash`. CEE imports the manifest below rather
+ * than hand-maintaining its own key arrays; clients may use the same manifest
+ * when reconciling receipts. Bump this integer whenever any nested inclusion
+ * or conditional rule changes.
+ */
+export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 1 as const;
+
+/**
+ * The exact nested fields retained by the canonical analysis graph hash.
+ *
+ * This is a field VOCABULARY, not a second projection or hash
+ * implementation. CEE owns the projection algorithm, ordering, stable JSON
+ * encoding and SHA-256 digest; it derives every property name from this one
+ * manifest. The `raw_interventions` rule is conditional because encoded-ready
+ * options no longer depend on their raw source spelling, while an unresolved
+ * option's raw value still affects analysis preconditions.
+ */
+export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
+  node: {
+    fields: [
+      'id',
+      'kind',
+      'category',
+      'factor_type',
+      'is_baseline',
+      'goal_threshold',
+      'goal_threshold_raw',
+      'goal_threshold_cap',
+      'intercept',
+      'encoding_map',
+    ],
+    observed_state_fields: ['value', 'baseline', 'cap'],
+    prior_fields: ['distribution', 'range_min', 'range_max'],
+    interventions_field: 'interventions',
+  },
+  edge: {
+    fields: [
+      'from',
+      'to',
+      'edge_type',
+      'exists_probability',
+      'effect_direction',
+    ],
+    strength_fields: ['mean', 'std'],
+  },
+  option: {
+    fields: ['id', 'status', 'is_baseline'],
+    interventions_field: 'interventions',
+    conditional_field: {
+      field: 'raw_interventions',
+      include_when: { field: 'status', not_equals: 'ready' },
+    },
+  },
+  intervention: {
+    fields: ['value', 'value_type', 'encoding_map'],
+    target_match_field: 'target_match',
+    target_match_fields: ['node_id'],
+  },
+} as const;
+
+/**
+ * Complete classification of the canonical committed receipt's top-level
+ * fields. Hash carriers preserve the exact committed analysis state; derived
+ * metadata is recomputed from those arrays and MUST NOT become hash input.
+ * The classification test derives the real schema keys and fails if a future
+ * receipt field is left unclassified.
+ */
+export const CANONICAL_COMMITTED_RECEIPT_FIELD_CLASSIFICATION = {
+  hash_carrier: CANONICAL_GRAPH_HASH_KEEP_LIST,
+  derived_metadata: ['node_count', 'edge_count'],
+} as const;
+
+/** Derive the receipt field set from the strict producer schema. */
+export function canonicalCommittedReceiptTopLevelFields(): readonly string[] {
+  const receiptObject = (
+    CanonicalCommittedGraphReceiptSchema as z.ZodEffects<z.AnyZodObject>
+  ).innerType();
+  return Object.keys(
+    receiptObject.shape,
+  );
+}
 
 /**
  * The GraphV3 top-level field set, DERIVED from the schema (never hand-listed)
