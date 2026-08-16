@@ -52,8 +52,23 @@ import { z } from 'zod';
 //       The two are contradictory in meaning and the parser does not refuse
 //       the contradiction, because this package cannot yet derive from a
 //       producer whether the pair is genuinely unreachable.
-//   L2. The five usability booleans are not cross-checked against `run_state`.
-//       `blocked_unusable: true` under `kind: 'complete_current'` PARSES.
+//   L2. NARROWED IN 0.47.0 — the usability booleans are now PARTIALLY
+//       cross-checked against `run_state`, enforcing exactly the pairs a
+//       producer-side derivation (CEE `c5e24307`, ROADMAP 2.1259) proved
+//       unreachable — see `refineAnalysisStateV1` below for the six rules and
+//       the per-rule proof class. WHAT REMAINS OPEN, deliberately:
+//         * `blocked_unusable` under `never_run` / `unknown_degraded` /
+//           `refused` / `running` PARSES — the first two are the coherent
+//           future encoding of CEE's `scenario_claims_analysis_no_fact`
+//           contradiction, refusal pairing is CEE policy (its freshness clamp
+//           retires at migration step 6), and `running` has no producer yet;
+//         * `usable_for_chips` under `unknown_degraded` PARSES — reachable
+//           (a hash-proven fresh verdict whose fact carries a non-UTC
+//           `computed_at` string degrades the kind, not the chip predicate);
+//         * NO positive is forced (e.g. `complete_stale` does not require
+//           `requires_rerun: true`) — the producer's predicates may
+//           legitimately tighten, and a forced positive would refuse the
+//           tightened emission (L3 keeps contradiction semantics open).
 //   L3. `contradictions` is the producer's OWN self-report of disagreements it
 //       detected while composing this verdict. An empty array asserts the
 //       producer found none — it is NOT evidence that none exist.
@@ -478,7 +493,12 @@ export type AnalysisRobustness = z.infer<typeof AnalysisRobustnessSchema>;
 // The composed verdict
 // ----------------------------------------------------------------------------
 
-export const AnalysisStateV1Schema = z
+/**
+ * The bare composed shape. Module-private (the `RunDeltaObjectSchema`
+ * precedent): the public export is this plus the 0.47.0 cross-checks, and two
+ * exported statements of one shape would be the estate's twin defect.
+ */
+const AnalysisStateV1ObjectSchema = z
   .object({
     run_state: AnalysisRunStateSchema,
     readiness: AnalysisReadinessSchema,
@@ -541,4 +561,140 @@ export const AnalysisStateV1Schema = z
       'producer-computed; a consumer reads, and does not re-derive. The `.describe()` strings ' +
       'on this shape ARE the specification a consumer may quote as licence.',
   );
+
+/**
+ * 0.47.0 cross-checks (ROADMAP 2.1259) — refuse EXACTLY the boolean × run_state
+ * combinations the producer provably cannot emit, derived at CEE `c5e24307`
+ * (composer: `context/canonical-analysis-state.ts` assembleCanonicalState;
+ * wire projection: `compose/analysis-state-v1.ts` composeRunState — both read
+ * ONE canonical object, which is what makes the rules below theorems rather
+ * than conventions). Proof classes:
+ *   STRUCTURAL — follows from the producer's own predicate definitions for any
+ *     input whatsoever (e.g. the same `status === 'blocked'` that selects the
+ *     blocked run-state branch forces `blockedUnusable` in the same object).
+ *   PRODUCER-DOMAIN — follows from the output domain of every freshness
+ *     derivation in the producer (e.g. a `fresh` verdict always carries a
+ *     selected fact, so the no-fact contradiction cannot co-occur with it).
+ *
+ *   CC-A [structural]      kind 'blocked' ⇒ blocked_unusable MUST be true.
+ *   CC-B [producer-domain] kind 'complete_current' | 'complete_stale' ⇒
+ *                          blocked_unusable MUST be false (the L2 pair).
+ *   CC-C [structural for prose/chips; producer-domain for followup/rerun]
+ *                          kind 'never_run' ⇒ all four of usable_for_prose /
+ *                          usable_for_chips / usable_for_followup /
+ *                          requires_rerun MUST be false.
+ *   CC-D [structural]      blocked_unusable ⇒ usable_for_prose /
+ *                          usable_for_chips / usable_for_followup MUST be
+ *                          false. `requires_rerun` is DELIBERATELY exempt: a
+ *                          blocked model whose prior fact is stale emits
+ *                          requires_rerun beside blocked_unusable — reachable.
+ *   CC-E [structural]      usable_for_chips ⇒ requires_rerun MUST be false
+ *                          (chips require fresh + no trust downgrade; rerun
+ *                          requires stale or a trust downgrade).
+ *   CC-F [structural]      kind 'complete_stale' ⇒ usable_for_chips MUST be
+ *                          false (chips require a fresh verdict).
+ *
+ * NOTHING BROADER: pairs a producer could coherently emit under a future
+ * wiring stay open — see the header's L2 disclosure for the named list.
+ */
+function refineAnalysisStateV1(
+  data: z.infer<typeof AnalysisStateV1ObjectSchema>,
+  ctx: z.RefinementCtx,
+): void {
+  const kind = data.run_state.kind;
+
+  if (kind === 'blocked' && data.blocked_unusable !== true) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['blocked_unusable'],
+      message:
+        'analysis_state_blocked_requires_blocked_unusable: run_state.kind "blocked" is ' +
+        'produced by the same status that forces blocked_unusable true; a payload asserting ' +
+        'otherwise cannot come from the producer (CC-A, 0.47.0).',
+    });
+  }
+
+  if (
+    (kind === 'complete_current' || kind === 'complete_stale') &&
+    data.blocked_unusable === true
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['blocked_unusable'],
+      message:
+        'analysis_state_complete_forbids_blocked_unusable: a complete verdict requires a ' +
+        'selected, non-blocked analysis, and every producer path to blocked_unusable ' +
+        'excludes exactly that; the pair is unreachable (CC-B, 0.47.0 — the former L2 pair).',
+    });
+  }
+
+  if (kind === 'never_run') {
+    for (const field of [
+      'usable_for_prose',
+      'usable_for_chips',
+      'usable_for_followup',
+      'requires_rerun',
+    ] as const) {
+      if (data[field] === true) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message:
+            'analysis_state_never_run_forbids_usability: "never_run" means no analysis fact ' +
+            `exists, and the producer derives every usability flag from that fact; ${field} ` +
+            'cannot be true (CC-C, 0.47.0).',
+        });
+      }
+    }
+  }
+
+  if (data.blocked_unusable === true) {
+    for (const field of [
+      'usable_for_prose',
+      'usable_for_chips',
+      'usable_for_followup',
+    ] as const) {
+      if (data[field] === true) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message:
+            'analysis_state_blocked_unusable_forbids_usability: the producer computes every ' +
+            `usable_for_* flag with a not-blocked conjunct, so ${field} cannot be true ` +
+            'beside blocked_unusable (CC-D, 0.47.0; requires_rerun is deliberately exempt).',
+        });
+      }
+    }
+  }
+
+  if (data.usable_for_chips === true && data.requires_rerun === true) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['requires_rerun'],
+      message:
+        'analysis_state_chips_forbid_rerun: chips require a fresh, trust-intact result and ' +
+        'a rerun requires a stale or trust-downgraded one; the producer cannot claim both ' +
+        '(CC-E, 0.47.0).',
+    });
+  }
+
+  if (kind === 'complete_stale' && data.usable_for_chips === true) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['usable_for_chips'],
+      message:
+        'analysis_state_stale_forbids_chips: the chip predicate requires a fresh verdict and ' +
+        'a stale kind is produced only from a stale one (CC-F, 0.47.0).',
+    });
+  }
+}
+
+/**
+ * Public schema — the bare shape plus the 0.47.0 cross-checks. This is what
+ * `OlumiResponseSchema.analysis_state` carries (the `RunDeltaSchema`
+ * precedent).
+ */
+export const AnalysisStateV1Schema = AnalysisStateV1ObjectSchema.superRefine(
+  refineAnalysisStateV1,
+);
 export type AnalysisStateV1 = z.infer<typeof AnalysisStateV1Schema>;
