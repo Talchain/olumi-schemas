@@ -155,7 +155,8 @@ Transactional producers use `CanonicalCommittedGraphReceiptSchema` (or its
 block-discriminated twin). It requires own keys for all five canonical hash
 carriers. Explicit absence is `options: []`, `goal_node_id: null`, and
 `goal_constraints: []`. Counts are derived metadata and must describe the same
-node/edge arrays; they are not a second graph identity. The contract exports a
+node/edge arrays; the canonical producer schemas enforce those equalities, and
+counts are not a second graph identity. The contract exports a
 complete hash-carrier/derived-metadata classification but intentionally no hash
 or readiness implementation. The versioned
 `CANONICAL_GRAPH_HASH_NESTED_PROJECTION` is the one nested field vocabulary;

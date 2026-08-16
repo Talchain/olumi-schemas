@@ -731,6 +731,27 @@
         "No readiness field is added. CEE #983's canonical readiness builder remains the sole",
         "  whole-status authority; this row governs committed graph carriage only."
       ]
+    },
+    {
+      "field": "canonical graph-hash nested projection vocabulary and version",
+      "declared_in": "schemas:src/boundary/graph-hash-contract.ts::CANONICAL_GRAPH_HASH_PROJECTION_VERSION + CANONICAL_GRAPH_HASH_NESTED_PROJECTION (0.43.0)",
+      "producer": "schemas — public versioned field vocabulary; CEE remains the sole projection/digest implementation",
+      "consumer": "cee and ui — derive nested receipt/hash reconciliation fields from the public vocabulary",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "SEPARATE LIFECYCLE from draft_graph carriage: this is a public cross-repo vocabulary and",
+        "  version signal, not a hidden implementation detail of the receipt schema.",
+        "CEE adoption replaces its nested hand-lists with imports from this manifest while retaining",
+        "  the ONE canonical projection algorithm, stable encoding and digest implementation.",
+        "UI adoption deletes its hand-copied nested list and serving-source SHA pin; it may reconcile",
+        "  receipt fields using this vocabulary but MUST NOT mint an independent graph hash authority.",
+        "Version 1 changes only when a nested inclusion or conditional rule changes. Top-level field",
+        "  carriage remains governed by the separate canonical committed-receipt adoption row."
+      ]
     }
   ]
 }

@@ -165,10 +165,11 @@ export const CANONICAL_COMMITTED_RECEIPT_FIELD_CLASSIFICATION = {
 
 /** Derive the receipt field set from the strict producer schema. */
 export function canonicalCommittedReceiptTopLevelFields(): readonly string[] {
+  const receiptObject = (
+    CanonicalCommittedGraphReceiptSchema as z.ZodEffects<z.AnyZodObject>
+  ).innerType();
   return Object.keys(
-    (CanonicalCommittedGraphReceiptSchema as unknown as {
-      shape: Record<string, z.ZodTypeAny>;
-    }).shape,
+    receiptObject.shape,
   );
 }
 

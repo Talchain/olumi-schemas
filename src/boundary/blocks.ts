@@ -313,17 +313,43 @@ export type DraftGraphBlock = z.infer<typeof DraftGraphBlockSchema>;
  * `goal_constraints: []` for explicit absence. It intentionally contains no
  * readiness member; whole-status readiness has a separate single authority.
  */
-export const CanonicalCommittedGraphBlockSchema = DraftGraphBlockSchema.extend({
+const CanonicalCommittedGraphBlockObjectSchema = DraftGraphBlockSchema.extend({
   options: z.array(z.unknown()),
   goal_node_id: z.string().min(1).nullable(),
   goal_constraints: z.array(DraftGoalConstraintSchema),
 }).strict();
+
+function enforceCanonicalReceiptCounts(
+  value: { nodes: unknown[]; edges: unknown[]; node_count: number; edge_count: number },
+  ctx: z.RefinementCtx,
+): void {
+  if (value.node_count !== value.nodes.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['node_count'],
+      message: 'must equal nodes.length for a canonical committed receipt',
+    });
+  }
+  if (value.edge_count !== value.edges.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['edge_count'],
+      message: 'must equal edges.length for a canonical committed receipt',
+    });
+  }
+}
+
+export const CanonicalCommittedGraphBlockSchema =
+  CanonicalCommittedGraphBlockObjectSchema.superRefine(enforceCanonicalReceiptCounts);
 export type CanonicalCommittedGraphBlock = z.infer<typeof CanonicalCommittedGraphBlockSchema>;
 
 /** The top-level `OlumiResponse.draft_graph` form (block discriminator omitted). */
-export const CanonicalCommittedGraphReceiptSchema = CanonicalCommittedGraphBlockSchema.omit({
-  type: true,
-}).strict();
+export const CanonicalCommittedGraphReceiptSchema =
+  CanonicalCommittedGraphBlockObjectSchema.omit({
+    type: true,
+  })
+    .strict()
+    .superRefine(enforceCanonicalReceiptCounts);
 export type CanonicalCommittedGraphReceipt = z.infer<
   typeof CanonicalCommittedGraphReceiptSchema
 >;

@@ -44,7 +44,7 @@
     "3_plot_meta_constraint_sources": {
       "shape": "present-but-empty vs absent are different claims, no discriminator",
       "visible_to_this_gate": true,
-      "why": "Every optional array/record in the contract has this shape. Caught as a row; the resolved example is boundary/DraftGraphBlockSchema.goal_constraints (verdict `same`, because the contract says so out loud), the open example is EnrichmentOptionComparisonEntrySchema.constraint_probabilities."
+      "why": "Every optional array/record in the contract has this shape. Caught as a row; boundary/DraftGraphBlockSchema.goal_constraints is now the resolved `distinct` example: omission is an unattested legacy partial while `[]` is an explicit canonical clear. EnrichmentOptionComparisonEntrySchema.constraint_probabilities remains open."
     },
     "4_plot_fabricate_on_absence": {
       "shape": "`?? 0` — absence coalesced into a real-looking measurement",

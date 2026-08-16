@@ -20,7 +20,8 @@ transport carry every field in the canonical analysis-affecting graph hash.
 - `CanonicalCommittedGraphBlockSchema` and
   `CanonicalCommittedGraphReceiptSchema`, the strict producer forms that
   require all five hash carriers: `nodes`, `edges`, `options`,
-  `goal_node_id`, and `goal_constraints`.
+  `goal_node_id`, and `goal_constraints`, and reject counts that do not equal
+  the corresponding carrier-array lengths.
 - A derived top-level receipt-field classification: the five canonical hash
   carriers versus the two derived count fields. CI fails if a future receipt
   field is left unclassified.

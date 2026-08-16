@@ -103,6 +103,34 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
     expect(CanonicalCommittedGraphReceiptSchema.parse(canonical)).toEqual(canonical);
   });
 
+  it('requires derived counts to equal their canonical carrier arrays', () => {
+    expect(
+      CanonicalCommittedGraphReceiptSchema.safeParse({
+        ...canonical,
+        node_count: canonical.nodes.length + 1,
+      }).success,
+    ).toBe(false);
+    expect(
+      CanonicalCommittedGraphBlockSchema.safeParse({
+        type: 'draft_graph',
+        ...canonical,
+        edge_count: canonical.edges.length + 1,
+      }).success,
+    ).toBe(false);
+
+    // The old reader remains additive-compatible; only canonical producers
+    // gain the cross-field invariant in 0.43.0.
+    expect(
+      DraftGraphBlockSchema.safeParse({
+        type: 'draft_graph',
+        nodes: canonical.nodes,
+        edges: canonical.edges,
+        node_count: 99,
+        edge_count: 99,
+      }).success,
+    ).toBe(true);
+  });
+
   it('has a strict block twin and reaches the response draft_graph projection', () => {
     const block = { type: 'draft_graph' as const, ...canonical };
     expect(CanonicalCommittedGraphBlockSchema.parse(block)).toEqual(block);
