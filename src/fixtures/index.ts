@@ -2165,6 +2165,15 @@ const eventEdgeStrengthEdit = deepFreeze({
   },
   intent: 'set',
 });
+// 0.48.0 — BOTH arrays are populated deliberately. The maximality ratchet fails
+// on empty collections, and this is also the honest maximal case: a canvas delete
+// of a node normally removes its incident edges in the same transaction.
+const eventStructuralDelete = deepFreeze({
+  kind: 'structural_delete',
+  removed_node_ids: [ID_OPTION_B, ID_FACTOR],
+  removed_edges: [{ from: ID_FACTOR, to: ID_OPTION_B }],
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
   selected: [maximalSelectedElementRef],
@@ -3000,6 +3009,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: eventEdgeStrengthEdit,
     notes:
       '0.42.0: canonical (from,to), a magnitude independent from direction, and an exact expected-before pair. Client provenance/std/operator/graph are absent by contract.',
+  },
+  {
+    family: 'boundary/SystemEventSchema#structural_delete',
+    schema: SystemEventSchema,
+    fixture: eventStructuralDelete,
+    notes:
+      '0.48.0: the first removal verb in any UI-to-CEE vocabulary. Plural and atomic — a node removal takes its incident edges with it, so a partial application would leave dangling edges. Edges are addressed by canonical (from,to) because EdgeV3Schema declares no id. base_graph_hash is a non-optional stale gate; add is deliberately excluded (Intent.add_option owns it).',
   },
   {
     family: 'boundary/SystemEventTurnPayloadSchema',
