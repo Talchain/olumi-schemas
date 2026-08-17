@@ -212,6 +212,17 @@ export type IntentLiteral = z.infer<typeof Intent>;
 // addressed edge-strength edit. It is deliberately separate from the
 // representative-only `direct_graph_edit` notification. Reader-first adoption
 // is mandatory: an older strict union rejects the new kind.
+// 0.48.0: `structural_delete` added — the FIRST removal verb in any UI→CEE
+// vocabulary. Until it, a canvas deletion had no wire shape at all (this enum,
+// `ActionType` and `Intent` all carried add/edit verbs only), so a deleted
+// option was never removed server-side and returned on the next rerun. Plural +
+// atomic by design: removing a node necessarily removes its incident edges, and
+// a partial application leaves dangling edges. Deliberately NOT folded into
+// `direct_graph_edit`, whose `target_id` is only a representative singular —
+// keying a mutation on it is "a defect by construction" (see turn-payload.ts).
+// Mirrors the member added to the `SystemEventSchema` union in turn-payload.ts;
+// parity pinned by `tests/boundary/turn-payload-0.22.test.ts` as for every
+// earlier addition. Reader-first adoption is mandatory.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
@@ -225,6 +236,7 @@ export const SystemEventKind = z.enum([
   'edge_adjudication',
   'prior_range_edit',
   'edge_strength_edit',
+  'structural_delete',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
 

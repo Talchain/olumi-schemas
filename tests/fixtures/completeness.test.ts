@@ -229,7 +229,13 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   to satisfy THIS ratchet even though its branch coverage comes from the
     //   seven variants above. The three `kind`/`cause` vocabularies are enums
     //   and auto-exempt.
-    expect(MAXIMAL_FIXTURES.length).toBe(178);
+    // 0.48.0 (+1): boundary/SystemEventSchema#structural_delete — one more
+    //   branch variant against the existing SystemEventSchema identity, exactly
+    //   as every prior system-event member added one. The nested
+    //   CanonicalEdgeRefSchema needs no row of its own: it is internal (not
+    //   exported from a namespace entry point) and is exercised non-empty by
+    //   this fixture's `removed_edges`.
+    expect(MAXIMAL_FIXTURES.length).toBe(179);
   });
 
   it('family keys are unique', () => {

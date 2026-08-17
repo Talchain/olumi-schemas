@@ -341,14 +341,27 @@ const EVENTS_0_41: ReadonlyArray<{ family: string; fixture: Record<string, unkno
   },
 ];
 
+/**
+ * Kinds added to `SystemEventKind` SINCE the 0.41.0 corpus above, newest last.
+ *
+ * The corpus itself is a HISTORIC RECORD of what 0.41.0 accepted and is
+ * append-only — it must never be edited to stay current. This list is the
+ * derived present-tense half: every additive member train appends exactly one
+ * entry, so the assertion below keeps failing loud on the next addition instead
+ * of the corpus being quietly rewritten to match.
+ *   · 0.42.0 — edge_strength_edit
+ *   · 0.48.0 — structural_delete
+ */
+const KINDS_ADDED_SINCE_0_41 = ['edge_strength_edit', 'structural_delete'] as const;
+
 describe('0.42.0 compatibility — every 0.41.0 system-event kind is byte-compatible', () => {
-  it('the captured corpus is exhaustive and 0.42 adds exactly one kind', () => {
+  it('the captured corpus is exhaustive and only the recorded kinds were added since', () => {
     const oldKinds = EVENTS_0_41.map(({ fixture }) => fixture.kind as string).sort();
     expect(EVENTS_0_41).toHaveLength(11);
     expect(new Set(oldKinds).size).toBe(EVENTS_0_41.length);
 
     const currentKinds = [...SystemEventKind.options].sort();
-    expect(currentKinds).toStrictEqual([...oldKinds, 'edge_strength_edit'].sort());
+    expect(currentKinds).toStrictEqual([...oldKinds, ...KINDS_ADDED_SINCE_0_41].sort());
   });
 
   it.each(EVENTS_0_41.map((row) => [row.family, row.fixture] as const))(

@@ -515,6 +515,13 @@ const EdgeStrengthExpectedSchema = z.object({
 // regex. We require exact, non-blank endpoint bytes and exclude the two
 // delimiters used by the existing canonical writer's composite adapter. No
 // trimming/coercion: changing an identity byte would be silent retargeting.
+//
+// 0.48.0: this schema is ALSO the node-id schema for `structural_delete` below.
+// A node id and an edge endpoint id are the same id space (an endpoint IS a node
+// id), and the constraints wanted are identical — exact bytes, no blank, no
+// composite. The name is historical, from 0.42.0 when the only consumer was an
+// edge endpoint. Deliberately reused rather than duplicated: a second identical
+// refinement chain is a hand-maintained mirror, and the two copies would drift.
 const CanonicalEdgeEndpointIdSchema = z.string().min(1)
   .refine((id) => id === id.trim(), 'edge endpoint ids must not have surrounding whitespace')
   .refine(
@@ -601,6 +608,168 @@ export function refinePriorRangeEdit(
   }
 }
 
+// ---------------------------------------------------------------------------
+// `structural_delete` (0.48.0) — a durable, atomic REMOVAL.
+//
+// THE DEFECT IT CLOSES. A user deletes an option on the canvas and it returns on
+// the next rerun, because no UI→CEE vocabulary has ever been able to say
+// "removed". All three closed vocabularies carry add/edit verbs only:
+// `SystemEventKind` had 12 members whose structural pair is `factor_value_edit` /
+// `edge_strength_edit`; `ActionType` has `set_factor_value`, `add_constraint`,
+// `adjust_edge_strength`; `Intent` has `add_option`. The deletion never reached
+// the server, so the server's model never lost the node — the canvas and the
+// persisted model simply disagreed until the next read overwrote the canvas.
+//
+// WHY NOT REUSE `direct_graph_edit` — THE CONTRACT HAS ALREADY RULED. Its own
+// comment above declares it a BATCH NOTIFICATION whose `target_id` is a
+// "REPRESENTATIVE SINGULAR ... explicit target → else the first changed node id
+// (ascending)", and `factor_value_edit`'s comment states the consequence
+// verbatim: "Keying a MUTATION on a representative id would mutate whichever
+// node happened to sort first in a batch rather than the one the user edited: a
+// defect by construction." A delete is the most destructive mutation in the
+// product; keying it on a representative id would delete the wrong node. The
+// contract's established answer, now applied a third time: a mutating edit gets
+// its OWN member, and `direct_graph_edit` keeps its notification semantics
+// byte-identically.
+//
+// WHY PLURAL AND ATOMIC — the one property that must not be "simplified" away.
+// Unlike `factor_value_edit`/`edge_strength_edit`, which address exactly one
+// entity, a canvas delete is INHERENTLY a batch: removing a node necessarily
+// removes its incident edges. Applying such a removal partially leaves DANGLING
+// EDGES — edges whose endpoint no longer exists — which is a graph that violates
+// referential integrity and will fail or silently mis-analyse downstream. So the
+// arrays are plural, and the whole event is ONE transaction: CEE applies all of
+// it or none of it. Splitting this into a singular member (or fanning it out into
+// N single-delete turns) reintroduces the dangling-edge window by construction.
+//
+// REMOVAL ONLY — ADD IS DELIBERATELY EXCLUDED. `Intent.add_option` already owns
+// adding, and it works: the add persists today. A combined "structural_edit"
+// covering both directions would create TWO AUTHORITIES for one concept, which is
+// the defect class this estate pays for most often. The adjacent readiness
+// problem ("an added option leaves the model unanalysable") is a different seam
+// from transport and is not fixed by widening this member.
+//
+// EDGES ARE ADDRESSED BY `(from, to)`, NEVER BY AN ID — derived, not chosen.
+// `EdgeV3Schema` (src/graph.ts) declares NO `id` field at all; an edge's only
+// identity in the canonical graph is its endpoint pair. Both existing
+// edge-addressed members say so explicitly: `edge_adjudication` notes client-side
+// ids ("reactflow__edge-…") "are NOT stable across repos ... never the lookup
+// key", and `edge_strength_edit` addresses edges by canonical `(from, to)`. A
+// `removed_edge_ids: string[]` field would therefore be unresolvable against the
+// persisted graph and could only carry a client-local id the contract forbids as
+// a key — so the wire refuses that shape outright.
+//
+// `base_graph_hash` IS THE STALE GATE, and the name is the estate's existing one:
+// `EditToolOpBatchSchema.base_graph_hash` (src/orchestrator/edit-tool-ops.ts),
+// whose divergence code is `BASE_HASH_DIVERGED` and whose rule is quoted here
+// because it applies unchanged — "Absent/null/empty are all forbidden: the stale
+// gate is non-optional". A delete is unsafe to apply against a graph the user was
+// not looking at: ids drift, and a stale delete removes something the user never
+// selected. CEE MUST compare this against its own canonical hash and refuse on
+// mismatch rather than applying a best-effort subset.
+//
+// ⚠ AND THE ONE DIFFERENCE FROM THAT PRECEDENT, stated so it is not "corrected":
+// there the hash is STAMPED SERVER-SIDE because the producer is the LLM, and A5b
+// reasons that "the model never echoes a hash" (a transcription error would
+// produce spurious dead-ends). That argument does NOT transfer here, because the
+// producer is the BROWSER, which genuinely holds the graph it rendered. A client
+// echoing state it actually read is the established optimistic-concurrency idiom
+// of this very union — `edge_strength_edit.expected` is "an optimistic-concurrency
+// assertion, not the requested value". Client-echoed here is correct; server-
+// stamped there is correct; they are different producers, not an inconsistency.
+//
+// DELIBERATELY UNCAPPED. `selected_elements` is bounded (≤20) because it is
+// advisory piggyback context. This is not: select-all-then-delete is a legitimate
+// user action, and a cap would refuse a request the server can honour perfectly
+// well — an affordance terminating in refusal. Bound it only if a real DoS
+// measurement demands it, and then bound it where the measurement points.
+//
+// NO `cascade` FLAG, and no server-side inference of extra removals. The client
+// enumerates exactly what the user removed. A `cascade: true` would let one flag
+// mean "also delete things I have not named", which is a mutation whose extent
+// the user never saw and the wire cannot audit.
+//
+// ⚠ SEQUENCING — READER-FIRST IS MANDATORY, NOT A PREFERENCE. Every member of
+// this union is `.strict()` and the union is a `discriminatedUnion` on `kind`, so
+// a consumer pinned ≤0.47.0 that receives this member fails the DISCRIMINATOR and
+// REJECTS THE WHOLE TURN (422) — not just this field. Order: publish 0.48.0 → CEE
+// re-vendors + deploys a reader → only then the UI emitter ships. UI-alone would
+// 422 every turn containing a delete; CEE-alone is invisible and safe. Pinned by
+// `tests/boundary/turn-payload-0.48.test.ts`.
+//
+// AUTHORITY STAYS SERVER-SIDE. The client carries intent and the base hash only —
+// never a graph, never a receipt, never a count it expects to be true afterwards.
+// CEE resolves each id in its persisted GraphV3 and routes the accepted removal
+// through the canonical `remove_node` / `remove_edge` PatchOperation train
+// (`handleEditGraph` → `evaluateEditGraphMutations` → commit) that the coach edit
+// tool already uses. This member is a TRANSPORT for a human's removal; it does
+// not mint a second applier.
+/** A canonical GraphV3 edge reference: the endpoint pair IS the edge's identity. */
+const CanonicalEdgeRefSchema = z.object({
+  from: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical source node id of the removed edge (edge identity, half 1).',
+  ),
+  to: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical target node id of the removed edge (edge identity, half 2).',
+  ),
+}).strict();
+
+export type CanonicalEdgeRef = z.infer<typeof CanonicalEdgeRefSchema>;
+
+const StructuralDeleteEvent = z.object({
+  kind: z.literal('structural_delete'),
+  removed_node_ids: z.array(CanonicalEdgeEndpointIdSchema).describe(
+    'The node ids the user removed. REQUIRED but MAY be empty — an edges-only delete is ' +
+      'legitimate. Required rather than optional so absence is impossible and there is no ' +
+      '"omitted vs empty" ambiguity for a consumer to resolve differently per pin.',
+  ),
+  removed_edges: z.array(CanonicalEdgeRefSchema).describe(
+    'The edges the user removed, each addressed by its canonical (from, to) pair — edges ' +
+      'have no id in GraphV3. REQUIRED but MAY be empty: a nodes-only delete is legitimate, ' +
+      'and CEE removes edges orphaned by a node removal as part of the same transaction ' +
+      'whether or not the client enumerated them.',
+  ),
+  base_graph_hash: z.string().min(1).describe(
+    'The canonical graph hash the client last read, i.e. the graph the user was actually ' +
+      'looking at when they deleted. An optimistic-concurrency assertion, never a requested ' +
+      'value. Absent, null and empty are all forbidden: the stale gate is non-optional, ' +
+      'because a delete applied to a graph the user did not see removes something they never ' +
+      'selected. CEE MUST refuse on divergence rather than applying a best-effort subset.',
+  ),
+}).strict();
+
+/**
+ * Cross-field rule for `structural_delete`: a delete must remove SOMETHING.
+ *
+ * Both arrays empty is a NO-OP that should never reach the wire — it would cost a
+ * turn, a commit and a hash comparison to change nothing, and it is
+ * indistinguishable from a client bug that lost the selection. Each array may be
+ * empty ALONE (nodes-only and edges-only deletes are both legitimate), so this
+ * cannot be expressed with `.min(1)` on either array; it is genuinely a
+ * cross-field rule. Precedent for refusing an empty structural batch:
+ * `EditToolOpBatchSchema.operations` is `.min(1)`.
+ *
+ * Lives at the union root like its three siblings because `z.discriminatedUnion`
+ * requires plain ZodObject options, and exported so a consumer that parses a bare
+ * `SystemEventSchema` applies the same rule instead of re-deriving it — see
+ * {@link refineEdgeAdjudication}.
+ */
+export function refineStructuralDelete(
+  ev: z.infer<typeof StructuralDeleteEvent>,
+  ctx: z.RefinementCtx,
+  pathPrefix: readonly (string | number)[] = [],
+): void {
+  if (ev.removed_node_ids.length === 0 && ev.removed_edges.length === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'removed_node_ids'],
+      message:
+        'a structural_delete that removes nothing is a no-op — supply at least one ' +
+        'removed node id or removed edge',
+    });
+  }
+}
+
 export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
@@ -614,6 +783,7 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   EdgeAdjudicationEvent,
   PriorRangeEditEvent,
   EdgeStrengthEditEvent,
+  StructuralDeleteEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 
@@ -641,6 +811,9 @@ export const OrchestratorTurnPayloadSchema = z
       }
       if (payload.event.kind === 'edge_strength_edit') {
         refineEdgeStrengthEdit(payload.event, ctx, ['event']);
+      }
+      if (payload.event.kind === 'structural_delete') {
+        refineStructuralDelete(payload.event, ctx, ['event']);
       }
       return;
     }

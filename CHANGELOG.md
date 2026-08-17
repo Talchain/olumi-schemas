@@ -7,6 +7,128 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.48.0] — 2026-08-17 (candidate)
+
+**`structural_delete` — a durable, atomic removal event.** Purely additive: one
+new `SystemEventSchema` member, one new `SystemEventKind` literal, one exported
+refinement. No existing field, member, vocabulary or validation rule changed.
+
+### Why
+
+A user deletes an option on the canvas and it comes back on the next rerun.
+Root cause: **no UI→CEE vocabulary has ever had a removal verb.** All three are
+closed enums and all three carry add/edit verbs only — `SystemEventKind`
+(structural members `factor_value_edit`, `edge_strength_edit`), `ActionType`
+(`set_factor_value`, `add_constraint`, `adjust_edge_strength`) and `Intent`
+(`add_option`). The deletion never reached the server, so the persisted model
+never lost the node; the canvas and the model simply disagreed until the next
+read overwrote the canvas.
+
+Swept at this tip with a contrast control: `remove_node|remove_edge|delete_node|
+structural_delete|remove_option` returns **zero** hits in `boundary/turn-payload`
+and `boundary/enums`, while the contrast `factor_value_edit|edge_strength_edit`
+returns hits in five files.
+
+**`direct_graph_edit` was NOT reused, on this contract's own existing ruling.**
+Its comment declares it a batch NOTIFICATION whose `target_id` is a
+"REPRESENTATIVE SINGULAR … explicit target → else the first changed node id
+(ascending)", and `factor_value_edit`'s comment states the consequence verbatim:
+*"Keying a MUTATION on a representative id would mutate whichever node happened
+to sort first in a batch rather than the one the user edited: a defect by
+construction."* A delete is the most destructive mutation in the product. The
+contract already faced this exact question for `factor_value_edit` (0.29.0) and
+for `edge_strength_edit` (0.42.0) and answered it the same way both times: **a
+mutating edit gets its own member.** This is the third instance of one pattern.
+
+### Added
+
+- **`SystemEventSchema` member `structural_delete`** (`.strict()`), carrying:
+  - `removed_node_ids: string[]` — required, may be empty (an edges-only delete
+    is legitimate). Ids use the same exact-bytes discipline as
+    `edge_strength_edit`'s endpoints: non-blank, no surrounding whitespace, no
+    delimiter-bearing composite. **Not** narrowed to the `NodeV3` id regex —
+    0.42.0 already ruled that CEE's persisted ids are open strings.
+  - `removed_edges: {from, to}[]` — required, may be empty. **Edges are
+    addressed by their canonical endpoint pair, never by an id**: `EdgeV3Schema`
+    declares no `id` field at all, and both existing edge-addressed members rule
+    that client-local ids (`reactflow__edge-…`) are never the lookup key. A
+    `removed_edge_ids: string[]` field would be unresolvable against the
+    persisted graph, so the wire refuses that shape.
+  - `base_graph_hash: string` (min 1) — the stale gate. Name taken from the
+    estate's existing `EditToolOpBatchSchema.base_graph_hash`, whose divergence
+    code is `BASE_HASH_DIVERGED` and whose rule applies unchanged: *absent, null
+    and empty are all forbidden — the stale gate is non-optional.* A delete
+    applied to a graph the user was not looking at removes something they never
+    selected.
+- **`refineStructuralDelete`**, exported for consumers that parse a bare
+  `SystemEventSchema`, and applied automatically at the union root (the
+  `refineEdgeAdjudication` / `refinePriorRangeEdit` / `refineEdgeStrengthEdit`
+  precedent — `z.discriminatedUnion` requires plain ZodObject options). One rule:
+  **both arrays empty simultaneously is refused.** Either array may be empty
+  alone, so this cannot be `.min(1)` on either one; precedent for refusing an
+  empty structural batch is `EditToolOpBatchSchema.operations`, which is
+  `.min(1)`.
+- `SystemEventKind` gains `structural_delete`. Enum↔union parity stays pinned by
+  the set-equality test in `tests/boundary/turn-payload-0.22.test.ts`.
+- Maximal fixture `boundary/SystemEventSchema#structural_delete`, with both
+  arrays populated (the maximality ratchet fails on empty collections, and a
+  node removal taking its incident edges is the honest maximal case).
+- Adoption-manifest row `system_event.event[kind=structural_delete]`, state
+  **`declared`** — this train adds no producer, consumer, dispatch, graph write
+  or deployment.
+
+### Design decisions worth not re-litigating
+
+- **Plural and atomic.** Removing a node necessarily removes its incident edges;
+  a partial application leaves **dangling edges** — a graph violating
+  referential integrity. CEE applies the whole event or none of it. A singular
+  member, or a fan-out into N single-delete turns, reintroduces that window by
+  construction.
+- **Removal only; add is deliberately excluded.** `Intent.add_option` already
+  owns adding and it persists today. A combined `structural_edit` covering both
+  directions would create **two authorities for one concept**. The adjacent
+  readiness problem ("an added option leaves the model unanalysable") is a
+  different seam and is not fixed by widening this member.
+- **Client-echoed hash here, server-stamped there — not an inconsistency.**
+  `EditToolOpBatch` stamps `base_graph_hash` server-side because its producer is
+  the LLM, which would fabricate one (amendment A5b). This member's producer is
+  the browser, which genuinely holds the graph it rendered, and a client echoing
+  state it actually read is this union's own established optimistic-concurrency
+  idiom (`edge_strength_edit.expected`). Different producers, not a defect.
+- **Deliberately uncapped**, unlike `selected_elements` (≤20): select-all-then-
+  delete is a legitimate user action and a cap would refuse a request the server
+  can honour.
+- **No `cascade` flag.** The client enumerates exactly what the user removed. A
+  cascade flag would mean "also delete things I have not named" — a mutation
+  whose extent the user never saw and the wire cannot audit.
+- **Authority stays server-side.** The client carries removed ids plus the base
+  hash only. CEE resolves each id in its persisted GraphV3, compares the hash
+  exactly, refuses on divergence, and routes the accepted removal through the
+  canonical `remove_node` / `remove_edge` PatchOperation train (`handleEditGraph`
+  → `evaluateEditGraphMutations` → commit) that the coach edit tool already
+  uses. **This member mints no second applier.**
+
+### ⚠ Deploy order — schemas → CEE → UI, and it is not negotiable
+
+Every `SystemEventSchema` member is `.strict()` and the union is a
+`discriminatedUnion` on `kind`, so a consumer whose pin predates this member does
+not ignore an unknown field — it **fails the discriminator and rejects the whole
+turn (422)**, not just the field. Therefore:
+
+- **UI-alone would 422 every turn containing a delete.**
+- **CEE-alone is invisible and safe** — a reader exists and nothing emits.
+
+Pinned by `tests/boundary/turn-payload-0.48.test.ts`, which proves whole-payload
+rejection and simulates a 0.47.0-shaped reader (the real union minus this member,
+derived from `SystemEventSchema.options` rather than hand-written) rejecting a
+well-formed delete turn that the current reader accepts.
+
+Pins measured 2026-08-17: **CEE staging `33349149` vendors 0.46.0; UI staging
+`289b730d` vendors 0.47.0** — CEE is currently the behind consumer, so a UI-first
+emission would 422 today. Order: publish 0.48.0 → CEE re-vendors and deploys the
+reader → CEE wires the canonical remove train → only then the UI emitter ships.
+PLoT/ISL do not read this UI→CEE seam.
+
 ## [0.47.0] — 2026-08-17 (candidate)
 
 **AnalysisStateV1 cross-checks — disclosed limit L2 narrowed to what the
