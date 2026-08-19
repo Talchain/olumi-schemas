@@ -235,7 +235,12 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   CanonicalEdgeRefSchema needs no row of its own: it is internal (not
     //   exported from a namespace entry point) and is exercised non-empty by
     //   this fixture's `removed_edges`.
-    expect(MAXIMAL_FIXTURES.length).toBe(179);
+    // 0.49.0 (+1): boundary/EnrichmentObjectiveRankingSchema — the ROADMAP
+    //   2.1192 ranking-provenance block, exported from the boundary entry
+    //   point and therefore needing its own row. `NodeV3Schema.goal_direction`
+    //   adds NO row: it is a field on an already-registered family, and it is
+    //   populated on the existing maximal node fixture.
+    expect(MAXIMAL_FIXTURES.length).toBe(180);
   });
 
   it('family keys are unique', () => {

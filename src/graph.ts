@@ -279,6 +279,76 @@ export const StateSpaceSchema = z.object({
 export const GoalThresholdFrame = z.enum(['level', 'delta']);
 export type GoalThresholdFrameType = z.infer<typeof GoalThresholdFrame>;
 
+// ----------------------------------------------------------------------------
+// goal_direction — 0.49.0 additive (ROADMAP 2.1192)
+// ----------------------------------------------------------------------------
+
+/**
+ * The user's OBJECTIVE SENSE for a goal node — what "this option wins" MEANS.
+ *
+ * WHY THIS EXISTS. Measured at ISL staging tip 28fe0c95, with a contrast
+ * control that discriminates (flipping an edge sign moved the ranking
+ * completely): **supplying the user's target changed the option ranking by
+ * exactly nothing.** ISL's winner rule was `max()` over the propagated
+ * goal-node scalar and nothing else — no target, no direction, no constraint —
+ * so "wins" meant *"this option produced the largest number at the goal node on
+ * this draw"*, while every surface in the estate rendered it as *"this is the
+ * best option"*. The two channels never met: the leading option could carry
+ * `probability_of_goal = 0.0` and still be crowned.
+ *
+ * THE CONTRACT WAS THE BINDING CONSTRAINT, not merely a missing wire. A derived
+ * completeness check over all nineteen fields of ISL's robustness request found
+ * ZERO direction-bearing members (contrast: `goal_node_id`, `goal_threshold`,
+ * `goal_threshold_frame`, `goal_constraints` — four present). No upstream
+ * service could express *"I want this to go UP"* even if it wanted to, so no
+ * amount of work in CEE or PLoT could have fixed the ranking. This field is
+ * what makes the intent expressible.
+ *
+ * THE THREE SENSES.
+ *
+ *   'maximise' — largest goal value wins. The historical rule, now STATED
+ *                rather than assumed.
+ *   'minimise' — smallest wins. Required whenever the goal is a quantity to
+ *                reduce (cost, churn, risk, time-to-X), where the historical
+ *                rule silently crowned whichever option made the outcome WORST.
+ *   'target'   — closest to `goal_threshold` wins. The only sense under which a
+ *                MODERATE option can win at all: under a linear SCM the goal is
+ *                monotone in each intervention, so an argmax always lands on a
+ *                corner and an option placed between two extremes is
+ *                structurally incapable of leading, whatever the evidence says.
+ *                "The optimum is in the middle" is the correct answer to most
+ *                pricing, staffing and capacity questions, and it was unsayable.
+ *
+ * 'target' REUSES `goal_threshold` — it does not introduce a second target.
+ * That is deliberate: a separately-framed target beside the existing one would
+ * recreate the very split this closes (a threshold that was an OUTPUT beside
+ * the comparison and never an INPUT to it). A 'target' sense therefore requires
+ * both `goal_threshold` and `goal_threshold_frame` on the same node; ISL
+ * refuses the request at parse if either is missing, rather than silently
+ * downgrading to a maximiser.
+ *
+ * ABSENCE MEANS UNATTESTED, NOT 'maximise'. A consumer that omits this field
+ * still gets the historical ranking, but the response says so
+ * (`ObjectiveRankingSchema.attested === false` plus a GOAL_DIRECTION_UNATTESTED
+ * inference warning). Absence is a disclosed default, never a claim about what
+ * the team wants — and it is the signal a coaching surface uses to ASK.
+ *
+ * ⚠ PRODUCERS MUST NOT INFER THIS FROM A NODE LABEL. A goal called "churn"
+ * usually wants minimising and sometimes does not; a goal called "price"
+ * routinely wants a target rather than a maximum. Guessing here reinstates the
+ * defect in a new place — the whole point is that the aim is STATED. Where
+ * direction is genuinely undeterminable, the correct product move is to ask the
+ * team, not to stamp a value.
+ *
+ * ⚠ TRANSPORT IS NOT AUTOMATIC. PLoT's V3→ISL node constructor and its
+ * observed-state allow-list are HAND-MAINTAINED and have NO fail-loud on a new
+ * contract field, so a field declared here is SILENTLY DROPPED at that boundary
+ * until forwarding is added — exactly as happened to `goal_threshold_frame`.
+ * See this field's row in `contracts/adoption-manifest.json`.
+ */
+export const GoalDirection = z.enum(['maximise', 'minimise', 'target']);
+export type GoalDirectionType = z.infer<typeof GoalDirection>;
+
 export const NodeV3Schema = z.object({
   id: z.string().min(1).max(100).regex(NODE_ID_PATTERN),
   kind: NodeKind,
@@ -296,6 +366,13 @@ export const NodeV3Schema = z.object({
    * UNATTESTED and consumers MUST fail closed (no goal probability).
    */
   goal_threshold_frame: GoalThresholdFrame.optional(),
+  /**
+   * 0.49.0 additive (ROADMAP 2.1192). The user's objective sense for this goal
+   * node — see `GoalDirection` above for the full contract and the measurement
+   * that produced it. Absence means UNATTESTED (the ranking runs as a maximiser
+   * and says so), never 'maximise'.
+   */
+  goal_direction: GoalDirection.optional(),
 }).passthrough();
 
 export const StrengthSchema = z.object({

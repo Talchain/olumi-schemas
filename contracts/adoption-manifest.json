@@ -873,6 +873,47 @@
         "Version 1 changes only when a nested inclusion or conditional rule changes. Top-level field",
         "  carriage remains governed by the separate canonical committed-receipt adoption row."
       ]
+    },
+    {
+      "field": "goal_direction",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.goal_direction (0.49.0) — the user's objective sense for the goal node (ROADMAP 2.1192)",
+      "producer": null,
+      "consumer": "isl",
+      "producer_test": null,
+      "consumer_test": "isl:tests/unit/test_goal_direction_objective_ranking.py::TestRankingHonoursTheStatedObjective — asserts the RANKING MOVES with the stated sense, not that the field survives the hop",
+      "deployment_flag": null,
+      "state": "consumed_dark",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "THE DEFECT IT CLOSES, measured at ISL staging tip 28fe0c95 with a contrast control that",
+        "  discriminates (flipping an edge sign moved the ranking completely): SUPPLYING THE USER'S",
+        "  TARGET CHANGED THE OPTION RANKING BY EXACTLY NOTHING. ISL's winner rule was max() over the",
+        "  propagated goal-node scalar and nothing else, so the option crowned at 70.67% carried",
+        "  probability_of_goal = 0.0 — the two channels never met. A derived completeness check over",
+        "  all 19 fields of RobustnessRequestV2 found ZERO direction-bearing members (contrast:",
+        "  goal_node_id, goal_threshold, goal_threshold_frame, goal_constraints — four present), so no",
+        "  upstream service could express the intent even if it wanted to. THE CONTRACT WAS THE BINDING",
+        "  CONSTRAINT, which is why the fix starts here.",
+        "SEQUENCING, and the ORDER is deliberate: ISL FIRST (already landed, consumer_test above), THEN",
+        "  this declaration, THEN PLoT forwarding, THEN CEE stamping. ISL-first because every ISL request",
+        "  model carries extra='ignore', so a contract-first field DIES SILENTLY AT PARSE WITH A 200 —",
+        "  the same ordering control_candidates used and for the same reason.",
+        "⚠ PLoT MUST ADD FORWARDING AND IT WILL NOT FAIL LOUD WITHOUT IT. This is the identical hazard",
+        "  recorded on goal_threshold_frame's row: toISLNode is a hand-written field constructor and",
+        "  ISL_DECLARED_OBSERVED_STATE_FIELDS is a hand-maintained allow-list, NEITHER of which errors on",
+        "  an unknown contract field. Until forwarding lands, a stamped goal_direction is STRUCTURALLY",
+        "  DELETED at the V3->ISL boundary and the drift reads as green. That is SAFE (ISL falls back to",
+        "  an UNATTESTED maximise and says so on the wire) but it is not 'it arrives'.",
+        "PRODUCER WHEN IT LANDS: cee. ⚠ AND THE PRODUCER RULE IS THE LOAD-BEARING ONE: CEE MUST NOT",
+        "  INFER THIS FROM A NODE LABEL. A goal called 'churn' usually wants minimising and sometimes",
+        "  does not; a goal called 'price' routinely wants a TARGET rather than a maximum. Guessing",
+        "  reinstates the defect in a new place. Where the direction is undeterminable the correct move",
+        "  is to ASK THE TEAM — the unwinnable inference is a coaching moment, not a default.",
+        "THE CONSUMER TEST MUST ASSERT THE RANKING MOVES, never that the field survives the hop. A test",
+        "  that proves transport is not a consumer test (this manifest's own rule). The named test",
+        "  changes the CROWNED OPTION under minimise and under target, and is mutation-checked: removing",
+        "  the direction handling REDs 8 of its 17 cases."
+      ]
     }
   ]
 }
