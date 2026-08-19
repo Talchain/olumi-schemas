@@ -1,4 +1,8 @@
 import { z } from 'zod';
+// ROADMAP 2.1192: the objective sense is DEFINED ONCE, on the request side, and
+// reused here. A second local enum would be a hand-maintained mirror of an enum
+// — the estate's dominant defect class — and the two would drift silently.
+import { GoalDirection } from '../graph.js';
 
 // ============================================================================
 // Analysis enrichment envelope (v0.14.0) — the typed replacement for the
@@ -226,6 +230,56 @@ export type EnrichmentConstraintMargin =
  * (absent) when any constraint target is unreliable, and delivered with
  * `goal_fit_basis` under doctrine B (PR #204).
  */
+/**
+ * WHAT the option ranking in this enrichment actually optimised (ROADMAP 2.1192).
+ *
+ * THE FIELD THAT MAKES `win_probability` READABLE. That number is the fraction
+ * of Monte Carlo draws on which an option scored best under ISL's winner rule.
+ * Until 2.1192 that rule was hardcoded to "largest goal-node value" and NOTHING
+ * ON THE WIRE SAID SO — so every consumer rendering "which option wins" was
+ * making a claim the number did not support. Measured at ISL 28fe0c95 with a
+ * discriminating contrast control: supplying the user's target moved the
+ * ranking by exactly nothing, and the option crowned at 70.67% carried
+ * `probability_of_goal = 0.0`.
+ *
+ * This is the PROVENANCE of the single ranking, not a rival to it. There is one
+ * winner rule in the estate and everything downstream — `win_probability`,
+ * PLoT's `deriveRecommendedOption`, the decision brief's banded headline, the
+ * m1 coaching headline, the executive summary — reads it. This block says what
+ * it answered.
+ *
+ * HOW A SURFACE SHOULD USE IT.
+ *   attested === false  →  the team's aim was never supplied and 'maximise' is
+ *                          ISL's disclosed default. Present the ranking as an
+ *                          assumption, or ASK for the objective. Do not say
+ *                          "best for your goal".
+ *   status === 'withheld' → there is NO ranking in this payload. `win_probability`
+ *                          is absent on every option and the robustness block
+ *                          (whose `confidence` IS the recommended option's win
+ *                          share) is absent too. This is the absence of a
+ *                          ranking, never a flat or tied one — and NOT a value
+ *                          to coalesce to zero.
+ */
+export const EnrichmentObjectiveRankingSchema = z.object({
+  /**
+   * The objective sense the winner rule applied. Under `status: 'withheld'`
+   * this is the sense that was REQUESTED and refused — which is what a surface
+   * needs in order to say what could not be done, rather than naming a sense
+   * nobody chose.
+   */
+  direction: GoalDirection,
+  /**
+   * True when the caller stated the objective. FALSE means the aim was never
+   * supplied. Absent is treated as false by every honest consumer: an
+   * unattested ranking that arrives without this block is still unattested.
+   */
+  attested: z.boolean(),
+  status: z.enum(['computed', 'withheld']),
+  withheld_reason: z.string().optional(),
+}).passthrough();
+export type EnrichmentObjectiveRanking =
+  z.infer<typeof EnrichmentObjectiveRankingSchema>;
+
 export const EnrichmentOptionComparisonEntrySchema = z.object({
   option_id: z.string().min(1),
   option_label: z.string().optional(),
@@ -1075,6 +1129,13 @@ export const AnalysisEnrichmentSchema = z.object({
   constraints_status: EnrichmentFeatureStatus.optional(),
 
   // --- science payloads ---------------------------------------------------
+  /**
+   * 0.49.0 additive (ROADMAP 2.1192). What the ranking beside this optimised,
+   * and whether the user's objective was actually stated. Optional so an
+   * older-pinned producer degrades to dark-but-honest; a consumer that finds it
+   * ABSENT must treat the ranking as UNATTESTED, never as attested-maximise.
+   */
+  objective_ranking: EnrichmentObjectiveRankingSchema.optional(),
   option_comparison: z.array(EnrichmentOptionComparisonEntrySchema).optional(),
   factor_sensitivity: z.array(EnrichmentFactorSensitivityEntrySchema).optional(),
   robustness: EnrichmentRobustnessSchema.nullable().optional(),

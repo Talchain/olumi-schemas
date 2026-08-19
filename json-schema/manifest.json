@@ -112,6 +112,11 @@
       "definition": "#/definitions/EnrichmentNearTieSchema"
     },
     {
+      "export": "EnrichmentObjectiveRankingSchema",
+      "file": "EnrichmentObjectiveRankingSchema.json",
+      "definition": "#/definitions/EnrichmentObjectiveRankingSchema"
+    },
+    {
       "export": "EnrichmentOptionComparisonEntrySchema",
       "file": "EnrichmentOptionComparisonEntrySchema.json",
       "definition": "#/definitions/EnrichmentOptionComparisonEntrySchema"

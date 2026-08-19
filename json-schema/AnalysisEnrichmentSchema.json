@@ -52,6 +52,38 @@
             "error"
           ]
         },
+        "objective_ranking": {
+          "type": "object",
+          "properties": {
+            "direction": {
+              "type": "string",
+              "enum": [
+                "maximise",
+                "minimise",
+                "target"
+              ]
+            },
+            "attested": {
+              "type": "boolean"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "computed",
+                "withheld"
+              ]
+            },
+            "withheld_reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "direction",
+            "attested",
+            "status"
+          ],
+          "additionalProperties": true
+        },
         "option_comparison": {
           "type": "array",
           "items": {

@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.49.0] — 2026-08-19 (candidate)
+
+### Added — the objective sense (ROADMAP 2.1192)
+
+- **`NodeV3Schema.goal_direction`** (`'maximise' | 'minimise' | 'target'`, optional)
+  and the **`GoalDirection`** enum — the user's objective sense for a goal node.
+- **`EnrichmentObjectiveRankingSchema`** and `enrichment.objective_ranking` —
+  what the option ranking actually optimised, and whether the aim was stated.
+
+**WHY.** Measured at ISL staging tip `28fe0c95`, with a contrast control that
+discriminates (flipping an edge sign moved the ranking completely): **supplying
+the user's target changed the option ranking by exactly nothing.** ISL's winner
+rule was `max()` over the propagated goal-node scalar and nothing else, so
+"wins" meant *"this option produced the largest number at the goal node on this
+draw"* while every surface rendered it as *"this is the best option"* — the
+option crowned at 70.67% carried `probability_of_goal = 0.0`. A derived
+completeness check over all nineteen fields of ISL's robustness request found
+**zero direction-bearing members** (contrast: `goal_node_id`, `goal_threshold`,
+`goal_threshold_frame`, `goal_constraints` — four present). **The contract was
+the binding constraint**: no upstream service could express "I want this to go
+UP" even if it wanted to, which is why the fix starts here.
+
+`'target'` reuses the existing `goal_threshold` rather than introducing a second
+target — a separately-framed target would recreate the split this closes, where
+the threshold was an OUTPUT beside the comparison and never an INPUT to it.
+
+### Additive, and what absence means
+
+Both fields are optional. **Absence of `goal_direction` means UNATTESTED, not
+`'maximise'`**: ISL still ranks by the historical maximiser but reports
+`objective_ranking.attested === false` plus a `GOAL_DIRECTION_UNATTESTED`
+inference warning. A consumer that finds `objective_ranking` absent must treat
+the ranking as unattested, never as attested-maximise.
+
+### Sequencing, and one hazard that will not fail loud
+
+ISL landed FIRST and is the verified consumer (its request models are
+`extra: "ignore"`, so a contract-first field dies silently at parse with a 200 —
+the same ordering `control_candidates` used). PLoT forwarding and CEE stamping
+follow.
+
+⚠ **PLoT's V3→ISL node constructor and its observed-state allow-list are
+hand-maintained and do not error on an unknown contract field**, so until
+forwarding lands a stamped `goal_direction` is *structurally deleted* at that
+boundary and the drift reads as green — exactly what happened to
+`goal_threshold_frame`. Safe (ISL falls back to an unattested maximise and says
+so) but not "it arrives". See the field's row in
+`contracts/adoption-manifest.json`.
+
+⚠ **Producers must not infer the sense from a node label.** A goal called
+"churn" usually wants minimising and sometimes does not; a goal called "price"
+routinely wants a target rather than a maximum. Where the direction is
+undeterminable the correct move is to ask the team — guessing reinstates the
+defect in a new place.
+
+
 ## [0.48.0] — 2026-08-17 (candidate)
 
 **`structural_delete` — a durable, atomic removal event.** Purely additive: one
