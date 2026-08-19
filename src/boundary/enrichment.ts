@@ -1,4 +1,8 @@
 import { z } from 'zod';
+// ROADMAP 2.1192: the objective sense is DEFINED ONCE, on the request side, and
+// reused here. A second local enum would be a hand-maintained mirror of an enum
+// — the estate's dominant defect class — and the two would drift silently.
+import { GoalDirection } from '../graph.js';
 
 // ============================================================================
 // Analysis enrichment envelope (v0.14.0) — the typed replacement for the
@@ -226,6 +230,70 @@ export type EnrichmentConstraintMargin =
  * (absent) when any constraint target is unreliable, and delivered with
  * `goal_fit_basis` under doctrine B (PR #204).
  */
+/**
+ * One producer comparison, derived from paired joint simulation draws before
+ * separately added output noise. win_probability is fractional first-place
+ * credit divided by requested draws: ties split credit equally, and draws with
+ * no finite outcome award none. It is neither strict-win frequency nor
+ * calibrated real-world confidence. PLoT may filter eligibility, but consumers
+ * must not recompute this order from marginal means or local winner rules.
+ *
+ * Equal exact shares have equal dense ranks. ID order within a tie is stable
+ * display ordering, never permission to designate a unique recommendation.
+ * Withheld means no comparison; an empty list must not be treated as a tie.
+ */
+export const EnrichmentObjectiveRankingSchema = z.object({
+  direction: GoalDirection.optional(),
+  attested: z.boolean(),
+  status: z.enum(['computed', 'withheld']),
+  withheld_reason: z.string().min(1).optional(),
+  ranked_options: z.array(z.object({
+    option_id: z.string().min(1),
+    rank: z.number().int().min(1),
+    win_probability: z.number().finite().min(0).max(1),
+  }).passthrough()),
+}).passthrough().superRefine((ranking, ctx) => {
+  const reject = (path: (string | number)[], message: string) =>
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path, message });
+  if (ranking.status === 'withheld') {
+    if (ranking.ranked_options.length !== 0) {
+      reject(['ranked_options'], 'A withheld comparison cannot carry ranked options.');
+    }
+    if (!ranking.withheld_reason) {
+      reject(['withheld_reason'], 'Withholding requires an explicit reason.');
+    }
+    return;
+  }
+  if (!ranking.attested || ranking.direction === undefined) {
+    reject(['attested'], 'A computed comparison requires a stated objective.');
+  }
+  if (ranking.withheld_reason !== undefined) {
+    reject(['withheld_reason'], 'A computed comparison cannot also be withheld.');
+  }
+  if (!ranking.ranked_options.length ||
+      !ranking.ranked_options.some((option) => option.win_probability > 0)) {
+    reject(['ranked_options'], 'A computed comparison requires informative draws.');
+  }
+  const ids = new Set<string>();
+  let denseRank = 1;
+  for (const [index, option] of ranking.ranked_options.entries()) {
+    if (ids.has(option.option_id)) reject(['ranked_options', index, 'option_id'], 'Duplicate option identity.');
+    ids.add(option.option_id);
+    const previous = ranking.ranked_options[index - 1];
+    if (previous) {
+      if (option.win_probability > previous.win_probability ||
+          (option.win_probability === previous.win_probability && option.option_id < previous.option_id)) {
+        reject(['ranked_options', index], 'Options must follow producer share order, with stable ID ordering for ties.');
+      }
+      if (option.win_probability < previous.win_probability) denseRank += 1;
+    }
+    if (option.rank !== denseRank) reject(['ranked_options', index, 'rank'], 'Rank must be dense and shared for equal shares.');
+  }
+  const total = ranking.ranked_options.reduce((sum, option) => sum + option.win_probability, 0);
+  if (total > 1 + 1e-12) reject(['ranked_options'], 'First-place shares cannot exceed one in total.');
+});
+export type EnrichmentObjectiveRanking = z.infer<typeof EnrichmentObjectiveRankingSchema>;
+
 export const EnrichmentOptionComparisonEntrySchema = z.object({
   option_id: z.string().min(1),
   option_label: z.string().optional(),
@@ -1075,6 +1143,13 @@ export const AnalysisEnrichmentSchema = z.object({
   constraints_status: EnrichmentFeatureStatus.optional(),
 
   // --- science payloads ---------------------------------------------------
+  /**
+   * Reconciled objective authority. What the ranking beside this optimised,
+   * and whether the user's objective was actually stated. Optional so an
+   * older-pinned producer degrades to dark-but-honest; a consumer that finds it
+   * ABSENT must treat the ranking as UNATTESTED, never as attested-maximise.
+   */
+  objective_ranking: EnrichmentObjectiveRankingSchema.optional(),
   option_comparison: z.array(EnrichmentOptionComparisonEntrySchema).optional(),
   factor_sensitivity: z.array(EnrichmentFactorSensitivityEntrySchema).optional(),
   robustness: EnrichmentRobustnessSchema.nullable().optional(),

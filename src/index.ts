@@ -15,6 +15,7 @@ export {
   TopologyPlanSchema,
   // 0.31.0 additive — ROADMAP 2.258 (frame attestation) and 2.193 (declared
   // scale + its authority bound).
+  GoalDirection,
   GoalThresholdFrame,
   DeclaredScale,
   DECLARED_SCALE_BOUNDS,
@@ -35,6 +36,7 @@ export type {
   EdgeTypeType,
   TopologyPlan,
   // 0.31.0 additive.
+  GoalDirectionType,
   GoalThresholdFrameType,
   DeclaredScaleType,
   // 0.40.0 additive.

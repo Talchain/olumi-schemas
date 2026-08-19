@@ -52,6 +52,66 @@
             "error"
           ]
         },
+        "objective_ranking": {
+          "type": "object",
+          "properties": {
+            "direction": {
+              "type": "string",
+              "enum": [
+                "maximise",
+                "minimise",
+                "target"
+              ]
+            },
+            "attested": {
+              "type": "boolean"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "computed",
+                "withheld"
+              ]
+            },
+            "withheld_reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ranked_options": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "option_id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rank": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "win_probability": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": [
+                  "option_id",
+                  "rank",
+                  "win_probability"
+                ],
+                "additionalProperties": true
+              }
+            }
+          },
+          "required": [
+            "attested",
+            "status",
+            "ranked_options"
+          ],
+          "additionalProperties": true
+        },
         "option_comparison": {
           "type": "array",
           "items": {

@@ -96,7 +96,7 @@ export type CanonicalGraphHashKeepKey =
  * when reconciling receipts. Bump this integer whenever any nested inclusion
  * or conditional rule changes.
  */
-export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 1 as const;
+export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 2 as const;
 
 /**
  * The exact nested fields retained by the canonical analysis graph hash.
@@ -117,6 +117,8 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'factor_type',
       'is_baseline',
       'goal_threshold',
+      'goal_direction',
+      'goal_threshold_frame',
       'goal_threshold_raw',
       'goal_threshold_cap',
       'intercept',
