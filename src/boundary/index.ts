@@ -171,6 +171,20 @@ export type {
   RunDeltaFlipThresholdDelta,
 } from './run-delta.js';
 
+// Persisted model-version history and semantic diff. This is intentionally a
+// separate contract family from run_delta: it compares model snapshots, not
+// stochastic analysis executions.
+export {
+  ModelVersionSummaryV2Schema,
+  ModelVersionsListV2Schema,
+  ModelVersionDiffV1Schema,
+} from './model-versions.js';
+export type {
+  ModelVersionSummaryV2,
+  ModelVersionsListV2,
+  ModelVersionDiffV1,
+} from './model-versions.js';
+
 // Composed analysis-state verdict (0.46.0 — analysis-state authority
 // migration, step 2). Carried on `OlumiResponseSchema.analysis_state`; see
 // ./analysis-state.ts for the doctrine, the per-field licence, and the three

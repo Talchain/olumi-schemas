@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ModelVersionSummaryV2Schema`, `ModelVersionsListV2Schema`, and
+  `ModelVersionDiffV1Schema` at the `/boundary` entry for persisted model
+  history. The user-facing label is retained with explicit `null` absence;
+  actors distinguish producer-attested known, system, and unknown authors;
+  creation and lineage gaps are explicit `unknown` states;
+  creation metadata carries the persisted source turn (or explicit legacy
+  `null`), route envelopes retain required request correlation (with explicit
+  `null` absence), and list pages carry the authoritative current-version id;
+  diff relation is limited to full-hash-attested `identical | different`;
+  category and coverage arrays are deterministic; mechanically detected but
+  uninterpreted paths are paired with `other_model_fields`; known blind spots travel as
+  `coverage.known_undetectable` and `coverage.known_uninterpreted_paths`.
+- The model-version diff is a separate contract family from analysis-run
+  `RunDeltaSchema`: it describes model snapshot changes and grants no causal
+  entitlement for analysis-result changes.
+
 ## [0.48.0] — 2026-08-17 (candidate)
 
 **`structural_delete` — a durable, atomic removal event.** Purely additive: one
