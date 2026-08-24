@@ -2280,6 +2280,11 @@ export const maximalDecisionRecordPrediction = deepFreeze({
   confidence_source: 'user_stated',
   probability_of_goal: 0.71,
   probability_of_joint_goal: 0.58,
+  // ROADMAP 2.757. 'blind' deliberately, not 'not_blind': the fixture library's
+  // job is to make a field a stale consumer would silently drop VISIBLE, and
+  // 'blind' is the value whose loss actually costs something — a dropped
+  // 'blind' turns an independent estimate into an ineligible one.
+  elicited_blind: 'blind',
 });
 
 export const maximalDecisionRecordOutcome = deepFreeze({
