@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.49.0] — 2026-08-24 (candidate)
+
+**`elicited_blind` — a decision record that says how its belief was elicited.**
+Purely additive: one new optional field on `DecisionRecordPredictionSchema`, one
+new exported enum. No existing field, member, vocabulary or validation rule
+changed.
+
+### Why
+
+A confidence stated once the analysis is on screen is **anchored**. It may be
+recorded and scored for personal calibration, but it must never be blended into
+a group aggregate as if it were an independent estimate. Eligibility therefore
+has to be a **recorded fact at capture time** — nobody downstream can
+reconstruct what a person could see (ROADMAP 2.757).
+
+Today CEE writes decision records from exactly two paths and both are
+post-analysis, so nothing is ambiguous *yet*. The moment blind elicitation
+rounds (already shipped, `src/collab/**`) start feeding this store, the two
+populations become indistinguishable with no way back. The marker has to exist
+before that consumer does.
+
+### Three values, not a boolean
+
+`'blind' | 'not_blind' | 'unknown'`. A boolean would conflate *"we know this was
+anchored"* with *"we could not tell"* — the exact ambiguity the field exists to
+remove, and two different questions under one name.
+
+**Blindness is earned.** A path that cannot prove withholding yields `unknown`,
+never `blind`: a false `not_blind` costs one usable data point, a false `blind`
+silently corrupts an aggregate.
+
+**Optional-forward and never backfilled.** Absent means the record predates the
+marker. Those records are genuinely ambiguous, and inventing a value for them
+would be fabrication.
+
+### Consumer note
+
+`create_decision_record`'s `p_prediction` key whitelist must admit the key
+before any producer stamps it — an off-whitelist key is a `22023` refusal of the
+**whole record**, not a dropped field.
+
+
 ## [0.48.0] — 2026-08-17 (candidate)
 
 **`structural_delete` — a durable, atomic removal event.** Purely additive: one

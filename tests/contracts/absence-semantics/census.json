@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 74,
+    "distinct": 75,
     "same": 8,
     "unresolved": 393
   },
@@ -755,6 +755,14 @@
       "verdict": "distinct",
       "note": "Same comment as probability_of_goal: \"absent whenever no goal target existed at capture.\" Absence is a statement about the DECISION, not about the probability.",
       "ref": "src/boundary/decision-record.ts \u2014 DecisionRecordPredictionSchema block comment (0.16.0, D-N Option-B)"
+    },
+    "boundary/DecisionRecordPredictionSchema.elicited_blind": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means THE RECORD PREDATES THE MARKER. No value can express that: 'unknown' means the capture path could not establish the elicitation conditions, which is a statement ABOUT THAT RECORD's capture, whereas absence is a statement about the CONTRACT at the time of writing. Collapsing the two would let a pre-marker record be read as one whose conditions were investigated and found indeterminate - the precise confusion this field exists to prevent. Records are NEVER backfilled, so absence is permanent and load-bearing.",
+      "ref": "src/boundary/decision-record.ts \u2014 the field's own contract comment: 'Optional-forward, and NEVER BACKFILLED: absent means the record predates the marker.' Absence therefore states a FOURTH fact that no value can express: 'unknown' means the capture path could not establish the conditions, which is NOT the same as the marker not having existed when the record was written. ROADMAP 2.757. DEBT ROW \u2014 the discriminator (e.g. a record-level contract version) rides its own train, deliberately not this PR."
     },
     "boundary/DecisionRecordSchema.outcome": {
       "markers": [

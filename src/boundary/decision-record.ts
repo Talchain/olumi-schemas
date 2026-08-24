@@ -91,12 +91,42 @@ export type DecisionRecordConfidenceSourceLiteral = z.infer<typeof DecisionRecor
 // jointly). Producer values (ISL via PLoT) recorded verbatim — the record
 // never computes or rescales them. Both optional-forward: absent whenever
 // no goal target existed at capture.
+//
+// `elicited_blind` (0.49.0, additive — ROADMAP 2.757): under what elicitation
+// conditions was this belief stated? A CONFIDENCE STATED ONCE THE ANALYSIS IS
+// ON SCREEN IS ANCHORED, and an anchored number may be recorded and scored for
+// personal calibration but must never be blended into a group aggregate as if
+// it were an independent estimate. Eligibility has to be a RECORDED FACT at
+// capture time, because nobody downstream can reconstruct what a person could
+// see.
+//   'blind'     — the capture path PROVES the belief was withheld from both
+//                 sibling positions and the model's own number.
+//   'not_blind' — the belief was not independent of the analysis (the analysis
+//                 provably already existed, or the number IS the analysis).
+//   'unknown'   — the capture path could establish neither.
+// THREE VALUES, NOT A BOOLEAN, ON PURPOSE: a boolean conflates "we know this
+// was anchored" with "we could not tell", which is the exact ambiguity the
+// marker exists to remove — two different questions under one name.
+// BLINDNESS IS EARNED: a path that cannot prove it yields 'unknown', never
+// 'blind' (a false 'not_blind' costs one data point; a false 'blind' silently
+// corrupts an aggregate).
+// Optional-forward, and NEVER BACKFILLED: absent means the record predates the
+// marker. Those records are genuinely ambiguous and inventing a value for them
+// would be fabrication.
+export const DecisionRecordElicitedBlind = z.enum([
+  'blind',
+  'not_blind',
+  'unknown',
+]);
+export type DecisionRecordElicitedBlindLiteral = z.infer<typeof DecisionRecordElicitedBlind>;
+
 export const DecisionRecordPredictionSchema = z.object({
   statement: z.string().min(1),
   confidence: z.number().min(0).max(1).optional(),
   confidence_source: DecisionRecordConfidenceSource.optional(),
   probability_of_goal: z.number().min(0).max(1).optional(),
   probability_of_joint_goal: z.number().min(0).max(1).optional(),
+  elicited_blind: DecisionRecordElicitedBlind.optional(),
 }).strict();
 export type DecisionRecordPrediction = z.infer<typeof DecisionRecordPredictionSchema>;
 

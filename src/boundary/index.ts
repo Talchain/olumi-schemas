@@ -459,6 +459,7 @@ export {
   DecisionRecordOutcomeSchema,
   DecisionRecordOutcomeResult,
   DecisionRecordConfidenceSource,
+  DecisionRecordElicitedBlind,
 } from './decision-record.js';
 export type {
   DecisionRecord,
@@ -468,6 +469,7 @@ export type {
   DecisionRecordOutcome,
   DecisionRecordOutcomeResultLiteral,
   DecisionRecordConfidenceSourceLiteral,
+  DecisionRecordElicitedBlindLiteral,
 } from './decision-record.js';
 
 // Re-exports from the flat root for convenience inside /boundary consumers.
