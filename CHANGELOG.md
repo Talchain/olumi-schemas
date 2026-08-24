@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `ModelVersionMutationReceiptV1Schema` at the `/boundary` entry and the
+  optional `OlumiResponse.model_version_receipt` carrier. The strict atomic
+  receipt carries the authoritative committed `GraphV3`, identity envelope,
+  actor, creation, source-turn, lineage, undo and event facts. It deliberately
+  omits replay/dedupe and analysis-freshness fields: idempotent replay is
+  byte-equivalent, and top-level `analysis_state` remains the sole freshness
+  authority.
 - `ModelVersionSummaryV2Schema`, `ModelVersionsListV2Schema`, and
   `ModelVersionDiffV1Schema` at the `/boundary` entry for persisted model
   history. The user-facing label is retained with explicit `null` absence;

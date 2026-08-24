@@ -63,8 +63,8 @@
     }
   },
   "counts": {
-    "distinct": 74,
-    "same": 30,
+    "distinct": 75,
+    "same": 32,
     "unresolved": 393
   },
   "open_objects": {
@@ -2175,13 +2175,29 @@
       "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling for a version with no persisted user-facing label.",
       "ref": "src/boundary/model-versions.ts :: ModelVersionSummaryV2ObjectSchema.label"
     },
-    "boundary/ModelVersionSummaryV2Schema.lineage|kind=known.parent_version_id": {
+    "boundary/ModelVersionMutationReceiptV1Schema.lineage|kind=known.parent_version_id": {
       "markers": [
         "nullable"
       ],
       "verdict": "same",
       "note": "The known-lineage key is required, so omission is rejected. Its description defines null as the lineage root; unavailable lineage uses the separate unknown union arm.",
       "ref": "src/boundary/model-versions.ts :: ModelVersionLineageSchema.parent_version_id"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.source_turn_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when source-turn correlation was not captured.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionMutationReceiptV1ObjectSchema.source_turn_id"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.undo_version_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when no undo version exists.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionMutationReceiptV1ObjectSchema.undo_version_id"
     },
     "boundary/ModelVersionsListV2Schema.next_cursor": {
       "markers": [
@@ -2401,6 +2417,14 @@
       "verdict": "distinct",
       "note": "Schema comment: absence means no notice attestation was supplied by this response (the legacy producer state), never zero notices. A present carrier cannot encode zero and must account for every notice exactly once.",
       "ref": "src/boundary/olumi-response.ts \u2014 OlumiResponseSchema.model_building_notices comment (0.45.0)"
+    },
+    "boundary/OlumiResponseSchema.model_version_receipt": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field comment: absent means this response does not attest a committed model mutation. A present receipt is the exact atomic commit attestation and is never inferred from draft_graph or a persistence sidecar.",
+      "ref": "src/boundary/olumi-response.ts :: OlumiResponseSchema.model_version_receipt comment (C8-A)"
     },
     "boundary/OlumiResponseSchema.reasoning": {
       "markers": [

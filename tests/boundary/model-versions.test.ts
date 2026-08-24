@@ -370,6 +370,15 @@ describe('ModelVersionDiffV1Schema', () => {
         },
       }).success,
     ).toBe(false);
+    expect(
+      ModelVersionDiffV1Schema.safeParse({
+        ...VALID_DIFFERENT_DIFF,
+        categories: {
+          ...emptyCategories(),
+          values_uncertainty: [{ ...VALUE_CHANGE, entity_id: '' }],
+        },
+      }).success,
+    ).toBe(false);
   });
 });
 

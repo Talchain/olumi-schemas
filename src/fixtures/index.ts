@@ -146,6 +146,7 @@ import {
   RunDeltaFlipThresholdDeltaSchema,
   // Persisted model-version history and semantic diff.
   ModelVersionSummaryV2Schema,
+  ModelVersionMutationReceiptV1Schema,
   ModelVersionsListV2Schema,
   ModelVersionDiffV1Schema,
   // 0.39.0 car 4 — collab elicitation + disagreement (ROADMAP 2.686 U-S0)
@@ -1616,6 +1617,7 @@ const MODEL_VERSION_4_ID = 'f1000000-0000-4000-8000-000000000004';
 const MODEL_VERSION_5_ID = 'f1000000-0000-4000-8000-000000000005';
 const MODEL_VERSION_6_ID = 'f1000000-0000-4000-8000-000000000006';
 const MODEL_VERSION_7_ID = 'f1000000-0000-4000-8000-000000000007';
+const MODEL_VERSION_8_ID = 'f1000000-0000-4000-8000-000000000008';
 
 export const maximalModelVersionSummaryInitial = deepFreeze({
   version_id: MODEL_VERSION_1_ID,
@@ -1761,6 +1763,80 @@ export const maximalModelVersionSummarySystem = deepFreeze({
   },
   full_hash: '7'.repeat(64),
   analysis_affecting_hash: '0'.repeat(64),
+});
+
+export const maximalModelVersionMutationReceiptInitial = deepFreeze({
+  schema: 'model_version_mutation_receipt.v1',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  mutation_id: 'fc000000-0000-4000-8000-000000000001',
+  version_id: MODEL_VERSION_1_ID,
+  sequence: 1,
+  graph: maximalGraphV3,
+  full_hash: '1'.repeat(64),
+  hash_algorithm: 'sha256',
+  identity_projection_version: 'FIXTURE_identity_projection_v1',
+  identity_normaliser_version: 'FIXTURE_identity_normaliser_v1',
+  graph_schema_version: 'FIXTURE_graph_v3',
+  analysis_affecting_hash: 'a'.repeat(64),
+  actor: { kind: 'system' },
+  creation: { kind: 'initial' },
+  source_turn_id: 'fixture_turn_model_version_receipt_initial',
+  lineage: {
+    kind: 'known',
+    parent_version_id: null,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  undo_version_id: null,
+  event_id: 'model_version_created_mutation_fc000000-0000-4000-8000-000000000001',
+});
+
+export const maximalModelVersionMutationReceiptCommittedMutation = deepFreeze({
+  schema: 'model_version_mutation_receipt.v1',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  mutation_id: 'fc000000-0000-4000-8000-000000000007',
+  version_id: MODEL_VERSION_7_ID,
+  sequence: 7,
+  graph: maximalGraphV3,
+  full_hash: '7'.repeat(64),
+  hash_algorithm: 'sha256',
+  identity_projection_version: 'FIXTURE_identity_projection_v1',
+  identity_normaliser_version: 'FIXTURE_identity_normaliser_v1',
+  graph_schema_version: 'FIXTURE_graph_v3',
+  analysis_affecting_hash: '0'.repeat(64),
+  actor: { kind: 'known', authored_by: 'owner' },
+  creation: { kind: 'committed_mutation' },
+  source_turn_id: 'fixture_turn_model_version_receipt_committed',
+  lineage: {
+    kind: 'known',
+    parent_version_id: MODEL_VERSION_6_ID,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  undo_version_id: null,
+  event_id: 'model_version_created_mutation_fc000000-0000-4000-8000-000000000007',
+});
+
+export const maximalModelVersionMutationReceiptRestore = deepFreeze({
+  schema: 'model_version_mutation_receipt.v1',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  mutation_id: 'fc000000-0000-4000-8000-000000000008',
+  version_id: MODEL_VERSION_8_ID,
+  sequence: 8,
+  graph: maximalGraphV3,
+  full_hash: '8'.repeat(64),
+  hash_algorithm: 'sha256',
+  identity_projection_version: 'FIXTURE_identity_projection_v1',
+  identity_normaliser_version: 'FIXTURE_identity_normaliser_v1',
+  graph_schema_version: 'FIXTURE_graph_v3',
+  analysis_affecting_hash: '8'.repeat(64),
+  actor: { kind: 'unknown' },
+  creation: {
+    kind: 'restore',
+    source_version_id: MODEL_VERSION_5_ID,
+  },
+  source_turn_id: 'fixture_turn_model_version_receipt_restore',
+  lineage: { kind: 'unknown' },
+  undo_version_id: MODEL_VERSION_7_ID,
+  event_id: 'model_version_restored_mutation_fc000000-0000-4000-8000-000000000008',
 });
 
 export const maximalModelVersionsListV2 = deepFreeze({
@@ -2307,6 +2383,9 @@ export const maximalOlumiResponse = deepFreeze({
   // is hosted here because it is the only kind under which a leader claim may
   // be permitted, so the response fixture carries the fully-usable shape.
   analysis_state: maximalAnalysisStateCompleteCurrent,
+  // C8-A — exact atomic committed-model receipt. Freshness remains solely in
+  // the sibling analysis_state carrier above.
+  model_version_receipt: maximalModelVersionMutationReceiptCommittedMutation,
   // 0.45.0 — response-only redacted construction notices.
   model_building_notices: maximalModelBuildingNotices,
   // 0.19.0 — wave-2 producer fields (asks 4 + 5).
@@ -2320,6 +2399,16 @@ export const maximalOlumiResponse = deepFreeze({
   // 0.39.0 (ROADMAP 2.698-S2) — the run-over-run delta block, beside
   // `analysis_ready`.
   run_delta: maximalRunDelta,
+});
+
+export const maximalOlumiResponseWithInitialModelVersionReceipt = deepFreeze({
+  ...maximalOlumiResponse,
+  model_version_receipt: maximalModelVersionMutationReceiptInitial,
+});
+
+export const maximalOlumiResponseWithRestoreModelVersionReceipt = deepFreeze({
+  ...maximalOlumiResponse,
+  model_version_receipt: maximalModelVersionMutationReceiptRestore,
 });
 
 // ----------------------------------------------------------------------------
@@ -3039,6 +3128,23 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     notes: 'Exercises the producer-attested system actor; consumers must never infer this arm.',
   },
   {
+    family: 'boundary/ModelVersionMutationReceiptV1Schema#initial',
+    schema: ModelVersionMutationReceiptV1Schema,
+    fixture: maximalModelVersionMutationReceiptInitial,
+  },
+  {
+    family: 'boundary/ModelVersionMutationReceiptV1Schema#committed_mutation',
+    schema: ModelVersionMutationReceiptV1Schema,
+    fixture: maximalModelVersionMutationReceiptCommittedMutation,
+  },
+  {
+    family: 'boundary/ModelVersionMutationReceiptV1Schema#restore',
+    schema: ModelVersionMutationReceiptV1Schema,
+    fixture: maximalModelVersionMutationReceiptRestore,
+    notes:
+      'Exercises explicit unknown actor and lineage, restore source identity, and a non-null undo version.',
+  },
+  {
     family: 'boundary/ModelVersionsListV2Schema',
     schema: ModelVersionsListV2Schema,
     fixture: maximalModelVersionsListV2,
@@ -3478,7 +3584,17 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     schema: OlumiResponseSchema,
     fixture: maximalOlumiResponse,
     notes:
-      'The /orchestrate/v2/turn egress. Carries every top-level optional, including the response-only model_building_notices carrier and the 0.46.0 composed analysis_state verdict, AND one block of every union member — the fields consumers have historically lost are all present.',
+      'The /orchestrate/v2/turn egress. Carries every top-level optional, including the response-only model_building_notices carrier, the C8-A committed-mutation receipt, and the 0.46.0 composed analysis_state verdict, AND one block of every union member — the fields consumers have historically lost are all present.',
+  },
+  {
+    family: 'boundary/OlumiResponseSchema#model_version_receipt_initial',
+    schema: OlumiResponseSchema,
+    fixture: maximalOlumiResponseWithInitialModelVersionReceipt,
+  },
+  {
+    family: 'boundary/OlumiResponseSchema#model_version_receipt_restore',
+    schema: OlumiResponseSchema,
+    fixture: maximalOlumiResponseWithRestoreModelVersionReceipt,
   },
   // --- v2 run + patch ---------------------------------------------------------------
   { family: 'boundary/LegacyGoalConstraintStubSchema', schema: LegacyGoalConstraintStubSchema, fixture: maximalLegacyGoalConstraintStub },

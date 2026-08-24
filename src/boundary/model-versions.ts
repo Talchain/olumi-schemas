@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { GraphV3Schema } from '../graph.js';
 import { AuthoredBySchema } from './collab.js';
 
 // ============================================================================
@@ -140,6 +141,82 @@ export const ModelVersionSummaryV2Schema = ModelVersionSummaryV2ObjectSchema.sup
 );
 export type ModelVersionSummaryV2 = z.infer<typeof ModelVersionSummaryV2Schema>;
 
+const ModelVersionMutationReceiptCreationSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('initial'),
+  }).strict(),
+  z.object({
+    kind: z.literal('committed_mutation'),
+  }).strict(),
+  z.object({
+    kind: z.literal('restore'),
+    source_version_id: UuidSchema,
+  }).strict(),
+]);
+
+const ModelVersionMutationReceiptV1ObjectSchema = z.object({
+  schema: z.literal('model_version_mutation_receipt.v1'),
+  scenario_id: UuidSchema,
+  mutation_id: UuidSchema,
+  version_id: UuidSchema,
+  sequence: z.number().int().min(1),
+  graph: GraphV3Schema,
+  full_hash: Sha256Schema,
+  hash_algorithm: NonEmptyStringSchema,
+  identity_projection_version: NonEmptyStringSchema,
+  identity_normaliser_version: NonEmptyStringSchema,
+  graph_schema_version: NonEmptyStringSchema,
+  analysis_affecting_hash: Sha256Schema,
+  actor: ModelVersionActorSchema,
+  creation: ModelVersionMutationReceiptCreationSchema,
+  source_turn_id: NonEmptyStringSchema.nullable().describe(
+    'The turn whose atomic mutation produced this receipt. Required on the wire: null means ' +
+      'source-turn correlation was not captured; omission is invalid.',
+  ),
+  lineage: ModelVersionLineageSchema,
+  undo_version_id: UuidSchema.nullable().describe(
+    'The exact pre-mutation version that can restore the prior model. Required on the wire: ' +
+      'null means no undo version exists; omission is invalid.',
+  ),
+  event_id: NonEmptyStringSchema,
+}).strict();
+
+/**
+ * Atomic receipt for the authoritative model snapshot committed by this turn.
+ * It intentionally contains neither replay/dedupe flags nor analysis
+ * freshness: a replay has the same receipt bytes, while the enclosing
+ * OlumiResponse.analysis_state remains the sole analysis-state authority.
+ */
+export const ModelVersionMutationReceiptV1Schema =
+  ModelVersionMutationReceiptV1ObjectSchema.superRefine((data, ctx) => {
+    if (data.lineage.kind === 'known' && data.lineage.parent_version_id === data.version_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['lineage', 'parent_version_id'],
+        message: 'a model version cannot be its own parent',
+      });
+    }
+
+    if (data.creation.kind === 'restore' && data.creation.source_version_id === data.version_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['creation', 'source_version_id'],
+        message: 'a restored model version cannot source itself',
+      });
+    }
+
+    if (data.undo_version_id === data.version_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['undo_version_id'],
+        message: 'a model version cannot be its own undo version',
+      });
+    }
+  });
+export type ModelVersionMutationReceiptV1 = z.infer<
+  typeof ModelVersionMutationReceiptV1Schema
+>;
+
 const ModelVersionsListV2ObjectSchema = z.object({
   schema: z.literal('model_versions_list.v2'),
   request_id: NonEmptyStringSchema.nullable().describe(
@@ -222,7 +299,7 @@ const ModelVersionDiffItemSchema = z.object({
   path: JsonPointerSchema,
   change_kind: z.enum(['added', 'removed', 'changed']),
   entity_kind: z.enum(['model', 'node', 'edge', 'option', 'constraint']),
-  entity_id: z.string().nullable().describe(
+  entity_id: NonEmptyStringSchema.nullable().describe(
     'Stable entity id when the change belongs to one entity. Null means model-level change.',
   ),
   label: z.string().nullable().describe(
