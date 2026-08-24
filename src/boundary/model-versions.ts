@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { GraphV3Schema } from '../graph.js';
+import { AnalysisStateV1Schema } from './analysis-state.js';
 import { AuthoredBySchema } from './collab.js';
 
 // ============================================================================
@@ -216,6 +217,38 @@ export const ModelVersionMutationReceiptV1Schema =
 export type ModelVersionMutationReceiptV1 = z.infer<
   typeof ModelVersionMutationReceiptV1Schema
 >;
+
+/**
+ * All-or-nothing restore response. The nested receipt is the same canonical
+ * mutation receipt used by ordinary semantic commits; AnalysisState remains a
+ * sibling producer authority and is never recomputed by a consumer.
+ */
+export const ModelVersionRestoreV2Schema = z.object({
+  schema: z.literal('model_version_restore.v2'),
+  scenario_id: UuidSchema,
+  restored: z.literal(true),
+  receipt: ModelVersionMutationReceiptV1Schema,
+  analysis_state: AnalysisStateV1Schema.nullable().describe(
+    'Canonical post-restore analysis state. Null means no analysis-state fact was available; omission is invalid.',
+  ),
+  request_id: NonEmptyStringSchema,
+}).strict().superRefine((data, ctx) => {
+  if (data.receipt.scenario_id !== data.scenario_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['receipt', 'scenario_id'],
+      message: 'the restore receipt must belong to the response scenario_id',
+    });
+  }
+  if (data.receipt.creation.kind !== 'restore') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['receipt', 'creation', 'kind'],
+      message: 'a restore response requires a restore mutation receipt',
+    });
+  }
+});
+export type ModelVersionRestoreV2 = z.infer<typeof ModelVersionRestoreV2Schema>;
 
 const ModelVersionsListV2ObjectSchema = z.object({
   schema: z.literal('model_versions_list.v2'),

@@ -235,10 +235,12 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   CanonicalEdgeRefSchema needs no row of its own: it is internal (not
     //   exported from a namespace entry point) and is exercised non-empty by
     //   this fixture's `removed_edges`.
-    // C8-A: 188 -> 193 (+5): three mutation-receipt variants exercise its
+    // C8-A: 188 -> 194 (+6): three mutation-receipt variants exercise its
     // actor/creation/lineage unions, and two OlumiResponse variants exercise
-    // the initial/restore branches of the optional single-receipt carrier.
-    expect(MAXIMAL_FIXTURES.length).toBe(193);
+    // the initial/restore branches of the optional single-receipt carrier. The
+    // final row exercises the atomic restore envelope and its AnalysisState
+    // sibling authority.
+    expect(MAXIMAL_FIXTURES.length).toBe(194);
   });
 
   it('family keys are unique', () => {

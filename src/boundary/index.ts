@@ -177,12 +177,14 @@ export type {
 export {
   ModelVersionSummaryV2Schema,
   ModelVersionMutationReceiptV1Schema,
+  ModelVersionRestoreV2Schema,
   ModelVersionsListV2Schema,
   ModelVersionDiffV1Schema,
 } from './model-versions.js';
 export type {
   ModelVersionSummaryV2,
   ModelVersionMutationReceiptV1,
+  ModelVersionRestoreV2,
   ModelVersionsListV2,
   ModelVersionDiffV1,
 } from './model-versions.js';

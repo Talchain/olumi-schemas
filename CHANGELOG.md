@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `ModelVersionRestoreV2Schema` at the `/boundary` entry for the atomic restore
+  route envelope. It carries the canonical restore mutation receipt and
+  nullable canonical `AnalysisState` as sibling authorities, and refuses a
+  scenario-mismatched or non-restore receipt.
 - `ModelVersionMutationReceiptV1Schema` at the `/boundary` entry and the
   optional `OlumiResponse.model_version_receipt` carrier. The strict atomic
   receipt carries the authoritative committed `GraphV3`, identity envelope,

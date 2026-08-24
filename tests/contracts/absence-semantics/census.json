@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 75,
-    "same": 32,
+    "same": 33,
     "unresolved": 393
   },
   "open_objects": {
@@ -2070,6 +2070,14 @@
       "verdict": "same",
       "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when route request correlation was unavailable.",
       "ref": "src/boundary/model-versions.ts :: ModelVersionDiffV1ObjectSchema.request_id"
+    },
+    "boundary/ModelVersionRestoreV2Schema.analysis_state": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when no post-restore analysis-state fact was available.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionRestoreV2Schema.analysis_state"
     },
     "boundary/ModelVersionSummaryV2Schema.creation|kind=committed_mutation.mutation_id": {
       "markers": [

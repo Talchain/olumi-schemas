@@ -147,6 +147,7 @@ import {
   // Persisted model-version history and semantic diff.
   ModelVersionSummaryV2Schema,
   ModelVersionMutationReceiptV1Schema,
+  ModelVersionRestoreV2Schema,
   ModelVersionsListV2Schema,
   ModelVersionDiffV1Schema,
   // 0.39.0 car 4 — collab elicitation + disagreement (ROADMAP 2.686 U-S0)
@@ -2329,6 +2330,15 @@ export const maximalAnalysisStateUnknownDegraded = deepFreeze({
   contradictions: ['FIXTURE_REFUSAL_REPORTED_BUT_UNCORROBORATED'],
 });
 
+export const maximalModelVersionRestoreV2 = deepFreeze({
+  schema: 'model_version_restore.v2',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  restored: true,
+  receipt: maximalModelVersionMutationReceiptRestore,
+  analysis_state: maximalAnalysisStateCompleteCurrent,
+  request_id: 'fixture_request_model_version_restore',
+});
+
 export const maximalOlumiResponse = deepFreeze({
   response_version: 2,
   assistant_text: 'FIXTURE synthetic assistant text.',
@@ -3143,6 +3153,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalModelVersionMutationReceiptRestore,
     notes:
       'Exercises explicit unknown actor and lineage, restore source identity, and a non-null undo version.',
+  },
+  {
+    family: 'boundary/ModelVersionRestoreV2Schema',
+    schema: ModelVersionRestoreV2Schema,
+    fixture: maximalModelVersionRestoreV2,
+    notes:
+      'Atomic restore envelope carries the canonical mutation receipt and AnalysisState as sibling producer authorities.',
   },
   {
     family: 'boundary/ModelVersionsListV2Schema',

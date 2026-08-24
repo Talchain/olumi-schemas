@@ -3,12 +3,14 @@ import { describe, expect, it } from 'vitest';
 import * as boundaryDist from '../../dist/boundary/index.js';
 import {
   ModelVersionMutationReceiptV1Schema,
+  ModelVersionRestoreV2Schema,
   OlumiResponseSchema,
 } from '../../src/boundary/index.js';
 import {
   maximalModelVersionMutationReceiptCommittedMutation,
   maximalModelVersionMutationReceiptInitial,
   maximalModelVersionMutationReceiptRestore,
+  maximalModelVersionRestoreV2,
   maximalOlumiResponse,
 } from '../../src/fixtures/index.js';
 
@@ -156,5 +158,43 @@ describe('OlumiResponse model_version_receipt carrier', () => {
       ).success,
     ).toBe(true);
     expect(boundaryDist.OlumiResponseSchema.shape.model_version_receipt).toBeDefined();
+  });
+});
+
+describe('ModelVersionRestoreV2Schema', () => {
+  it('carries the canonical restore receipt and sibling AnalysisState authority', () => {
+    expect(ModelVersionRestoreV2Schema.parse(maximalModelVersionRestoreV2)).toStrictEqual(
+      maximalModelVersionRestoreV2,
+    );
+    expect(
+      ModelVersionRestoreV2Schema.safeParse({
+        ...maximalModelVersionRestoreV2,
+        analysis_state: null,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('fails closed on a scenario mismatch, non-restore receipt, or absent AnalysisState', () => {
+    expect(
+      ModelVersionRestoreV2Schema.safeParse({
+        ...maximalModelVersionRestoreV2,
+        scenario_id: 'fa000000-0000-4000-8000-000000000099',
+      }).success,
+    ).toBe(false);
+    expect(
+      ModelVersionRestoreV2Schema.safeParse({
+        ...maximalModelVersionRestoreV2,
+        receipt: maximalModelVersionMutationReceiptCommittedMutation,
+      }).success,
+    ).toBe(false);
+    const { analysis_state: _analysisState, ...withoutAnalysisState } =
+      maximalModelVersionRestoreV2;
+    expect(ModelVersionRestoreV2Schema.safeParse(withoutAnalysisState).success).toBe(false);
+  });
+
+  it('reaches the built /boundary entry', () => {
+    expect(boundaryDist.ModelVersionRestoreV2Schema.parse(maximalModelVersionRestoreV2)).toStrictEqual(
+      maximalModelVersionRestoreV2,
+    );
   });
 });
