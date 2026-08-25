@@ -54,6 +54,26 @@ function unionKinds(): string[] {
     .map((o) => (o.shape.kind as z.ZodLiteral<string>).value);
 }
 
+/**
+ * Kinds added to the union SINCE 0.48.0, newest last.
+ *
+ * `PRE_0_48_KINDS` below is a HISTORIC RECORD of what 0.48.0 inherited and is
+ * append-only — it must never be edited to stay current. This is the derived
+ * present-tense half, the same idiom `KINDS_ADDED_SINCE_0_41` uses in
+ * turn-payload-0.42.test.ts, so a later member train keeps failing loud here
+ * instead of the 0.48.0 baseline being quietly rewritten to match it.
+ *
+ * It is ALSO what keeps the deploy-order test below honest: a "0.47.0-shaped
+ * reader" must be the union minus structural_delete AND minus everything added
+ * after it, or it silently stops being a 0.47.0 reader as the union grows.
+ *   · 0.50.0 — structural_add, structural_add_edge, structural_rename
+ */
+const KINDS_ADDED_SINCE_0_48 = [
+  'structural_add',
+  'structural_add_edge',
+  'structural_rename',
+] as const;
+
 // ---------------------------------------------------------------------------
 // A · The member exists and is reachable through the real ingress schema
 // ---------------------------------------------------------------------------
@@ -245,8 +265,16 @@ describe('0.48.0 is purely additive to the system-event union', () => {
     for (const k of PRE_0_48_KINDS) expect(kinds).toContain(k);
   });
 
-  it('the union gained exactly one member', () => {
-    expect(unionKinds()).toHaveLength(PRE_0_48_KINDS.length + 1);
+  it('0.48.0 gained exactly one member, and every later addition is declared', () => {
+    // The 0.48.0 delta itself: PRE_0_48 + structural_delete and nothing else.
+    // Stated as a set identity rather than as a raw length, so this keeps
+    // asserting what 0.48.0 did even as the union grows past it.
+    expect(unionKinds().sort()).toStrictEqual(
+      [...PRE_0_48_KINDS, 'structural_delete', ...KINDS_ADDED_SINCE_0_48].sort(),
+    );
+    expect(unionKinds()).toHaveLength(
+      PRE_0_48_KINDS.length + 1 + KINDS_ADDED_SINCE_0_48.length,
+    );
   });
 
   it('an unrelated member still parses byte-identically (edge_strength_edit)', () => {
@@ -300,8 +328,13 @@ describe('0.48.0 deploy-order guarantee — an unknown member rejects the WHOLE 
   // (proven additive by block D).
   it('a 0.47.0-shaped reader (union minus structural_delete) REJECTS the whole delete turn', () => {
     type KindOption = z.ZodDiscriminatedUnionOption<'kind'>;
+    // A 0.47.0 reader knows neither structural_delete NOR anything added after
+    // it. Filtering only structural_delete would leave the 0.50.0 members in and
+    // quietly stop simulating 0.47.0 — the length assertion below is what makes
+    // that failure loud rather than silent.
+    const EXCLUDED_FROM_0_47: readonly string[] = ['structural_delete', ...KINDS_ADDED_SINCE_0_48];
     const priorOptions = (SystemEventSchema.options as KindOption[])
-      .filter((o) => (o.shape.kind as z.ZodLiteral<string>).value !== 'structural_delete');
+      .filter((o) => !EXCLUDED_FROM_0_47.includes((o.shape.kind as z.ZodLiteral<string>).value));
     expect(priorOptions).toHaveLength(12);
 
     const priorUnion = z.discriminatedUnion(

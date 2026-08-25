@@ -2558,6 +2558,36 @@ const eventStructuralDelete = deepFreeze({
   removed_edges: [{ from: ID_FACTOR, to: ID_OPTION_B }],
   base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
 });
+// 0.50.0 — the three direct-edit members. Every field on each is REQUIRED, so
+// each fixture is maximal by construction; there is no optional field to omit
+// and therefore no absence-semantics debt to record. `structural_add` mints a
+// NEW node id, so it deliberately does NOT reuse one of the shared ID_*
+// constants — reusing an existing id would make the fixture an id COLLISION,
+// which is the one case the contract requires CEE to refuse.
+const eventStructuralAdd = deepFreeze({
+  kind: 'structural_add',
+  node_id: 'fixture_factor_supplier_capacity',
+  node_kind: 'factor',
+  label: 'FIXTURE_supplier_capacity',
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
+const eventStructuralAddEdge = deepFreeze({
+  kind: 'structural_add_edge',
+  from: ID_FACTOR,
+  to: ID_GOAL,
+  magnitude: 0.62,
+  effect_direction: 'positive',
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
+// `label` and `expected_label` differ deliberately: refineStructuralRename
+// refuses a rename to the label the node already has.
+const eventStructuralRename = deepFreeze({
+  kind: 'structural_rename',
+  node_id: ID_FACTOR,
+  label: 'FIXTURE_market_demand_renamed',
+  expected_label: 'FIXTURE_market_demand',
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
   selected: [maximalSelectedElementRef],
@@ -3477,6 +3507,27 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: eventStructuralDelete,
     notes:
       '0.48.0: the first removal verb in any UI-to-CEE vocabulary. Plural and atomic — a node removal takes its incident edges with it, so a partial application would leave dangling edges. Edges are addressed by canonical (from,to) because EdgeV3Schema declares no id. base_graph_hash is a non-optional stale gate; add is deliberately excluded (Intent.add_option owns it).',
+  },
+  {
+    family: 'boundary/SystemEventSchema#structural_add',
+    schema: SystemEventSchema,
+    fixture: eventStructuralAdd,
+    notes:
+      '0.50.0: creates ONE graph node from a direct canvas gesture. Singular, unlike structural_delete — a new node has no incident edges, so there is no dangling-edge cascade to make atomic. Field set is exactly NodeV3Schema\'s three REQUIRED fields, referenced through NodeV3Schema.shape.* rather than restated. The NEW id is validated against NODE_ID_PATTERN (CEE must be able to persist it), unlike the existing-node ids on its siblings, which stay open strings. Distinct from Intent.add_option, which adds a decision OPTION through the coaching referee.',
+  },
+  {
+    family: 'boundary/SystemEventSchema#structural_add_edge',
+    schema: SystemEventSchema,
+    fixture: eventStructuralAddEdge,
+    notes:
+      '0.50.0: creates ONE causal edge, addressed by canonical (from,to) because EdgeV3Schema declares no id. Magnitude and direction are separate so an edge cannot be created with an inverted sign; effect_direction excludes `unknown` because a stated magnitude without a direction has an unrecoverable sign. std/exists_probability are absent by contract, as on edge_strength_edit. No `expected` twin: the edge projection is entirely analysis-affecting, so base_graph_hash already covers a concurrent change.',
+  },
+  {
+    family: 'boundary/SystemEventSchema#structural_rename',
+    schema: SystemEventSchema,
+    fixture: eventStructuralRename,
+    notes:
+      '0.50.0: changes ONE node label. Carries expected_label because the analysis-affecting hash does NOT cover `label` — CEE\'s projectNode omits it deliberately so label-only edits do not move the hash — so base_graph_hash alone cannot detect a concurrent rename and the second writer would silently clobber the first. A rename to the label the node already has is refused as a no-op.',
   },
   {
     family: 'boundary/SystemEventTurnPayloadSchema',
