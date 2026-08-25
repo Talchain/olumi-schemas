@@ -223,6 +223,23 @@ export type IntentLiteral = z.infer<typeof Intent>;
 // Mirrors the member added to the `SystemEventSchema` union in turn-payload.ts;
 // parity pinned by `tests/boundary/turn-payload-0.22.test.ts` as for every
 // earlier addition. Reader-first adoption is mandatory.
+// 0.50.0: `structural_add`, `structural_add_edge` and `structural_rename` added
+// — the direct-edit half of the canvas vocabulary. 0.48.0 gave the canvas a
+// removal verb and stopped there; creating a factor, drawing an edge and
+// renaming a node still had no wire shape, so each was lost on reload or routed
+// through the representative-only `direct_graph_edit`. All three follow the
+// 0.48.0 pattern exactly: intent plus a non-optional `base_graph_hash` stale
+// gate, never structure, resolved against CEE's own persisted read.
+// ⚠ These do NOT reverse 0.48.0's "add is deliberately excluded (Intent.add_option
+// owns it)": `Intent.add_option` is the COACHING vocabulary's compound
+// decision-option transaction routed through the referee, while `structural_add`
+// creates a graph node from a direct canvas gesture with no LLM. Different
+// concepts, similar names — see turn-payload.ts for the full derivation.
+// `structural_rename` additionally carries `expected_label`, because the
+// analysis-affecting hash does NOT cover `label` and so cannot detect a
+// concurrent rename. Mirrors the members added to the `SystemEventSchema` union
+// in turn-payload.ts; parity pinned by `tests/boundary/turn-payload-0.22.test.ts`
+// as for every earlier addition. Reader-first adoption is mandatory.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
@@ -237,6 +254,9 @@ export const SystemEventKind = z.enum([
   'prior_range_edit',
   'edge_strength_edit',
   'structural_delete',
+  'structural_add',
+  'structural_add_edge',
+  'structural_rename',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
 

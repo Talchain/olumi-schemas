@@ -144,6 +144,12 @@ import {
   RunDeltaLeaderDeltaSchema,
   RunDeltaWinProbabilityDeltaSchema,
   RunDeltaFlipThresholdDeltaSchema,
+  // Persisted model-version history and semantic diff.
+  ModelVersionSummaryV2Schema,
+  ModelVersionMutationReceiptV1Schema,
+  ModelVersionRestoreV2Schema,
+  ModelVersionsListV2Schema,
+  ModelVersionDiffV1Schema,
   // 0.39.0 car 4 — collab elicitation + disagreement (ROADMAP 2.686 U-S0)
   AuthoredBySchema,
   // 0.40.0 — PR4 evidence loop (shared attribution ref)
@@ -1597,6 +1603,362 @@ export const maximalRunDelta = deepFreeze({
 });
 
 // ----------------------------------------------------------------------------
+// Persisted model-version history and semantic diff.
+//
+// Summary variants share one schema identity. Multiple fixtures are required
+// to exercise every actor/creation/lineage union arm without constructing one
+// contradictory synthetic version.
+// ----------------------------------------------------------------------------
+
+const MODEL_VERSION_SCENARIO_ID = 'f0000000-0000-4000-8000-000000000001';
+const MODEL_VERSION_1_ID = 'f1000000-0000-4000-8000-000000000001';
+const MODEL_VERSION_2_ID = 'f1000000-0000-4000-8000-000000000002';
+const MODEL_VERSION_3_ID = 'f1000000-0000-4000-8000-000000000003';
+const MODEL_VERSION_4_ID = 'f1000000-0000-4000-8000-000000000004';
+const MODEL_VERSION_5_ID = 'f1000000-0000-4000-8000-000000000005';
+const MODEL_VERSION_6_ID = 'f1000000-0000-4000-8000-000000000006';
+const MODEL_VERSION_7_ID = 'f1000000-0000-4000-8000-000000000007';
+const MODEL_VERSION_8_ID = 'f1000000-0000-4000-8000-000000000008';
+
+export const maximalModelVersionSummaryInitial = deepFreeze({
+  version_id: MODEL_VERSION_1_ID,
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  sequence: 1,
+  label: 'FIXTURE initial model',
+  created_at: '2026-08-24T09:00:00.000Z',
+  actor: { kind: 'known', authored_by: 'owner' },
+  creation: {
+    kind: 'initial',
+    mutation_id: 'fa000000-0000-4000-8000-000000000001',
+    source_turn_id: 'fixture_turn_model_version_1',
+  },
+  lineage: {
+    kind: 'known',
+    parent_version_id: null,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  full_hash: '1'.repeat(64),
+  analysis_affecting_hash: 'a'.repeat(64),
+});
+
+export const maximalModelVersionSummaryUnknown = deepFreeze({
+  version_id: MODEL_VERSION_2_ID,
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  sequence: 2,
+  label: 'FIXTURE legacy model',
+  created_at: '2026-08-24T09:10:00.000Z',
+  actor: { kind: 'unknown' },
+  creation: {
+    kind: 'unknown',
+    mutation_id: 'fa000000-0000-4000-8000-000000000002',
+    source_turn_id: 'fixture_turn_model_version_2',
+  },
+  lineage: { kind: 'unknown' },
+  full_hash: '2'.repeat(64),
+  analysis_affecting_hash: 'b'.repeat(64),
+});
+
+export const maximalModelVersionSummaryVariantPromotion = deepFreeze({
+  version_id: MODEL_VERSION_3_ID,
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  sequence: 3,
+  label: 'FIXTURE promoted variant',
+  created_at: '2026-08-24T09:20:00.000Z',
+  actor: { kind: 'known', authored_by: 'assistant' },
+  creation: {
+    kind: 'variant_promotion',
+    source_version_id: MODEL_VERSION_4_ID,
+    mutation_id: 'fa000000-0000-4000-8000-000000000003',
+    source_turn_id: 'fixture_turn_model_version_3',
+  },
+  lineage: {
+    kind: 'known',
+    parent_version_id: MODEL_VERSION_2_ID,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  full_hash: '3'.repeat(64),
+  analysis_affecting_hash: 'c'.repeat(64),
+});
+
+export const maximalModelVersionSummaryVariantCreation = deepFreeze({
+  version_id: MODEL_VERSION_4_ID,
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  sequence: 4,
+  label: 'FIXTURE created variant',
+  created_at: '2026-08-24T09:30:00.000Z',
+  actor: { kind: 'known', authored_by: 'owner' },
+  creation: {
+    kind: 'variant_creation',
+    source_version_id: MODEL_VERSION_2_ID,
+    mutation_id: 'fa000000-0000-4000-8000-000000000004',
+    source_turn_id: 'fixture_turn_model_version_4',
+  },
+  lineage: {
+    kind: 'known',
+    parent_version_id: MODEL_VERSION_3_ID,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  full_hash: '4'.repeat(64),
+  analysis_affecting_hash: 'd'.repeat(64),
+});
+
+export const maximalModelVersionSummaryRestore = deepFreeze({
+  version_id: MODEL_VERSION_5_ID,
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  sequence: 5,
+  label: 'FIXTURE restored model',
+  created_at: '2026-08-24T09:40:00.000Z',
+  actor: { kind: 'known', authored_by: 'owner' },
+  creation: {
+    kind: 'restore',
+    source_version_id: MODEL_VERSION_2_ID,
+    mutation_id: 'fa000000-0000-4000-8000-000000000005',
+    source_turn_id: 'fixture_turn_model_version_5',
+  },
+  lineage: {
+    kind: 'known',
+    parent_version_id: MODEL_VERSION_4_ID,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  full_hash: '5'.repeat(64),
+  analysis_affecting_hash: 'e'.repeat(64),
+});
+
+export const maximalModelVersionSummaryCommittedMutation = deepFreeze({
+  version_id: MODEL_VERSION_6_ID,
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  sequence: 6,
+  label: 'FIXTURE committed model',
+  created_at: '2026-08-24T09:50:00.000Z',
+  actor: { kind: 'known', authored_by: 'owner' },
+  creation: {
+    kind: 'committed_mutation',
+    mutation_id: 'fa000000-0000-4000-8000-000000000006',
+    source_turn_id: 'fixture_turn_model_version_6',
+  },
+  lineage: {
+    kind: 'known',
+    parent_version_id: MODEL_VERSION_5_ID,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  full_hash: '6'.repeat(64),
+  analysis_affecting_hash: 'f'.repeat(64),
+});
+
+export const maximalModelVersionSummarySystem = deepFreeze({
+  version_id: MODEL_VERSION_7_ID,
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  sequence: 7,
+  label: 'FIXTURE system-authored model',
+  created_at: '2026-08-24T10:00:00.000Z',
+  actor: { kind: 'system' },
+  creation: {
+    kind: 'committed_mutation',
+    mutation_id: 'fa000000-0000-4000-8000-000000000007',
+    source_turn_id: 'fixture_turn_model_version_7',
+  },
+  lineage: {
+    kind: 'known',
+    parent_version_id: MODEL_VERSION_6_ID,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  full_hash: '7'.repeat(64),
+  analysis_affecting_hash: '0'.repeat(64),
+});
+
+export const maximalModelVersionMutationReceiptInitial = deepFreeze({
+  schema: 'model_version_mutation_receipt.v1',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  mutation_id: 'fc000000-0000-4000-8000-000000000001',
+  version_id: MODEL_VERSION_1_ID,
+  sequence: 1,
+  graph: maximalGraphV3,
+  full_hash: '1'.repeat(64),
+  hash_algorithm: 'sha256',
+  identity_projection_version: 'FIXTURE_identity_projection_v1',
+  identity_normaliser_version: 'FIXTURE_identity_normaliser_v1',
+  graph_schema_version: 'FIXTURE_graph_v3',
+  analysis_affecting_hash: 'a'.repeat(64),
+  actor: { kind: 'system' },
+  creation: { kind: 'initial' },
+  source_turn_id: 'fixture_turn_model_version_receipt_initial',
+  lineage: {
+    kind: 'known',
+    parent_version_id: null,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  undo_version_id: null,
+  event_id: 'model_version_created_mutation_fc000000-0000-4000-8000-000000000001',
+});
+
+export const maximalModelVersionMutationReceiptCommittedMutation = deepFreeze({
+  schema: 'model_version_mutation_receipt.v1',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  mutation_id: 'fc000000-0000-4000-8000-000000000007',
+  version_id: MODEL_VERSION_7_ID,
+  sequence: 7,
+  graph: maximalGraphV3,
+  full_hash: '7'.repeat(64),
+  hash_algorithm: 'sha256',
+  identity_projection_version: 'FIXTURE_identity_projection_v1',
+  identity_normaliser_version: 'FIXTURE_identity_normaliser_v1',
+  graph_schema_version: 'FIXTURE_graph_v3',
+  analysis_affecting_hash: '0'.repeat(64),
+  actor: { kind: 'known', authored_by: 'owner' },
+  creation: { kind: 'committed_mutation' },
+  source_turn_id: 'fixture_turn_model_version_receipt_committed',
+  lineage: {
+    kind: 'known',
+    parent_version_id: MODEL_VERSION_6_ID,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  undo_version_id: null,
+  event_id: 'model_version_created_mutation_fc000000-0000-4000-8000-000000000007',
+});
+
+export const maximalModelVersionMutationReceiptRestore = deepFreeze({
+  schema: 'model_version_mutation_receipt.v1',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  mutation_id: 'fc000000-0000-4000-8000-000000000008',
+  version_id: MODEL_VERSION_8_ID,
+  sequence: 8,
+  graph: maximalGraphV3,
+  full_hash: '8'.repeat(64),
+  hash_algorithm: 'sha256',
+  identity_projection_version: 'FIXTURE_identity_projection_v1',
+  identity_normaliser_version: 'FIXTURE_identity_normaliser_v1',
+  graph_schema_version: 'FIXTURE_graph_v3',
+  analysis_affecting_hash: '8'.repeat(64),
+  actor: { kind: 'unknown' },
+  creation: {
+    kind: 'restore',
+    source_version_id: MODEL_VERSION_5_ID,
+  },
+  source_turn_id: 'fixture_turn_model_version_receipt_restore',
+  lineage: { kind: 'unknown' },
+  undo_version_id: MODEL_VERSION_7_ID,
+  event_id: 'model_version_restored_mutation_fc000000-0000-4000-8000-000000000008',
+});
+
+export const maximalModelVersionsListV2 = deepFreeze({
+  schema: 'model_versions_list.v2',
+  request_id: 'fixture_request_model_versions_list',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  current_version_id: MODEL_VERSION_7_ID,
+  versions: [
+    maximalModelVersionSummarySystem,
+    maximalModelVersionSummaryCommittedMutation,
+    maximalModelVersionSummaryRestore,
+    maximalModelVersionSummaryVariantCreation,
+    maximalModelVersionSummaryVariantPromotion,
+    maximalModelVersionSummaryUnknown,
+    maximalModelVersionSummaryInitial,
+  ],
+  next_cursor: 'FIXTURE_cursor_page_2',
+});
+
+function maximalModelVersionDiffItem(
+  path: string,
+  entityKind: 'model' | 'node' | 'edge' | 'option' | 'constraint',
+  entityId: string,
+  label: string,
+) {
+  return {
+    path,
+    change_kind: 'changed' as const,
+    entity_kind: entityKind,
+    entity_id: entityId,
+    label,
+    before_display: 'FIXTURE_before',
+    after_display: 'FIXTURE_after',
+    summary: `FIXTURE ${label} changed.`,
+    why_it_matters: `FIXTURE ${label} is part of the shared strategic model.`,
+  };
+}
+
+export const maximalModelVersionDiffV1 = deepFreeze({
+  schema: 'model_version_diff.v1',
+  request_id: 'fixture_request_model_version_diff',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  from_version_id: MODEL_VERSION_1_ID,
+  to_version_id: MODEL_VERSION_6_ID,
+  relation: 'different',
+  from_full_hash: '1'.repeat(64),
+  to_full_hash: '6'.repeat(64),
+  analysis_equivalent: false,
+  categories: {
+    structure: [
+      maximalModelVersionDiffItem(
+        '/nodes/fixture_new_factor',
+        'node',
+        'fixture_new_factor',
+        'FIXTURE new factor',
+      ),
+    ],
+    relationships: [
+      maximalModelVersionDiffItem(
+        '/edges/fixture_factor_to_goal',
+        'edge',
+        'fixture_factor_to_goal',
+        'FIXTURE relationship',
+      ),
+    ],
+    values_uncertainty: [
+      maximalModelVersionDiffItem(
+        '/nodes/fixture_factor/observed_state/value',
+        'node',
+        'fixture_factor',
+        'FIXTURE factor value',
+      ),
+    ],
+    evidence_provenance: [
+      maximalModelVersionDiffItem(
+        '/nodes/fixture_factor/evidence',
+        'node',
+        'fixture_factor',
+        'FIXTURE evidence',
+      ),
+    ],
+    goals_constraints_options: [
+      maximalModelVersionDiffItem(
+        '/options/fixture_option_a',
+        'option',
+        'fixture_option_a',
+        'FIXTURE option',
+      ),
+    ],
+    assumptions_claims: [
+      maximalModelVersionDiffItem(
+        '/nodes/fixture_assumption',
+        'node',
+        'fixture_assumption',
+        'FIXTURE assumption',
+      ),
+    ],
+    presentation: [
+      maximalModelVersionDiffItem(
+        '/nodes/fixture_factor/position',
+        'node',
+        'fixture_factor',
+        'FIXTURE canvas position',
+      ),
+    ],
+    other_model_fields: [
+      maximalModelVersionDiffItem(
+        '/model/fixture_extension',
+        'model',
+        MODEL_VERSION_SCENARIO_ID,
+        'FIXTURE model extension',
+      ),
+    ],
+  },
+  coverage: {
+    known_undetectable: ['FIXTURE external evidence-body edits are not snapshot-carried'],
+    known_uninterpreted_paths: ['/model/fixture_extension'],
+  },
+});
+
+// ----------------------------------------------------------------------------
 // Collaborative elicitation + disagreement (0.39.0 car 4 — ROADMAP 2.686
 // U-S0 / 2.968 build-list item 1)
 // ----------------------------------------------------------------------------
@@ -1968,6 +2330,15 @@ export const maximalAnalysisStateUnknownDegraded = deepFreeze({
   contradictions: ['FIXTURE_REFUSAL_REPORTED_BUT_UNCORROBORATED'],
 });
 
+export const maximalModelVersionRestoreV2 = deepFreeze({
+  schema: 'model_version_restore.v2',
+  scenario_id: MODEL_VERSION_SCENARIO_ID,
+  restored: true,
+  receipt: maximalModelVersionMutationReceiptRestore,
+  analysis_state: maximalAnalysisStateCompleteCurrent,
+  request_id: 'fixture_request_model_version_restore',
+});
+
 export const maximalOlumiResponse = deepFreeze({
   response_version: 2,
   assistant_text: 'FIXTURE synthetic assistant text.',
@@ -2022,6 +2393,9 @@ export const maximalOlumiResponse = deepFreeze({
   // is hosted here because it is the only kind under which a leader claim may
   // be permitted, so the response fixture carries the fully-usable shape.
   analysis_state: maximalAnalysisStateCompleteCurrent,
+  // C8-A — exact atomic committed-model receipt. Freshness remains solely in
+  // the sibling analysis_state carrier above.
+  model_version_receipt: maximalModelVersionMutationReceiptCommittedMutation,
   // 0.45.0 — response-only redacted construction notices.
   model_building_notices: maximalModelBuildingNotices,
   // 0.19.0 — wave-2 producer fields (asks 4 + 5).
@@ -2035,6 +2409,16 @@ export const maximalOlumiResponse = deepFreeze({
   // 0.39.0 (ROADMAP 2.698-S2) — the run-over-run delta block, beside
   // `analysis_ready`.
   run_delta: maximalRunDelta,
+});
+
+export const maximalOlumiResponseWithInitialModelVersionReceipt = deepFreeze({
+  ...maximalOlumiResponse,
+  model_version_receipt: maximalModelVersionMutationReceiptInitial,
+});
+
+export const maximalOlumiResponseWithRestoreModelVersionReceipt = deepFreeze({
+  ...maximalOlumiResponse,
+  model_version_receipt: maximalModelVersionMutationReceiptRestore,
 });
 
 // ----------------------------------------------------------------------------
@@ -2172,6 +2556,36 @@ const eventStructuralDelete = deepFreeze({
   kind: 'structural_delete',
   removed_node_ids: [ID_OPTION_B, ID_FACTOR],
   removed_edges: [{ from: ID_FACTOR, to: ID_OPTION_B }],
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
+// 0.50.0 — the three direct-edit members. Every field on each is REQUIRED, so
+// each fixture is maximal by construction; there is no optional field to omit
+// and therefore no absence-semantics debt to record. `structural_add` mints a
+// NEW node id, so it deliberately does NOT reuse one of the shared ID_*
+// constants — reusing an existing id would make the fixture an id COLLISION,
+// which is the one case the contract requires CEE to refuse.
+const eventStructuralAdd = deepFreeze({
+  kind: 'structural_add',
+  node_id: 'fixture_factor_supplier_capacity',
+  node_kind: 'factor',
+  label: 'FIXTURE_supplier_capacity',
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
+const eventStructuralAddEdge = deepFreeze({
+  kind: 'structural_add_edge',
+  from: ID_FACTOR,
+  to: ID_GOAL,
+  magnitude: 0.62,
+  effect_direction: 'positive',
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
+// `label` and `expected_label` differ deliberately: refineStructuralRename
+// refuses a rename to the label the node already has.
+const eventStructuralRename = deepFreeze({
+  kind: 'structural_rename',
+  node_id: ID_FACTOR,
+  label: 'FIXTURE_market_demand_renamed',
+  expected_label: 'FIXTURE_market_demand',
   base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
 });
 export const maximalSelectionChangeEvent = deepFreeze({
@@ -2714,6 +3128,83 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     schema: RunDeltaFlipThresholdDeltaSchema,
     fixture: maximalRunDeltaFlipThresholdDelta,
   },
+  // --- persisted model-version history and semantic diff ---------------------------
+  {
+    family: 'boundary/ModelVersionSummaryV2Schema#initial',
+    schema: ModelVersionSummaryV2Schema,
+    fixture: maximalModelVersionSummaryInitial,
+  },
+  {
+    family: 'boundary/ModelVersionSummaryV2Schema#committed_mutation',
+    schema: ModelVersionSummaryV2Schema,
+    fixture: maximalModelVersionSummaryCommittedMutation,
+  },
+  {
+    family: 'boundary/ModelVersionSummaryV2Schema#restore',
+    schema: ModelVersionSummaryV2Schema,
+    fixture: maximalModelVersionSummaryRestore,
+  },
+  {
+    family: 'boundary/ModelVersionSummaryV2Schema#variant_creation',
+    schema: ModelVersionSummaryV2Schema,
+    fixture: maximalModelVersionSummaryVariantCreation,
+  },
+  {
+    family: 'boundary/ModelVersionSummaryV2Schema#variant_promotion',
+    schema: ModelVersionSummaryV2Schema,
+    fixture: maximalModelVersionSummaryVariantPromotion,
+  },
+  {
+    family: 'boundary/ModelVersionSummaryV2Schema#unknown',
+    schema: ModelVersionSummaryV2Schema,
+    fixture: maximalModelVersionSummaryUnknown,
+    notes:
+      'Exercises explicit unknown actor, creation, and lineage metadata; no author or ancestry is invented.',
+  },
+  {
+    family: 'boundary/ModelVersionSummaryV2Schema#system',
+    schema: ModelVersionSummaryV2Schema,
+    fixture: maximalModelVersionSummarySystem,
+    notes: 'Exercises the producer-attested system actor; consumers must never infer this arm.',
+  },
+  {
+    family: 'boundary/ModelVersionMutationReceiptV1Schema#initial',
+    schema: ModelVersionMutationReceiptV1Schema,
+    fixture: maximalModelVersionMutationReceiptInitial,
+  },
+  {
+    family: 'boundary/ModelVersionMutationReceiptV1Schema#committed_mutation',
+    schema: ModelVersionMutationReceiptV1Schema,
+    fixture: maximalModelVersionMutationReceiptCommittedMutation,
+  },
+  {
+    family: 'boundary/ModelVersionMutationReceiptV1Schema#restore',
+    schema: ModelVersionMutationReceiptV1Schema,
+    fixture: maximalModelVersionMutationReceiptRestore,
+    notes:
+      'Exercises explicit unknown actor and lineage, restore source identity, and a non-null undo version.',
+  },
+  {
+    family: 'boundary/ModelVersionRestoreV2Schema',
+    schema: ModelVersionRestoreV2Schema,
+    fixture: maximalModelVersionRestoreV2,
+    notes:
+      'Atomic restore envelope carries the canonical mutation receipt and AnalysisState as sibling producer authorities.',
+  },
+  {
+    family: 'boundary/ModelVersionsListV2Schema',
+    schema: ModelVersionsListV2Schema,
+    fixture: maximalModelVersionsListV2,
+    notes:
+      'Newest-first page contains every summary creation and actor variant, the authoritative current id, and a non-null next cursor.',
+  },
+  {
+    family: 'boundary/ModelVersionDiffV1Schema',
+    schema: ModelVersionDiffV1Schema,
+    fixture: maximalModelVersionDiffV1,
+    notes:
+      'Every deterministic category and both coverage disclosures are populated.',
+  },
   // --- 0.39.0 car 4 — collab elicitation + disagreement -----------------------------
   {
     family: 'boundary/AuthoredBySchema',
@@ -3018,6 +3509,27 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
       '0.48.0: the first removal verb in any UI-to-CEE vocabulary. Plural and atomic — a node removal takes its incident edges with it, so a partial application would leave dangling edges. Edges are addressed by canonical (from,to) because EdgeV3Schema declares no id. base_graph_hash is a non-optional stale gate; add is deliberately excluded (Intent.add_option owns it).',
   },
   {
+    family: 'boundary/SystemEventSchema#structural_add',
+    schema: SystemEventSchema,
+    fixture: eventStructuralAdd,
+    notes:
+      '0.50.0: creates ONE graph node from a direct canvas gesture. Singular, unlike structural_delete — a new node has no incident edges, so there is no dangling-edge cascade to make atomic. Field set is exactly NodeV3Schema\'s three REQUIRED fields, referenced through NodeV3Schema.shape.* rather than restated. The NEW id is validated against NODE_ID_PATTERN (CEE must be able to persist it), unlike the existing-node ids on its siblings, which stay open strings. Distinct from Intent.add_option, which adds a decision OPTION through the coaching referee.',
+  },
+  {
+    family: 'boundary/SystemEventSchema#structural_add_edge',
+    schema: SystemEventSchema,
+    fixture: eventStructuralAddEdge,
+    notes:
+      '0.50.0: creates ONE causal edge, addressed by canonical (from,to) because EdgeV3Schema declares no id. Magnitude and direction are separate so an edge cannot be created with an inverted sign; effect_direction excludes `unknown` because a stated magnitude without a direction has an unrecoverable sign. std/exists_probability are absent by contract, as on edge_strength_edit. No `expected` twin: the edge projection is entirely analysis-affecting, so base_graph_hash already covers a concurrent change.',
+  },
+  {
+    family: 'boundary/SystemEventSchema#structural_rename',
+    schema: SystemEventSchema,
+    fixture: eventStructuralRename,
+    notes:
+      '0.50.0: changes ONE node label. Carries expected_label because the analysis-affecting hash does NOT cover `label` — CEE\'s projectNode omits it deliberately so label-only edits do not move the hash — so base_graph_hash alone cannot detect a concurrent rename and the second writer would silently clobber the first. A rename to the label the node already has is refused as a no-op.',
+  },
+  {
     family: 'boundary/SystemEventTurnPayloadSchema',
     schema: SystemEventTurnPayloadSchema,
     fixture: maximalSystemEventTurnPayload,
@@ -3140,7 +3652,17 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     schema: OlumiResponseSchema,
     fixture: maximalOlumiResponse,
     notes:
-      'The /orchestrate/v2/turn egress. Carries every top-level optional, including the response-only model_building_notices carrier and the 0.46.0 composed analysis_state verdict, AND one block of every union member — the fields consumers have historically lost are all present.',
+      'The /orchestrate/v2/turn egress. Carries every top-level optional, including the response-only model_building_notices carrier, the C8-A committed-mutation receipt, and the 0.46.0 composed analysis_state verdict, AND one block of every union member — the fields consumers have historically lost are all present.',
+  },
+  {
+    family: 'boundary/OlumiResponseSchema#model_version_receipt_initial',
+    schema: OlumiResponseSchema,
+    fixture: maximalOlumiResponseWithInitialModelVersionReceipt,
+  },
+  {
+    family: 'boundary/OlumiResponseSchema#model_version_receipt_restore',
+    schema: OlumiResponseSchema,
+    fixture: maximalOlumiResponseWithRestoreModelVersionReceipt,
   },
   // --- v2 run + patch ---------------------------------------------------------------
   { family: 'boundary/LegacyGoalConstraintStubSchema', schema: LegacyGoalConstraintStubSchema, fixture: maximalLegacyGoalConstraintStub },

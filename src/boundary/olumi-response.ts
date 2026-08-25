@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { AnalysisStateV1Schema } from './analysis-state.js';
 import { BlockSchema, DraftGraphBlockSchema } from './blocks.js';
 import { ActionType, Stage } from './enums.js';
+import { ModelVersionMutationReceiptV1Schema } from './model-versions.js';
 import { RunDeltaSchema } from './run-delta.js';
 
 // Wire-level suggested action. The richer ActionRecommendation lives in the
@@ -245,6 +246,16 @@ export const OlumiResponseSchema = z.object({
   // this field keeps its existing behaviour unchanged; that is what makes this
   // step safe to ship before any consumer migrates.
   analysis_state: AnalysisStateV1Schema.optional(),
+  // C8-A additive -----------------------------------------------------------
+  // Atomic receipt for the authoritative model version committed by THIS
+  // turn. ABSENCE IS DISTINCT: absent means this response does not attest a
+  // committed model mutation. It is never synthesised from draft_graph or a
+  // persistence sidecar. The receipt carries the exact committed GraphV3 and
+  // identity envelope, but deliberately carries no freshness: the sibling
+  // `analysis_state` above remains the sole authority for analysis currency.
+  // It also omits replay/dedupe flags so an idempotent replay returns the same
+  // receipt bytes as the original mutation.
+  model_version_receipt: ModelVersionMutationReceiptV1Schema.optional(),
   reasoning: z.string().optional(),
   // 0.45.0 additive ----------------------------------------------------------
   // Aggregate, redacted notices about conservative model-building choices for

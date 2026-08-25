@@ -63,8 +63,8 @@
     }
   },
   "counts": {
-    "distinct": 74,
-    "same": 8,
+    "distinct": 75,
+    "same": 33,
     "unresolved": 393
   },
   "open_objects": {
@@ -2031,6 +2031,206 @@
       ],
       "verdict": "unresolved"
     },
+    "boundary/ModelVersionDiffV1Schema.categories.assumptions_claims[].after_display": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling for no next display value or a value that cannot be rendered.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionDiffItemSchema.after_display"
+    },
+    "boundary/ModelVersionDiffV1Schema.categories.assumptions_claims[].before_display": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling for no prior display value or a value that cannot be rendered.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionDiffItemSchema.before_display"
+    },
+    "boundary/ModelVersionDiffV1Schema.categories.assumptions_claims[].entity_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling for a model-level change with no entity id.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionDiffItemSchema.entity_id"
+    },
+    "boundary/ModelVersionDiffV1Schema.categories.assumptions_claims[].label": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when no display label travelled.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionDiffItemSchema.label"
+    },
+    "boundary/ModelVersionDiffV1Schema.request_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when route request correlation was unavailable.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionDiffV1ObjectSchema.request_id"
+    },
+    "boundary/ModelVersionRestoreV2Schema.analysis_state": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when no post-restore analysis-state fact was available.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionRestoreV2Schema.analysis_state"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=committed_mutation.mutation_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates mutation-id capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.mutation_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=initial.mutation_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates mutation-id capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.mutation_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=restore.mutation_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates mutation-id capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.mutation_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=unknown.mutation_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates mutation-id capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.mutation_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=variant_creation.mutation_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates mutation-id capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.mutation_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=variant_promotion.mutation_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates mutation-id capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.mutation_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=committed_mutation.source_turn_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates source-turn capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.source_turn_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=initial.source_turn_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates source-turn capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.source_turn_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=restore.source_turn_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates source-turn capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.source_turn_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=unknown.source_turn_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates source-turn capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.source_turn_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=variant_creation.source_turn_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates source-turn capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.source_turn_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.creation|kind=variant_promotion.source_turn_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required in every creation arm, so omission is rejected. The field description defines null as a persisted version that predates source-turn capture.",
+      "ref": "src/boundary/model-versions.ts :: creationMetadataShape.source_turn_id"
+    },
+    "boundary/ModelVersionSummaryV2Schema.label": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling for a version with no persisted user-facing label.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionSummaryV2ObjectSchema.label"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.lineage|kind=known.parent_version_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The known-lineage key is required, so omission is rejected. Its description defines null as the lineage root; unavailable lineage uses the separate unknown union arm.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionLineageSchema.parent_version_id"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.source_turn_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when source-turn correlation was not captured.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionMutationReceiptV1ObjectSchema.source_turn_id"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.undo_version_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when no undo version exists.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionMutationReceiptV1ObjectSchema.undo_version_id"
+    },
+    "boundary/ModelVersionsListV2Schema.next_cursor": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the final page and a string as the opaque next-page cursor.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionsListV2ObjectSchema.next_cursor"
+    },
+    "boundary/ModelVersionsListV2Schema.current_version_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as a scenario with no persisted head; a non-null id is authoritative even when it lies outside a later cursor page.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionsListV2ObjectSchema.current_version_id"
+    },
+    "boundary/ModelVersionsListV2Schema.request_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when route request correlation was unavailable.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionsListV2ObjectSchema.request_id"
+    },
     "boundary/MessageTurnPayloadSchema.chip": {
       "markers": [
         "optional"
@@ -2225,6 +2425,14 @@
       "verdict": "distinct",
       "note": "Schema comment: absence means no notice attestation was supplied by this response (the legacy producer state), never zero notices. A present carrier cannot encode zero and must account for every notice exactly once.",
       "ref": "src/boundary/olumi-response.ts \u2014 OlumiResponseSchema.model_building_notices comment (0.45.0)"
+    },
+    "boundary/OlumiResponseSchema.model_version_receipt": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field comment: absent means this response does not attest a committed model mutation. A present receipt is the exact atomic commit attestation and is never inferred from draft_graph or a persistence sidecar.",
+      "ref": "src/boundary/olumi-response.ts :: OlumiResponseSchema.model_version_receipt comment (C8-A)"
     },
     "boundary/OlumiResponseSchema.reasoning": {
       "markers": [

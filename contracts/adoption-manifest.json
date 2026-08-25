@@ -409,6 +409,66 @@
       ]
     },
     {
+      "field": "system_event.event[kind=structural_add]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::StructuralAddEvent (0.50.0) — strict, singular node creation with a non-optional base_graph_hash stale gate",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY. This schema train adds no UI emission, CEE dispatch, graph write, deployment or migration. Naming a producer or consumer before those separate PRs merge would overstate transport as adoption; their behavioural test refs land later.",
+        "THE DEFECT IT CLOSES: creating a factor on the canvas had no wire shape, so it was lost on the next reload or routed through direct_graph_edit, whose target_id is a REPRESENTATIVE SINGULAR the contract itself calls 'a defect by construction' as a mutation key.",
+        "SINGULAR, unlike structural_delete. The plurality there is FORCED — removing a node takes its incident edges with it, so a partial apply leaves dangling edges. A new node has no incident edges, so there is no atomicity argument and a singular member keeps the failure attributable to the one node the user drew.",
+        "FIELD SET IS DERIVED, NOT CHOSEN: id/kind/label are exactly NodeV3Schema's three REQUIRED fields, referenced through NodeV3Schema.shape.* so a change to the node contract cannot leave this member behind. Every OPTIONAL NodeV3 field is deliberately absent — 0.48.0 already ruled the readiness problem ('an added option leaves the model unanalysable') a different seam from transport.",
+        "⚠ THIS DOES NOT REVERSE 0.48.0's 'add is deliberately excluded (Intent.add_option owns it)'. Intent.add_option is the COACHING vocabulary's compound decision-OPTION transaction routed through the referee; structural_add creates a graph NODE from a direct canvas gesture with no LLM. Different concepts, similar names.",
+        "⚠ ID COLLISION IS THE ONE CASE THE STALE GATE CANNOT CATCH: a colliding id is already present in the very graph the user was looking at, so base_graph_hash matches. CEE MUST refuse a duplicate id rather than overwriting that node.",
+        "THE SEQUENCING IS LOAD-BEARING: every SystemEventSchema member is .strict() and the union discriminates on kind, so a consumer pinned below 0.50.0 rejects the WHOLE turn (422), not just this field. Order: publish 0.50.0 -> CEE re-vendors and deploys the reader -> CEE wires the canonical write train -> only then UI re-vendors and emits. PLoT/ISL do not read this UI-to-CEE seam."
+      ]
+    },
+    {
+      "field": "system_event.event[kind=structural_add_edge]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::StructuralAddEdgeEvent (0.50.0) — strict, singular edge creation addressed by canonical (from,to), with a non-optional base_graph_hash stale gate",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY. This schema train adds no UI emission, CEE dispatch, graph write, deployment or migration. Naming a producer or consumer before those separate PRs merge would overstate transport as adoption; their behavioural test refs land later.",
+        "THE DEFECT IT CLOSES: drawing an edge between two factors had no wire shape; only edge_strength_edit existed, and it can only EDIT an edge that already exists.",
+        "ADDRESSED BY (from,to), NEVER BY AN ID — derived: EdgeV3Schema declares NO id field at all, so the endpoint pair IS the edge's identity, and a client-local id ('reactflow__edge-...') is explicitly forbidden as a lookup key.",
+        "MAGNITUDE AND DIRECTION ARE SEPARATE, inherited from edge_strength_edit's ruling that they must be so a strength change cannot reverse an edge accidentally. effect_direction EXCLUDES 'unknown' because this member requires a magnitude, and a stated magnitude with an unknown direction is an edge whose sign cannot be recovered. std and exists_probability are absent by contract; the server owns them.",
+        "NO 'expected' TWIN, and the asymmetry with structural_rename is DERIVED, not an oversight: every field the canonical edge projection hashes (from, to, edge_type, exists_probability, effect_direction, strength mean/std) is analysis-affecting, so a concurrent edge change moves base_graph_hash and the stale gate fires.",
+        "SELF-EDGES ARE DELIBERATELY NOT REFUSED: EdgeV3Schema permits them and no existing endpoint-addressed member forbids them, so refusing here would encode a MODELLING opinion the graph contract does not hold. CEE MUST still refuse an endpoint that does not resolve, rather than creating a dangling edge.",
+        "THE SEQUENCING IS LOAD-BEARING: every SystemEventSchema member is .strict() and the union discriminates on kind, so a consumer pinned below 0.50.0 rejects the WHOLE turn (422), not just this field. Order: publish 0.50.0 -> CEE re-vendors and deploys the reader -> CEE wires the canonical write train -> only then UI re-vendors and emits. PLoT/ISL do not read this UI-to-CEE seam."
+      ]
+    },
+    {
+      "field": "system_event.event[kind=structural_rename]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::StructuralRenameEvent (0.50.0) — strict, singular label change carrying an expected_label assertion plus the non-optional base_graph_hash stale gate",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY. This schema train adds no UI emission, CEE dispatch, graph write, deployment or migration. Naming a producer or consumer before those separate PRs merge would overstate transport as adoption; their behavioural test refs land later.",
+        "THE DEFECT IT CLOSES: renaming a node had no wire shape, so the rename was lost on reload.",
+        "⚠⚠ expected_label IS LOAD-BEARING AND MUST NOT BE 'SIMPLIFIED AWAY' AS REDUNDANT WITH THE HASH. Derived at CEE's implementation bytes (src/orchestrator-v5/context/graph-hash.ts, staging 4a064e60): projectNode hashes exactly kind, category, factor_type, is_baseline, goal_threshold, goal_threshold_raw, goal_threshold_cap, intercept, encoding_map — 'label' is NOT among them, and the module header says it omits cosmetic/display fields SO THAT label-only edits do not move the hash. The published keep-list in boundary/graph-hash-contract.ts agrees field for field.",
+        "THE CONSEQUENCE: two users renaming the same node concurrently produce NO hash divergence, so base_graph_hash alone would let the second rename silently clobber the first — last-writer-wins on the one field the stale gate cannot see. The expected idiom from EdgeStrengthExpectedSchema is applied for exactly that reason. CEE MUST compare expected_label against the persisted label and refuse on mismatch. Pinned in-test against the published projection by tests/boundary/turn-payload-0.50.test.ts block F, so if 'label' ever becomes analysis-affecting the rationale fails loud instead of rotting.",
+        "RENAME ONLY, NOT A GENERAL NODE EDIT: 'kind' is deliberately not renameable here because changing a node's kind IS analysis-affecting and is therefore already covered by the stale gate. One verb, one failure mode.",
+        "A rename to the label the node already has is refused as a no-op by refineStructuralRename — the same ruling as structural_delete's 'a delete must remove SOMETHING'.",
+        "THE SEQUENCING IS LOAD-BEARING: every SystemEventSchema member is .strict() and the union discriminates on kind, so a consumer pinned below 0.50.0 rejects the WHOLE turn (422), not just this field. Order: publish 0.50.0 -> CEE re-vendors and deploys the reader -> CEE wires the canonical write train -> only then UI re-vendors and emits. PLoT/ISL do not read this UI-to-CEE seam."
+      ]
+    },
+    {
       "field": "system_event.event[kind=edge_adjudication]",
       "declared_in": "schemas:src/boundary/turn-payload.ts::EdgeAdjudicationEvent (0.34.0) — the contested-edge verdict, a new member of SystemEventSchema (P4 transport lane 2026-08-05; ROADMAP 2.396-adjacent)",
       "producer": null,

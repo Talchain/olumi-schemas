@@ -235,7 +235,19 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   CanonicalEdgeRefSchema needs no row of its own: it is internal (not
     //   exported from a namespace entry point) and is exercised non-empty by
     //   this fixture's `removed_edges`.
-    expect(MAXIMAL_FIXTURES.length).toBe(179);
+    // C8-A: 188 -> 194 (+6): three mutation-receipt variants exercise its
+    // actor/creation/lineage unions, and two OlumiResponse variants exercise
+    // the initial/restore branches of the optional single-receipt carrier. The
+    // final row exercises the atomic restore envelope and its AnalysisState
+    // sibling authority.
+    // 0.50.0 (+3): boundary/SystemEventSchema#structural_add,
+    //   #structural_add_edge and #structural_rename — three more branch variants
+    //   against the existing SystemEventSchema identity, exactly as 0.48.0's
+    //   structural_delete added one. No nested shape needs a row of its own:
+    //   all three members are flat, and EVERY field on each is REQUIRED, so each
+    //   fixture is maximal by construction and there is no optional field for
+    //   the maximality walker to report as unexercised.
+    expect(MAXIMAL_FIXTURES.length).toBe(197);
   });
 
   it('family keys are unique', () => {

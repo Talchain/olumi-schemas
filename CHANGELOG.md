@@ -5,7 +5,102 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.50.0] — 2026-08-25 (candidate)
+
+**Two trains, one honest version.** The C8 model-version boundary contracts and
+the direct-edit structural vocabulary publish together. Purely additive: three
+new `SystemEventSchema` members, three new `SystemEventKind` literals, one
+exported refinement, five new boundary response schemas. No existing field,
+member, vocabulary or validation rule changed.
+
+**⚠ Why 0.50.0 and not 0.49.0.** `0.49.0` is claimed by TWO other open pull
+requests — #48 (`goal_direction`) and #49 (`elicited_blind`) — both of which
+already set `package.json` to `0.49.0` against `main`. A third claimant would
+make that collision worse, so this release takes the next free number. Whichever
+of #48/#49 lands first keeps `0.49.0`; the other must renumber, and that was
+true before this release existed.
+
+**⚠ Why the version bump is load-bearing, not bookkeeping.** CEE and the UI both
+vendor a byte-identical `talchain-schemas-0.48.0.tgz`. Re-vendoring these
+contracts without a bump would produce a second, byte-different tarball with the
+same filename and the same version string, after which neither the filename nor
+the version discriminates and only the `.sha256` sidecar can tell them apart.
+CEE's own `mutation-receipt.ts` states the precondition: the contract mirrors
+come out "only after the ordered schemas changes publish under an honest version
+newer than 0.48.0".
+
+### Added — direct-edit structural vocabulary
+
+- `structural_add` — creates ONE graph node from a direct canvas gesture.
+  Singular, unlike `structural_delete`: a new node has no incident edges, so
+  there is no dangling-edge cascade to make atomic. Its field set is derived
+  from `NodeV3Schema`'s three REQUIRED fields and references
+  `NodeV3Schema.shape.*` directly rather than restating their validators.
+- `structural_add_edge` — creates ONE causal edge, addressed by canonical
+  `(from, to)` because `EdgeV3Schema` declares no `id`. Magnitude and direction
+  are carried separately so an edge cannot be created with an inverted sign;
+  `effect_direction` excludes `unknown` because a stated magnitude without a
+  direction has an unrecoverable sign. `std` and `exists_probability` are absent
+  by contract, as on `edge_strength_edit`.
+- `structural_rename` — changes ONE node's label, carrying an `expected_label`
+  optimistic-concurrency assertion and refusing a rename to the label the node
+  already has.
+- `refineStructuralRename`, exported for consumers that parse a bare
+  `SystemEventSchema`.
+
+**⚠ `expected_label` is load-bearing and must not be "simplified away" as
+redundant with `base_graph_hash`.** Derived at CEE's implementation bytes: the
+analysis-affecting hash's `projectNode` covers `kind, category, factor_type,
+is_baseline, goal_threshold, goal_threshold_raw, goal_threshold_cap, intercept,
+encoding_map` — `label` is deliberately NOT among them, so that label-only edits
+do not move the hash. The stale gate is therefore structurally blind to a
+concurrent rename, and without `expected_label` the second writer would silently
+clobber the first. `structural_add_edge` needs no equivalent twin because every
+field the edge projection reads IS analysis-affecting. The asymmetry follows
+from the hash's coverage, not from taste, and it is pinned in-test against the
+published projection.
+
+**⚠ This does NOT reverse 0.48.0's "add is deliberately excluded".** That ruling
+is about `Intent.add_option`, which adds a decision OPTION through the coaching
+referee as a compound transaction. `structural_add` creates a graph node from a
+direct canvas gesture with no LLM and no referee, and cannot express "add a
+decision option" at all. Two concepts, similar names, named apart rather than
+merged.
+
+**⚠ Reader-first adoption is mandatory.** Every `SystemEventSchema` member is
+`.strict()` and the union discriminates on `kind`, so a consumer pinned below
+0.50.0 that receives one of these members fails the DISCRIMINATOR and rejects
+the WHOLE turn (422), not just the field. Order: publish 0.50.0 → CEE re-vendors
+and deploys a reader → only then the UI emitter ships.
+
+### Added — C8 model-version boundary contracts
+
+- `ModelVersionRestoreV2Schema` at the `/boundary` entry for the atomic restore
+  route envelope. It carries the canonical restore mutation receipt and
+  nullable canonical `AnalysisState` as sibling authorities, and refuses a
+  scenario-mismatched or non-restore receipt.
+- `ModelVersionMutationReceiptV1Schema` at the `/boundary` entry and the
+  optional `OlumiResponse.model_version_receipt` carrier. The strict atomic
+  receipt carries the authoritative committed `GraphV3`, identity envelope,
+  actor, creation, source-turn, lineage, undo and event facts. It deliberately
+  omits replay/dedupe and analysis-freshness fields: idempotent replay is
+  byte-equivalent, and top-level `analysis_state` remains the sole freshness
+  authority.
+- `ModelVersionSummaryV2Schema`, `ModelVersionsListV2Schema`, and
+  `ModelVersionDiffV1Schema` at the `/boundary` entry for persisted model
+  history. The user-facing label is retained with explicit `null` absence;
+  actors distinguish producer-attested known, system, and unknown authors;
+  creation and lineage gaps are explicit `unknown` states;
+  creation metadata carries the persisted source turn (or explicit legacy
+  `null`), route envelopes retain required request correlation (with explicit
+  `null` absence), and list pages carry the authoritative current-version id;
+  diff relation is limited to full-hash-attested `identical | different`;
+  category and coverage arrays are deterministic; mechanically detected but
+  uninterpreted paths are paired with `other_model_fields`; known blind spots travel as
+  `coverage.known_undetectable` and `coverage.known_uninterpreted_paths`.
+- The model-version diff is a separate contract family from analysis-run
+  `RunDeltaSchema`: it describes model snapshot changes and grants no causal
+  entitlement for analysis-result changes.
 
 ## [0.48.0] — 2026-08-17 (candidate)
 

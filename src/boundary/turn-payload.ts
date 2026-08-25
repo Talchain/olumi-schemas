@@ -9,7 +9,7 @@ import {
   EdgeStrengthDirectionIntent,
   EdgeStrengthEditIntent,
 } from './enums.js';
-import { GraphV3Schema } from '../graph.js';
+import { EffectDirection, GraphV3Schema, NodeKind, NodeV3Schema } from '../graph.js';
 import { RoundParticipantRefSchema } from './collab.js';
 
 // UUIDv4 pattern — keep loose; CEE also re-checks.
@@ -704,6 +704,35 @@ export function refinePriorRangeEdit(
 // (`handleEditGraph` → `evaluateEditGraphMutations` → commit) that the coach edit
 // tool already uses. This member is a TRANSPORT for a human's removal; it does
 // not mint a second applier.
+// ---------------------------------------------------------------------------
+// `base_graph_hash` — ONE schema, shared by every structural member.
+//
+// DERIVED, NOT CHOSEN. Both pre-existing sites of this field name validate it
+// as exactly `z.string().min(1)`: `StructuralDeleteEvent.base_graph_hash`
+// (0.48.0, below) and `EditToolOpBatchSchema.base_graph_hash`
+// (src/orchestrator/edit-tool-ops.ts). The 0.50.0 structural members bind to
+// this same constant rather than restating the validator, so the four members
+// cannot drift into two spellings of one concept — the hand-maintained-mirror
+// defect this repo pays for most often. Parity is pinned by execution in
+// tests/boundary/turn-payload-0.50.test.ts, not asserted in prose.
+//
+// ⚠ WHY THERE IS DELIBERATELY NO HEX REGEX HERE, stated so it is not "tightened"
+// later by someone who assumes the omission is an oversight. The value CEE
+// compares against is the ANALYSIS-AFFECTING hash — `computeAnalysisAffectingGraphHash`
+// (CEE `src/orchestrator-v5/context/graph-hash.ts`), which is SHA-256 truncated
+// to a 16-char hex prefix (`HASH_HEX_LENGTH = 16`, `.digest('hex').slice(0, 16)`),
+// and is the only graph hash CEE ever puts on the wire. The 64-hex IDENTITY hash
+// (`computeGraphIdentityHash`) has NO wire emitter and is used only for the
+// server-derived atomic RPC CAS. Binding this field to the 64-hex shape would
+// yield a gate that can never match — an affordance terminating in refusal.
+// A width regex is nonetheless NOT added, for two reasons: (a) neither existing
+// site has one, and introducing one here would make the same field name mean two
+// different validations inside one union; (b) the width is a CEE implementation
+// constant, and pinning it in the published contract would turn a truncation-length
+// change into a cross-repo breaking change. The contract states the semantics; CEE
+// remains the authority on the digest.
+const CanonicalBaseGraphHashSchema = z.string().min(1);
+
 /** A canonical GraphV3 edge reference: the endpoint pair IS the edge's identity. */
 const CanonicalEdgeRefSchema = z.object({
   from: CanonicalEdgeEndpointIdSchema.describe(
@@ -729,7 +758,7 @@ const StructuralDeleteEvent = z.object({
       'and CEE removes edges orphaned by a node removal as part of the same transaction ' +
       'whether or not the client enumerated them.',
   ),
-  base_graph_hash: z.string().min(1).describe(
+  base_graph_hash: CanonicalBaseGraphHashSchema.describe(
     'The canonical graph hash the client last read, i.e. the graph the user was actually ' +
       'looking at when they deleted. An optimistic-concurrency assertion, never a requested ' +
       'value. Absent, null and empty are all forbidden: the stale gate is non-optional, ' +
@@ -770,6 +799,258 @@ export function refineStructuralDelete(
   }
 }
 
+// ---------------------------------------------------------------------------
+// 0.50.0 — the DIRECT-EDIT structural vocabulary: `structural_add`,
+// `structural_add_edge`, `structural_rename`.
+//
+// WHAT THESE CLOSE. 0.48.0 gave the canvas its first REMOVAL verb and stopped
+// there, deliberately. The remaining direct manipulations a user performs on the
+// canvas — creating a factor, drawing an edge between two factors, and renaming
+// a node — still had no wire shape, so each was either lost on the next reload
+// or routed through `direct_graph_edit`, whose `target_id` is a REPRESENTATIVE
+// SINGULAR and whose own contract comment calls keying a mutation on it "a defect
+// by construction". These three members follow the pattern 0.48.0 established
+// and re-state none of it: intent plus a `base_graph_hash` assertion, resolved
+// against the server's own persisted read. Authority stays server-side.
+//
+// ⚠⚠ THE APPARENT CONTRADICTION WITH 0.48.0, RESOLVED RATHER THAN OVERRULED.
+// `structural_delete`'s comment says, in terms, "REMOVAL ONLY — ADD IS
+// DELIBERATELY EXCLUDED. `Intent.add_option` already owns adding". That sentence
+// is still TRUE and is not being reversed here, because it is about a DIFFERENT
+// CONCEPT wearing a similar name. Derived at the bytes (enums.ts:124-149):
+// `Intent` is the authored COACHING / ELICITATION vocabulary, "DECOUPLED from
+// ActionType", and its `add_option` member is "add a decision OPTION (the
+// compound-transaction intent; the referee `add_option` case wires to a LIVE
+// producer through this)". It adds a decision option through the coaching
+// referee. `structural_add` creates a GRAPH NODE from a direct canvas gesture,
+// with no LLM and no referee, and cannot express "add a decision option" at all.
+// Two authorities for one concept is the defect class this estate pays for most
+// often (global CLAUDE.md trap 21 — two questions under similar names); the fix
+// there is to NAME THE CONCEPTS APART, which is what this paragraph does. If a
+// future lane wants to fold them, that is a product decision with a referee
+// seam attached, not a contract tidy-up.
+//
+// WHY THREE MEMBERS AND NOT ONE `structural_edit`. Same ruling as 0.48.0, applied
+// a fourth time: each verb carries a different payload and a different failure
+// mode, and a single member would need a nested discriminator to keep them apart
+// — which is the union we already have, one level down and harder to read. The
+// union is the discriminator.
+//
+// ⚠ SEQUENCING IS UNCHANGED AND STILL MANDATORY. Every member of this union is
+// `.strict()` and the union is a `discriminatedUnion` on `kind`, so a consumer
+// pinned below 0.50.0 that receives one of these fails the DISCRIMINATOR and
+// REJECTS THE WHOLE TURN (422) — not just this field. Order: publish 0.50.0 →
+// CEE re-vendors and deploys a reader → only then the UI emitter ships.
+// UI-alone would 422 every turn carrying a direct edit; CEE-alone is invisible
+// and safe.
+//
+// ⚠ THE ID-SPACE ASYMMETRY IS DERIVED AND DELIBERATE — do not "make it
+// consistent". `structural_add` mints a NEW node id and therefore validates it
+// against `NodeV3Schema.shape.id` (which carries `NODE_ID_PATTERN`), because an
+// id that fails that pattern is one CEE cannot persist into GraphV3 — the
+// producer's own declared semantics. `structural_rename` and
+// `structural_add_edge` address EXISTING nodes and therefore use
+// `CanonicalEdgeEndpointIdSchema`, whose comment states the reason verbatim:
+// "CEE's persisted GraphV3 is the authority and its deployed node ids are open
+// strings, so do not narrow this to the root package's lowercase NodeV3 id
+// regex." Narrowing the existing-id fields would refuse live nodes; loosening
+// the new-id field would mint unpersistable ones. Both directions are wrong.
+
+/**
+ * `structural_add` (0.50.0) — create ONE node from a direct canvas gesture.
+ *
+ * SINGULAR, unlike `structural_delete`. The plurality there is forced: removing a
+ * node necessarily removes its incident edges, so a partial application leaves
+ * DANGLING EDGES. Creating a node has no such cascade — a new node has no
+ * incident edges by construction — so there is no atomicity argument for a batch,
+ * and a singular member keeps the failure attributable to the one node the user
+ * drew. Drawing a node and then an edge is two gestures and two turns.
+ *
+ * THE FIELD SET IS DERIVED FROM `NodeV3Schema`, NOT CHOSEN: `id`, `kind` and
+ * `label` are exactly its three REQUIRED fields, so this is the minimal payload
+ * from which CEE can construct a valid GraphV3 node. `id` and `label` reference
+ * `NodeV3Schema.shape.*` directly rather than restating their validators, so a
+ * change to the node contract cannot leave this member behind.
+ *
+ * EVERY OPTIONAL NodeV3 FIELD IS DELIBERATELY ABSENT — `category`,
+ * `observed_state`, `goal_threshold` and the rest. Two reasons. (a) 0.48.0
+ * already ruled on the adjacent problem: "the adjacent readiness problem ('an
+ * added option leaves the model unanalysable') is a different seam from transport
+ * and is not fixed by widening this member." (b) An optional field on the wire
+ * creates absence semantics — is omitted the same as unset? — which is a debt row
+ * in this repo's own absence-semantics census. A node created here is refined by
+ * the value/prior/edge members that already exist.
+ */
+const StructuralAddEvent = z.object({
+  kind: z.literal('structural_add'),
+  node_id: NodeV3Schema.shape.id.describe(
+    'The id for the NEW node, minted client-side so the gesture is idempotent under retry ' +
+      'and the client can correlate the committed node with the shape it drew. Validated ' +
+      'against NodeV3Schema.shape.id because CEE must be able to persist it. CEE MUST refuse ' +
+      'an id that already exists in the persisted graph rather than overwriting that node: ' +
+      'the base_graph_hash gate cannot catch a collision, because a colliding id is already ' +
+      'present in the very graph the user was looking at.',
+  ),
+  node_kind: NodeKind.describe(
+    'The node kind, from the graph contract\'s own NodeKind vocabulary. Named `node_kind` ' +
+      'rather than `kind` because `kind` is the union discriminator on this member.',
+  ),
+  label: NodeV3Schema.shape.label.describe(
+    'The user-authored label for the new node. Bounds are inherited from NodeV3Schema.shape.label.',
+  ),
+  base_graph_hash: CanonicalBaseGraphHashSchema.describe(
+    'The canonical graph hash the client last read. An optimistic-concurrency assertion, ' +
+      'never a requested value. Absent, null and empty are all forbidden: the stale gate is ' +
+      'non-optional. CEE MUST refuse on divergence rather than applying a best-effort add.',
+  ),
+}).strict();
+
+/**
+ * `structural_add_edge` (0.50.0) — create ONE causal edge between two existing nodes.
+ *
+ * ADDRESSED BY `(from, to)`, NEVER BY AN ID — the same derivation 0.48.0 recorded:
+ * `EdgeV3Schema` (src/graph.ts) declares NO `id` field at all, so an edge's only
+ * identity in the canonical graph is its endpoint pair, and a client-local id
+ * ("reactflow__edge-…") is explicitly forbidden as a lookup key.
+ *
+ * MAGNITUDE AND DIRECTION ARE SEPARATE, inherited from `edge_strength_edit`'s
+ * ruling that they must be, "so a strength change cannot reverse an edge
+ * accidentally". Here direction is the graph's own `EffectDirection` vocabulary
+ * with `unknown` EXCLUDED — derived, not trimmed by taste: this member requires a
+ * `magnitude`, and a stated magnitude paired with an unknown direction produces an
+ * edge whose sign cannot be recovered, which is the exact failure
+ * `EdgeStrengthExpectedSchema` cites when it keeps `effect_direction` required at
+ * a zero mean. An edge whose direction is genuinely unknown is a different product
+ * gesture and does not ride this member.
+ *
+ * `std` AND `exists_probability` ARE ABSENT BY CONTRACT, matching
+ * `edge_strength_edit`, whose fixture note states the rule for the whole family:
+ * "Client provenance/std/operator/graph are absent by contract." The server owns
+ * them.
+ *
+ * NO `expected` TWIN, and the asymmetry with `structural_rename` below is derived,
+ * not an oversight: an edge that does not yet exist has no current value to
+ * assert, and `base_graph_hash` DOES cover this gesture — every field the edge
+ * projection hashes (`from`, `to`, `edge_type`, `exists_probability`,
+ * `effect_direction`, and strength `mean`/`std`) is analysis-affecting, so a
+ * concurrent edge change moves the hash and the stale gate fires.
+ *
+ * SELF-EDGES (`from === to`) ARE DELIBERATELY NOT REFUSED HERE. `EdgeV3Schema`
+ * permits them and no existing endpoint-addressed member forbids them, so a
+ * transport-level refusal would encode a MODELLING opinion the graph contract does
+ * not hold — refusing a request the server can honour. Contrast the no-op rules on
+ * `structural_delete` and `structural_rename`, which refuse requests that are
+ * provably meaningless rather than merely unusual.
+ */
+const StructuralAddEdgeEvent = z.object({
+  kind: z.literal('structural_add_edge'),
+  from: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical source node id of the new edge (edge identity, half 1). Must already exist.',
+  ),
+  to: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical target node id of the new edge (edge identity, half 2). Must already exist.',
+  ),
+  magnitude: z.number().finite().min(0).max(1).describe(
+    'Absolute strength in [0, 1] for the new edge. Direction is carried separately so an ' +
+      'edge cannot be created with an accidentally inverted sign.',
+  ),
+  effect_direction: EffectDirection.exclude(['unknown']).describe(
+    'The causal direction of the new edge. `unknown` is excluded: this member states a ' +
+      'magnitude, and magnitude without direction is an edge whose sign cannot be recovered.',
+  ),
+  base_graph_hash: CanonicalBaseGraphHashSchema.describe(
+    'The canonical graph hash the client last read. An optimistic-concurrency assertion, ' +
+      'never a requested value. Absent, null and empty are all forbidden: the stale gate is ' +
+      'non-optional. CEE MUST refuse on divergence, and MUST refuse an endpoint that does ' +
+      'not resolve in its persisted graph rather than creating a dangling edge.',
+  ),
+}).strict();
+
+/**
+ * `structural_rename` (0.50.0) — change ONE node's label.
+ *
+ * ⚠⚠ THIS MEMBER CARRIES `expected_label` BECAUSE `base_graph_hash` IS STRUCTURALLY
+ * BLIND TO IT, and that is the whole reason the field exists. Derived at CEE's
+ * implementation bytes (`src/orchestrator-v5/context/graph-hash.ts`, staging
+ * 4a064e60): `projectNode` hashes exactly `kind, category, factor_type,
+ * is_baseline, goal_threshold, goal_threshold_raw, goal_threshold_cap, intercept,
+ * encoding_map` — `label` is NOT among them, and the module header says so in
+ * terms: it omits "cosmetic / provenance / display fields so label-only edits do
+ * not trigger" a hash change. The published keep-list in
+ * `boundary/graph-hash-contract.ts` (CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields)
+ * agrees, field for field.
+ *
+ * THE CONSEQUENCE, stated plainly because it is easy to get backwards: two users
+ * renaming the same node concurrently produce NO hash divergence, so
+ * `base_graph_hash` alone would let the second rename silently overwrite the first
+ * — a last-writer-wins clobber on the one field the stale gate cannot see. The
+ * `expected` idiom from `EdgeStrengthExpectedSchema` is exactly the right
+ * template and it is applied here for exactly that reason: an "optimistic-
+ * concurrency assertion, not the requested value". CEE MUST compare
+ * `expected_label` against the persisted label and refuse on mismatch.
+ *
+ * ⚠ SO DO NOT "SIMPLIFY" THIS FIELD AWAY as redundant with the hash. It is
+ * redundant for `structural_add_edge` — every edge field the projection reads is
+ * analysis-affecting — and it is load-bearing here. The two members differ because
+ * the hash's coverage differs, not because the authors were inconsistent.
+ *
+ * RENAME ONLY, NOT A GENERAL NODE EDIT. `kind` is deliberately not renameable
+ * here: changing a node's kind IS analysis-affecting (it is in the projection
+ * above), so it is covered by the stale gate and belongs to a different gesture
+ * with a different review. One verb, one failure mode.
+ */
+const StructuralRenameEvent = z.object({
+  kind: z.literal('structural_rename'),
+  node_id: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical id of the EXISTING node being renamed. Open-string, per the canonical ' +
+      'id rule: CEE\'s persisted node ids are the authority.',
+  ),
+  label: NodeV3Schema.shape.label.describe(
+    'The new label. Bounds are inherited from NodeV3Schema.shape.label.',
+  ),
+  expected_label: NodeV3Schema.shape.label.describe(
+    'The exact label last read from the canonical persisted node. An optimistic-concurrency ' +
+      'assertion, never a requested value, and NOT redundant with base_graph_hash: the ' +
+      'analysis-affecting hash does not cover `label`, so a concurrent rename moves no hash ' +
+      'and would otherwise be silently clobbered. CEE MUST refuse on mismatch.',
+  ),
+  base_graph_hash: CanonicalBaseGraphHashSchema.describe(
+    'The canonical graph hash the client last read. Guards every analysis-affecting change ' +
+      'to the graph around this node; `expected_label` guards the label itself, which the ' +
+      'hash does not cover. Absent, null and empty are all forbidden.',
+  ),
+}).strict();
+
+/**
+ * Cross-field rule for `structural_rename`: a rename must CHANGE something.
+ *
+ * `label === expected_label` is a NO-OP that should never reach the wire — it costs
+ * a turn, a commit and two comparisons to change nothing, and it is
+ * indistinguishable from a client bug that lost the edit. This is the same ruling
+ * as {@link refineStructuralDelete}'s "a delete must remove SOMETHING", applied to
+ * the one member where the no-op is expressible as a cross-field equality.
+ *
+ * Lives at the union root like its siblings because `z.discriminatedUnion` requires
+ * plain ZodObject options, and exported so a consumer that parses a bare
+ * `SystemEventSchema` applies the same rule instead of re-deriving it — see
+ * {@link refineEdgeAdjudication}.
+ */
+export function refineStructuralRename(
+  ev: z.infer<typeof StructuralRenameEvent>,
+  ctx: z.RefinementCtx,
+  pathPrefix: readonly (string | number)[] = [],
+): void {
+  if (ev.label === ev.expected_label) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'label'],
+      message:
+        'a structural_rename to the label it already has is a no-op — supply a label that ' +
+        'differs from expected_label',
+    });
+  }
+}
+
 export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
@@ -784,6 +1065,9 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   PriorRangeEditEvent,
   EdgeStrengthEditEvent,
   StructuralDeleteEvent,
+  StructuralAddEvent,
+  StructuralAddEdgeEvent,
+  StructuralRenameEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 
@@ -814,6 +1098,9 @@ export const OrchestratorTurnPayloadSchema = z
       }
       if (payload.event.kind === 'structural_delete') {
         refineStructuralDelete(payload.event, ctx, ['event']);
+      }
+      if (payload.event.kind === 'structural_rename') {
+        refineStructuralRename(payload.event, ctx, ['event']);
       }
       return;
     }

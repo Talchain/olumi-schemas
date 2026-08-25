@@ -351,8 +351,20 @@ const EVENTS_0_41: ReadonlyArray<{ family: string; fixture: Record<string, unkno
  * of the corpus being quietly rewritten to match.
  *   · 0.42.0 — edge_strength_edit
  *   · 0.48.0 — structural_delete
+ *   · 0.50.0 — structural_add, structural_add_edge, structural_rename
+ *
+ * ⚠ 0.50.0 is the first train to append MORE THAN ONE entry, so the "exactly
+ * one entry" phrasing above is now "one entry per member". The invariant the
+ * assertion enforces is unchanged: the 0.41.0 corpus is never edited, and every
+ * new member must be declared here to stay green.
  */
-const KINDS_ADDED_SINCE_0_41 = ['edge_strength_edit', 'structural_delete'] as const;
+const KINDS_ADDED_SINCE_0_41 = [
+  'edge_strength_edit',
+  'structural_delete',
+  'structural_add',
+  'structural_add_edge',
+  'structural_rename',
+] as const;
 
 describe('0.42.0 compatibility — every 0.41.0 system-event kind is byte-compatible', () => {
   it('the captured corpus is exhaustive and only the recorded kinds were added since', () => {
