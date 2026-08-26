@@ -155,13 +155,212 @@ const ModelVersionMutationReceiptCreationSchema = z.discriminatedUnion('kind', [
   }).strict(),
 ]);
 
+type JsonCloneResult =
+  | { ok: true; value: unknown }
+  | { ok: false; path: Array<string | number>; message: string };
+
+function cloneJsonData(
+  value: unknown,
+  path: Array<string | number> = [],
+  ancestors: Set<object> = new Set(),
+): JsonCloneResult {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
+    return { ok: true, value };
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value)
+      ? { ok: true, value }
+      : { ok: false, path, message: 'receipt graph values must be finite JSON numbers' };
+  }
+  if (typeof value !== 'object') {
+    return { ok: false, path, message: 'receipt graph values must be JSON data' };
+  }
+  if (ancestors.has(value)) {
+    return { ok: false, path, message: 'receipt graph values must not be cyclic' };
+  }
+
+  const expectedPrototype = Array.isArray(value) ? Array.prototype : Object.prototype;
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== expectedPrototype && prototype !== null) {
+    return { ok: false, path, message: 'receipt graph objects must have a plain JSON prototype' };
+  }
+  const toJsonDescriptor = Object.getOwnPropertyDescriptor(value, 'toJSON');
+  const hasSafeToJsonShadow =
+    toJsonDescriptor !== undefined &&
+    'value' in toJsonDescriptor &&
+    toJsonDescriptor.value === undefined &&
+    toJsonDescriptor.enumerable === false &&
+    toJsonDescriptor.configurable === false &&
+    toJsonDescriptor.writable === false;
+  if (toJsonDescriptor !== undefined && !hasSafeToJsonShadow) {
+    return { ok: false, path, message: 'receipt graph objects must not define toJSON' };
+  }
+
+  ancestors.add(value);
+  if (Array.isArray(value)) {
+    const keys = Object.keys(value);
+    if (
+      keys.length !== value.length ||
+      keys.some((key, index) => key !== String(index))
+    ) {
+      return { ok: false, path, message: 'receipt graph arrays must be dense JSON arrays' };
+    }
+
+    const clone: unknown[] = [];
+    for (let index = 0; index < value.length; index += 1) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+      if (descriptor === undefined || !('value' in descriptor)) {
+        return {
+          ok: false,
+          path: [...path, index],
+          message: 'receipt graph properties must be stable data properties',
+        };
+      }
+      const child = cloneJsonData(descriptor.value, [...path, index], ancestors);
+      if (!child.ok) return child;
+      clone[index] = child.value;
+    }
+    // Arrays retain Array.prototype so consumers keep ordinary array methods,
+    // but an immutable own shadow prevents a polluted inherited `toJSON` from
+    // changing their wire representation. Re-parsing this carrier recognises
+    // only this exact inert descriptor.
+    Object.defineProperty(clone, 'toJSON', {
+      value: undefined,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+    ancestors.delete(value);
+    return { ok: true, value: clone };
+  }
+
+  const clone = Object.create(null) as Record<string, unknown>;
+  for (const key of Object.keys(value)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      return {
+        ok: false,
+        path: [...path, key],
+        message: 'receipt graph properties must not use prototype-control names',
+      };
+    }
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (descriptor === undefined || !('value' in descriptor)) {
+      return {
+        ok: false,
+        path: [...path, key],
+        message: 'receipt graph properties must be stable data properties',
+      };
+    }
+    const child = cloneJsonData(descriptor.value, [...path, key], ancestors);
+    if (!child.ok) return child;
+    Object.defineProperty(clone, key, {
+      value: child.value,
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    });
+  }
+  ancestors.delete(value);
+  return { ok: true, value: clone };
+}
+
+function exposeStableJsonData(value: unknown): void {
+  if (value === null || typeof value !== 'object') return;
+  for (const key of Object.keys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (descriptor !== undefined && 'value' in descriptor) {
+      exposeStableJsonData(descriptor.value);
+    }
+  }
+  if (!Object.prototype.hasOwnProperty.call(value, 'toJSON')) {
+    Object.defineProperty(value, 'toJSON', {
+      value: undefined,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  }
+  if (!Array.isArray(value)) Object.setPrototypeOf(value, Object.prototype);
+}
+
+const ModelVersionReceiptGraphInputSchema = z.custom<z.input<typeof GraphV3Schema>>(
+  (value) => {
+    try {
+      return value !== null && typeof value === 'object' && !Array.isArray(value);
+    } catch {
+      return false;
+    }
+  },
+  { message: 'receipt graph must be a JSON object' },
+);
+
+/**
+ * Preserve the receipt's exact JSON data without preserving executable object
+ * behaviour. The stable plain-data clone closes validation/serialization TOCTOU
+ * paths (getters, custom prototypes and `toJSON`), then the full GraphV3 parse
+ * validates that clone. Its rebuilt value is deliberately discarded because it
+ * would materialise `edge_type: "directed"` and move the persisted hash.
+ */
+const ModelVersionReceiptGraphVerbatimSchema = ModelVersionReceiptGraphInputSchema.transform(
+  (value, ctx) => {
+    let clone: JsonCloneResult;
+    try {
+      clone = cloneJsonData(value);
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'receipt graph could not be read as stable JSON data',
+      });
+      return z.NEVER;
+    }
+
+    if (!clone.ok) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: clone.path, message: clone.message });
+      return z.NEVER;
+    }
+
+    let validation: ReturnType<typeof GraphV3Schema.safeParse>;
+    try {
+      validation = GraphV3Schema.safeParse(clone.value, { path: ctx.path });
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'receipt graph could not be validated as stable GraphV3 data',
+      });
+      return z.NEVER;
+    }
+    if (!validation.success) {
+      for (const issue of validation.error.issues) {
+        ctx.addIssue({ ...issue, path: issue.path.slice(ctx.path.length) });
+      }
+      return z.NEVER;
+    }
+
+    // Validation ran over null-prototype object snapshots, so inherited fields
+    // could not satisfy GraphV3. Restore ordinary object prototypes only after
+    // that gate, with an immutable own `toJSON: undefined` shadow on every
+    // container so polluted inherited serializers still cannot move the wire.
+    try {
+      exposeStableJsonData(clone.value);
+    } catch {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'receipt graph could not be exposed as stable JSON data',
+      });
+      return z.NEVER;
+    }
+
+    return clone.value as z.input<typeof GraphV3Schema>;
+  },
+);
+
 const ModelVersionMutationReceiptV1ObjectSchema = z.object({
   schema: z.literal('model_version_mutation_receipt.v1'),
   scenario_id: UuidSchema,
   mutation_id: UuidSchema,
   version_id: UuidSchema,
   sequence: z.number().int().min(1),
-  graph: GraphV3Schema,
+  graph: ModelVersionReceiptGraphVerbatimSchema,
   full_hash: Sha256Schema,
   hash_algorithm: NonEmptyStringSchema,
   identity_projection_version: NonEmptyStringSchema,

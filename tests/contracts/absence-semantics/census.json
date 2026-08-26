@@ -173,7 +173,12 @@
       "sites were visited, and on every one the structural marker classification and Zod's own",
       "isOptional()/isNullable() agreed."
     ],
-    "entries": {}
+    "entries": {
+      "effects-transform::boundary/ModelVersionMutationReceiptV1Schema.graph": {
+        "kind": "effects-transform",
+        "note": "0.51.0 intentionally transforms the required receipt graph into a stable plain-JSON snapshot before GraphV3 validation. The input schema cannot reveal that output shape, so the walker records this bounded hole instead of inferring absence semantics through it."
+      }
+    }
   },
   "fields": {
     "boundary/ActionSchema.action_type": {

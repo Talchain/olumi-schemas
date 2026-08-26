@@ -5,6 +5,32 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.51.0] — 2026-08-27 (candidate)
+
+### Fixed — model-version receipts preserve their hash-bearing graph verbatim
+
+- `ModelVersionMutationReceiptV1Schema.graph` now validates against the full
+  `GraphV3Schema` contract while preserving its exact JSON data. This
+  prevents the general graph parser's historical
+  `edge_type.optional().default('directed')` from changing receipt bytes after
+  `full_hash` was computed over the persisted graph.
+- Validation remains fail-closed and retains nested GraphV3 issue paths. The
+  change is receipt-specific: the general `GraphV3Schema` default and every
+  non-receipt parse keep their existing behaviour.
+- The composed `OlumiResponseSchema` now preserves the same receipt graph data,
+  so CEE and UI can validate the shared response contract without
+  recreating a hash/payload fork at either side of the wire.
+- Receipt graphs are first copied into stable plain JSON data. Accessors,
+  custom prototypes, cycles, non-finite values, sparse arrays, executable
+  `toJSON`, and prototype-control keys are refused; inherited fields cannot
+  satisfy GraphV3, and inherited serializers cannot change an accepted wire.
+
+Deploy in contract order: publish schemas, re-vendor the identical package in
+CEE and UI, then deploy CEE's egress correction and rerun the exact authenticated
+quartet. A CEE-only pass-through is insufficient because a consumer pinned to
+0.50.0 can recreate the default while parsing; returning the entire unparsed
+response is also too broad because it bypasses unrelated egress normalization.
+
 ## [0.50.0] — 2026-08-25 (candidate)
 
 **Two trains, one honest version.** The C8 model-version boundary contracts and
