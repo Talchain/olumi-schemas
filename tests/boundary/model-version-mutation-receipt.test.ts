@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import { z } from 'zod';
 
 import * as boundaryDist from '../../dist/boundary/index.js';
 import {
@@ -13,6 +14,7 @@ import {
   maximalModelVersionRestoreV2,
   maximalOlumiResponse,
 } from '../../src/fixtures/index.js';
+import { GraphV3Schema } from '../../src/graph.js';
 
 const MINIMAL_RESPONSE = {
   response_version: 2,
@@ -23,6 +25,13 @@ const MINIMAL_RESPONSE = {
   stage_indicator: 'frame',
 } as const;
 
+type ModelVersionMutationReceiptInput = z.input<typeof ModelVersionMutationReceiptV1Schema>;
+
+function expectSameJsonData(actual: unknown, expected: unknown): void {
+  expect(actual).toEqual(expected);
+  expect(JSON.stringify(actual)).toBe(JSON.stringify(expected));
+}
+
 describe('ModelVersionMutationReceiptV1Schema', () => {
   it('parses only the three attested creation kinds and all actor/lineage states', () => {
     for (const receipt of [
@@ -30,7 +39,9 @@ describe('ModelVersionMutationReceiptV1Schema', () => {
       maximalModelVersionMutationReceiptCommittedMutation,
       maximalModelVersionMutationReceiptRestore,
     ]) {
-      expect(ModelVersionMutationReceiptV1Schema.parse(receipt)).toStrictEqual(receipt);
+      const parsed = ModelVersionMutationReceiptV1Schema.parse(receipt);
+      expect(parsed).toEqual(receipt);
+      expect(JSON.stringify(parsed)).toBe(JSON.stringify(receipt));
     }
 
     expect(
@@ -39,6 +50,12 @@ describe('ModelVersionMutationReceiptV1Schema', () => {
         creation: { kind: 'variant_creation' },
       }).success,
     ).toBe(false);
+  });
+
+  it('keeps graph required in the public schema input type', () => {
+    expectTypeOf<ModelVersionMutationReceiptInput['graph']>().toEqualTypeOf<
+      z.input<typeof GraphV3Schema>
+    >();
   });
 
   it('requires explicit source-turn and undo absence and a non-empty event id', () => {
@@ -84,6 +101,340 @@ describe('ModelVersionMutationReceiptV1Schema', () => {
         analysis_affecting_hash: 'short',
       }).success,
     ).toBe(false);
+  });
+
+  it('validates but never rebuilds the hash-bearing graph', () => {
+    const graphWithoutEdgeType = {
+      nodes: [
+        {
+          id: 'factor_a',
+          kind: 'factor',
+          label: 'Factor A',
+          state_space: { range: { min: 0, max: 1, future_range_key: 'retained' } },
+        },
+        { id: 'goal_b', kind: 'goal', label: 'Goal B' },
+      ],
+      edges: [
+        {
+          from: 'factor_a',
+          to: 'goal_b',
+          strength: { mean: 0.5, std: 0.1, future_strength_key: 'retained' },
+          exists_probability: 0.9,
+        },
+      ],
+      future_graph_key: 'retained',
+    };
+    const receipt = {
+      ...maximalModelVersionMutationReceiptCommittedMutation,
+      graph: graphWithoutEdgeType,
+    };
+
+    // Discriminating control: the general GraphV3 parser still rebuilds the
+    // graph and materialises its historical default.
+    const ordinaryGraphParse = GraphV3Schema.parse(graphWithoutEdgeType);
+    expect(ordinaryGraphParse).not.toBe(graphWithoutEdgeType);
+    expect(ordinaryGraphParse.edges.every((edge) => edge.edge_type === 'directed')).toBe(true);
+    expect('future_strength_key' in ordinaryGraphParse.edges[0].strength).toBe(false);
+    expect(
+      'future_range_key' in (ordinaryGraphParse.nodes[0].state_space?.range ?? {}),
+    ).toBe(false);
+
+    const parsed = ModelVersionMutationReceiptV1Schema.parse(receipt);
+    expect(parsed.graph).not.toBe(graphWithoutEdgeType);
+    expect(parsed.graph).toEqual(graphWithoutEdgeType);
+    expect(JSON.stringify(parsed.graph)).toBe(JSON.stringify(graphWithoutEdgeType));
+    expect(parsed.graph.edges.every((edge) => !('edge_type' in edge))).toBe(true);
+    expect('future_strength_key' in parsed.graph.edges[0].strength).toBe(true);
+    expect('future_range_key' in (parsed.graph.nodes[0].state_space?.range ?? {})).toBe(true);
+
+    // The same guarantee survives the composed response parser used by clients.
+    const response = { ...MINIMAL_RESPONSE, model_version_receipt: receipt };
+    const parsedResponse = OlumiResponseSchema.parse(response);
+    expectSameJsonData(parsedResponse.model_version_receipt?.graph, graphWithoutEdgeType);
+    expect(
+      parsedResponse.model_version_receipt?.graph.edges.every(
+        (edge) => !('edge_type' in edge),
+      ),
+    ).toBe(true);
+
+    // The stable snapshot is recursively independent of its source and can be
+    // validated again without changing its JSON representation.
+    const stableWire = JSON.stringify(parsed.graph);
+    graphWithoutEdgeType.nodes[0].label = 'Mutated after parse';
+    graphWithoutEdgeType.edges[0].strength.mean = -0.25;
+    expect(JSON.stringify(parsed.graph)).toBe(stableWire);
+    expect(JSON.stringify(ModelVersionMutationReceiptV1Schema.parse(parsed).graph)).toBe(
+      stableWire,
+    );
+
+    // Validation excluded inherited data; consumers still receive ordinary
+    // objects/arrays, each shadowing inherited serialization hooks.
+    expect(Object.getPrototypeOf(parsed.graph)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(parsed.graph.nodes[0])).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(parsed.graph.edges[0].strength)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(parsed.graph.nodes)).toBe(Array.prototype);
+    expect(Object.getOwnPropertyDescriptor(parsed.graph, 'toJSON')).toMatchObject({
+      value: undefined,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+    expect(parsed.graph.nodes.map((node) => node.id)).toEqual(['factor_a', 'goal_b']);
+  });
+
+  it('snapshots stable JSON data so accepted input cannot change after validation', () => {
+    const graph = maximalModelVersionMutationReceiptCommittedMutation.graph;
+    let nodeReads = 0;
+    const getterGraph = { edges: graph.edges } as { nodes?: unknown; edges: unknown };
+    Object.defineProperty(getterGraph, 'nodes', {
+      enumerable: true,
+      get() {
+        nodeReads += 1;
+        return nodeReads === 1 ? graph.nodes : 'NOT_AN_ARRAY';
+      },
+    });
+    expect(
+      ModelVersionMutationReceiptV1Schema.safeParse({
+        ...maximalModelVersionMutationReceiptCommittedMutation,
+        graph: getterGraph,
+      }).success,
+    ).toBe(false);
+    expect(nodeReads).toBe(0);
+
+    const toJsonGraph = { ...graph };
+    Object.defineProperty(toJsonGraph, 'toJSON', {
+      enumerable: false,
+      value: () => ({ nodes: 'NOT_AN_ARRAY', edges: null }),
+    });
+    expect(
+      ModelVersionMutationReceiptV1Schema.safeParse({
+        ...maximalModelVersionMutationReceiptCommittedMutation,
+        graph: toJsonGraph,
+      }).success,
+    ).toBe(false);
+
+    const bigintGraph = {
+      ...graph,
+      edges: graph.edges.map((edge, index) =>
+        index === 0
+          ? { ...edge, strength: { ...edge.strength, accepted_but_unserializable: 1n } }
+          : edge,
+      ),
+    };
+    expect(GraphV3Schema.safeParse(bigintGraph).success).toBe(true);
+    expect(
+      ModelVersionMutationReceiptV1Schema.safeParse({
+        ...maximalModelVersionMutationReceiptCommittedMutation,
+        graph: bigintGraph,
+      }).success,
+    ).toBe(false);
+  });
+
+  it('excludes inherited fields and serialization hooks from the stable snapshot', () => {
+    const graph = maximalModelVersionMutationReceiptCommittedMutation.graph;
+    const expectedWire = JSON.stringify(graph);
+    const objectNodes = Object.getOwnPropertyDescriptor(Object.prototype, 'nodes');
+    const objectToJson = Object.getOwnPropertyDescriptor(Object.prototype, 'toJSON');
+    const arrayToJson = Object.getOwnPropertyDescriptor(Array.prototype, 'toJSON');
+
+    try {
+      Object.defineProperty(Object.prototype, 'nodes', {
+        value: graph.nodes,
+        enumerable: false,
+        configurable: true,
+        writable: true,
+      });
+      Object.defineProperty(Object.prototype, 'toJSON', {
+        value: () => ({ nodes: 'INHERITED_OBJECT_TO_JSON', edges: null }),
+        enumerable: false,
+        configurable: true,
+      });
+      Object.defineProperty(Array.prototype, 'toJSON', {
+        value: () => 'INHERITED_ARRAY_TO_JSON',
+        enumerable: false,
+        configurable: true,
+      });
+
+      const parsed = ModelVersionMutationReceiptV1Schema.parse({
+        ...maximalModelVersionMutationReceiptCommittedMutation,
+        graph,
+      });
+      expect(JSON.stringify(parsed.graph)).toBe(expectedWire);
+      expect(parsed.graph.nodes.map((node) => node.id)).toEqual(graph.nodes.map((node) => node.id));
+
+      // Without an own `nodes`, inherited data must not satisfy GraphV3.
+      expect(
+        ModelVersionMutationReceiptV1Schema.safeParse({
+          ...maximalModelVersionMutationReceiptCommittedMutation,
+          graph: { edges: graph.edges },
+        }).success,
+      ).toBe(false);
+
+      // Even hostile inherited descriptors must produce a normal validation
+      // failure rather than escaping `safeParse` as an exception.
+      Object.defineProperty(Object.prototype, 'nodes', {
+        value: graph.nodes,
+        enumerable: false,
+        configurable: true,
+        writable: false,
+      });
+      let guardedResult: ReturnType<typeof ModelVersionMutationReceiptV1Schema.safeParse>;
+      try {
+        guardedResult = ModelVersionMutationReceiptV1Schema.safeParse({
+          ...maximalModelVersionMutationReceiptCommittedMutation,
+          graph,
+        });
+      } finally {
+        Object.defineProperty(Object.prototype, 'nodes', {
+          value: graph.nodes,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      }
+      expect(guardedResult.success).toBe(false);
+    } finally {
+      if (arrayToJson === undefined) delete (Array.prototype as { toJSON?: unknown }).toJSON;
+      else Object.defineProperty(Array.prototype, 'toJSON', arrayToJson);
+      if (objectToJson === undefined) delete (Object.prototype as { toJSON?: unknown }).toJSON;
+      else Object.defineProperty(Object.prototype, 'toJSON', objectToJson);
+      if (objectNodes === undefined) delete (Object.prototype as { nodes?: unknown }).nodes;
+      else Object.defineProperty(Object.prototype, 'nodes', objectNodes);
+    }
+  });
+
+  it('rejects prototype-control keys instead of stripping hash-bearing data', () => {
+    for (const key of ['__proto__', 'constructor', 'prototype']) {
+      const graph = {
+        ...maximalModelVersionMutationReceiptCommittedMutation.graph,
+      } as Record<string, unknown>;
+      Object.defineProperty(graph, key, {
+        value: { polluted: true },
+        enumerable: true,
+        configurable: true,
+      });
+      const result = ModelVersionMutationReceiptV1Schema.safeParse({
+        ...maximalModelVersionMutationReceiptCommittedMutation,
+        graph,
+      });
+      expect(result.success).toBe(false);
+      if (result.success) continue;
+      expect(result.error.issues.some((issue) => issue.path.join('.') === `graph.${key}`)).toBe(
+        true,
+      );
+    }
+  });
+
+  // ⚠ THIS TEST'S INVALID VALUE CHANGED WHEN #51 WAS RECONCILED WITH #52.
+  // It originally used `strength: { mean: 0.5, std: 0 }`, chosen at #51's
+  // merge-base (v0.50.0) purely as a convenient invalid value. #52 then made
+  // `std: 0` DELIBERATELY VALID for this receipt — reporting the non-positive
+  // sigma CEE durably persists is the entire point of that fix. Keeping `0`
+  // here would have asserted the absence of #52. The intent is unchanged:
+  // prove the validating parse is still fail-closed and still reports the
+  // ORIGINAL NESTED PATH. Only the value moved, to one still outside the band.
+  it('keeps receipt-graph validation fail-closed with the original nested issue path', () => {
+    const invalid = {
+      ...maximalModelVersionMutationReceiptCommittedMutation,
+      graph: {
+        ...maximalModelVersionMutationReceiptCommittedMutation.graph,
+        edges: [
+          {
+            ...maximalModelVersionMutationReceiptCommittedMutation.graph.edges[0],
+            // A string: accepted by the plain-JSON clone (#51), refused by
+            // ReceiptGraphV3Schema (#52). `StrengthSchema.std` is a bare
+            // `z.number()` with no coercion (src/graph.ts:303), so this can
+            // only fail at the validating parse — which is what is under test.
+            strength: { mean: 0.5, std: 'not-a-number' },
+          },
+        ],
+      },
+    };
+
+    const result = ModelVersionMutationReceiptV1Schema.safeParse(invalid);
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues.some((issue) =>
+      issue.path.join('.') === 'graph.edges.0.strength.std'
+    )).toBe(true);
+  });
+
+  // The composition guard. #51's carrier wraps the graph in an opaque
+  // `z.custom(...).transform(...)`, so NOTHING about which schema it validates
+  // against is visible on inspection — the field's declared type reads the same
+  // either way. If the inner parse is ever "tidied" back to
+  // `GraphV3Schema.safeParse`, #52's band silently re-closes and CEE resumes
+  // rejecting its own durable commits at egress. This pins the discrimination
+  // in #51's own file, next to the fail-closed case it must not be confused
+  // with: the SAME field, one value inside the band and one outside it.
+  it('validates through #52 band, not bare GraphV3 — std: 0 passes, a string does not', () => {
+    const withBandSigma = {
+      ...maximalModelVersionMutationReceiptCommittedMutation,
+      graph: {
+        ...maximalModelVersionMutationReceiptCommittedMutation.graph,
+        edges: [
+          {
+            ...maximalModelVersionMutationReceiptCommittedMutation.graph.edges[0],
+            strength: { mean: 0.5, std: 0 },
+          },
+        ],
+      },
+    };
+
+    // Precondition, pinned in-test: bare GraphV3Schema REFUSES this graph. If
+    // this ever passes, the canonical schema was loosened and the assertion
+    // below stops discriminating between the two parses.
+    expect(GraphV3Schema.safeParse(withBandSigma.graph).success).toBe(false);
+
+    // ...and the receipt accepts it anyway, which is only possible if the
+    // carrier's inner parse is ReceiptGraphV3Schema.
+    const result = ModelVersionMutationReceiptV1Schema.safeParse(withBandSigma);
+    expect(result.success).toBe(true);
+
+    // ...and the verbatim guarantee still holds over the band value.
+    if (!result.success) return;
+    expect(result.data.graph.edges[0].strength.std).toBe(0);
+    expect(
+      Object.prototype.hasOwnProperty.call(result.data.graph.edges[0], 'edge_type'),
+    ).toBe(
+      Object.prototype.hasOwnProperty.call(withBandSigma.graph.edges[0], 'edge_type'),
+    );
+  });
+
+  it('keeps nested union details under graph in formatted validation errors', () => {
+    const graph = {
+      nodes: [
+        {
+          id: 'factor_a',
+          kind: 'factor',
+          label: 'Factor A',
+          observed_state: {
+            value: 0.5,
+            elicited_from: { round_id: 'round-1', participant_id: 42 },
+          },
+        },
+      ],
+      edges: [],
+    };
+    const result = ModelVersionMutationReceiptV1Schema.safeParse({
+      ...maximalModelVersionMutationReceiptCommittedMutation,
+      graph,
+    });
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    expect(
+      result.error.issues.some(
+        (issue) =>
+          issue.path.join('.') ===
+          'graph.nodes.0.observed_state.elicited_from.participant_id',
+      ),
+    ).toBe(true);
+    const formatted = result.error.format() as Record<string, unknown>;
+    expect(formatted).toHaveProperty(
+      'graph.nodes.0.observed_state.elicited_from.participant_id._errors',
+    );
+    expect(formatted).not.toHaveProperty('nodes');
   });
 
   it('rejects self-referential parent, restore-source, and undo claims', () => {
@@ -145,8 +496,18 @@ describe('OlumiResponse model_version_receipt carrier', () => {
       ...MINIMAL_RESPONSE,
       model_version_receipt: maximalModelVersionMutationReceiptCommittedMutation,
     } as const;
-    expect(OlumiResponseSchema.parse(response)).toStrictEqual(response);
-    expect(OlumiResponseSchema.parse(maximalOlumiResponse)).toStrictEqual(maximalOlumiResponse);
+    const parsedResponse = OlumiResponseSchema.parse(response);
+    expect(parsedResponse).toEqual(response);
+    expectSameJsonData(
+      parsedResponse.model_version_receipt?.graph,
+      response.model_version_receipt.graph,
+    );
+    const parsedMaximal = OlumiResponseSchema.parse(maximalOlumiResponse);
+    expect(parsedMaximal).toEqual(maximalOlumiResponse);
+    expectSameJsonData(
+      parsedMaximal.model_version_receipt?.graph,
+      maximalOlumiResponse.model_version_receipt.graph,
+    );
     expect(maximalOlumiResponse.analysis_state).toBeDefined();
     expect('analysis_state' in maximalOlumiResponse.model_version_receipt).toBe(false);
   });
@@ -163,8 +524,11 @@ describe('OlumiResponse model_version_receipt carrier', () => {
 
 describe('ModelVersionRestoreV2Schema', () => {
   it('carries the canonical restore receipt and sibling AnalysisState authority', () => {
-    expect(ModelVersionRestoreV2Schema.parse(maximalModelVersionRestoreV2)).toStrictEqual(
-      maximalModelVersionRestoreV2,
+    const parsed = ModelVersionRestoreV2Schema.parse(maximalModelVersionRestoreV2);
+    expect(parsed).toEqual(maximalModelVersionRestoreV2);
+    expectSameJsonData(
+      parsed.receipt.graph,
+      maximalModelVersionRestoreV2.receipt.graph,
     );
     expect(
       ModelVersionRestoreV2Schema.safeParse({
@@ -193,8 +557,11 @@ describe('ModelVersionRestoreV2Schema', () => {
   });
 
   it('reaches the built /boundary entry', () => {
-    expect(boundaryDist.ModelVersionRestoreV2Schema.parse(maximalModelVersionRestoreV2)).toStrictEqual(
-      maximalModelVersionRestoreV2,
+    const parsed = boundaryDist.ModelVersionRestoreV2Schema.parse(maximalModelVersionRestoreV2);
+    expect(parsed).toEqual(maximalModelVersionRestoreV2);
+    expectSameJsonData(
+      parsed.receipt.graph,
+      maximalModelVersionRestoreV2.receipt.graph,
     );
   });
 });

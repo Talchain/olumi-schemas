@@ -162,6 +162,36 @@ describe('absence-semantics census · the derivation reaches a real surface', ()
     ).toContain('unknown-type');
   });
 
+  it('a transform is unparseable without inheriting optionality from its input schema', () => {
+    const RequiredTransform = z.object({
+      required_snapshot: z.unknown().transform((value, ctx) => {
+        if (value === undefined) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'required' });
+          return z.NEVER;
+        }
+        return value;
+      }),
+      inner_optional_but_required: z.string().optional().transform((value, ctx) => {
+        if (value === undefined) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'required after transform' });
+          return z.NEVER;
+        }
+        return value;
+      }),
+      outer_optional: z.string().transform((value) => value).optional(),
+    });
+    const result = deriveAbsenceCensus({ probe: { RequiredTransformSchema: RequiredTransform } });
+
+    const fields = new Map(result.fields.map((field) => [field.key, field.markers]));
+    expect(fields.has('probe/RequiredTransformSchema.required_snapshot')).toBe(false);
+    expect(fields.has('probe/RequiredTransformSchema.inner_optional_but_required')).toBe(false);
+    expect(fields.get('probe/RequiredTransformSchema.outer_optional')).toEqual(['optional']);
+    expect(result.unparseable.map((entry) => entry.kind)).toContain('effects-transform');
+    expect(result.unparseable.map((entry) => entry.kind)).not.toContain(
+      'classification-disagreement',
+    );
+  });
+
   it('POSITIVE CONTROL: a passthrough object is reported as an open object', () => {
     const Open = z.object({ declared: z.string() }).passthrough();
     const result = deriveAbsenceCensus({ probe: { OpenSchema: Open } });
@@ -304,6 +334,71 @@ describe('absence-semantics census · the ratchet and the holes', () => {
         'list goes back to empty), or document each one in `unparseable.entries` with what the ' +
         'census cannot see because of it:\n  ' +
         undocumented.map((entry) => `${entry.key}\n      ${entry.detail}`).join('\n  '),
+    ).toEqual([]);
+  });
+
+  // ⭐ The receipt graph became invisible to this census when #51's opaque
+  // `z.custom(...).transform(...)` carrier composed onto #52's walkable
+  // `ReceiptGraphV3Schema`. 17 field rows and 4 open-object rows were deleted.
+  // The ONLY thing that makes that deletion defensible is that every deleted
+  // row has a canonical-root twin still pinned here. That justification lives
+  // in a JSON note — i.e. in a hand-maintained mirror — so it will rot the day
+  // someone tidies one of the twins away, and nothing would say so.
+  //
+  // This is that alarm. It does not restore the lost coverage; it fails loud
+  // the moment the reason for tolerating the loss stops being true.
+  it('RECEIPT-GRAPH HOLE: every row lost to the opaque carrier still has a canonical twin', () => {
+    const receiptPrefix = 'boundary/ModelVersionMutationReceiptV1Schema.graph';
+
+    // Precondition, pinned in-test: the hole is actually open. If the walker is
+    // ever taught to descend through the carrier, these rows come back and this
+    // guard must be deleted rather than left passing vacuously.
+    expect(
+      Object.keys(census.fields).some((key) => key.startsWith(`${receiptPrefix}.`)),
+      'The census can now see inside the receipt graph again — the hole closed. ' +
+        'Delete this guard and the unparseable note it defends.',
+    ).toBe(false);
+
+    const requiredTwins = [
+      'boundary/EdgeV3Schema.edge_type',
+      'boundary/EdgeV3Schema.effect_direction',
+      'boundary/EdgeV3Schema.label',
+      'boundary/NodeV3Schema.body',
+      'boundary/NodeV3Schema.categories',
+      'boundary/NodeV3Schema.category',
+      'boundary/NodeV3Schema.goal_threshold',
+      'boundary/NodeV3Schema.goal_threshold_frame',
+      'boundary/NodeV3Schema.observed_state',
+      'boundary/NodeV3Schema.state_space',
+      'boundary/NodeV3Schema.type',
+      'root/ObservedStateSchema.baseline',
+      'root/ObservedStateSchema.declared_scale',
+      'root/ObservedStateSchema.elicited_from',
+      'root/ObservedStateSchema.source',
+      'root/ObservedStateSchema.std',
+      'root/ObservedStateSchema.unit',
+    ];
+    const missingFields = requiredTwins.filter((key) => !(key in census.fields));
+    expect(
+      missingFields,
+      '\nA canonical-root row disappeared that the receipt-graph census hole depends on. ' +
+        'Those 17 receipt rows were deleted ONLY because these twins still pinned the same ' +
+        'optionality facts. With a twin gone the fact is now pinned NOWHERE, and the ' +
+        'unparseable note in census.json is a false justification:\n  ' +
+        missingFields.join('\n  '),
+    ).toEqual([]);
+
+    const requiredOpen = [
+      'boundary/GraphV3Schema',
+      'boundary/NodeV3Schema',
+      'boundary/EdgeV3Schema',
+      'root/ObservedStateSchema',
+    ];
+    const missingOpen = requiredOpen.filter((key) => !census.open_objects.keys.includes(key));
+    expect(
+      missingOpen,
+      '\nAn open-object pin disappeared that the receipt-graph census hole depends on:\n  ' +
+        missingOpen.join('\n  '),
     ).toEqual([]);
   });
 

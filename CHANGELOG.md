@@ -31,7 +31,7 @@ Also corrected here: `package-lock.json` declared `0.46.0`, four releases behind
 `package.json`. `npm ci` never noticed because it validates dependency
 resolution, not the root version.
 
-### Fixed
+### Fixed — the receipt can report the sigma the writer persists (#52)
 
 - **`ModelVersionMutationReceiptV1Schema.graph` can now REPORT the sigma the
   model-version writer actually persists.** Previously `graph: GraphV3Schema`
@@ -63,6 +63,47 @@ resolution, not the root version.
   still validates (the positive branch of the new union IS
   `StrengthSchema.shape.std`, not a restatement of it).
 
+### Fixed — the receipt preserves its hash-bearing graph verbatim (#51)
+
+- `ModelVersionMutationReceiptV1Schema.graph` now validates against
+  `ReceiptGraphV3Schema` — #52's receipt-scoped projection, NOT the bare
+  `GraphV3Schema` this bullet claimed before the two fixes were reconciled —
+  while preserving its exact JSON data. This
+  prevents the general graph parser's historical
+  `edge_type.optional().default('directed')` from changing receipt bytes after
+  `full_hash` was computed over the persisted graph.
+- Validation remains fail-closed and retains nested GraphV3 issue paths. The
+  change is receipt-specific: the general `GraphV3Schema` default and every
+  non-receipt parse keep their existing behaviour.
+- The composed `OlumiResponseSchema` now preserves the same receipt graph data,
+  so CEE and UI can validate the shared response contract without
+  recreating a hash/payload fork at either side of the wire.
+- Receipt graphs are first copied into stable plain JSON data. Accessors,
+  custom prototypes, cycles, non-finite values, sparse arrays, executable
+  `toJSON`, and prototype-control keys are refused; inherited fields cannot
+  satisfy GraphV3, and inherited serializers cannot change an accepted wire.
+
+### How the two fixes compose — and why the order inside the parse matters
+
+#52 and #51 both replaced the same line (`graph: GraphV3Schema`) and both
+inserted a large block immediately above it, so they conflicted textually. They
+do not conflict semantically, but they compose in ONE DIRECTION ONLY:
+
+- #52 WIDENS what the receipt may report (finite `std <= 0`, because CEE's
+  commit gate admits it and the store holds it verbatim).
+- #51 FREEZES the bytes the receipt reports (no `edge_type` default
+  materialising after `full_hash` was computed).
+
+The resolution keeps both and makes #51's carrier validate against #52's
+projection: inside `ModelVersionReceiptGraphVerbatimSchema`'s transform the
+parse is `ReceiptGraphV3Schema.safeParse(...)`, not `GraphV3Schema.safeParse(...)`.
+Taking either side wholesale, or keeping both while leaving the inner parse on
+`GraphV3Schema`, re-closes #52's band from inside #51's carrier: the receipt
+again refuses the graph CEE durably persisted, `EGRESS_CONTRACT_VIOLATION`
+returns, and it is invisible on inspection because the field's declared schema
+still reads as the widened one. The declared input and output types were moved
+with it, so the carrier cannot re-narrow at the type level while parsing wider.
+
 ### Added
 
 - `boundary/ModelVersionMutationReceiptV1Schema#persisted_sigma_band` — a fourth
@@ -84,6 +125,12 @@ closing a gap. ISL is a separate track — a pin bump there is theatre unless
 `PAIRINGS` gains any newly comparable model.
 
 Until CEE's pin moves, CEE keeps rejecting its own durable commits at egress.
+
+⚠ #51's own note said "re-vendor the identical package in CEE and UI". The UI
+half of that is withdrawn: the UI does not consume `model_version_receipt`, its
+0.48.0 pin routes those paths to the `__additive__` sidecar, and moving it
+removes a safeguard. It is a product decision, taken last and deliberately —
+not part of this train.
 
 ## [0.50.0] — 2026-08-25 (candidate)
 
