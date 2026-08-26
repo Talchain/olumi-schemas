@@ -208,26 +208,27 @@ function classify(schema: z.ZodTypeAny): Classification {
   const markers = new Set<OptionalityMarker>();
   const problems: Array<{ kind: UnparseableKind; detail: string }> = [];
   let current = schema;
+  let crossedTransform = false;
 
   for (let guard = 0; guard < 32; guard++) {
     const def = defOf(current);
     if (current instanceof z.ZodOptional) {
-      markers.add('optional');
+      if (!crossedTransform) markers.add('optional');
       current = def.innerType as z.ZodTypeAny;
       continue;
     }
     if (current instanceof z.ZodNullable) {
-      markers.add('nullable');
+      if (!crossedTransform) markers.add('nullable');
       current = def.innerType as z.ZodTypeAny;
       continue;
     }
     if (current instanceof z.ZodDefault) {
-      markers.add('default');
+      if (!crossedTransform) markers.add('default');
       current = def.innerType as z.ZodTypeAny;
       continue;
     }
     if (current instanceof z.ZodCatch) {
-      markers.add('catch');
+      if (!crossedTransform) markers.add('catch');
       current = def.innerType as z.ZodTypeAny;
       continue;
     }
@@ -238,6 +239,7 @@ function classify(schema: z.ZodTypeAny): Classification {
     if (current instanceof z.ZodEffects) {
       const effect = def.effect as { type?: string } | undefined;
       if (effect?.type === 'transform') {
+        crossedTransform = true;
         problems.push({
           kind: 'effects-transform',
           detail:
@@ -269,22 +271,28 @@ function classify(schema: z.ZodTypeAny): Classification {
     break;
   }
 
-  // Types that admit absence WITHOUT any wrapper saying so.
-  if (current instanceof z.ZodAny || current instanceof z.ZodUnknown) {
-    markers.add('any-or-unknown');
-  }
-  if (current instanceof z.ZodNull) markers.add('nullable');
-  if (current instanceof z.ZodUndefined) markers.add('optional');
+  // A transform controls whether its INPUT's `undefined`/`null` survives, so
+  // markers inferred from the inner schema are not facts about the field. The
+  // transform is already reported as UNPARSEABLE; wrappers OUTSIDE it remain
+  // knowable and stay in `markers`.
+  if (!crossedTransform) {
+    // Types that admit absence WITHOUT any wrapper saying so.
+    if (current instanceof z.ZodAny || current instanceof z.ZodUnknown) {
+      markers.add('any-or-unknown');
+    }
+    if (current instanceof z.ZodNull) markers.add('nullable');
+    if (current instanceof z.ZodUndefined) markers.add('optional');
 
-  if (current instanceof z.ZodUnion || current instanceof z.ZodDiscriminatedUnion) {
-    const options = (current as unknown as { options: z.ZodTypeAny[] }).options ?? [];
-    for (const option of options) {
-      const inner = classify(option);
-      if (inner.core instanceof z.ZodNull) markers.add('null-in-union');
-      if (inner.core instanceof z.ZodUndefined) markers.add('undefined-in-union');
-      // A union member that is itself optional/nullable makes the whole field so.
-      for (const marker of inner.markers) {
-        if (marker === 'optional' || marker === 'nullable') markers.add(marker);
+    if (current instanceof z.ZodUnion || current instanceof z.ZodDiscriminatedUnion) {
+      const options = (current as unknown as { options: z.ZodTypeAny[] }).options ?? [];
+      for (const option of options) {
+        const inner = classify(option);
+        if (inner.core instanceof z.ZodNull) markers.add('null-in-union');
+        if (inner.core instanceof z.ZodUndefined) markers.add('undefined-in-union');
+        // A union member that is itself optional/nullable makes the whole field so.
+        for (const marker of inner.markers) {
+          if (marker === 'optional' || marker === 'nullable') markers.add(marker);
+        }
       }
     }
   }
@@ -432,7 +440,10 @@ export function deriveAbsenceCensus(
           );
           behaviourallyOptional = structurallyOptional;
         }
-        if (structurallyOptional !== behaviourallyOptional) {
+        const optionalityIsOpaque = classification.problems.some(
+          (problem) => problem.kind === 'effects-transform',
+        );
+        if (!optionalityIsOpaque && structurallyOptional !== behaviourallyOptional) {
           reportUnparseable(
             fieldSchema,
             fieldPath,

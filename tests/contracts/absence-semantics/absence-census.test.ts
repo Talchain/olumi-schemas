@@ -162,6 +162,36 @@ describe('absence-semantics census · the derivation reaches a real surface', ()
     ).toContain('unknown-type');
   });
 
+  it('a transform is unparseable without inheriting optionality from its input schema', () => {
+    const RequiredTransform = z.object({
+      required_snapshot: z.unknown().transform((value, ctx) => {
+        if (value === undefined) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'required' });
+          return z.NEVER;
+        }
+        return value;
+      }),
+      inner_optional_but_required: z.string().optional().transform((value, ctx) => {
+        if (value === undefined) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'required after transform' });
+          return z.NEVER;
+        }
+        return value;
+      }),
+      outer_optional: z.string().transform((value) => value).optional(),
+    });
+    const result = deriveAbsenceCensus({ probe: { RequiredTransformSchema: RequiredTransform } });
+
+    const fields = new Map(result.fields.map((field) => [field.key, field.markers]));
+    expect(fields.has('probe/RequiredTransformSchema.required_snapshot')).toBe(false);
+    expect(fields.has('probe/RequiredTransformSchema.inner_optional_but_required')).toBe(false);
+    expect(fields.get('probe/RequiredTransformSchema.outer_optional')).toEqual(['optional']);
+    expect(result.unparseable.map((entry) => entry.kind)).toContain('effects-transform');
+    expect(result.unparseable.map((entry) => entry.kind)).not.toContain(
+      'classification-disagreement',
+    );
+  });
+
   it('POSITIVE CONTROL: a passthrough object is reported as an open object', () => {
     const Open = z.object({ declared: z.string() }).passthrough();
     const result = deriveAbsenceCensus({ probe: { OpenSchema: Open } });
