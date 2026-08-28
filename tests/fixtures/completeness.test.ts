@@ -247,7 +247,15 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   all three members are flat, and EVERY field on each is REQUIRED, so each
     //   fixture is maximal by construction and there is no optional field for
     //   the maximality walker to report as unexercised.
-    expect(MAXIMAL_FIXTURES.length).toBe(197);
+    // Receipt sigma band (+1):
+    //   boundary/ModelVersionMutationReceiptV1Schema#persisted_sigma_band — a
+    //   fourth variant against the existing receipt identity, exercising the
+    //   non-positive branch of the receipt-only sigma union (see the doctrine
+    //   block in src/boundary/model-versions.ts). It needs its OWN fixture
+    //   rather than an edit to `maximalGraphV3`, because that graph is also the
+    //   maximal fixture for GraphV3Schema, where a non-positive sigma is
+    //   invalid and must stay invalid.
+    expect(MAXIMAL_FIXTURES.length).toBe(198);
   });
 
   it('family keys are unique', () => {

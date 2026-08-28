@@ -5,6 +5,58 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — receipt-scoped sigma (P0, no version bump in this PR)
+
+**⚠ DELIBERATELY UNVERSIONED.** `package.json` is untouched and no tarball is
+re-vendored: the consumer pins are frozen. The version this rides and the
+publish order are the integration owner's call — see "Downstream train" below.
+
+### Fixed
+
+- **`ModelVersionMutationReceiptV1Schema.graph` can now REPORT the sigma the
+  model-version writer actually persists.** Previously `graph: GraphV3Schema`
+  bounded `strength.std` / `observed_state.std` with `.positive()`, while CEE's
+  `orchestrator-v5/commit.ts` deliberately floors only a PROJECTION of the graph
+  for its admissibility parse (`floorGraphSigmaForCompute`, `COMPUTE_SIGMA_FLOOR
+  = 0.001`) and then persists the caller's graph VERBATIM — because sigma is
+  inside the analysis-affecting hash projection and rewriting it would fork
+  graph identity. Consequence on the deployed product: a user's edit COMMITTED
+  DURABLY and the whole response then failed egress validation
+  (`validators/b1.ts` → `OlumiResponseSchema`), so the user was told
+  `EGRESS_CONTRACT_VIOLATION` — "The server produced a response that failed
+  validation." Commit/response divergence on a Core mutation.
+
+  The receipt's `graph` is now a RECEIPT-ONLY projection of `GraphV3Schema`
+  admitting the finite non-positive band the writer admits. **Ordinary
+  `GraphV3Schema`, `StrengthSchema`, `ObservedStateSchema`, `EdgeV3Schema` and
+  `NodeV3Schema` are UNCHANGED and still `.positive()`** — ingress, `run.ts`,
+  `patch.ts` and `turn-payload.ts` still refuse a zero-sigma graph. Refusing to
+  ACCEPT one is right; refusing to REPORT one is not.
+
+  The admitted band is derived from the producer, not from the symptom:
+  `checkFiniteNumber(..., n => n > 0, 'sigma_non_positive')` fires only on
+  FINITE numbers, so every finite `std <= 0` — negatives included — can commit
+  durably and must be reportable. Non-finite sigma is not floored, is refused by
+  the commit gate, and is not in the band.
+
+  Purely widening for the receipt carrier: every payload that validated before
+  still validates (the positive branch of the new union IS
+  `StrengthSchema.shape.std`, not a restatement of it).
+
+### Added
+
+- `boundary/ModelVersionMutationReceiptV1Schema#persisted_sigma_band` — a fourth
+  maximal fixture variant exercising the band at both sigma sites, so a consumer
+  on an older pin cannot silently drop the case with no test noticing.
+
+### Downstream train
+
+Publish under whichever version the integration owner chooses, then re-vendor
+the tarball into CEE (the only producer of this receipt) — CEE needs no code
+change, only the pin. The UI and PLoT are unaffected: neither validates
+`model_version_receipt`. Until the pin moves, CEE keeps rejecting its own
+durable commits at egress.
+
 ## [0.50.0] — 2026-08-25 (candidate)
 
 **Two trains, one honest version.** The C8 model-version boundary contracts and
