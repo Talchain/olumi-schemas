@@ -5,11 +5,31 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — receipt-scoped sigma (P0, no version bump in this PR)
+## [0.51.0] — 2026-08-28 (candidate)
 
-**⚠ DELIBERATELY UNVERSIONED.** `package.json` is untouched and no tarball is
-re-vendored: the consumer pins are frozen. The version this rides and the
-publish order are the integration owner's call — see "Downstream train" below.
+**This version number is the fix, not the packaging around it.** #52 landed the
+receipt-scoped sigma relaxation on `main` under the `[Unreleased]` heading, with
+`package.json` still declaring `0.50.0`. That left `main` in a state the contract
+cannot describe:
+
+`SCHEMA_SHA` is `sha256(name@version + every json-schema/*.json)` — 28 files,
+**all of them the enrichment family**. It has zero coverage of `model-versions`,
+`graph`, `turn-payload`, `blocks` or `olumi-response`. #52 changed
+`src/boundary/model-versions.ts` and touched no `json-schema/*.json` file, so
+`main`'s `SCHEMA_SHA` (`5f77deef…`) is **byte-identical to tag `v0.50.0`** while
+the validation behaviour differs. Packing `main` before this bump yields a
+tarball carrying 0.50.0's identity constants and 0.51.0's parse behaviour — a
+silent contract fork under a matching fingerprint, undetectable by the very
+constant a service publishes on its health endpoint to prove which contract it
+holds.
+
+**The version bump is the only input to `SCHEMA_SHA` that #52's change can
+move.** Bumping to `0.51.0` takes it to `1bfe6cbf…`, so the fork closes and the
+fingerprint discriminates again. Nothing else in this commit is load-bearing.
+
+Also corrected here: `package-lock.json` declared `0.46.0`, four releases behind
+`package.json`. `npm ci` never noticed because it validates dependency
+resolution, not the root version.
 
 ### Fixed
 
@@ -51,11 +71,19 @@ publish order are the integration owner's call — see "Downstream train" below.
 
 ### Downstream train
 
-Publish under whichever version the integration owner chooses, then re-vendor
-the tarball into CEE (the only producer of this receipt) — CEE needs no code
-change, only the pin. The UI and PLoT are unaffected: neither validates
-`model_version_receipt`. Until the pin moves, CEE keeps rejecting its own
-durable commits at egress.
+The version is now chosen: **0.51.0**. `0.49.0` is a dead number — claimed by two
+open PRs, never tagged, and now below `main`; do not resurrect it.
+
+Re-vendor the tarball into **CEE first** (the only producer of this receipt —
+pin-only change, no code change). **PLoT is optional and genuinely inert**:
+`AnalysisEnrichmentSchema` is `.passthrough()` at 0.40.0, 0.48.0 and 0.50.0
+alike. **The UI goes last and is a product decision, not routine**: its 0.48.0
+pin is what routes all 83 new `model_version_receipt` response paths to the
+`__additive__` sidecar, so re-vendoring the UI REMOVES a safeguard rather than
+closing a gap. ISL is a separate track — a pin bump there is theatre unless
+`PAIRINGS` gains any newly comparable model.
+
+Until CEE's pin moves, CEE keeps rejecting its own durable commits at egress.
 
 ## [0.50.0] — 2026-08-25 (candidate)
 
