@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import { GraphV3Schema } from '../graph.js';
+import {
+  EdgeV3Schema,
+  GraphV3Schema,
+  NodeV3Schema,
+  ObservedStateSchema,
+  StrengthSchema,
+} from '../graph.js';
 import { AnalysisStateV1Schema } from './analysis-state.js';
 import { AuthoredBySchema } from './collab.js';
 
@@ -155,13 +161,92 @@ const ModelVersionMutationReceiptCreationSchema = z.discriminatedUnion('kind', [
   }).strict(),
 ]);
 
+// ----------------------------------------------------------------------------
+// ⭐ RECEIPT-SCOPED SIGMA — the receipt must be able to REPORT WHAT THE WRITER
+// ACTUALLY PERSISTED. It is not a licence to persist a wider band.
+//
+// THE DEFECT THIS CLOSES (P0, commit/response divergence on a Core mutation):
+// the model-version writer (CEE `orchestrator-v5/commit.ts`) DELIBERATELY
+// tolerates a non-positive sigma. It floors a PROJECTION of the graph for the
+// admissibility parse (`floorGraphSigmaForCompute`, `COMPUTE_SIGMA_FLOOR =
+// 0.001`) and then persists the caller's graph VERBATIM, because
+// `strength.std` sits inside the analysis-affecting hash projection and
+// rewriting it would fork graph identity. The floor is applied only where the
+// graph crosses into compute (`validators/numeric-bounds.ts`). Four CEE sites
+// implement that one ruling.
+//
+// The shared contract never adopted it. With `graph: GraphV3Schema`, a receipt
+// describing a legitimately committed zero-sigma graph fails WHOLE-RESPONSE
+// egress validation (CEE `validators/b1.ts` → `OlumiResponseSchema`), so the
+// user's edit COMMITS DURABLY and the user is told
+// `EGRESS_CONTRACT_VIOLATION` — "The server produced a response that failed
+// validation." The write is real; the report of it is a lie.
+//
+// ⚠ THE ADMITTED BAND IS DERIVED FROM THE PRODUCER, NOT FROM THE SYMPTOM.
+// `checkGraphNumericBounds` raises `sigma_non_positive` through
+// `checkFiniteNumber(..., n => n > 0, ...)`, and `checkFiniteNumber` fires
+// ONLY on finite numbers. So `floorGraphSigmaForCompute` repairs — and the
+// commit gate therefore admits, and the store therefore holds verbatim — EVERY
+// FINITE `std <= 0`, negatives included (the live UI writer floors typed
+// negatives to exactly 0 at the emitter, but that is the emitter's choice, not
+// the contract's guarantee). A projection admitting only `0` would leave the
+// identical divergence open one value to the left. Non-finite sigma is NOT
+// floored, is refused by the commit gate, and is therefore NOT in the band.
+//
+// ⚠ SCOPE IS DELIBERATE AND LOAD-BEARING. This relaxation is RECEIPT-ONLY.
+// `GraphV3Schema`, `StrengthSchema`, `ObservedStateSchema`, `EdgeV3Schema` and
+// `NodeV3Schema` stay `.positive()` for every other consumer — ingress,
+// `run.ts`, `patch.ts` and `turn-payload.ts` still refuse a zero-sigma graph,
+// because refusing to ACCEPT one is right and refusing to REPORT one is not.
+// `tests/boundary/model-version-receipt-persisted-sigma.test.ts` pins both
+// halves; loosening the canonical schemas instead turns its two
+// "does NOT loosen canonical …" cases RED.
+// ----------------------------------------------------------------------------
+
+/**
+ * Sigma as the receipt may report it: the canonical constraint, OR the finite
+ * non-positive band the writer floors for compute and persists verbatim.
+ *
+ * The positive branch is `StrengthSchema.shape.std` ITSELF, taken from the
+ * canonical schema rather than restated. That makes the superset property true
+ * BY CONSTRUCTION — this projection can never drift into rejecting a graph
+ * ordinary `GraphV3Schema` accepts, even if the canonical bound later changes.
+ */
+const ReceiptSigmaSchema = z.union([
+  StrengthSchema.shape.std,
+  z.number().nonpositive().finite(),
+]);
+
+const ReceiptStrengthSchema = StrengthSchema.extend({ std: ReceiptSigmaSchema });
+
+const ReceiptObservedStateSchema = ObservedStateSchema.extend({
+  std: ReceiptSigmaSchema.optional(),
+});
+
+const ReceiptEdgeV3Schema = EdgeV3Schema.extend({ strength: ReceiptStrengthSchema });
+
+const ReceiptNodeV3Schema = NodeV3Schema.extend({
+  observed_state: ReceiptObservedStateSchema.optional(),
+});
+
+/**
+ * `GraphV3Schema` with the two sigma sites — and ONLY those — widened to the
+ * band the model-version writer can persist. Every other field, bound,
+ * passthrough posture and default is inherited from the canonical schemas by
+ * `.extend()`, never copied, so a new graph field cannot go unmirrored here.
+ */
+const ReceiptGraphV3Schema = GraphV3Schema.extend({
+  nodes: z.array(ReceiptNodeV3Schema),
+  edges: z.array(ReceiptEdgeV3Schema),
+});
+
 const ModelVersionMutationReceiptV1ObjectSchema = z.object({
   schema: z.literal('model_version_mutation_receipt.v1'),
   scenario_id: UuidSchema,
   mutation_id: UuidSchema,
   version_id: UuidSchema,
   sequence: z.number().int().min(1),
-  graph: GraphV3Schema,
+  graph: ReceiptGraphV3Schema,
   full_hash: Sha256Schema,
   hash_algorithm: NonEmptyStringSchema,
   identity_projection_version: NonEmptyStringSchema,

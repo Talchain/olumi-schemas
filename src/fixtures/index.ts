@@ -1619,6 +1619,7 @@ const MODEL_VERSION_5_ID = 'f1000000-0000-4000-8000-000000000005';
 const MODEL_VERSION_6_ID = 'f1000000-0000-4000-8000-000000000006';
 const MODEL_VERSION_7_ID = 'f1000000-0000-4000-8000-000000000007';
 const MODEL_VERSION_8_ID = 'f1000000-0000-4000-8000-000000000008';
+const MODEL_VERSION_9_ID = 'f1000000-0000-4000-8000-000000000009';
 
 export const maximalModelVersionSummaryInitial = deepFreeze({
   version_id: MODEL_VERSION_1_ID,
@@ -1838,6 +1839,52 @@ export const maximalModelVersionMutationReceiptRestore = deepFreeze({
   lineage: { kind: 'unknown' },
   undo_version_id: MODEL_VERSION_7_ID,
   event_id: 'model_version_restored_mutation_fc000000-0000-4000-8000-000000000008',
+});
+
+// ----------------------------------------------------------------------------
+// The receipt's TOLERATED SIGMA BAND — a fourth registered variant, following
+// the AnalysisStateV1 / UiDirectiveBlockSchema precedent above (variants of one
+// schema identity, coverage aggregated by the walker).
+//
+// A FOURTH FAMILY RATHER THAN AN EDIT TO `maximalGraphV3`, deliberately: that
+// graph is also the maximal fixture for `GraphV3Schema` itself, where a
+// non-positive sigma is INVALID and must stay invalid. The receipt is the one
+// carrier that may REPORT the band the model-version writer persists verbatim
+// (see the doctrine block in src/boundary/model-versions.ts), so the band gets
+// its own receipt rather than a canonical graph nobody else could keep.
+//
+// Both sigma sites carry the band: the edge's `strength.std` and the node's
+// `observed_state.std`. Element 1 of each collection keeps a positive sigma, so
+// a consumer binding to this fixture sees the two classes side by side.
+// ----------------------------------------------------------------------------
+const persistedSigmaBandGraph = deepFreeze({
+  ...maximalGraphV3,
+  nodes: [
+    { ...maximalNodeV3, observed_state: { ...maximalObservedState, std: 0 } },
+    ...maximalGraphV3.nodes.slice(1),
+  ],
+  edges: [
+    { ...maximalEdgeV3, strength: { ...maximalStrength, std: 0 } },
+    ...maximalGraphV3.edges.slice(1),
+  ],
+});
+
+export const maximalModelVersionMutationReceiptPersistedSigmaBand = deepFreeze({
+  ...maximalModelVersionMutationReceiptCommittedMutation,
+  mutation_id: 'fc000000-0000-4000-8000-000000000009',
+  version_id: MODEL_VERSION_9_ID,
+  sequence: 9,
+  graph: persistedSigmaBandGraph,
+  full_hash: '9'.repeat(64),
+  analysis_affecting_hash: '9'.repeat(64),
+  source_turn_id: 'fixture_turn_model_version_receipt_persisted_sigma_band',
+  lineage: {
+    kind: 'known',
+    parent_version_id: MODEL_VERSION_7_ID,
+    root_version_id: MODEL_VERSION_1_ID,
+  },
+  undo_version_id: MODEL_VERSION_7_ID,
+  event_id: 'model_version_created_mutation_fc000000-0000-4000-8000-000000000009',
 });
 
 export const maximalModelVersionsListV2 = deepFreeze({
@@ -3183,6 +3230,17 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalModelVersionMutationReceiptRestore,
     notes:
       'Exercises explicit unknown actor and lineage, restore source identity, and a non-null undo version.',
+  },
+  {
+    family: 'boundary/ModelVersionMutationReceiptV1Schema#persisted_sigma_band',
+    schema: ModelVersionMutationReceiptV1Schema,
+    fixture: maximalModelVersionMutationReceiptPersistedSigmaBand,
+    notes:
+      'Exercises the receipt-only sigma band: the non-positive `strength.std` / `observed_state.std` ' +
+      'the model-version writer floors for compute and persists VERBATIM. Ordinary GraphV3 rejects ' +
+      'this graph and must keep rejecting it — the receipt is the one carrier that may REPORT it, ' +
+      'because a receipt that cannot describe a durable commit turns that commit into a lie ' +
+      '(EGRESS_CONTRACT_VIOLATION on a write that succeeded).',
   },
   {
     family: 'boundary/ModelVersionRestoreV2Schema',
