@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 75,
+    "distinct": 80,
     "same": 33,
     "unresolved": 410
   },
@@ -80,6 +80,8 @@
       "boundary/AnalysisEnrichmentSchema",
       "boundary/AnalysisEnrichmentSchema.correlation_model",
       "boundary/AnalysisEnrichmentSchema.decision_brief",
+      "boundary/AnalysisEnrichmentSchema.objective_ranking.ranked_options[]",
+      "boundary/AnalysisEnrichmentSchema.objective_ranking",
       "boundary/BoundaryErrorSchema.details",
       "boundary/CounterfactualResponseSchema",
       "boundary/CounterfactualResponseSchema._metadata",
@@ -3586,6 +3588,46 @@
       ],
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.type`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `unresolved`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/AnalysisEnrichmentSchema.objective_ranking": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence is unattested comparison authority, not a computed or reasoned withheld result.",
+      "ref": "src/boundary/enrichment.ts::AnalysisEnrichmentSchema.objective_ranking"
+    },
+    "boundary/AnalysisEnrichmentSchema.objective_ranking.direction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means the objective is unknown; no enum value supplies that meaning.",
+      "ref": "src/boundary/enrichment.ts::EnrichmentObjectiveRankingSchema"
+    },
+    "boundary/AnalysisEnrichmentSchema.objective_ranking.withheld_reason": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Required when withheld; absent only for computed comparison. Empty text is invalid.",
+      "ref": "src/boundary/enrichment.ts::EnrichmentObjectiveRankingSchema"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].goal_direction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence is an unknown objective and cannot imply maximise, including persisted receipt graphs.",
+      "ref": "src/graph.ts::GoalDirection"
+    },
+    "boundary/NodeV3Schema.goal_direction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence is an unknown objective and cannot imply maximise.",
+      "ref": "src/graph.ts::GoalDirection"
     }
   }
 }

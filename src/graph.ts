@@ -279,6 +279,24 @@ export const StateSpaceSchema = z.object({
 export const GoalThresholdFrame = z.enum(['level', 'delta']);
 export type GoalThresholdFrameType = z.infer<typeof GoalThresholdFrame>;
 
+// ----------------------------------------------------------------------------
+// goal_direction — reconciled from schemas #48 for the objective-authority train.
+// ----------------------------------------------------------------------------
+
+/**
+ * The user's stated objective for the selected goal node.
+ * maximise/minimise compare the propagated outcome; target compares distance
+ * from goal_threshold in its declared goal_threshold_frame. The target reuses
+ * the existing threshold carrier, but nearest-target ranking and threshold
+ * attainment are different statistical questions.
+ *
+ * Absence is unknown and withholds comparison. Producers must not infer this
+ * field from a node label. Only the selected goal node supplies the objective;
+ * PLoT forwards it to ISL's request-level goal_direction.
+ */
+export const GoalDirection = z.enum(['maximise', 'minimise', 'target']);
+export type GoalDirectionType = z.infer<typeof GoalDirection>;
+
 export const NodeV3Schema = z.object({
   id: z.string().min(1).max(100).regex(NODE_ID_PATTERN),
   kind: NodeKind,
@@ -296,6 +314,10 @@ export const NodeV3Schema = z.object({
    * UNATTESTED and consumers MUST fail closed (no goal probability).
    */
   goal_threshold_frame: GoalThresholdFrame.optional(),
+  /**
+   * The stated objective of this goal. Absence is unknown, never maximise.
+   */
+  goal_direction: GoalDirection.optional(),
 }).passthrough();
 
 export const StrengthSchema = z.object({

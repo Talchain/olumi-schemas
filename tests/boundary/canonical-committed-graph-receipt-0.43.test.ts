@@ -165,7 +165,7 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
   });
 
   it('publishes the exact versioned nested hash projection vocabulary', () => {
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(1);
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(2);
     expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION).toEqual({
       node: {
         fields: [
@@ -175,6 +175,8 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
           'factor_type',
           'is_baseline',
           'goal_threshold',
+          'goal_direction',
+          'goal_threshold_frame',
           'goal_threshold_raw',
           'goal_threshold_cap',
           'intercept',

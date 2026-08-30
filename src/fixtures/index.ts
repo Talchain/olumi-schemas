@@ -167,6 +167,7 @@ import {
   AnalysisEnrichmentSchema,
   EnrichmentOutcomeStatsSchema,
   EnrichmentGoalFitBasisSchema,
+  EnrichmentObjectiveRankingSchema,
   EnrichmentOptionComparisonEntrySchema,
   EnrichmentConfidenceProvenanceSchema,
   EnrichmentFactorSensitivityEntrySchema,
@@ -384,6 +385,12 @@ export const maximalNodeV3 = deepFreeze({
   // is the frame CEE mints today, so it is the honest default for a fixture
   // that models current production behaviour.
   goal_threshold_frame: 'level',
+  // 0.49.0 (ROADMAP 2.1192) — the user's objective sense. 'target' is chosen
+  // deliberately over the easier 'maximise': it is the ONLY sense that requires
+  // goal_threshold + goal_threshold_frame alongside it, so this one fixture
+  // exercises the three goal fields as the coherent set a producer must send,
+  // rather than as three independently-populated slots.
+  goal_direction: 'target',
   [PROBE]: true,
 });
 
@@ -1159,6 +1166,21 @@ export const maximalEnrichmentConditionalWinner = deepFreeze({
   [PROBE]: true,
 });
 
+export const maximalEnrichmentObjectiveRanking = deepFreeze({
+  direction: 'target',
+  attested: true,
+  status: 'computed',
+  ranked_options: [{ option_id: 'opt_expand', rank: 1, win_probability: 0.7 }, { option_id: 'opt_hold', rank: 2, win_probability: 0.3 }],
+});
+
+export const maximalWithheldObjectiveRanking = deepFreeze({
+  direction: 'target',
+  attested: true,
+  status: 'withheld',
+  withheld_reason: 'target_not_resolvable_in_sample_frame',
+  ranked_options: [],
+});
+
 export const maximalAnalysisEnrichment = deepFreeze({
   analysis_status: 'computed',
   status_reason: 'FIXTURE_computed_normally',
@@ -1166,6 +1188,12 @@ export const maximalAnalysisEnrichment = deepFreeze({
   robustness_status: 'computed',
   drivers_status: 'computed',
   constraints_status: 'computed',
+  // 0.49.0 (ROADMAP 2.1192) — the ranking's provenance beside the ranking it
+  // describes. `attested: true` because this fixture models a producer that
+  // stamped the objective; the UNATTESTED case is exercised in
+  // tests/goal-direction.test.ts, where absence-means-unattested is the
+  // property under test rather than a fixture value.
+  objective_ranking: maximalEnrichmentObjectiveRanking,
   option_comparison: [maximalEnrichmentOptionComparisonEntry],
   factor_sensitivity: [maximalEnrichmentFactorSensitivityEntry],
   robustness: maximalEnrichmentRobustness,
@@ -3411,6 +3439,20 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/EnrichmentOptionComparisonEntrySchema',
     schema: EnrichmentOptionComparisonEntrySchema,
     fixture: maximalEnrichmentOptionComparisonEntry,
+  },
+  {
+    // 0.49.0 (ROADMAP 2.1192) — registered immediately beside the entry it
+    // describes, because a ranking's provenance that is not exercised is a
+    // field a consumer on an older pin drops with nothing noticing, which is
+    // exactly the class of loss this row exists to close.
+    family: 'boundary/EnrichmentObjectiveRankingSchema',
+    schema: EnrichmentObjectiveRankingSchema,
+    fixture: maximalEnrichmentObjectiveRanking,
+  },
+  {
+    family: 'boundary/EnrichmentObjectiveRankingSchema#withheld',
+    schema: EnrichmentObjectiveRankingSchema,
+    fixture: maximalWithheldObjectiveRanking,
   },
   {
     family: 'boundary/EnrichmentConfidenceProvenanceSchema',

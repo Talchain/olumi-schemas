@@ -255,7 +255,8 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   rather than an edit to `maximalGraphV3`, because that graph is also the
     //   maximal fixture for GraphV3Schema, where a non-positive sigma is
     //   invalid and must stay invalid.
-    expect(MAXIMAL_FIXTURES.length).toBe(198);
+    // Objective authority adds computed and withheld fixtures.
+    expect(MAXIMAL_FIXTURES.length).toBe(200);
   });
 
   it('family keys are unique', () => {
