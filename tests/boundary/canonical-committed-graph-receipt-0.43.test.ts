@@ -165,7 +165,7 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
   });
 
   it('publishes the exact versioned nested hash projection vocabulary', () => {
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(2);
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(3);
     expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION).toEqual({
       node: {
         fields: [
@@ -182,8 +182,8 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
           'intercept',
           'encoding_map',
         ],
-        observed_state_fields: ['value', 'baseline', 'cap'],
-        prior_fields: ['distribution', 'range_min', 'range_max'],
+        observed_state_fields: ['value', 'baseline', 'cap', 'std', 'source', 'value_tier'],
+        prior_fields: ['distribution', 'range_min', 'range_max', 'source', 'value_tier', 'prior_is_unquantified', 'unit', 'cap', 'declared_scale'],
         interventions_field: 'interventions',
       },
       edge: {

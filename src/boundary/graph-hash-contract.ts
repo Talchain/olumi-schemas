@@ -96,7 +96,7 @@ export type CanonicalGraphHashKeepKey =
  * when reconciling receipts. Bump this integer whenever any nested inclusion
  * or conditional rule changes.
  */
-export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 2 as const;
+export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 3 as const;
 
 /**
  * The exact nested fields retained by the canonical analysis graph hash.
@@ -124,8 +124,11 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'intercept',
       'encoding_map',
     ],
-    observed_state_fields: ['value', 'baseline', 'cap'],
-    prior_fields: ['distribution', 'range_min', 'range_max'],
+    // 0.53.0: std changes sampling; source/tier/unknown markers change selected
+    // quantity and fallback status. Source is not evidence authority. Reasoning
+    // and labels are descriptive and remain excluded from this projection.
+    observed_state_fields: ['value', 'baseline', 'cap', 'std', 'source', 'value_tier'],
+    prior_fields: ['distribution', 'range_min', 'range_max', 'source', 'value_tier', 'prior_is_unquantified', 'unit', 'cap', 'declared_scale'],
     interventions_field: 'interventions',
   },
   edge: {

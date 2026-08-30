@@ -931,7 +931,8 @@
         "UI adoption deletes its hand-copied nested list and serving-source SHA pin; it may reconcile",
         "  receipt fields using this vocabulary but MUST NOT mint an independent graph hash authority.",
         "Version 1 changes only when a nested inclusion or conditional rule changes. Top-level field",
-        "  carriage remains governed by the separate canonical committed-receipt adoption row."
+        "  carriage remains governed by the separate canonical committed-receipt adoption row.",
+        "0.53.0 projection v3 retains objective v2 fields and includes factor std/source/value_tier and prior source/value_tier/prior_is_unquantified plus known unit/cap/declared_scale. Source changes quantity selection, never evidence authority. Model reasoning and labels stay excluded; CEE owns and must verify the one digest implementation."
       ]
     },
     {
@@ -949,6 +950,66 @@
         "N+1 coordinated train: explicit canonical goal-node objective -> PLoT -> repaired ISL comparator -> licensed downstream result.",
         "Unknown objective withholds comparison. No label inference or silent maximise default.",
         "Adoption remains declared until exact producer and consumer tests are recorded; parsing is not a consumer proof."
+      ]
+    },
+    {
+      "field": "factor model reasoning",
+      "declared_in": "schemas:src/factor-quantification.ts::FactorReasoningSchema (0.53.0)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "rationale and context_basis reference supplied context, never evidence authority; producers validate context IDs.",
+        "Factor Quantification N+1 train. Transport tests in schemas are not producer/consumer adoption or deployed science proof."
+      ]
+    },
+    {
+      "field": "factor value_tier",
+      "declared_in": "schemas:src/factor-quantification.ts::FactorValueTierSchema (0.53.0)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "Existing explicit/inferred_with_evidence/fallback_default vocabulary. Numeric equality never establishes fallback or evidence.",
+        "Factor Quantification N+1 train. Transport tests in schemas are not producer/consumer adoption or deployed science proof."
+      ]
+    },
+    {
+      "field": "factor explicit unknown",
+      "declared_in": "schemas:src/factor-quantification.ts::UnquantifiedPriorSchema (0.53.0)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "An unknown carries prior_is_unquantified:true without numeric support. Legacy flagged numeric support remains fallback; selection alone grants no scientific permission.",
+        "Factor Quantification N+1 train. Transport tests in schemas are not producer/consumer adoption or deployed science proof."
+      ]
+    },
+    {
+      "field": "factor prior scale metadata",
+      "declared_in": "schemas:src/graph.ts::PriorSchema / src/factor-quantification.ts::UnquantifiedPriorSchema (0.53.0)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "unit, cap and declared_scale reuse existing factor scale semantics. Preserve supplied metadata only; never infer a scale from an estimated or absent quantity. A cap on an unknown is scale metadata, not a selected numeric claim or a distribution bound.",
+        "The existing DeclaredScale enum and DECLARED_SCALE_BOUNDS retain their public exports. Older consumers may drop these fields; declaration is not evidence of science adoption."
       ]
     }
   ]
