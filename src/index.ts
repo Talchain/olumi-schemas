@@ -1,5 +1,19 @@
 // Graph schemas
 export {
+  FactorReasoningSchema,
+  FactorValueTierSchema,
+  UnquantifiedPriorSchema,
+  selectFactorQuantity,
+  clearSupersededFactorMarkers,
+} from './factor-quantification.js';
+export type {
+  FactorReasoning,
+  FactorValueTier,
+  UnquantifiedPrior,
+  FactorQuantitySelection,
+} from './factor-quantification.js';
+
+export {
   NODE_ID_PATTERN,
   NodeKind,
   FactorCategory,

@@ -4,10 +4,10 @@
 // See ./health-manifest.ts for what these are and where they go.
 
 /** sha256 of the published wire contract (package name+version + every json-schema/*.json). */
-export const SCHEMA_SHA = '6790ed244d02026273f73cd9df2e21cd17d9aec1cda3086e84dcbd50a9f16304';
+export const SCHEMA_SHA = '233d4b91991fef7fc250e8b6339b4ac533701342a1997890d49df7cb4ecfc99a';
 
 /** sha256 of contracts/adoption-manifest.json. */
-export const CONTRACT_MANIFEST_SHA = '4e674c5b235a5c2b8dfee5006a96fba6d1645b1d3ff01b7ba65e8b4c82968e7c';
+export const CONTRACT_MANIFEST_SHA = 'ea34764744cca7281d2569b886e6bd4065c551cc64f6238ba8b4cff0a36a3596';
 
 /** The exact @talchain/schemas version these constants were generated from. */
-export const SCHEMA_PACKAGE_VERSION = '0.52.0';
+export const SCHEMA_PACKAGE_VERSION = '0.53.0';

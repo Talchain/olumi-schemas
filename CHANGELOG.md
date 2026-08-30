@@ -5,6 +5,14 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.53.0 — factor quantification carriers and protected selection
+
+- Add model reasoning to existing observed-state/prior carriers. `context_basis` names supplied context IDs and never grants evidence authority.
+- Declare the existing `value_tier` fallback marker; preserve shared source literals and neutral absent provenance.
+- Add a nonnumeric `prior_is_unquantified` unknown branch. Legacy flagged numeric priors remain expressible as fallback support, without granting permission to compute or recommend.
+- Add pure quantity selection and accepted-user-mutation cleanup. Protect supplied points/distributions and preserve ambiguity; confirmed user values supersede only stale system unknown/fallback priors.
+- Coordinated minor release: older readers cannot parse the new nonnumeric unknown branch. Preserve 0.52.0 objective-direction fields and extend graph-hash projection to v3 for quantitative uncertainty/provenance qualifiers; model rationale stays excluded. No publishing or consumer adoption is implied by this declaration.
+
 ## 0.52.0 — objective comparison authority (N+1)
 
 Reconciles the unmerged objective implementation from schemas #48 onto current

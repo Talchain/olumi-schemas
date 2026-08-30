@@ -33,7 +33,7 @@ describe('objective request authority', () => {
   it('includes objective direction and target frame in the canonical hash vocabulary', () => {
     expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields).toContain('goal_direction');
     expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields).toContain('goal_threshold_frame');
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(2);
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(3);
   });
 });
 

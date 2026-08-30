@@ -63,8 +63,8 @@
     }
   },
   "counts": {
-    "distinct": 80,
-    "same": 33,
+    "distinct": 89,
+    "same": 34,
     "unresolved": 410
   },
   "open_objects": {
@@ -163,7 +163,7 @@
       "root/FragileEdgeSchema",
       "root/ObservedStateSchema",
       "root/OptionForAnalysisSchema",
-      "root/PriorSchema",
+      "root/PriorSchema|object#0",
       "root/ResponseMetaSchema",
       "root/ResponseMetaSchema.request_id_chain",
       "root/StateSpaceSchema",
@@ -3628,6 +3628,85 @@
       "verdict": "distinct",
       "note": "Absence is an unknown objective and cannot imply maximise.",
       "ref": "src/graph.ts::GoalDirection"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.reasoning": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Model rationale and supplied context references, not evidence authority. Absence means no model reasoning was recorded.",
+      "ref": "src/graph.ts::ObservedStateSchema/PriorSchema"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.value_tier": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Existing producer classification. Absence means no tier was declared; source attribution remains independent. fallback_default explicitly marks a resilience value. inferred_with_evidence alone is not evidence authority.",
+      "ref": "src/graph.ts::ObservedStateSchema/PriorSchema"
+    },
+    "root/ObservedStateSchema.reasoning": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Model rationale and supplied context references, not evidence authority. Absence means no model reasoning was recorded.",
+      "ref": "src/graph.ts::ObservedStateSchema/PriorSchema"
+    },
+    "root/ObservedStateSchema.value_tier": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Existing producer classification. Absence means no tier was declared; source attribution remains independent. fallback_default explicitly marks a resilience value. inferred_with_evidence alone is not evidence authority.",
+      "ref": "src/graph.ts::ObservedStateSchema/PriorSchema"
+    },
+    "root/PriorSchema|object#0.prior_is_unquantified": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "True identifies legacy ignorance support, not knowledge. Absent and false both mean no ignorance marker; neither establishes evidence or permission to compute."
+    },
+    "root/PriorSchema|object#0.reasoning": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Model rationale and supplied context references, not evidence authority. Absence means no model reasoning was recorded.",
+      "ref": "src/graph.ts::ObservedStateSchema/PriorSchema"
+    },
+    "root/PriorSchema|object#0.source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Who supplied this distribution. Absence is unattributed and must not be guessed.",
+      "ref": "src/graph.ts::ObservedStateSchema/PriorSchema"
+    },
+    "root/PriorSchema|object#0.value_tier": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Existing producer classification. Absence means no tier was declared; source attribution remains independent. fallback_default marks resilience support, not a defensible estimate.",
+      "ref": "src/graph.ts::ObservedStateSchema/PriorSchema"
+    },
+    "root/UnquantifiedPriorSchema.reasoning": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Optional model explanation of the unresolved gap. Absence means no model reasoning was recorded; this is never evidence authority.",
+      "ref": "src/factor-quantification.ts::UnquantifiedPriorSchema"
+    },
+    "root/UnquantifiedPriorSchema.source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Who recorded the unknown. Absence means unattributed, not an Olumi or user claim.",
+      "ref": "src/factor-quantification.ts::UnquantifiedPriorSchema"
     }
   }
 }

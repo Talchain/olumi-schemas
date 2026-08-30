@@ -65,6 +65,8 @@ import type {
 import {
   // graph
   ObservedStateSchema,
+  FactorReasoningSchema,
+  UnquantifiedPriorSchema,
   PriorSchema,
   StateSpaceSchema,
   NodeV3Schema,
@@ -357,10 +359,34 @@ export const maximalObservedState = deepFreeze({
   [PROBE]: true,
 });
 
+export const maximalFactorReasoning = deepFreeze({
+  rationale: 'FIXTURE_model explanation of the quantity; this is not evidence.',
+  context_basis: ['fixture_supplied_context_record'],
+});
+
+export const maximalEstimatedObservedState = deepFreeze({
+  value: 0.63,
+  std: 0.07,
+  source: 'cee_inference',
+  reasoning: maximalFactorReasoning,
+  value_tier: 'inferred_with_evidence',
+  [PROBE]: true,
+});
+
+export const maximalUnquantifiedPrior = deepFreeze({
+  prior_is_unquantified: true,
+  source: 'cee_inference',
+  reasoning: maximalFactorReasoning,
+});
+
 export const maximalPrior = deepFreeze({
   distribution: 'normal',
   range_min: 10,
   range_max: 90,
+  source: 'cee_inference',
+  reasoning: maximalFactorReasoning,
+  value_tier: 'inferred_with_evidence',
+  prior_is_unquantified: false,
   [PROBE]: true,
 });
 
@@ -1826,7 +1852,13 @@ export const maximalModelVersionMutationReceiptCommittedMutation = deepFreeze({
   mutation_id: 'fc000000-0000-4000-8000-000000000007',
   version_id: MODEL_VERSION_7_ID,
   sequence: 7,
-  graph: maximalGraphV3,
+  graph: {
+    ...maximalGraphV3,
+    nodes: [...maximalGraphV3.nodes, {
+      id: 'fixture_estimated_factor', kind: 'factor', label: 'FIXTURE_estimated_quantity',
+      observed_state: maximalEstimatedObservedState,
+    }],
+  },
   full_hash: '7'.repeat(64),
   hash_algorithm: 'sha256',
   identity_projection_version: 'FIXTURE_identity_projection_v1',
@@ -3040,7 +3072,11 @@ const maximalSuppressedFact: SuppressedFact = {
 export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   // --- graph -----------------------------------------------------------------
   { family: 'root/ObservedStateSchema', schema: ObservedStateSchema, fixture: maximalObservedState },
+  { family: 'root/ObservedStateSchema#estimated', schema: ObservedStateSchema, fixture: maximalEstimatedObservedState },
+  { family: 'root/FactorReasoningSchema', schema: FactorReasoningSchema, fixture: maximalFactorReasoning },
+  { family: 'root/UnquantifiedPriorSchema', schema: UnquantifiedPriorSchema, fixture: maximalUnquantifiedPrior },
   { family: 'root/PriorSchema', schema: PriorSchema, fixture: maximalPrior },
+  { family: 'root/PriorSchema#unknown', schema: PriorSchema, fixture: maximalUnquantifiedPrior },
   { family: 'root/StateSpaceSchema', schema: StateSpaceSchema, fixture: maximalStateSpace },
   { family: 'root/NodeV3Schema', schema: NodeV3Schema, fixture: maximalNodeV3 },
   { family: 'root/StrengthSchema', schema: StrengthSchema, fixture: maximalStrength },

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { FactorReasoningSchema, FactorValueTierSchema, UnquantifiedPriorSchema } from './factor-quantification.js';
 import { RoundParticipantRefSchema } from './boundary/collab.js';
 
 export const NODE_ID_PATTERN = /^[a-z0-9_:-]+$/;
@@ -155,6 +156,8 @@ export type KnownObservedStateSourceLiteral = z.infer<typeof KnownObservedStateS
 export const ObservedStateSchema = z.object({
   value: z.number(),
   std: z.number().positive().optional(),
+  reasoning: FactorReasoningSchema.optional().describe('Model rationale and supplied context references, not evidence authority. Absence means no model reasoning was recorded.'),
+  value_tier: FactorValueTierSchema.optional().describe('Existing producer classification. Absence means no tier was declared; source attribution remains independent. fallback_default explicitly marks a resilience value. inferred_with_evidence alone is not evidence authority.'),
   baseline: z.number().optional(),
   unit: z.string().optional(),
   /**
@@ -190,11 +193,18 @@ export const ObservedStateSchema = z.object({
 
 export type ObservedStateType = z.infer<typeof ObservedStateSchema>;
 
-export const PriorSchema = z.object({
+const QuantifiedPriorSchema = z.object({
   distribution: z.string(),
   range_min: z.number(),
   range_max: z.number(),
+  source: z.string().optional().describe('Who supplied this distribution. Absence is unattributed and must not be guessed.'),
+  reasoning: FactorReasoningSchema.optional().describe('Model rationale and supplied context references, not evidence authority. Absence means no model reasoning was recorded.'),
+  value_tier: FactorValueTierSchema.optional().describe('Existing producer classification. Absence means no tier was declared; source attribution remains independent. fallback_default marks resilience support, not a defensible estimate.'),
+  prior_is_unquantified: z.boolean().optional().describe('True identifies legacy ignorance support, not knowledge. Absent and false both mean no ignorance marker; neither establishes evidence or permission to compute.'),
 }).passthrough();
+
+/** Numeric distributions retain their existing carrier. Explicit unknown has no numeric claim. */
+export const PriorSchema = z.union([QuantifiedPriorSchema, UnquantifiedPriorSchema]);
 
 export type PriorType = z.infer<typeof PriorSchema>;
 
