@@ -375,11 +375,17 @@ export const maximalEstimatedObservedState = deepFreeze({
 
 export const maximalUnquantifiedPrior = deepFreeze({
   prior_is_unquantified: true,
+  unit: 'FIXTURE_agents',
+  cap: 100,
+  declared_scale: 'unit_interval',
   source: 'cee_inference',
   reasoning: maximalFactorReasoning,
 });
 
 export const maximalPrior = deepFreeze({
+  unit: 'FIXTURE_agents',
+  cap: 100,
+  declared_scale: 'raw_count',
   distribution: 'normal',
   range_min: 10,
   range_max: 90,

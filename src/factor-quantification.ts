@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { factorScaleFields } from './factor-scale.js';
 import type { KnownObservedStateSourceLiteral } from './graph.js';
 
 /** Model reasoning is an explanation, NEVER evidence authority or a citation. */
@@ -26,6 +27,7 @@ export type FactorValueTier = z.infer<typeof FactorValueTierSchema>;
  */
 export const UnquantifiedPriorSchema = z.object({
   prior_is_unquantified: z.literal(true),
+  ...factorScaleFields,
   source: z.string().optional().describe('Who recorded the unknown. Absence means unattributed, not an Olumi or user claim.'),
   reasoning: FactorReasoningSchema.optional().describe('Optional model explanation of the unresolved gap. Absence means no model reasoning was recorded; this is never evidence authority.'),
 }).strict();

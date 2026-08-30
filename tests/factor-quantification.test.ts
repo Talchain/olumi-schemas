@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   clearSupersededFactorMarkers,
+  DeclaredScale,
+  DECLARED_SCALE_BOUNDS,
   FactorReasoningSchema,
   GraphV3Schema,
   ObservedStateSchema,
@@ -55,12 +57,37 @@ describe('factor quantification carriers', () => {
     expect(selectFactorQuantity({ prior: unknown })).toMatchObject({ kind: 'unknown', protected: false });
   });
 
+  it.each([
+    { prior_is_unquantified: true, source: 'cee_repair' },
+    { distribution: 'uniform', range_min: 0.65, range_max: 0.85, source: 'cee_inference' },
+  ])('retains already-declared scale metadata on prior carrier %# through the canonical graph', quantity => {
+    const prior = { ...quantity, unit: 'agents', cap: 100, declared_scale: 'unit_interval' };
+    expect(PriorSchema.parse(JSON.parse(JSON.stringify(prior)))).toEqual(prior);
+    const node = { id: 'fixture_factor', kind: 'factor', label: 'FIXTURE_availability', prior };
+    const parsed = GraphV3Schema.parse(JSON.parse(JSON.stringify({ nodes: [node], edges: [] })));
+    expect(parsed.nodes[0].prior).toEqual(prior);
+    expect(parsed.nodes[0].observed_state).toBeUndefined();
+    expect(selectFactorQuantity(parsed.nodes[0]).kind).toBe('prior_is_unquantified' in quantity ? 'unknown' : 'distribution');
+  });
+
+  it('keeps the existing scale vocabulary and authority bounds after moving the definition', () => {
+    expect(DeclaredScale.options).toEqual(['unit_interval', 'ratio', 'raw_count']);
+    expect(DECLARED_SCALE_BOUNDS).toEqual({ unit_interval: { min: 0, max: 1 }, ratio: { min: 0, max: null }, raw_count: { min: 0, max: null } });
+    expect(UnquantifiedPriorSchema.safeParse({ prior_is_unquantified: true, declared_scale: 'probability' }).success).toBe(false);
+  });
+
+  it('does not manufacture scale metadata or a number for unknown', () => {
+    const prior = { prior_is_unquantified: true, source: 'cee_repair' };
+    expect(UnquantifiedPriorSchema.parse(prior)).toEqual(prior);
+    expect(PriorSchema.parse(prior)).toEqual(prior);
+  });
+
   it.each(['user_override', 'brief_extraction', 'Q3 report'])('protects an explicitly supplied unknown from source %s', (source) => {
     expect(selectFactorQuantity({ prior: { prior_is_unquantified: true, source, reasoning } }))
       .toEqual({ kind: 'unknown', carrier: 'prior', protected: true, source });
   });
 
-  it.each(['value', 'range_min', 'range_max', 'distribution'])('rejects a numeric-claim carrier %s on the unknown-only branch', (key) => {
+  it.each(['value', 'std', 'range_min', 'range_max', 'distribution'])('rejects a numeric-claim carrier %s on the unknown-only branch', (key) => {
     expect(UnquantifiedPriorSchema.safeParse({ prior_is_unquantified: true, [key]: key === 'distribution' ? 'uniform' : 0.5 }).success).toBe(false);
   });
 
@@ -252,6 +279,9 @@ describe('factor hash-input contract v3 (not a second canonical digest)', () => 
     ['source', 'cee_inference', 'user_override'],
     ['value_tier', 'inferred_with_evidence', 'fallback_default'],
     ['prior_is_unquantified', false, true],
+    ['unit', 'agents', 'hours'],
+    ['cap', 100, 200],
+    ['declared_scale', 'unit_interval', 'raw_count'],
   ])('prior %s change moves the declared hash input', (field, before, after) => {
     const fields = CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.prior_fields;
     const support = { distribution: 'uniform', range_min: 0, range_max: 1 };

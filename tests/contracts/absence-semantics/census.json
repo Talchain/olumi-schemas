@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 89,
+    "distinct": 95,
     "same": 34,
     "unresolved": 410
   },
@@ -3324,7 +3324,7 @@
       ],
       "verdict": "distinct",
       "note": "Absence means UNDECLARED - which is every graph drafted before 0.31.0 - and no member of the enum expresses it. The schema's comment states the rule that makes the two states behaviourally different: a consumer MUST NOT read absence as 'unit_interval' (that is the unsound current-value guess ROADMAP 2.193 exists to retire) and MUST fail OPEN to today's unbounded behaviour. So absence selects 'enforce nothing' while every value selects a bound. DEBT: pre-existing stored graphs stay permanently indistinguishable from undeclared new ones until a backfill decision, which 2.193 names as a separate stored-graphs train.",
-      "ref": "src/graph.ts - DeclaredScale doc comment + ObservedStateSchema.declared_scale (0.31.0, ROADMAP 2.193)"
+      "ref": "src/factor-scale.ts - DeclaredScale doc comment + src/graph.ts::ObservedStateSchema.declared_scale (0.31.0, ROADMAP 2.193)"
     },
     "root/ObservedStateSchema.elicited_from": {
       "markers": [
@@ -3707,6 +3707,54 @@
       "verdict": "distinct",
       "note": "Who recorded the unknown. Absence means unattributed, not an Olumi or user claim.",
       "ref": "src/factor-quantification.ts::UnquantifiedPriorSchema"
+    },
+    "root/PriorSchema|object#0.cap": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Existing scale cap, preserved verbatim as metadata, not an estimated value or distribution bound. Absence means no cap was declared; do not infer one.",
+      "ref": "src/factor-scale.ts::factorScaleFields"
+    },
+    "root/PriorSchema|object#0.declared_scale": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Existing declared scale of the factor quantity. Absence means undeclared, never an implied unit interval; preserve the original declaration without inferring one.",
+      "ref": "src/factor-scale.ts::factorScaleFields"
+    },
+    "root/PriorSchema|object#0.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Existing unit of the factor quantity, preserved verbatim. Absence means no unit was declared; do not infer one.",
+      "ref": "src/factor-scale.ts::factorScaleFields"
+    },
+    "root/UnquantifiedPriorSchema.cap": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Existing scale cap, preserved verbatim as metadata, not an estimated value or distribution bound. Absence means no cap was declared; do not infer one.",
+      "ref": "src/factor-scale.ts::factorScaleFields"
+    },
+    "root/UnquantifiedPriorSchema.declared_scale": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Existing declared scale of the factor quantity. Absence means undeclared, never an implied unit interval; preserve the original declaration without inferring one.",
+      "ref": "src/factor-scale.ts::factorScaleFields"
+    },
+    "root/UnquantifiedPriorSchema.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Existing unit of the factor quantity, preserved verbatim. Absence means no unit was declared; do not infer one.",
+      "ref": "src/factor-scale.ts::factorScaleFields"
     }
   }
 }

@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add model reasoning to existing observed-state/prior carriers. `context_basis` names supplied context IDs and never grants evidence authority.
 - Declare the existing `value_tier` fallback marker; preserve shared source literals and neutral absent provenance.
+- Preserve known `unit`, `cap`, and `declared_scale` metadata on numeric and unknown priors without a selected numeric claim; reuse the existing scale enum and bounds.
 - Add a nonnumeric `prior_is_unquantified` unknown branch. Legacy flagged numeric priors remain expressible as fallback support, without granting permission to compute or recommend.
-- Add pure quantity selection and accepted-user-mutation cleanup. Protect supplied points/distributions and preserve ambiguity; confirmed user values supersede only stale system unknown/fallback priors.
+- Add pure quantity selection and accepted-user-mutation cleanup. Protect supplied points/distributions and preserve ambiguity; accepted `user_override` points remain selected over source-absent priors without erasing or reattributing those priors. Only confirmed system residue is removed during cleanup.
 - Coordinated minor release: older readers cannot parse the new nonnumeric unknown branch. Preserve 0.52.0 objective-direction fields and extend graph-hash projection to v3 for quantitative uncertainty/provenance qualifiers; model rationale stays excluded. No publishing or consumer adoption is implied by this declaration.
 
 ## 0.52.0 — objective comparison authority (N+1)

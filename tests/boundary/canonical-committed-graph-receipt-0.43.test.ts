@@ -183,7 +183,7 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
           'encoding_map',
         ],
         observed_state_fields: ['value', 'baseline', 'cap', 'std', 'source', 'value_tier'],
-        prior_fields: ['distribution', 'range_min', 'range_max', 'source', 'value_tier', 'prior_is_unquantified'],
+        prior_fields: ['distribution', 'range_min', 'range_max', 'source', 'value_tier', 'prior_is_unquantified', 'unit', 'cap', 'declared_scale'],
         interventions_field: 'interventions',
       },
       edge: {
