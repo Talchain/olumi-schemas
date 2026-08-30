@@ -17,6 +17,8 @@ const reasoning = {
 const ignorance = {
   distribution: 'uniform', range_min: 0, range_max: 1, prior_is_unquantified: true,
 };
+const systemIgnorance = { ...ignorance, source: 'cee_repair' };
+const legacyPrior = { distribution: 'uniform', range_min: 0, range_max: 0.132 };
 const suppliedPrior = {
   distribution: 'uniform', range_min: 0.1, range_max: 0.4, source: 'user_override',
 };
@@ -62,9 +64,20 @@ describe('factor quantification carriers', () => {
     expect(UnquantifiedPriorSchema.safeParse({ prior_is_unquantified: true, [key]: key === 'distribution' ? 'uniform' : 0.5 }).success).toBe(false);
   });
 
-  it('preserves legacy numeric ignorance as fallback support, never a reasoned distribution', () => {
+  it('protects unattributed legacy ignorance without calling it system-created', () => {
     expect(PriorSchema.parse(ignorance)).toEqual(ignorance);
-    expect(selectFactorQuantity({ prior: ignorance })).toMatchObject({ kind: 'fallback', carrier: 'prior', protected: false });
+    expect(selectFactorQuantity({ prior: ignorance })).toMatchObject({ kind: 'fallback', carrier: 'prior', protected: true, source: null });
+  });
+
+  it('protects an unattributed explicit unknown', () => {
+    expect(selectFactorQuantity({ prior: { prior_is_unquantified: true } }))
+      .toEqual({ kind: 'unknown', carrier: 'prior', protected: true, source: null });
+  });
+
+  it('makes explicitly system-created ignorance replaceable', () => {
+    expect(selectFactorQuantity({ prior: systemIgnorance })).toMatchObject({ kind: 'fallback', protected: false });
+    expect(selectFactorQuantity({ prior: { ...ignorance, value_tier: 'fallback_default' } }))
+      .toMatchObject({ kind: 'fallback', protected: false, source: null });
   });
 
   it('preserves supplied ignorance as protected fallback support', () => {
@@ -83,9 +96,30 @@ describe('factor quantification carriers', () => {
 describe('selected quantity and estimator protection', () => {
   it.each([0.12, 0.24, 0])('selects protected user value %s over old system ignorance', (value) => {
     const observed_state = { value, source: 'user_override' };
-    expect(selectFactorQuantity({ observed_state, prior: ignorance })).toEqual({
+    expect(selectFactorQuantity({ observed_state, prior: systemIgnorance })).toEqual({
       kind: 'point', carrier: 'observed_state', protected: true, source: 'user_override',
     });
+  });
+
+  it.each([0.12, 0.24].flatMap(value => [legacyPrior, ignorance, { prior_is_unquantified: true }].map(prior => ({ value, prior }))))('selects accepted user override $value without deleting or reattributing source-absent prior %#', ({ value, prior }) => {
+    const node = { observed_state: { value, source: 'user_override' }, prior };
+    const original = structuredClone(node);
+    expect(selectFactorQuantity(node)).toEqual({
+      kind: 'point', carrier: 'observed_state', protected: true, source: 'user_override',
+    });
+    expect(clearSupersededFactorMarkers(node)).toEqual(original);
+    expect(node).toEqual(original);
+  });
+
+  it('does not invent an accepted-edit ordering from a brief source', () => {
+    expect(selectFactorQuantity({ observed_state: { value: 0.12, source: 'brief_extraction' }, prior: legacyPrior }))
+      .toMatchObject({ kind: 'ambiguous', protected: true });
+  });
+
+  it('does not call an unattributed ignorance prior superseded system residue when selecting an accepted user point', () => {
+    const node = { observed_state: { value: 0.12, source: 'user_override' }, prior: ignorance };
+    expect(selectFactorQuantity(node)).toMatchObject({ kind: 'point', protected: true });
+    expect(clearSupersededFactorMarkers(node).prior).toEqual(ignorance);
   });
 
   it('does not invent precedence between a genuine supplied point and a genuine supplied prior', () => {
@@ -108,6 +142,17 @@ describe('selected quantity and estimator protection', () => {
       .toMatchObject({ kind: 'distribution', carrier: 'prior', protected: true });
   });
 
+  it.each([
+    [{ prior_is_unquantified: true }, 'unknown'],
+    [{ prior_is_unquantified: true, source: 'user_override' }, 'unknown'],
+    [ignorance, 'fallback'],
+    [{ ...ignorance, source: 'user_override' }, 'fallback'],
+    [{ source: 'Q3 report', distribution: 'invalid' }, 'ambiguous'],
+  ])('a system fallback point cannot hide a protected prior %#', (prior, kind) => {
+    expect(selectFactorQuantity({ observed_state: { value: 0.5, source: 'cee_repair', value_tier: 'fallback_default' }, prior }))
+      .toMatchObject({ kind, protected: true });
+  });
+
   it.each([0.12, 0.5, 0.81])('identifies fallback %s by its marker, never numeric equality', (value) => {
     expect(selectFactorQuantity({ observed_state: { value, source: 'cee_inference', value_tier: 'fallback_default' } }))
       .toMatchObject({ kind: 'fallback', protected: false });
@@ -123,6 +168,14 @@ describe('selected quantity and estimator protection', () => {
   it('protects unrecognised provenance without hiding its explicit fallback marker', () => {
     expect(selectFactorQuantity({ observed_state: { value: 0.12, source: 'future_source', value_tier: 'fallback_default' } }))
       .toMatchObject({ kind: 'fallback', protected: true, source: 'future_source' });
+  });
+
+  it.each([null, 42, {}])('does not treat malformed source %j as absent system attribution', source => {
+    expect(selectFactorQuantity({ observed_state: { value: 0.12, source, value_tier: 'fallback_default' } }))
+      .toMatchObject({ kind: 'fallback', protected: true, source: null });
+    expect(selectFactorQuantity({ prior: { ...ignorance, source } }).protected).toBe(true);
+    expect(selectFactorQuantity({ observed_state: { value: 0.12, source: 'user_override' }, prior: { ...legacyPrior, source } }))
+      .toMatchObject({ kind: 'ambiguous', protected: true });
   });
 
   it.each([null, {}, { kind: 'factor' }])('reports an actually absent quantity as missing', (node) => {
@@ -142,7 +195,7 @@ describe('selected quantity and estimator protection', () => {
 describe('accepted user mutation cleanup', () => {
   it.each([0.12, 0.24])('keeps fresh value %s and clears only old system qualifiers', (value) => {
     const observed_state = { value, std: 0.02, source: 'user_override', value_tier: 'fallback_default', reasoning };
-    const node = { id: 'fixture_factor', observed_state, prior: ignorance };
+    const node = { id: 'fixture_factor', observed_state, prior: systemIgnorance };
     const before = JSON.parse(JSON.stringify(node));
     const cleaned = clearSupersededFactorMarkers(node);
     expect(cleaned).toEqual({ id: 'fixture_factor', observed_state: { value, std: 0.02, source: 'user_override' } });
@@ -150,7 +203,15 @@ describe('accepted user mutation cleanup', () => {
     expect(cleaned).not.toBe(node);
   });
 
-  it.each([suppliedPrior, { ...suppliedPrior, prior_is_unquantified: true }, { ...ignorance, source: 'Q3 report' }])('never removes genuine or unattributed-source supplied priors', (prior) => {
+  it.each([0.12, 0.24])('a missing cleanup leaves user value %s visibly protected fallback, not ordinary knowledge', value => {
+    const node = { observed_state: { value, source: 'user_override', value_tier: 'fallback_default', reasoning }, prior: legacyPrior };
+    expect(selectFactorQuantity(node)).toEqual({ kind: 'fallback', carrier: 'observed_state', protected: true, source: 'user_override' });
+    const cleaned = clearSupersededFactorMarkers(node);
+    expect(selectFactorQuantity(cleaned)).toEqual({ kind: 'point', carrier: 'observed_state', protected: true, source: 'user_override' });
+    expect(cleaned.prior).toEqual(legacyPrior);
+  });
+
+  it.each([suppliedPrior, { ...suppliedPrior, prior_is_unquantified: true }, { ...ignorance, source: 'Q3 report' }, ignorance, legacyPrior, { prior_is_unquantified: true }])('never removes genuine or unattributed-source supplied priors', (prior) => {
     const node = { observed_state: { value: 0.12, source: 'user_override', reasoning }, prior };
     expect(clearSupersededFactorMarkers(node).prior).toEqual(prior);
   });

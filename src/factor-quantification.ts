@@ -69,7 +69,11 @@ function originOf(quantity: Record<string, unknown> | undefined): 'supplied' | '
 }
 
 function isSystemQuantity(quantity: Record<string, unknown> | undefined): boolean {
-  return sourceOf(quantity) === null || originOf(quantity) === 'model';
+  // Missing attribution alone proves nothing, including on old ignorance
+  // support. An explicit fallback declaration can identify system residue when
+  // there is no conflicting or malformed source declaration.
+  return originOf(quantity) === 'model'
+    || (quantity?.source === undefined && quantity?.value_tier === 'fallback_default');
 }
 
 function isSystemResidue(prior: Record<string, unknown> | undefined): boolean {
@@ -94,15 +98,25 @@ export function selectFactorQuantity(node: unknown): FactorQuantitySelection {
   const hasPointClaim = observed !== undefined && Object.prototype.hasOwnProperty.call(observed, 'value');
   const distribution = prior !== undefined && typeof prior.distribution === 'string'
     && finite(prior.range_min) && finite(prior.range_max) && prior.range_min < prior.range_max;
-  const pointFallback = point && observed?.value_tier === 'fallback_default' && originOf(observed) !== 'supplied';
+  const pointFallback = point && observed?.value_tier === 'fallback_default';
   const priorResidue = isSystemResidue(prior);
   const priorFallback = prior !== undefined
     && (prior.prior_is_unquantified === true || prior.value_tier === 'fallback_default');
   const unknown = prior !== undefined && UnquantifiedPriorSchema.safeParse(prior).success;
 
-  // A verified user/brief point supersedes only SYSTEM residue. A real prior
-  // beside a point is not silently subordinated, even when both are numeric.
-  if (point && originOf(observed) === 'supplied' && (!prior || priorResidue)) {
+  // A source stamp without atomic marker cleanup is contradictory, not proof
+  // that a former fallback has become supplied knowledge.
+  if (pointFallback && originOf(observed) === 'supplied') {
+    return selected('fallback', 'observed_state', observed, true);
+  }
+  // An accepted user override selects that point over a prior with no source
+  // declaration, including old unknown markers. The prior stays intact and is not called
+  // system-created. Source-bearing supplied priors retain ambiguity; absence
+  // does not give an estimator permission to replace either carrier.
+  const acceptedOverride = sourceOf(observed) === 'user_override'
+    && prior !== undefined && prior.source === undefined;
+  if (point && !pointFallback && originOf(observed) === 'supplied'
+    && (!prior || priorResidue || acceptedOverride)) {
     return selected('point', 'observed_state', observed, true);
   }
   if (point && !pointFallback && prior) return selected('ambiguous', null, undefined, true);
@@ -114,6 +128,13 @@ export function selectFactorQuantity(node: unknown): FactorQuantitySelection {
   // Malformed supplied data is not a licence to overwrite it. Source-bearing
   // contradictory markers are likewise left for an explicit correction.
   if (hasPointClaim && !pointFallback) return selected('ambiguous', null, undefined, true);
+  // A fallback point does not confer permission to erase an independent,
+  // protected prior. In particular absence of that prior's source stays neutral.
+  if (pointFallback && prior && !isSystemQuantity(prior)) {
+    if (unknown) return selected('unknown', 'prior', prior, true);
+    if (distribution && priorFallback) return selected('fallback', 'prior', prior, true);
+    return selected('ambiguous', null, undefined, true);
+  }
   if (pointFallback) return selected('fallback', 'observed_state', observed, !isSystemQuantity(observed));
   if (unknown) return selected('unknown', 'prior', prior, !isSystemQuantity(prior));
   if (distribution && priorFallback) return selected('fallback', 'prior', prior, !isSystemQuantity(prior));
