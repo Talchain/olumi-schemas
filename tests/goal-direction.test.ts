@@ -52,6 +52,18 @@ describe('producer comparison authority', () => {
     ] };
     expect(EnrichmentObjectiveRankingSchema.parse(value)).toEqual(value);
   });
+  it('accepts the Python producer Unicode code-point tie order without sorting rows', () => {
+    const value = { ...computed(), ranked_options: [
+      { option_id: '\uFFFD', rank: 1, win_probability: .5 },
+      { option_id: '\u{10000}', rank: 1, win_probability: .5 },
+    ] };
+    // JavaScript UTF-16 '<' reverses this valid Python string order.
+    expect(value.ranked_options[1].option_id < value.ranked_options[0].option_id).toBe(true);
+    expect(EnrichmentObjectiveRankingSchema.parse(value)).toEqual(value);
+    expect(EnrichmentObjectiveRankingSchema.safeParse({
+      ...value, ranked_options: [...value.ranked_options].reverse(),
+    }).success).toBe(false);
+  });
   it('keeps genuinely unknown objective absent in a withheld result', () => {
     expect(EnrichmentObjectiveRankingSchema.parse(withheld())).toEqual(withheld());
     const target = { ...withheld(), direction: 'target', attested: true, withheld_reason: 'unresolved_target_frame' };

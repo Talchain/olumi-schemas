@@ -253,6 +253,17 @@ export const EnrichmentObjectiveRankingSchema = z.object({
     win_probability: z.number().finite().min(0).max(1),
   }).passthrough()),
 }).passthrough().superRefine((ranking, ctx) => {
+  // Python's producer orders strings by Unicode code point, while JavaScript
+  // '<' orders UTF-16 code units. Validate the producer's ordering without
+  // rejecting legal non-BMP option identities (or sorting the received rows).
+  const compareIds = (a: string, b: string): number => {
+    const left = Array.from(a, char => char.codePointAt(0)!);
+    const right = Array.from(b, char => char.codePointAt(0)!);
+    for (let i = 0; i < Math.min(left.length, right.length); i++) {
+      if (left[i] !== right[i]) return left[i] - right[i];
+    }
+    return left.length - right.length;
+  };
   const reject = (path: (string | number)[], message: string) =>
     ctx.addIssue({ code: z.ZodIssueCode.custom, path, message });
   if (ranking.status === 'withheld') {
@@ -282,7 +293,7 @@ export const EnrichmentObjectiveRankingSchema = z.object({
     const previous = ranking.ranked_options[index - 1];
     if (previous) {
       if (option.win_probability > previous.win_probability ||
-          (option.win_probability === previous.win_probability && option.option_id < previous.option_id)) {
+          (option.win_probability === previous.win_probability && compareIds(option.option_id, previous.option_id) < 0)) {
         reject(['ranked_options', index], 'Options must follow producer share order, with stable ID ordering for ties.');
       }
       if (option.win_probability < previous.win_probability) denseRank += 1;
