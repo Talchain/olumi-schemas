@@ -46,6 +46,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      # GRAPH TRUTH CONTRACT (Limb 0 + Limb 1). Runs AFTER build because it
+      # reads the built contract, not the source — a field minted without a
+      # semantic classification fails here rather than shipping unclassified.
+      # A separate step so the failure is attributed to the contract gate and
+      # not to the suite. Exit 2 (could-not-measure) fails this job exactly as
+      # exit 1 does; that is deliberate.
+      - name: Graph truth contract
+        run: npm run check:graph-truth
+
       # The build config (`tsconfig.json`) excludes `tests` and `fixtures`, and
       # `lint` uses that same config — so until tsconfig.test.json existed, NO
       # test file was typechecked by anything here. Runs after Build because

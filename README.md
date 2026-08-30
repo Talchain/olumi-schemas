@@ -242,11 +242,54 @@ system can hold should never be left to a convention.
    checked-in `file:` tarball, not a registry version, so nothing here updates
    them automatically. See `CLAUDE.md` § Publish model.
 
+## The graph truth contract
+
+`src/boundary/semantic-axes.ts` declares which leaves of the canonical graph
+carry **user meaning**, and what happens to each of them at every point the
+graph is REBUILT on its way to the science layer. `npm run check:graph-truth`
+(a PR-gate step) enforces it.
+
+**The set is derived; only the classification is written.** Every leaf of the
+canonical roots — `NodeV3Schema`, `EdgeV3Schema`, `OptionForAnalysisSchema`,
+`DraftGoalConstraintSchema`, `CanonicalCommittedGraphReceiptSchema` — is walked
+out of the Zod tree, and a leaf in neither `SEMANTIC_AXES` nor `NOT_SEMANTIC`
+**fails the build**. So minting a qualifier without classifying it is not
+possible; that is how `value_tier` shipped, unclassified and untransported, and
+nothing noticed for months.
+
+**Adding a field to any of those schemas therefore requires one extra step:**
+classify it, in the same PR. Either name the axes it carries
+(`quantity` · `scale` · `provenance` · `stated_ness` · `uncertainty`), or say in
+one line why it carries none. If it is a `quantity`, also name the qualifiers
+without which the number is meaningless — a quantity with no companions is the
+bare float the whole gate exists to prevent.
+
+The other limbs:
+
+| Limb | What it asserts | Where |
+|---|---|---|
+| 0 | every leaf is classified; every quantity names its qualifiers | `scripts/check-graph-truth-contract.mjs` |
+| 1 | every axis member has a declared fate at every boundary it crosses; `unmeasured` cells carry a deadline that expires | same |
+| 1c | the recorded set of quantities crossing a boundary with EVERY qualifier lost, asserted exactly — red if it grows **or shrinks** | same |
+| bond | the fate table reconciled against PLoT's real projections, derived from its source | `scripts/check-plot-projection-drift.mjs` (`OLUMI_ESTATE_ROOT`) |
+| 2 | user meaning survives a REAL run, brief → graph → science input | `npm run graph-truth:runtime` |
+| 3 | a persist/reload no-op loses nothing (identity-keyed leaf differ) | `tests/boundary/graph-truth-roundtrip.test.ts` |
+
+**Limb 2 refuses to report a pass it did not earn.** It exits `2`
+(could-not-measure — a failure, never a pass) without live credentials, and also
+when `contracts/graph-truth-corpus.json` is marked `provenance: "authored"`. A
+corpus drawn from the author's head cannot see the class the author did not
+imagine, so the runtime limb accepts only `captured` or `external` briefs.
+
+**Nothing in the fate table is wire-witnessed.** Every cell is `CODE EXISTS`,
+derived at the SHAs in `MEASUREMENT_SHAS`. Limb 2 is what raises a fate to
+`WIRE_WITNESSED`, and it has not been run against a live quartet.
+
 ## Development
 
 ```bash
 npm ci            # Install dependencies
-npm test          # THE GATE — check:contracts && build && vitest run
+npm test          # THE GATE — check:contracts && build && check:graph-truth && vitest run
 npm run build     # Compile to dist/ (tsc)
 npm run lint      # tsc --noEmit; same tsconfig as build, so no extra coverage
 ```

@@ -1,0 +1,85 @@
+{
+  "$comment": [
+    "THE OUTSIDE CORPUS for the graph-truth runtime limb (scripts/graph-truth-runtime-limb.mjs).",
+    "",
+    "⚠ `provenance` IS A GATE, NOT A LABEL. The runner accepts only `captured` (real user",
+    "briefs, taken from live sessions) or `external` (written by someone other than the author",
+    "of the code under test). It EXITS 2 on `authored`, which is what this file currently",
+    "carries — so the runtime limb cannot report a pass until this corpus is replaced with real",
+    "briefs. That refusal is the point, not a gap to route around.",
+    "",
+    "WHY: for any predicate over natural language, a corpus drawn from the author's head cannot",
+    "see the class the author did not imagine, and a full pass against one is a perfect score on",
+    "the wrong exam. This estate has measured that twice: six live defects shipped in a",
+    "stated-value-honour rule under a 25/25 mutant kit, every invariant true as stated and every",
+    "defect living in the BREADTH of the predicates.",
+    "",
+    "HOW TO FILL IT (the sequencing that keeps it honest):",
+    "  1. capture real briefs from staging sessions, or commission them from someone who has not",
+    "     read the extraction code — NOT from the lane implementing the fix;",
+    "  2. for each, write `expectations` naming the semantic object, the STATING PHRASE (used to",
+    "     resolve the object BY IDENTITY via source_quote — never by value), the quantity path,",
+    "     and each qualifier with the marker that proves it reached the science input AND the",
+    "     reason_codes that would constitute an HONEST REFUSAL instead;",
+    "  3. set `provenance` to `captured` or `external` and record where they came from.",
+    "",
+    "The two entries below are SHAPE EXAMPLES under `authored` provenance. They are here to show",
+    "the schema and to be replaced. They are deliberately NOT evidence, and the runner will not",
+    "let them become evidence."
+  ],
+  "provenance": "authored",
+  "provenance_note": "SHAPE EXAMPLES ONLY — written by the lane that wrote the suite. The runner exits 2 on this value by design.",
+  "captured_from": null,
+  "briefs": [
+    {
+      "id": "example-factor-baseline-percent",
+      "text": "We are deciding whether to invest in retention. Monthly churn is currently 12 percent and we want to cut it.",
+      "reload_message": "Show me the current model.",
+      "analyse_message": "Run the analysis.",
+      "expectations": [
+        {
+          "object": "factor_baseline",
+          "stated_phrase": "12 percent",
+          "quantity_path": "observed_state.raw_value",
+          "qualifiers": [
+            {
+              "graph_path": "observed_state.declared_scale",
+              "science_marker": "unit_interval",
+              "refusal_codes": ["baseline_scale_unresolved", "baseline_scale_unknown_divisor"]
+            },
+            {
+              "graph_path": "observed_state.unit",
+              "science_marker": "\"unit\"",
+              "refusal_codes": ["baseline_scale_unresolved"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "example-constraint-currency",
+      "text": "The board approved a first-year budget cap of GBP 240,000 and we must not go over it.",
+      "reload_message": "Show me the current model.",
+      "analyse_message": "Run the analysis.",
+      "expectations": [
+        {
+          "object": "constraint",
+          "stated_phrase": "240,000",
+          "quantity_path": "value",
+          "qualifiers": [
+            {
+              "graph_path": "unit",
+              "science_marker": "\"unit\"",
+              "refusal_codes": ["constraint_scale_unresolved"]
+            },
+            {
+              "graph_path": "value_frame",
+              "science_marker": "\"level\"",
+              "refusal_codes": ["constraint_frame_unattested"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

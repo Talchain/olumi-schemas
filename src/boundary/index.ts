@@ -573,3 +573,67 @@ export {
 
 export { NODE_ID_PATTERN } from '../graph.js';
 export { STRENGTH_DEFAULT_SIGNATURE } from '../warnings.js';
+
+// ----------------------------------------------------------------------------
+// The graph truth contract (semantic axes, quantity companions, boundary fates).
+//
+// Exported so CEE and PLoT can IMPORT the classification rather than restating
+// it — the whole point of the module is that there is one place where a graph
+// leaf's meaning, and its fate at each rebuild point, is written down. A
+// consumer that re-declares any of this has created the twins defect the module
+// exists to close. See README § The graph truth contract.
+// ----------------------------------------------------------------------------
+export {
+  SEMANTIC_AXIS_VALUES,
+  SEMANTIC_AXES,
+  NOT_SEMANTIC,
+  SEMANTIC_OBJECTS,
+  QUANTITY_QUALIFIERS,
+  SEMANTIC_BOUNDARIES,
+  AXIS_BOUNDARY_FATES,
+  FATE_VALUES,
+  DEFAULT_FATE,
+  KNOWN_DROPPED,
+  KNOWN_UNQUALIFIED_CROSSINGS,
+  CANONICAL_GRAPH_ROOTS,
+  PLOT_PROJECTIONS,
+  MEASUREMENT_SHAS,
+  LIVE_REGISTRY,
+  fateKey,
+  objectOf,
+  objectVerdicts,
+  projectedKeyFor,
+  reconcileProjection,
+  walkCanonicalGraph,
+  canonicalGraphLeafPaths,
+  enumerateValueLeaves,
+  diffGraphLeaves,
+  unqualifiedCrossings,
+  graphTruthEpistemics,
+  checkGraphTruthContract,
+  checkClassificationCompleteness,
+  checkQuantityCompanions,
+  checkBoundaryFates,
+  checkKnownDropped,
+  checkUnqualifiedCrossings,
+  checkSemanticObjectCoverage,
+} from './semantic-axes.js';
+export type {
+  SemanticAxis,
+  SemanticObject,
+  SemanticBoundary,
+  BoundaryFate,
+  Fate,
+  FateKey,
+  CanonicalRootName,
+  CanonicalLeaf,
+  CanonicalWalk,
+  PassthroughSite,
+  PlotProjection,
+  TruthProblem,
+  TruthRegistry,
+  ObjectBoundaryVerdict,
+  UnqualifiedCrossing,
+  ValueLeaves,
+  LeafDiff,
+} from './semantic-axes.js';

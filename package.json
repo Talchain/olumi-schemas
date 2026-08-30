@@ -32,12 +32,12 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "npm run check:contracts && npm run build && npm run typecheck:tests && vitest run",
+    "test": "npm run check:contracts && npm run build && npm run check:graph-truth && npm run typecheck:tests && vitest run",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "typecheck:tests": "tsc -p tsconfig.test.json",
     "generate:json-schema": "npm run build && node scripts/generate-json-schema.mjs",
-    "prepublishOnly": "npm run lint && npm run check:contracts && npm run build && npm run test",
+    "prepublishOnly": "npm run lint && npm run check:contracts && npm run build && npm run check:graph-truth && npm run test",
     "check:adoption": "node scripts/check-adoption-manifest.mjs",
     "check:populations": "node scripts/check-population-registry.mjs",
     "check:compat": "node scripts/check-compat-gate.mjs",
@@ -45,7 +45,9 @@
     "generate:contract-constants": "node scripts/generate-contract-constants.mjs --write",
     "generate:contract-constants:check": "node scripts/generate-contract-constants.mjs",
     "generate:population-ref": "node scripts/generate-population-ref.mjs --write",
-    "generate:population-ref:check": "node scripts/generate-population-ref.mjs"
+    "generate:population-ref:check": "node scripts/generate-population-ref.mjs",
+    "check:graph-truth": "node scripts/check-graph-truth-contract.mjs && node scripts/check-plot-projection-drift.mjs",
+    "graph-truth:runtime": "node scripts/graph-truth-runtime-limb.mjs"
   },
   "keywords": [
     "olumi",
