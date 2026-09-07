@@ -933,6 +933,43 @@
         "Version 1 changes only when a nested inclusion or conditional rule changes. Top-level field",
         "  carriage remains governed by the separate canonical committed-receipt adoption row."
       ]
+    },
+    {
+      "field": "edit_refusal handler fact (fact_type + EditRefusalResult)",
+      "declared_in": "schemas:src/orchestrator/handler-fact.ts::EditRefusalHandlerFactSchema + src/orchestrator/handler-results.ts::EditRefusalResultSchema (0.51.0)",
+      "producer": "cee — the validator-recovery commit in turn-executor.ts, which today commits handler_facts: [] with handler_id: null",
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "THE GAP, measured 2026-09-07 at cee@staging 25f7f380 and schemas@main 25d01ba2.",
+        "  CEE has TWO refusals and, before this release, ONE carrier.",
+        "  ANALYSIS refusal is carried: buildAnalysisRefusalFact persists a run_analysis fact with",
+        "  enrichment.analysis_status='refused'. It needed no contract change because",
+        "  RunAnalysisResultSchema.enrichment is an OPEN z.record(z.string(), z.unknown()).",
+        "  EDIT refusal is NOT carried: the validator-recovery path commits handler_facts: [] and",
+        "  handler_id: null, so the next turn cannot know the edit was refused. Contrast-controlled",
+        "  absence sweep, same run, same command shape: TARGET (edit_refusal|EditRefusal|edit_refused)",
+        "  = 0 in both repos; CONTRAST (EditGraphResultSchema|EditGraphHandlerFact) = 12 in schemas and",
+        "  (analysisRefusalFact|AnalysisRefusalContinuity|ANALYSIS_REFUSAL_STATUS) = 12 in CEE.",
+        "WHY A NEW FACT TYPE RATHER THAN REUSING edit_graph: settled against that schema's own",
+        "  declared semantics ('this turn was processed by the edit_graph dispatcher'). The refusal",
+        "  path elects no dispatcher, so reusing the literal would assert a falsehood in a durable",
+        "  record. Its status enum is ['applied','noop'] and the result is .strict() — no open seam.",
+        "STATE IS 'declared', NOT 'produced_dark': there is no producer test because there is no",
+        "  producer yet. CEE cannot emit this until 0.51.0 is MERGED, TAGGED and vendored — the",
+        "  vendoring standard in CEE vendor/README.md requires the tarball be source-packed from the",
+        "  merged, tagged release with HEAD asserted equal to `git rev-list -n1 v0.51.0`.",
+        "CEE ADOPTION IS FAIL-LOUD, NOT OPTIONAL: recent-changes.conformance.test.ts asserts",
+        "  MUTATION_RECEIPT_FACT_TYPES union MUTATION_DISPATCH_SKIP equals HandlerFactSchema.options",
+        "  EXACTLY, so this new member REDs CEE until it is deliberately classified.",
+        "CONSUMPTION IS A SEPARATE CHANGE. The intended first consumer is the post-analysis advice",
+        "  gate, which today recites the standings on the turn AFTER a refusal — and is eligible to do",
+        "  so precisely BECAUSE the refusal changed nothing, leaving freshness 'fresh'."
+      ]
     }
   ]
 }

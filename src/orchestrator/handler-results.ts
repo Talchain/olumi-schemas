@@ -472,3 +472,67 @@ export const PriorRangeEditResultSchema = z.object({
   provenance: z.literal('user_set'),
 }).strict();
 export type PriorRangeEditResult = z.infer<typeof PriorRangeEditResultSchema>;
+
+// ---- 0.51.0: the EDIT-refusal continuity carrier ---------------------------
+//
+// Durable, non-result evidence that a proposed EDIT was REFUSED. A refusal is
+// neither an applied mutation nor an absent event; without a persisted record
+// the next turn is structurally incapable of knowing it happened.
+//
+// THE GAP. CEE has two refusals and, before this release, one carrier:
+//   · ANALYSIS refusal — carried, as a `run_analysis` fact with
+//     `enrichment.analysis_status: 'refused'`. It needed no contract change
+//     because `RunAnalysisResultSchema.enrichment` is an OPEN record.
+//   · EDIT refusal (the validator-recovery path in
+//     `compose/validation-failure-responses.ts`) — NOT carried. That turn
+//     commits `handler_facts: []` with `handler_id: null`.
+//
+// WHY NOT REUSE `edit_graph`. Settled against that schema's OWN declared
+// semantics: "this turn was processed by the `edit_graph` dispatcher". A
+// validator-recovery refusal is not — `handler_id` is null on the commit — so
+// stamping it `edit_graph` would assert in a durable, widely-read record that a
+// dispatcher ran which did not. Its `status` is `z.enum(['applied','noop'])`
+// and the result is `.strict()`, with no open seam to ride either.
+//
+// SCOPE. This is the CARRIER only. Nothing reads it yet; consumption is a
+// separate, later change that this release makes possible. Recorded as a
+// `declared` row in contracts/adoption-manifest.json so a carrier with no
+// consumer cannot go quietly dark.
+
+/**
+ * Shape rule shared by `reason_code` and `template_id`.
+ *
+ * DELIBERATELY NOT AN ENUM. The reason-code and template-id vocabularies belong
+ * to CEE (`ValidationErrorCode` and the validation-failure composer). Listing
+ * their members here would be a cross-repo hand-maintained mirror: it would
+ * drift the moment CEE mints a code, and the failure would land at the
+ * consumer's parse — which THROWS `SessionReadError` rather than skipping —
+ * turning a new refusal reason into an unreadable session. The contract
+ * therefore constrains SHAPE and leaves the vocabulary to its owner.
+ */
+const RefusalCodeSchema = z
+  .string()
+  .regex(/^[a-z][a-z0-9_]{0,79}$/, 'must be snake_case, start with a letter, max 80 chars');
+
+export const EditRefusalResultSchema = z.object({
+  /** Why the edit was declined. CEE's `ValidationErrorCode`, shape-checked. */
+  reason_code: RefusalCodeSchema,
+  /**
+   * The composer template that produced the user-visible decline copy. Carried
+   * so a consumer can tell WHICH refusal the user was shown without having to
+   * re-derive it from prose (the only signal available before this fact).
+   */
+  template_id: RefusalCodeSchema,
+  /**
+   * The analysis-affecting graph hash at the moment of refusal.
+   *
+   * ONE hash, not a before/after pair, and that is the point: a refusal changes
+   * nothing, so a pair would imply a transition that never happened and could
+   * drift into disagreeing with itself. `.strict()` makes the pair a parse
+   * error rather than a convention. Nullable when hashing failed at emission.
+   */
+  graph_hash_at_refusal: z.string().nullable(),
+  /** ISO timestamp of the refusal (NOT the response-emit time). */
+  refused_at: z.string(),
+}).strict();
+export type EditRefusalResult = z.infer<typeof EditRefusalResultSchema>;

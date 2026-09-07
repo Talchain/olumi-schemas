@@ -3928,6 +3928,11 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   'orchestrator/FeedbackHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/EdgeAdjudicationHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/PriorRangeEditHandlerFactSchema': ORCHESTRATOR_INTERNAL,
+  // 0.51.0 — the EDIT-refusal continuity carrier. Same class as every other
+  // handler-fact shape above: CEE-internal fact persistence in
+  // `v5_handler_facts.payload`, never a cross-service wire format.
+  'orchestrator/EditRefusalResultSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/EditRefusalHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/HandlerFactSchema': ORCHESTRATOR_INTERNAL,
   // 0.35.0 — coach structural-edit tool (ROADMAP 2.474). Same class as every
   // other /orchestrator shape: CEE-internal, never a cross-service wire

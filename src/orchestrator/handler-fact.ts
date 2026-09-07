@@ -13,6 +13,7 @@ import {
   FeedbackResultSchema,
   EdgeAdjudicationResultSchema,
   PriorRangeEditResultSchema,
+  EditRefusalResultSchema,
 } from './handler-results.js';
 
 // HandlerFact — typed evidence of what a handler did on a turn, persisted in
@@ -154,6 +155,31 @@ export const PriorRangeEditHandlerFactSchema = z.object({
 }).strict();
 export type PriorRangeEditHandlerFact = z.infer<typeof PriorRangeEditHandlerFactSchema>;
 
+// 0.51.0 — the EDIT-refusal continuity carrier.
+//
+// Semantic meaning of `fact_type: 'edit_refusal'`: this turn DECLINED to apply
+// a change the user asked for, and the graph is unchanged as a result. It is
+// deliberately NOT an `edit_graph` fact — that literal means "the edit_graph
+// dispatcher processed this turn", and the refusal path commits with
+// `handler_id: null`, having elected no dispatcher at all.
+//
+// `noop` is NOT pinned to `true` here, though a refusal does change nothing.
+// In this union `noop` means "the D1 NOOP suppression fired", which is a
+// different claim — the existing refusal carrier (CEE
+// `buildAnalysisRefusalFact`) sets `noop: false` for that reason. A
+// `z.literal(true)` would also be unsafe: CEE's read path THROWS
+// `SessionReadError` on a parse miss and defaults a missing `noop` column to
+// `false`, so the literal would convert one column default into a permanently
+// unreadable session. Keeping refusals out of "what just changed" belongs to
+// CEE's `MUTATION_DISPATCH_SKIP`, whose conformance test fails loud when a new
+// `fact_type` is classified in neither set.
+export const EditRefusalHandlerFactSchema = z.object({
+  fact_type: z.literal('edit_refusal'),
+  ...BaseHandlerFactFields,
+  result: EditRefusalResultSchema,
+}).strict();
+export type EditRefusalHandlerFact = z.infer<typeof EditRefusalHandlerFactSchema>;
+
 export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   RunAnalysisHandlerFactSchema,
   ExplainResultHandlerFactSchema,
@@ -168,5 +194,6 @@ export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   FeedbackHandlerFactSchema,
   EdgeAdjudicationHandlerFactSchema,
   PriorRangeEditHandlerFactSchema,
+  EditRefusalHandlerFactSchema,
 ]);
 export type HandlerFact = z.infer<typeof HandlerFactSchema>;
