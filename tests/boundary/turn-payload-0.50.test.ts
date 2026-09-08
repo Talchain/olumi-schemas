@@ -39,6 +39,21 @@ const HASH = 'sha256:9f2c1b0ae4d37c5a6e8b';
 /** The three kinds this release adds, in one place so every block derives from it. */
 const NEW_KINDS = ['structural_add', 'structural_add_edge', 'structural_rename'] as const;
 
+/**
+ * Members added AFTER 0.50.0 — the derived present-tense half, the same idiom
+ * `KINDS_ADDED_SINCE_0_48` uses in turn-payload-0.48.test.ts.
+ *
+ * `NEW_KINDS` and `PRE_0_50_KINDS` above are HISTORIC RECORDS of what 0.50.0
+ * added and inherited; neither may be edited to stay current. A later member
+ * declares itself here instead, so this file keeps asserting what 0.50.0
+ * actually did as the union grows past it — and so the "0.48.0-shaped reader"
+ * below stays a 0.48.0 reader rather than quietly becoming "the union minus
+ * three".
+ *
+ *   · unversioned — option_intervention_edit
+ */
+const KINDS_ADDED_SINCE_0_50 = ['option_intervention_edit'] as const;
+
 /** A system_event turn wrapper — the shape CEE actually validates on ingress. */
 function turn(event: unknown) {
   return {
@@ -288,12 +303,21 @@ describe('0.50.0 — additive at 0.48.0', () => {
 
   it('adds exactly three members and removes none', () => {
     const kinds = unionKinds();
-    expect(kinds).toHaveLength(PRE_0_50_KINDS.length + NEW_KINDS.length);
+    expect(kinds).toHaveLength(
+      PRE_0_50_KINDS.length + NEW_KINDS.length + KINDS_ADDED_SINCE_0_50.length,
+    );
     // Every 0.48.0 member is still present, by name.
     for (const kind of PRE_0_50_KINDS) expect(kinds).toContain(kind);
-    // …and the new members are strictly ADDITIONAL, not replacements.
-    expect(kinds.filter((k) => !PRE_0_50_KINDS.includes(k as never)).sort())
-      .toEqual([...NEW_KINDS].sort());
+    // …and the new members are strictly ADDITIONAL, not replacements. Later
+    // trains are subtracted by NAME rather than by count, so this keeps
+    // asserting the 0.50.0 delta itself and still REDs if one of its three
+    // members is ever replaced rather than appended to.
+    expect(
+      kinds
+        .filter((k) => !PRE_0_50_KINDS.includes(k as never))
+        .filter((k) => !(KINDS_ADDED_SINCE_0_50 as readonly string[]).includes(k))
+        .sort(),
+    ).toEqual([...NEW_KINDS].sort());
   });
 
   it('the 0.48.0 members appear FIRST and in unchanged order', () => {
@@ -328,8 +352,12 @@ describe('0.50.0 — additive at 0.48.0', () => {
   // three new members removed. Derived from the real schema's own options rather
   // than a hand-written twin, so it cannot drift from what 0.48.0 shipped.
   it('a 0.48.0-shaped reader (union minus the three) REJECTS each new turn', () => {
+    // A 0.48.0 reader knows neither the three NOR anything added after them;
+    // filtering only NEW_KINDS would leave later members in and quietly stop
+    // simulating 0.48.0. The length assertion is what makes that loud.
+    const EXCLUDED_FROM_0_48: readonly string[] = [...NEW_KINDS, ...KINDS_ADDED_SINCE_0_50];
     const priorOptions = unionOptions()
-      .filter((o) => !(NEW_KINDS as readonly string[])
+      .filter((o) => !EXCLUDED_FROM_0_48
         .includes((o.shape.kind as z.ZodLiteral<string>).value));
     expect(priorOptions).toHaveLength(13);
 

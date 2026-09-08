@@ -364,6 +364,10 @@ const KINDS_ADDED_SINCE_0_41 = [
   'structural_add',
   'structural_add_edge',
   'structural_rename',
+  // Unversioned in its own PR: the per-cell option→factor effect carrier. The
+  // entry is required here the moment the member joins the enum, which is this
+  // guard doing its job — it is the reason a new kind cannot arrive unnoticed.
+  'option_intervention_edit',
 ] as const;
 
 describe('0.42.0 compatibility — every 0.41.0 system-event kind is byte-compatible', () => {

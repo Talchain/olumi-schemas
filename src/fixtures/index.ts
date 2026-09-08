@@ -2635,6 +2635,16 @@ const eventStructuralRename = deepFreeze({
   expected_label: 'FIXTURE_market_demand',
   base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
 });
+// A MAXIMAL fixture with four fields is not an oversight: this member has
+// exactly four, deliberately. No `unit`/`raw_value` twin exists to populate —
+// the canonical operation builder emits `value` alone.
+const eventOptionInterventionEdit = deepFreeze({
+  kind: 'option_intervention_edit',
+  option_id: ID_OPTION_A,
+  factor_id: ID_FACTOR,
+  value: 0.62,
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
   selected: [maximalSelectedElementRef],
@@ -3586,6 +3596,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: eventStructuralRename,
     notes:
       '0.50.0: changes ONE node label. Carries expected_label because the analysis-affecting hash does NOT cover `label` — CEE\'s projectNode omits it deliberately so label-only edits do not move the hash — so base_graph_hash alone cannot detect a concurrent rename and the second writer would silently clobber the first. A rename to the label the node already has is refused as a no-op.',
+  },
+  {
+    family: 'boundary/SystemEventSchema#option_intervention_edit',
+    schema: SystemEventSchema,
+    fixture: eventOptionInterventionEdit,
+    notes:
+      'Sets ONE option\'s effect value on ONE factor, addressed by canonical node ids because the surface that performs this gesture holds them — the server\'s label-matching resolver for the same write is documented as unroutable on the 84-101 character option labels the drafter actually mints. Distinct from factor_value_edit, which moves the FACTOR\'s own observed value: this moves what one option would make that factor become, and conflating the two is the witnessed wrong-entity write. value is bounded [0,1] because that is the scale the served edit instruction states. No unit/raw_value: the canonical operation builder emits value alone rather than choosing a conversion it has no basis for. No expected twin — unlike structural_rename, an intervention IS inside the analysis-affecting projection, so base_graph_hash already sees a concurrent write to the same cell.',
   },
   {
     family: 'boundary/SystemEventTurnPayloadSchema',

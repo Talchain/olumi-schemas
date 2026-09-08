@@ -67,11 +67,18 @@ function unionKinds(): string[] {
  * reader" must be the union minus structural_delete AND minus everything added
  * after it, or it silently stops being a 0.47.0 reader as the union grows.
  *   · 0.50.0 — structural_add, structural_add_edge, structural_rename
+ *   · unversioned — option_intervention_edit
  */
 const KINDS_ADDED_SINCE_0_48 = [
   'structural_add',
   'structural_add_edge',
   'structural_rename',
+  // Unversioned in its own PR: the per-cell option→factor effect carrier. It
+  // belongs in the DERIVED half, never in PRE_0_48_KINDS — that list is the
+  // historic record of what 0.48.0 inherited and is append-only in the other
+  // direction. Declaring it here is what keeps the 0.47.0-shaped reader below
+  // an actual 0.47.0 reader rather than "the union minus one member".
+  'option_intervention_edit',
 ] as const;
 
 // ---------------------------------------------------------------------------

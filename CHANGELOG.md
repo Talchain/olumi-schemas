@@ -5,6 +5,72 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.54.0] — `option_intervention_edit`
+
+**Version allocated by the integration owner, not chosen here.** `0.54.0` was
+assigned after a release probe found registry/tags/main at `0.50.0` with `0.51`
+claimed by two open PRs and package files in two more claiming `0.52`/`0.53` —
+so picking the next number from titles alone would have collided with preserved
+work. **This release does not touch, bundle or supersede any of those four.**
+Publication remains the owner's act and is subject to a final registry/tag
+check; the registry release, not this entry, is what allows a consumer to pin
+`0.54.0`.
+
+### Added
+
+- **`option_intervention_edit` — a per-cell carrier for an option's effect value
+  on one factor.** Four fields, `.strict()`: `option_id`, `factor_id`, `value`
+  in `[0, 1]` on the model scale, and the non-optional `base_graph_hash` stale
+  gate. Ids are canonical, never labels.
+
+  **What it closes.** The Model tab's option-effect editor is fully built —
+  editor, authority, projection, refusals and tests — and deliberately withheld,
+  because no wire verb can carry the value: its authority is declared
+  `'disabled'` and the section renders a notice instead of a control. That is
+  honest, and it is also the capability missing. A local edit does reach the
+  server through whole-graph registration on a later replacement event, but
+  there is no **per-edit, identity-exact, durably acknowledged** write — which is
+  what an acknowledgement, a changed-input rerun and a reload each need.
+
+  **Why not an existing member.** `direct_graph_edit` is a value-less batch
+  notification whose singular target is a representative; `chip_click`'s
+  parameter bag is open and has no expected-before guard. Both objections are
+  `edge_strength_edit`'s own, unchanged. And it is **not** `factor_value_edit`:
+  that moves a FACTOR's own `observed_state.value`, while this moves what ONE
+  OPTION would make that factor become. Conflating them is not hypothetical —
+  on the captured journey a user answering an option-effect question had a
+  factor BASELINE written instead, interventions stayed `0` on all four options,
+  and the missing-value blocker survived by identity.
+
+  **Why ids.** A deterministic label-matching resolver for this same cell
+  already ships and is reached from chat. Its own header records why it cannot
+  serve a direct-manipulation surface: real drafted option labels are the user's
+  brief fragments — 84–101 characters on the captured graph — every rendering
+  truncates them, and the truncated sentence resolves "option not named". A
+  surface that holds canonical ids must send them.
+
+  **What is deliberately absent.** No `unit`, no `raw_value`, no provenance, no
+  actor. The canonical operation builder for this cell emits `value` alone and
+  says why: populating the user-scale trio means choosing a conversion it has no
+  basis for. The `[0, 1]` bound is the served edit instruction's own stated scale
+  and the range the existing writer already refuses outside — derived from the
+  producer, not chosen here. There is **no `expected` twin**, and the asymmetry
+  with `structural_rename` is derived: rename needs one because `projectNode`
+  omits `label` from the analysis-affecting hash, so a concurrent rename moves
+  nothing. An intervention value is inside that projection, so `base_graph_hash`
+  already detects a concurrent write to the same cell.
+
+  **Sequencing.** Every `SystemEventSchema` member is `.strict()` and the union
+  discriminates on `kind`, so a consumer pinned below the carrying release
+  rejects the WHOLE turn (422). Reader before emitter, client authority flip
+  last. The middle state is not a gap: an unwritten kind is classified
+  `reader_only_refusal`, which commits a turn row with no graph write, no new
+  pendings, and the prior pendings preserved.
+
+  Adoption manifest row added as `state: "declared"` — no producer, no consumer,
+  no deployment flag. Naming any of those now would overstate transport as
+  adoption.
+
 ## [Unreleased] — receipt-scoped sigma (P0, no version bump in this PR)
 
 **⚠ DELIBERATELY UNVERSIONED.** `package.json` is untouched and no tarball is
