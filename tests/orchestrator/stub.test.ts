@@ -95,9 +95,11 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         'FeedbackResultSchema',
         'EdgeAdjudicationResultSchema',
         'PriorRangeEditResultSchema',
+        'EditRefusalResultSchema',
         'FeedbackHandlerFactSchema',
         'EdgeAdjudicationHandlerFactSchema',
         'PriorRangeEditHandlerFactSchema',
+        'EditRefusalHandlerFactSchema',
         // 0.25.0 — T1 claim safety (additive)
         'ConstraintVerdictSchema',
         'ConstraintVerdictStateSchema',

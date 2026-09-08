@@ -104,6 +104,8 @@ export {
   FeedbackResultSchema,
   EdgeAdjudicationResultSchema,
   PriorRangeEditResultSchema,
+  // 0.51.0 — the EDIT-refusal continuity carrier
+  EditRefusalResultSchema,
   EditGraphEditKindSchema,
   EditGraphImpactSchema,
   EditGraphAffectedEntitySchema,
@@ -127,6 +129,7 @@ export type {
   FeedbackResult,
   EdgeAdjudicationResult,
   PriorRangeEditResult,
+  EditRefusalResult,
   EditGraphEditKind,
   EditGraphImpact,
   EditGraphAffectedEntity,
@@ -181,6 +184,8 @@ export {
   FeedbackHandlerFactSchema,
   EdgeAdjudicationHandlerFactSchema,
   PriorRangeEditHandlerFactSchema,
+  // 0.51.0 — the EDIT-refusal continuity carrier
+  EditRefusalHandlerFactSchema,
   HandlerFactSchema,
 } from './handler-fact.js';
 export type {
@@ -197,6 +202,7 @@ export type {
   FeedbackHandlerFact,
   EdgeAdjudicationHandlerFact,
   PriorRangeEditHandlerFact,
+  EditRefusalHandlerFact,
   HandlerFact,
 } from './handler-fact.js';
 

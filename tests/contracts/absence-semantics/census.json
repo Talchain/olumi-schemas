@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 75,
-    "same": 33,
+    "same": 34,
     "unresolved": 410
   },
   "open_objects": {
@@ -3586,6 +3586,14 @@
       ],
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.type`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `unresolved`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "orchestrator/EditRefusalResultSchema.graph_hash_at_refusal": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is REQUIRED (nullable, never optional), so omission is rejected at parse and `null` can never alias an omitted wire state. `null` is the sole explicit value for one documented condition \u2014 hashing failed at emission \u2014 and a consumer reads it as \"no hash recorded for this refusal\". Same required-nullable shape and same reasoning as CanonicalCommittedGraphBlockSchema.goal_node_id. Note the field is deliberately SINGULAR where EditGraphResult carries a before/after PAIR: a refusal changes nothing, so a pair would imply a transition that never happened and could drift into disagreeing with itself.",
+      "ref": "src/orchestrator/handler-results.ts :: EditRefusalResultSchema.graph_hash_at_refusal required-nullable contract + its field comment (0.51.0)"
     }
   }
 }
