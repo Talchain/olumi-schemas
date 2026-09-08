@@ -9,10 +9,14 @@
 // per-edit, identity-exact, durably acknowledged write — which is what an
 // acknowledgement, a changed-input rerun and a reload each need.
 //
-// ⚠ FILE NAME. Every sibling in this directory is version-named. This one is
-// feature-named because the PR carries NO package-version bump: naming it
-// `turn-payload-0.5X` would reserve a number the integration owner has not
-// allocated, and two open PRs already propose one. Rename it at allocation.
+// ⚠ FILE NAME. Every sibling in this directory is version-named; this one is
+// feature-named. It was written before a release number existed — naming it
+// then would have reserved one the integration owner had not allocated, and
+// four open PRs were already claiming numbers. `0.54.0` has since been
+// allocated, and the file is DELIBERATELY NOT renamed: the rename is
+// discretionary churn against an already-reviewed head, and a feature name is
+// no less findable. Corrected here rather than left standing, because the
+// original sentence became false the moment the version landed.
 //
 // Written in OPPOSITE-DIRECTION TWINS, like the 0.50.0 suite: for every shape
 // that must VALIDATE there is a malformed sibling that must REJECT. A corpus

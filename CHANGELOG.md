@@ -5,14 +5,16 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — `option_intervention_edit` (additive, no version bump in this PR)
+## [0.54.0] — `option_intervention_edit`
 
-**⚠ DELIBERATELY UNVERSIONED.** `package.json` is untouched, nothing is
-re-vendored and no release number is reserved. This is source for independent
-review; the version it rides is the integration owner's allocation, taken
-against the registry at publication. It deliberately does not touch, bundle or
-supersede the two open PRs that already propose a next version — their claims
-are reconciled by that owner, not by this change.
+**Version allocated by the integration owner, not chosen here.** `0.54.0` was
+assigned after a release probe found registry/tags/main at `0.50.0` with `0.51`
+claimed by two open PRs and package files in two more claiming `0.52`/`0.53` —
+so picking the next number from titles alone would have collided with preserved
+work. **This release does not touch, bundle or supersede any of those four.**
+Publication remains the owner's act and is subject to a final registry/tag
+check; the registry release, not this entry, is what allows a consumer to pin
+`0.54.0`.
 
 ### Added
 
