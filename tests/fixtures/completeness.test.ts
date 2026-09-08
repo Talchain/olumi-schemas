@@ -255,7 +255,13 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   rather than an edit to `maximalGraphV3`, because that graph is also the
     //   maximal fixture for GraphV3Schema, where a non-positive sigma is
     //   invalid and must stay invalid.
-    expect(MAXIMAL_FIXTURES.length).toBe(198);
+    // option_intervention_edit (+1):
+    //   boundary/SystemEventSchema#option_intervention_edit — one more branch
+    //   variant against the existing SystemEventSchema identity, on the same
+    //   reasoning as the four structural members above. The member is flat and
+    //   EVERY field is REQUIRED, so the fixture is maximal by construction and
+    //   the maximality walker has no optional field to report.
+    expect(MAXIMAL_FIXTURES.length).toBe(199);
   });
 
   it('family keys are unique', () => {

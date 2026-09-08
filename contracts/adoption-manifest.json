@@ -469,6 +469,27 @@
       ]
     },
     {
+      "field": "system_event.event[kind=option_intervention_edit]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::OptionInterventionEditEvent (unversioned in this PR) — strict, four fields, canonical option_id + factor_id, model-scale value in [0,1], non-optional base_graph_hash stale gate",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY, AND UNVERSIONED. This PR adds no package-version bump, no UI emission, no CEE dispatch arm, no graph write and no deployment. Naming a producer or consumer now would overstate transport as adoption; their behavioural test refs land with those separate PRs. The release number is the integration owner's allocation, taken against the registry at publication — this row does not reserve one.",
+        "THE DEFECT IT CLOSES: the Model tab's option-effect editor is fully built and deliberately withheld, because no wire verb can carry the value. Its authority is declared 'disabled' and the section renders a notice instead of a control, so the user is told the truth and left without the capability. A local write does reach the server through whole-graph registration on a later replacement event, but there is no per-edit, identity-exact, durably acknowledged write — which is what an acknowledgement, a changed-input rerun and a reload all need.",
+        "NOT factor_value_edit, AND THE DISTINCTION IS THE WITNESSED DEFECT. factor_value_edit moves a FACTOR's own observed_state.value; this moves what ONE OPTION would make that factor become, at /nodes/<option>/data/interventions/<factor>. On the captured journey a user answering an option-effect question had a factor BASELINE written instead: interventions stayed 0 on all four options and the missing-value blocker survived by identity, while the only thing that moved was a constant in the blocker copy.",
+        "IDS, NEVER LABELS. CEE already has a deterministic label-matching resolver for this same cell, reached from chat, and its own header records why it cannot serve a direct-manipulation surface: real drafted option labels are the user's brief fragments (84-101 characters on the captured graph), every rendering truncates them, and the truncated sentence resolves 'option not named'. The routable label-independent form binds only to a pair the product is currently asking about. A surface holding canonical ids must send them.",
+        "NO unit/raw_value. The canonical operation builder for this cell emits `value` alone and states why: populating the user-scale trio means choosing a scale conversion it has no basis for. The [0,1] bound is the served edit instruction's own stated scale and the range the existing writer already refuses outside — derived from the producer, not chosen here.",
+        "NO expected TWIN, and the asymmetry with structural_rename is DERIVED: rename needs one because CEE's projectNode deliberately omits `label` from the analysis-affecting hash, so a concurrent rename moves nothing. An intervention value is inside that projection, so base_graph_hash already detects a concurrent write to the same cell.",
+        "SEQUENCING: every SystemEventSchema member is .strict() and the union discriminates on kind, so a consumer pinned below the carrying release rejects the WHOLE turn (422). Reader before emitter, and the client authority flip last. The middle state is not a gap — CEE's dispatch classifies an unwritten kind 'reader_only_refusal', which commits a turn row with no graph write, no new pendings and the prior pendings preserved.",
+        "CONSENT IS THE GESTURE, and the scope of that claim is stated rather than inherited: the withheld-consent predicate reads the user's own prose and a system_event carries none, which is why the shipped value-carrying siblings are not subject to it either. That holds for a per-cell edit the user performed on one named cell. It does NOT extend to a batch or a fill-every-missing-value action, which need their own answer."
+      ]
+    },
+    {
       "field": "system_event.event[kind=edge_adjudication]",
       "declared_in": "schemas:src/boundary/turn-payload.ts::EdgeAdjudicationEvent (0.34.0) — the contested-edge verdict, a new member of SystemEventSchema (P4 transport lane 2026-08-05; ROADMAP 2.396-adjacent)",
       "producer": null,

@@ -257,6 +257,7 @@ export const SystemEventKind = z.enum([
   'structural_add',
   'structural_add_edge',
   'structural_rename',
+  'option_intervention_edit',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
 

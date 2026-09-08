@@ -1051,6 +1051,84 @@ export function refineStructuralRename(
   }
 }
 
+/**
+ * `option_intervention_edit` — the Model tab's per-cell option→factor effect
+ * value, addressed by canonical node ids.
+ *
+ * ── WHY A NEW MEMBER, AND WHY NOT ONE OF THE FOUR EXISTING SHAPES ──────────
+ * The reasoning is `edge_strength_edit`'s, unchanged, because the two
+ * objections it recorded apply here word for word: `direct_graph_edit` is
+ * deliberately a value-less BATCH notification whose singular `target_id` is a
+ * REPRESENTATIVE, so it cannot truthfully carry an authoritative mutation; and
+ * `chip_click`'s parameter bag is intentionally open with no expected-before
+ * guard, so extending it would let an older reader strip the safety field and
+ * still write.
+ *
+ * ⚠ AND IT IS NOT `factor_value_edit`. That member moves a FACTOR's own
+ * `observed_state.value` — what the factor is. This one moves what ONE OPTION
+ * would make that factor become, which is a different entity living at
+ * `/nodes/<option>/data/interventions/<factor>`. Collapsing them would put two
+ * questions under one name, and the wrong-entity write that confusion produces
+ * is already witnessed: a user answering an option-effect question had a factor
+ * BASELINE written instead, the interventions stayed `0`, and the blocker
+ * survived by identity.
+ *
+ * ── IDENTITY IS CARRIED, NEVER RE-DERIVED ─────────────────────────────────
+ * Both ids are canonical and exact. The server already has a deterministic
+ * label-matching resolver for this same write, reached from chat, and its own
+ * header records why that cannot serve a direct-manipulation surface: real
+ * drafted option labels are the user's brief fragments (84–101 characters on
+ * the captured graph), every user-facing rendering truncates them, and the
+ * truncated sentence resolves to "option not named" while a plausible-looking
+ * write lands on the wrong entity. A surface that HOLDS the ids must send the
+ * ids.
+ *
+ * ── WHAT IS DELIBERATELY ABSENT ───────────────────────────────────────────
+ * No `unit`, no `raw_value`, no provenance, no actor. The canonical operation
+ * builder for this cell emits `value` alone and states why: populating the
+ * user-scale trio means choosing a scale conversion nothing here has a basis
+ * for. A wire field nothing may honestly populate is a field a later reader
+ * will populate anyway.
+ *
+ * ── SEQUENCING, WHICH IS LOAD-BEARING ─────────────────────────────────────
+ * Every `SystemEventSchema` member is `.strict()` and the union discriminates
+ * on `kind`, so a consumer pinned below the release carrying this member
+ * rejects the WHOLE turn (422), not just this field. Reader before emitter,
+ * and the client affordance last of all — the same order `structural_delete`
+ * and the 0.50.0 direct-edit vocabulary took.
+ */
+const OptionInterventionEditEvent = z.object({
+  kind: z.literal('option_intervention_edit'),
+  option_id: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical id of the OPTION whose effect value is being set. The intervention ' +
+      'belongs to the option: writing this map onto a factor is a well-formed patch that ' +
+      'means nothing and that nothing downstream reports.',
+  ),
+  factor_id: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical id of the FACTOR this option would move. The server must resolve it ' +
+      'in its own persisted graph and refuse an id that names no node: every surface that ' +
+      'lists interventions falls back to the raw key when the lookup misses, so an ' +
+      'unchecked write surfaces a wire id to the user one hop later.',
+  ),
+  value: z.number().finite().min(0).max(1).describe(
+    'The effect value on the MODEL scale. Bounded [0, 1] because that is the scale the ' +
+      'served edit instruction states and the range the canonical writer already refuses ' +
+      'outside — the bound is derived from the producer, not chosen here. No unit, no ' +
+      'currency and no percentage: the client converts nothing, and the server licenses no ' +
+      'raw-unit conversion on this path.',
+  ),
+  base_graph_hash: CanonicalBaseGraphHashSchema.describe(
+    'The canonical analysis-affecting graph hash the client last read. The stale gate: an ' +
+      'intervention value IS analysis-affecting, so a concurrent change to this cell moves ' +
+      'the hash and the server refuses rather than clobbering it. Absent, null and empty ' +
+      'are all forbidden. ' +
+      'NO `expected` TWIN, and the asymmetry with structural_rename is DERIVED, not an ' +
+      'oversight: rename needs one because CEE\'s projectNode deliberately omits `label` ' +
+      'from the hash, so a concurrent rename moves nothing. Interventions are inside the ' +
+      'projection, so this gate already sees a concurrent write to the same cell.',
+  ),
+}).strict();
+
 export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
@@ -1068,6 +1146,7 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   StructuralAddEvent,
   StructuralAddEdgeEvent,
   StructuralRenameEvent,
+  OptionInterventionEditEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 
