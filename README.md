@@ -2,6 +2,8 @@
 
 Shared TypeScript schemas and runtime validation for Olumi's boundary contracts. Single source of truth for wire-format types consumed by UI, CEE, PLoT, and ISL.
 
+For curated meaning, source authority and the preserved v2.6 FRAME reconciliation, see [Decision-model semantics](docs/decision-model/README.md) (document revision 2.7, separate from the package version).
+
 ## Installation
 
 Configure your `.npmrc` for GitHub Packages:
