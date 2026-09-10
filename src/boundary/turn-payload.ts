@@ -1144,6 +1144,19 @@ const OptionInterventionEditEvent = z.object({
  */
 const MAX_STATED_REASON = 2000;
 
+// Exported (0.55.0) so the PERSISTENCE side binds the SAME bound BY
+// CONSTRUCTION rather than duplicating the literal: `FindingDissentResultSchema`
+// (orchestrator/handler-results.ts) imports this const. A wire field that
+// accepts N characters whose fact row accepts fewer would truncate or refuse a
+// statement the user was told was fine — the failure is silent on the wire and
+// loud only in CEE's fail-closed commit. Kept as a separate `export` statement
+// so the declaration above is untouched and this change stays strictly
+// additive. The equality is ALSO asserted at run time, by probing both schemas,
+// in tests/orchestrator/handler-fact-finding-dissent-0.55.test.ts — belt and
+// braces, because "equal by construction" stops being true the moment someone
+// hardcodes a number on either side.
+export { MAX_STATED_REASON };
+
 // ---------------------------------------------------------------------------
 // `finding_dissent` (0.55.0) — the first wire shape for a human's STATED REASON.
 //

@@ -3963,6 +3963,12 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   'orchestrator/FeedbackHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/EdgeAdjudicationHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/PriorRangeEditHandlerFactSchema': ORCHESTRATOR_INTERNAL,
+  // 0.55.0 — the fourth judgement receipt. Same disposition as the three
+  // above: the FACT is CEE-internal persistence. Note the wire member it
+  // records, SystemEventSchema#finding_dissent, DOES carry a maximal
+  // fixture — it is the half that crosses a service boundary.
+  'orchestrator/FindingDissentResultSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/FindingDissentHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/HandlerFactSchema': ORCHESTRATOR_INTERNAL,
   // 0.35.0 — coach structural-edit tool (ROADMAP 2.474). Same class as every
   // other /orchestrator shape: CEE-internal, never a cross-service wire

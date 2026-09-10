@@ -98,6 +98,11 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         'FeedbackHandlerFactSchema',
         'EdgeAdjudicationHandlerFactSchema',
         'PriorRangeEditHandlerFactSchema',
+        // 0.55.0 — the fourth judgement receipt, and the first that
+        // persists the user's WORDS (additive; appended last to the
+        // CLOSED HandlerFactSchema union)
+        'FindingDissentResultSchema',
+        'FindingDissentHandlerFactSchema',
         // 0.25.0 — T1 claim safety (additive)
         'ConstraintVerdictSchema',
         'ConstraintVerdictStateSchema',

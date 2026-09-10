@@ -13,6 +13,7 @@ import {
   FeedbackResultSchema,
   EdgeAdjudicationResultSchema,
   PriorRangeEditResultSchema,
+  FindingDissentResultSchema,
 } from './handler-results.js';
 
 // HandlerFact — typed evidence of what a handler did on a turn, persisted in
@@ -154,6 +155,30 @@ export const PriorRangeEditHandlerFactSchema = z.object({
 }).strict();
 export type PriorRangeEditHandlerFact = z.infer<typeof PriorRangeEditHandlerFactSchema>;
 
+// 0.55.0 — the fourth human-judgement receipt, and the first that persists the
+// user's WORDS. Same commit path as the three above (CEE system-event dispatch,
+// canonical wrapper, no turn_id/scenario_id on the fact); `fact_type` matches
+// the system-event `kind` that carried it, so the fact row names its wire
+// producer.
+//
+// ⚠ WITHOUT THIS MEMBER THE WIRE EVENT IS INERT, AND IT FAILS IN THE DIRECTION
+// THAT LOOKS FINE. `HandlerFactSchema` is a CLOSED discriminated union, and
+// CEE validates every judgement fact against it BEFORE committing
+// (`olumi-assistants-service` src/orchestrator-v5/system-events/dispatch.ts:715,
+// `HandlerFactSchema.safeParse(fact)`). That check is deliberately FAIL-CLOSED
+// (dispatch.ts:716): a fact that does not parse refuses the whole commit rather
+// than degrading to an empty ack. So a `finding_dissent` event shipped with the
+// wire member alone would not merely lose the user's reasoning quietly — it
+// would refuse the commit and surface as a typed 500, while every other part of
+// the change looked complete. The authorisation for persisting the text, and
+// its limit, are recorded on `FindingDissentResultSchema`.
+export const FindingDissentHandlerFactSchema = z.object({
+  fact_type: z.literal('finding_dissent'),
+  ...BaseHandlerFactFields,
+  result: FindingDissentResultSchema,
+}).strict();
+export type FindingDissentHandlerFact = z.infer<typeof FindingDissentHandlerFactSchema>;
+
 export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   RunAnalysisHandlerFactSchema,
   ExplainResultHandlerFactSchema,
@@ -168,5 +193,6 @@ export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   FeedbackHandlerFactSchema,
   EdgeAdjudicationHandlerFactSchema,
   PriorRangeEditHandlerFactSchema,
+  FindingDissentHandlerFactSchema,
 ]);
 export type HandlerFact = z.infer<typeof HandlerFactSchema>;
