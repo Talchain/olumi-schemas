@@ -1129,6 +1129,164 @@ const OptionInterventionEditEvent = z.object({
   ),
 }).strict();
 
+/**
+ * The bound on a user's stated reason. DERIVED, NOT CHOSEN: it is
+ * `FeedbackEvent.comment`'s bound — the only other user-free-text field on this
+ * union, and the exact field CEE's R-004 privacy ruling is written about. One
+ * PII-bearing bound in the union rather than two.
+ *
+ * It is a named constant rather than a literal because a number restated in two
+ * places is the hand-maintained mirror this repo pays for most often. The mirror
+ * that remains — this constant against `feedback.comment`'s own `.max()` — is
+ * DERIVED FROM BOTH SCHEMAS AT RUN TIME and asserted equal in
+ * `tests/boundary/turn-payload-0.55.test.ts`, so a change to either side fails
+ * loud instead of drifting quietly.
+ */
+const MAX_STATED_REASON = 2000;
+
+// ---------------------------------------------------------------------------
+// `finding_dissent` (0.55.0) — the first wire shape for a human's STATED REASON.
+//
+// ⭐ THE AUTHORISATION, RECORDED HERE SO A LATER READER FINDS IT RATHER THAN AN
+// UNEXPLAINED FREE-TEXT FIELD. CEE carries a standing privacy ruling, R-004
+// (`olumi-assistants-service` src/orchestrator-v5/system-events/dispatch.ts:396),
+// quoted verbatim rather than paraphrased away:
+//
+//   "the fact records `comment_present`, NEVER the comment text — the user's
+//    free text may contain PII and a fact row is long-lived and widely read.
+//    The contract's `FeedbackResultSchema` is `.strict()`, so a future
+//    `comment` field is a deliberate reviewed widening, not a quiet leak."
+//
+// PAUL SLEE RULED ON 2026-09-11 THAT A USER'S STATED REASONING MAY BE
+// PERSISTED. This member IS the deliberate reviewed widening R-004 anticipated,
+// taken on the axis R-004 named. R-004 is NOT reversed and still governs
+// `feedback`: that member's `comment` stays a rating aside whose fact row
+// records presence only. What changes is that a stated REASON — text a user
+// wrote in order to be read by their team — now has a carrier of its own, where
+// persisting the words is the entire point rather than a side effect.
+//
+// WHAT IT CLOSES. On the Reasoning tab a user can disagree with a finding and
+// type why; that text terminates in the browser (`commitDispute` →
+// `recordDissent` → `localStorage.setItem`) and never leaves it. Olumi is a
+// living shared model of the team's REASONING with humans as the authors, and
+// the one thing that could not reach the shared model was a human's stated
+// reason. Derived across the union before minting this: `edge_adjudication` is a
+// structured verdict with NO WORDS, and `feedback` is words the fact row
+// deliberately DISCARDS. Neither is a place for a stated reason to land.
+//
+// ⚠⚠ THE NAME, AND WHAT IT IS NOT — trap 21, and this estate has paid for it.
+// The union's naming convention is `<subject>_<act>`, and the closest sibling is
+// `edge_adjudication`: a human's judgement about a named server-produced
+// artefact, named subject-then-act-noun. `finding_dissent` takes that shape
+// exactly. Both halves were swept for collision before use.
+//   · NOT `disagreement_*`, and the ban is not stylistic. `DisagreementSchema`
+//     (boundary/collab.ts) is a SERVER-DERIVED artefact of a facilitation round
+//     — a composed contest object with typed parties, a status lifecycle and its
+//     own persistence — and CEE separately runs a `disagreement_resolution`
+//     LENS over `edge.validation.status === 'contested'`, which is the MACHINE
+//     disagreeing with ITSELF across two validation passes. Three different
+//     concepts. Sharing a name would make them look like one thing to
+//     reconcile, and reconciling them is the wrong move.
+//   · NOT `*_contest`/`*_contested` either: `contested` is already bound
+//     estate-wide to the ContestedEdgeCard seam that `edge_adjudication` serves.
+//   · NOT `DisagreementPosition.doubt`, which collab.ts calls "VALUELESS
+//     dissent" — a position kind that declares no other member, so a value
+//     smuggled onto it fails to parse BY CONSTRUCTION. This member is its exact
+//     complement: dissent WITH the words. The wire carries no bridge between
+//     them, and a lane that later wants one must design it rather than assume
+//     the shared English word already means it.
+//   · NOT A GRAPH MUTATION. Every `*_edit` and `structural_*` member writes the
+//     model. This one writes nothing but a record of what a human said, which is
+//     why its name carries no edit verb — see the `base_graph_hash` note below.
+//
+// IDENTITY IS BOTH IDS, AND `analysis_id` IS NOT CONTEXT — IT IS THE OTHER HALF.
+// The Reasoning tab addresses a finding by a per-run recommendation id, which
+// may not survive the next analysis. So the id ALONE is a dangling reference the
+// moment the model is rerun, and a dissent shown beside a later analysis would
+// be a claim the user never made. The pair (run, finding) is the address; that
+// is why `analysis_id` is REQUIRED rather than optional context, and why the
+// absence-vs-empty question never arises for it.
+//
+// NO `base_graph_hash`, AND THE OMISSION IS THE POINT. Five members carry that
+// field as a STALE GATE whose rule is "CEE MUST refuse on divergence". Applying
+// it here would refuse a TRUE STATEMENT OF WHAT A HUMAN SAID because the graph
+// had moved underneath it — destroying the record this member exists to keep.
+// A dissent is not a mutation and has no base to be stale against. Putting the
+// same field name on two different questions is precisely the defect
+// `CanonicalBaseGraphHashSchema`'s own comment refuses ("the same field name
+// mean two different validations inside one union").
+//
+// NO `authored_by` / `provenance`, following `edge_adjudication` verbatim: "the
+// event KIND is the provenance claim (only a user acts on this surface). A
+// client-supplied constant would add nothing the server could trust." CEE stamps
+// them server-side. The `.strict()` reject of both keys is pinned in
+// turn-payload-0.55.test.ts.
+//
+// NO COPY OF THE FINDING'S OWN TEXT, and this is a deliberate refusal rather
+// than an oversight. It is tempting — a dissent whose subject no longer resolves
+// is illegible. But the finding's words are CEE's own output, which CEE can
+// resolve from `(analysis_id, finding_id)` without being told; a client-echoed
+// copy would be a second free-text surface, a second thing a client could
+// fabricate, and "a wire field nothing may honestly populate is a field a later
+// reader will populate anyway". The asymmetry decides it: adding the field later
+// is ADDITIVE, removing it is BREAKING. If CEE derives that it cannot resolve a
+// finding id against a stored run, that is a finding to report and an additive
+// follow-up — not a field to mint speculatively now.
+//
+// NO SUBJECT-KIND VOCABULARY. One subject class emits today. Pre-registering
+// kinds nobody emits is the exact non-adoption failure the population registry
+// records as its own anti-pattern: an id enters in the same change train as the
+// producer that emits it.
+//
+// ⚠ SEQUENCING — READER-FIRST IS MANDATORY, NOT A PREFERENCE. Every member of
+// this union is `.strict()` and the union is a `discriminatedUnion` on `kind`,
+// so a consumer pinned ≤0.54.0 that receives this member fails the DISCRIMINATOR
+// and REJECTS THE WHOLE TURN (422) — not just this field. Order: publish 0.55.0
+// → CEE re-vendors and deploys a reader → only then the UI emitter ships.
+// UI-alone would 422 every turn carrying a dissent; CEE-alone is invisible and
+// safe.
+const FindingDissentEvent = z.object({
+  kind: z.literal('finding_dissent'),
+  finding_id: z.string().min(1).describe(
+    'Exact id of the finding the user is objecting to, as the surface rendering it holds it ' +
+      '(the Reasoning tab\'s per-run recommendation id). ID-ADDRESSED — never a label or the ' +
+      'rendered sentence, which every surface truncates. Deliberately NOT narrowed to a UUID ' +
+      'or ULID: the id convention belongs to CEE, and a regex here would be this package ' +
+      'asserting a producer convention it does not own — the reasoning `analysis_fact.fact_id` ' +
+      'already records. Deliberately NOT named `target_id`, which on this union means a GRAPH ' +
+      'NODE id: a finding is not a node, and one name over two id-spaces is how a write lands ' +
+      'on the wrong entity.',
+  ),
+  analysis_id: z.string().min(1).describe(
+    'The analysis run the finding was rendered from — the same token the analysis-fact ' +
+      'contract calls `analysis_id` ("the run this fact belongs to"), reused rather than ' +
+      'respelled. REQUIRED, and not merely for context: a recommendation id is per-run, so ' +
+      'this is the other half of the subject\'s address. Without it a dissent could be shown ' +
+      'beside a later analysis, which would be a claim the user never made. It is a RECORD ' +
+      'STAMP, never a stale gate: CEE must not refuse a dissent because the run has since ' +
+      'been superseded — the statement was still true when it was made.',
+  ),
+  statement: z.string()
+    .min(1)
+    .max(MAX_STATED_REASON)
+    .refine((s) => s.trim().length > 0, {
+      message: 'a dissent must state a reason — a blank statement is this member with its point removed',
+    })
+    .describe(
+      'The user\'s reason, VERBATIM. This is the field Paul\'s ruling of 2026-09-11 authorises ' +
+        'persisting and it is the entire purpose of the member — R-004\'s deliberate reviewed ' +
+        'widening, not a quiet leak. It MAY contain PII: consumers persist it as authored user ' +
+        'content and must not re-emit it into telemetry or logs, which is the half of R-004 that ' +
+        'still stands. Named `statement` to reuse `DisagreementPositionSchema`\'s `preference` ' +
+        'member rather than mint a synonym for the same idea. NEVER trimmed, collapsed or ' +
+        'normalised by any consumer — the words are the record, and a whitespace-only statement ' +
+        'is REFUSED rather than tidied, on the same reasoning refineStructuralDelete and ' +
+        'refineStructuralRename give for refusing a provably meaningless request. `.min(1)` ' +
+        'alone would admit " ". The bound is DERIVED, not chosen: it is `feedback.comment`\'s, ' +
+        'the only other user-free-text field on this union and the exact field R-004 is about.',
+    ),
+}).strict();
+
 export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
@@ -1147,6 +1305,7 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   StructuralAddEdgeEvent,
   StructuralRenameEvent,
   OptionInterventionEditEvent,
+  FindingDissentEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 

@@ -240,6 +240,27 @@ export type IntentLiteral = z.infer<typeof Intent>;
 // concurrent rename. Mirrors the members added to the `SystemEventSchema` union
 // in turn-payload.ts; parity pinned by `tests/boundary/turn-payload-0.22.test.ts`
 // as for every earlier addition. Reader-first adoption is mandatory.
+// 0.55.0: `finding_dissent` added — the FIRST wire shape for a human's STATED
+// REASON. Until it, a user who disagreed with a finding on the Reasoning tab and
+// typed why had that text terminate in the browser: this union carried a verdict
+// with NO WORDS (`edge_adjudication`) and words a fact row deliberately DISCARDS
+// (`feedback`, CEE ruling R-004), and nowhere for a stated reason to land.
+// Authorised by PAUL SLEE'S RULING OF 2026-09-11 that a user's stated reasoning
+// MAY be persisted — the deliberate reviewed widening R-004 itself anticipated,
+// not a reversal of it: `feedback`'s comment is still a rating aside whose fact
+// row records presence only.
+// ⚠ It is NOT `disagreement_*` and must never be renamed to it. `Disagreement`
+// (boundary/collab.ts) is a SERVER-DERIVED facilitation artefact with parties and
+// a status lifecycle, and CEE's `disagreement_resolution` lens is the MACHINE
+// disagreeing with itself across two validation passes. Three concepts, named
+// apart on purpose — see turn-payload.ts for the full derivation and the
+// `DisagreementPosition.doubt` contrast (valueless dissent; this is its
+// complement, dissent WITH the words).
+// Writes NO graph, so it carries no `base_graph_hash`: a stale gate would refuse
+// a true statement of what a human said because the model had moved. Mirrors the
+// member added to the `SystemEventSchema` union in turn-payload.ts; parity pinned
+// by `tests/boundary/turn-payload-0.22.test.ts` as for every earlier addition.
+// Reader-first adoption is mandatory.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
@@ -258,6 +279,7 @@ export const SystemEventKind = z.enum([
   'structural_add_edge',
   'structural_rename',
   'option_intervention_edit',
+  'finding_dissent',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
 

@@ -5,6 +5,106 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.55.0] — `finding_dissent`
+
+**Additive.** One new member on `SystemEventSchema`. No existing member's shape,
+field set, bounds or union ORDER changes; the new member is appended last.
+
+### Added
+
+- **`finding_dissent` — the first wire shape for a human's STATED REASON.**
+  Three fields, all REQUIRED, `.strict()`: `finding_id`, `analysis_id`, and
+  `statement` (the user's words, verbatim, non-blank, bounded at
+  `feedback.comment`'s own bound).
+
+  **⭐ The authorisation, recorded here rather than left to be rediscovered.**
+  CEE carries a standing privacy ruling, **R-004**
+  (`olumi-assistants-service` `src/orchestrator-v5/system-events/dispatch.ts:396`):
+
+  > *"the fact records `comment_present`, NEVER the comment text — the user's
+  > free text may contain PII and a fact row is long-lived and widely read. The
+  > contract's `FeedbackResultSchema` is `.strict()`, so a future `comment`
+  > field is a **deliberate reviewed widening**, not a quiet leak."*
+
+  **Paul Slee ruled on 2026-09-11 that a user's stated reasoning MAY be
+  persisted.** This member is that deliberate reviewed widening, taken on the
+  axis R-004 named. **R-004 is not reversed** and still governs `feedback`:
+  that member's `comment` remains a rating aside whose fact row records presence
+  only. What changes is that a stated *reason* — text a user wrote in order to
+  be read by their team — now has a carrier where persisting the words is the
+  point rather than a side effect. The widening licenses **persistence as
+  authored user content**; it does not license re-emitting the text into
+  telemetry or logs, which is the half of R-004 that still stands.
+
+  **What it closes.** On the Reasoning tab a user can disagree with a finding
+  and type why. That text terminates in the browser (`commitDispute` →
+  `recordDissent` → `localStorage.setItem`) and never leaves it. Olumi is a
+  living shared model of the team's *reasoning* with humans as the authors, and
+  the one thing that could not reach the shared model was a human's stated
+  reason. Derived across the union before minting this: `edge_adjudication` is a
+  structured verdict with **no words**, and `feedback` is words the fact row
+  **deliberately discards**. There was nowhere for a stated reason to land.
+
+  **The name, and what it is NOT.** The union's convention is
+  `<subject>_<act>`, and the closest sibling is `edge_adjudication` — a human's
+  judgement about a named server-produced artefact. This takes that shape
+  exactly. It is deliberately **not** `disagreement_*`: `DisagreementSchema`
+  (`boundary/collab.ts`) is a *server-derived* facilitation artefact with typed
+  parties and a status lifecycle, and CEE separately runs a
+  `disagreement_resolution` **lens** over `edge.validation.status ===
+  'contested'` — the machine disagreeing with *itself* across two validation
+  passes. Three concepts; a shared name would make them look like one thing to
+  reconcile. Nor `*_contest`, since `contested` is already bound to the
+  ContestedEdgeCard seam. It is the complement of `DisagreementPosition.doubt`,
+  which `collab.ts` calls *"valueless dissent"* — this is dissent **with** the
+  words, and the wire carries no bridge between them.
+
+  **Identity is the pair; `analysis_id` is not context.** A Reasoning-tab
+  recommendation id is per-run and may not survive the next analysis, so the id
+  alone dangles the moment the model is rerun — and a dissent shown beside a
+  later analysis would be a claim the user never made. Both ids are free
+  strings, on `analysis_fact.fact_id`'s stated reasoning that a regex here would
+  be this package asserting a producer convention it does not own.
+  `finding_id` is deliberately not called `target_id`, which on this union means
+  a graph **node** id.
+
+  **Deliberately absent.** No `base_graph_hash`: five members carry it as a
+  stale gate whose rule is *"CEE MUST refuse on divergence"*, and applying that
+  here would refuse a **true statement of what a human said** because the graph
+  had moved. A dissent is not a mutation and has no base to be stale against.
+  No `authored_by` / `provenance`, following `edge_adjudication` verbatim — the
+  event kind is the provenance claim and CEE stamps the rest. No copy of the
+  finding's own text: CEE can resolve it from `(analysis_id, finding_id)`, a
+  client-echoed copy would be a second fabricable free-text surface, and the
+  asymmetry decides it — adding the field later is additive, removing it is
+  breaking.
+
+  **`statement` is never tidied.** A whitespace-only statement is **refused**,
+  not trimmed, on the same reasoning `refineStructuralDelete` and
+  `refineStructuralRename` give for refusing a provably meaningless request
+  (`.min(1)` alone admits `" "`). What is accepted is returned byte-for-byte:
+  the widening was granted to persist *the words*, and a contract that quietly
+  normalises a user's sentence has already broken that promise. Pinned by
+  execution in `tests/boundary/turn-payload-0.55.test.ts`, including through the
+  root payload, and the maximal fixture carries surrounding space on purpose so
+  a trimming consumer is visibly caught.
+
+  **⚠ Sequencing — reader-first is mandatory.** Every `SystemEventSchema` member
+  is `.strict()` and the union discriminates on `kind`, so a consumer pinned
+  ≤ 0.54.0 that receives this member fails the **discriminator** and rejects the
+  **whole turn** (422), not just this field. Order: publish `0.55.0` → CEE
+  re-vendors and deploys a reader → only then the UI emitter ships. UI-alone
+  would 422 every turn carrying a dissent; CEE-alone is invisible and safe.
+
+  Adoption-manifest row is `state: "declared"` — no producer, no consumer, no
+  deployment flag. Naming any of those now would overstate transport as
+  adoption.
+
+  The three derived deploy-order guards (`KINDS_ADDED_SINCE_0_41`,
+  `KINDS_ADDED_SINCE_0_48`, `KINDS_ADDED_SINCE_0_50`) and the maximal-fixture
+  ratchet (199 → 200) all required updating and did so loudly, which is them
+  working.
+
 ## [0.54.0] — `option_intervention_edit`
 
 **Version allocated by the integration owner, not chosen here.** `0.54.0` was

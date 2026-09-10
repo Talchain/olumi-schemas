@@ -2645,6 +2645,17 @@ const eventOptionInterventionEdit = deepFreeze({
   value: 0.62,
   base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
 });
+// Three fields, all REQUIRED, so the fixture is maximal by construction and the
+// maximality walker has no optional field to report. The `statement` carries
+// LEADING AND TRAILING SPACE ON PURPOSE: the member's promise is that the user's
+// words survive VERBATIM, so the one fixture every roundtrip test replays must
+// be one that a trimming consumer would visibly corrupt.
+const eventFindingDissent = deepFreeze({
+  kind: 'finding_dissent',
+  finding_id: 'fixture_finding_capex_dominates',
+  analysis_id: 'fixture_analysis_01J0FIXTURE0000000000000',
+  statement: '  FIXTURE capex is committed under the existing lease, so it cannot swing this.  ',
+});
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
   selected: [maximalSelectedElementRef],
@@ -3603,6 +3614,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: eventOptionInterventionEdit,
     notes:
       'Sets ONE option\'s effect value on ONE factor, addressed by canonical node ids because the surface that performs this gesture holds them — the server\'s label-matching resolver for the same write is documented as unroutable on the 84-101 character option labels the drafter actually mints. Distinct from factor_value_edit, which moves the FACTOR\'s own observed value: this moves what one option would make that factor become, and conflating the two is the witnessed wrong-entity write. value is bounded [0,1] because that is the scale the served edit instruction states. No unit/raw_value: the canonical operation builder emits value alone rather than choosing a conversion it has no basis for. No expected twin — unlike structural_rename, an intervention IS inside the analysis-affecting projection, so base_graph_hash already sees a concurrent write to the same cell.',
+  },
+  {
+    family: 'boundary/SystemEventSchema#finding_dissent',
+    schema: SystemEventSchema,
+    fixture: eventFindingDissent,
+    notes:
+      '0.55.0: the first wire shape for a human\'s STATED REASON, authorised by Paul\'s ruling of 2026-09-11 as the deliberate reviewed widening CEE\'s R-004 privacy ruling anticipated. Addressed by the PAIR (analysis_id, finding_id): a Reasoning-tab recommendation id is per-run, so the id alone dangles the moment the model is rerun and a dissent shown beside a later analysis would be a claim the user never made. `statement` is the user\'s words verbatim, non-blank, bounded by feedback.comment\'s own bound because that is the sibling free-text field R-004 is written about. NO base_graph_hash: this member writes no graph, and a stale gate would refuse a true statement of what a human said because the model had moved. NO authored_by/provenance: the event kind is the provenance claim and CEE stamps the rest. Distinct from the Disagreement ENTITY (a server-derived facilitation artefact) and from CEE\'s disagreement_resolution lens (the machine disagreeing with itself across two validation passes) — three concepts, named apart.',
   },
   {
     family: 'boundary/SystemEventTurnPayloadSchema',
