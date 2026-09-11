@@ -104,6 +104,8 @@ export {
   FeedbackResultSchema,
   EdgeAdjudicationResultSchema,
   PriorRangeEditResultSchema,
+  // 0.55.0 — the persisted dissent (a human's stated reason)
+  FindingDissentResultSchema,
   EditGraphEditKindSchema,
   EditGraphImpactSchema,
   EditGraphAffectedEntitySchema,
@@ -127,6 +129,7 @@ export type {
   FeedbackResult,
   EdgeAdjudicationResult,
   PriorRangeEditResult,
+  FindingDissentResult,
   EditGraphEditKind,
   EditGraphImpact,
   EditGraphAffectedEntity,
@@ -181,6 +184,8 @@ export {
   FeedbackHandlerFactSchema,
   EdgeAdjudicationHandlerFactSchema,
   PriorRangeEditHandlerFactSchema,
+  // 0.55.0 — the fourth judgement receipt
+  FindingDissentHandlerFactSchema,
   HandlerFactSchema,
 } from './handler-fact.js';
 export type {
@@ -197,6 +202,7 @@ export type {
   FeedbackHandlerFact,
   EdgeAdjudicationHandlerFact,
   PriorRangeEditHandlerFact,
+  FindingDissentHandlerFact,
   HandlerFact,
 } from './handler-fact.js';
 

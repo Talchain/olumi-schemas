@@ -3,6 +3,9 @@ import { NodeKind } from '../graph.js';
 import { AnalysisFactSchema } from '../contracts/analysis-fact.js';
 import { EdgeAdjudicationVerdict } from '../boundary/enums.js';
 import { FeedbackRating, FeedbackTargetKind } from '../boundary/turn-payload.js';
+// 0.55.0 — the statement bound, taken from the wire member so the two cannot
+// drift. See FindingDissentResultSchema below.
+import { MAX_STATED_REASON } from '../boundary/turn-payload.js';
 
 // Per-handler result schemas. These validate the in-memory body a handler
 // returns; they also describe the JSONB payload persisted in the
@@ -472,3 +475,109 @@ export const PriorRangeEditResultSchema = z.object({
   provenance: z.literal('user_set'),
 }).strict();
 export type PriorRangeEditResult = z.infer<typeof PriorRangeEditResultSchema>;
+
+// ---- 0.55.0: the persisted dissent — a human's STATED REASON ----------------
+//
+// The fact body for the `finding_dissent` system event
+// (boundary/turn-payload.ts::FindingDissentEvent). Same commit path as the
+// three 0.34.0 receipts above: built by CEE's system-event dispatch on the turn
+// that acknowledged the event, contract-validated BEFORE the commit, and
+// persisted through the canonical `v5_handler_facts` wrapper.
+//
+// ⭐⭐ THE AUTHORISATION FOR PERSISTING USER TEXT, RECORDED HERE SO A LATER
+// READER FINDS THE RULING AND ITS LIMIT RATHER THAN AN UNEXPLAINED FREE-TEXT
+// FIELD. CEE carries standing privacy ruling R-004, at
+// `olumi-assistants-service` src/orchestrator-v5/system-events/dispatch.ts:396
+// (verified at the bytes on `staging`, 2026-09-11). Quoted verbatim rather than
+// paraphrased away:
+//
+//   "⚠ R-004 (feedback): the fact records `comment_present`, NEVER the comment
+//    text — the user's free text may contain PII and a fact row is long-lived
+//    and widely read. The contract's `FeedbackResultSchema` is `.strict()`, so
+//    a future `comment` field is a deliberate reviewed widening, not a quiet
+//    leak."
+//
+// PAUL SLEE RULED ON 2026-09-11 THAT A USER'S STATED REASONING MAY BE
+// PERSISTED. `statement` below IS the deliberate reviewed widening R-004
+// anticipated, taken on exactly the axis R-004 named and by exactly the
+// mechanism it prescribed — a reviewed change to a `.strict()` schema, not a
+// field that slipped in.
+//
+// ⚠⚠ THE LIMIT OF THAT RULING, STATED BECAUSE A PERMISSION FOUND WITHOUT ITS
+// SCOPE GETS GENERALISED. It authorises persisting A USER'S OWN STATED
+// REASONING ABOUT A FINDING. It is NOT a general licence to persist free text.
+// Specifically:
+//   · R-004 is NOT reversed. It still governs `feedback`, whose `comment` stays
+//     a rating aside recorded as `comment_present` only. That schema is
+//     unchanged by this release and its "REJECTS a verbatim comment field"
+//     guard in tests/orchestrator/handler-fact-0.34.test.ts still passes.
+//   · The PII half of R-004 still stands in full. This text MAY contain PII.
+//     Consumers persist it as authored user content and MUST NOT re-emit it
+//     into telemetry, analytics, logs or error payloads. Persisting is
+//     authorised; re-emitting is not, and the two are different acts.
+//   · It licenses no OTHER free-text field. A future member wanting one needs
+//     its own ruling, recorded the same way.
+//
+// WHY THIS RESULT DIFFERS FROM `FeedbackResultSchema`, which deliberately
+// carries only `comment_present: boolean`. The difference is not a relaxation
+// of the same rule; it is a different artefact:
+//   · `feedback.comment` is an ASIDE ATTACHED TO A RATING. The fact's job is to
+//     record the rating; the words are optional colour, and discarding them
+//     loses nothing the fact exists to keep. Recording presence is therefore
+//     the complete answer, and storing the text would be gratuitous retention.
+//   · A dissent's words ARE THE ARTEFACT. `dissent_present: true` records that
+//     a human disagreed and destroys WHY — which is the entire content. Olumi
+//     is a living shared model of the team's REASONING with humans as the
+//     authors; a dissent stripped of its reason is exactly the thing this
+//     member exists to stop being lost. There is no smaller shape that carries
+//     the meaning, so the retention is necessary rather than incidental.
+// Put plainly: for `feedback`, storing the text would add nothing the fact
+// needs; for `finding_dissent`, NOT storing it would leave the fact empty.
+export const FindingDissentResultSchema = z.object({
+  /**
+   * The finding the user objected to, as the surface rendering it holds the id.
+   * Reused from the wire event rather than respelled. Free string for the same
+   * reason the wire field is: the id convention belongs to CEE, and a regex
+   * here would be this package asserting a producer convention it does not own.
+   */
+  finding_id: z.string().min(1),
+  /**
+   * The analysis run the finding was rendered from — the OTHER HALF of the
+   * subject's address, not context. A recommendation id is per-run, so
+   * `finding_id` alone dangles the moment the model is rerun and a dissent
+   * shown beside a later analysis would be a claim the user never made. A
+   * RECORD STAMP, never a stale gate: a superseded run does not make the
+   * statement untrue, and CEE must not refuse the fact on that ground.
+   */
+  analysis_id: z.string().min(1),
+  /**
+   * The user's reason, VERBATIM — the field Paul's ruling of 2026-09-11
+   * authorises persisting, and the reason this member exists. See the R-004
+   * block above for the authorisation AND its limit.
+   *
+   * The bound is `MAX_STATED_REASON`, IMPORTED from the wire member rather than
+   * duplicated, so wire and fact cannot drift apart: a statement CEE accepted
+   * on the wire but could not persist would fail the contract check at
+   * dispatch.ts:715 and — because that check is FAIL-CLOSED — refuse the whole
+   * commit, surfacing as a typed 500 on a turn the user had every reason to
+   * think succeeded.
+   *
+   * Whitespace-only is REFUSED rather than tidied, matching the wire member:
+   * `.min(1)` alone would admit " ". The words are the record, so no consumer
+   * trims, collapses or normalises them.
+   */
+  statement: z.string()
+    .min(1)
+    .max(MAX_STATED_REASON)
+    .refine((s) => s.trim().length > 0, {
+      message: 'a dissent must state a reason — a blank statement is this member with its point removed',
+    }),
+  /**
+   * The provenance CLASS of this record, stamped by the SERVER (never taken
+   * from the wire) — identical rule to the adjudication and prior-range
+   * receipts, and the server-side half the wire member's comment promises when
+   * it declines to carry a client-supplied `provenance`.
+   */
+  provenance: z.literal('user_set'),
+}).strict();
+export type FindingDissentResult = z.infer<typeof FindingDissentResultSchema>;

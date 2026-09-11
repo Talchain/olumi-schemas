@@ -51,8 +51,9 @@ const NEW_KINDS = ['structural_add', 'structural_add_edge', 'structural_rename']
  * three".
  *
  *   · unversioned — option_intervention_edit
+ *   · 0.55.0 — finding_dissent
  */
-const KINDS_ADDED_SINCE_0_50 = ['option_intervention_edit'] as const;
+const KINDS_ADDED_SINCE_0_50 = ['option_intervention_edit', 'finding_dissent'] as const;
 
 /** A system_event turn wrapper — the shape CEE actually validates on ingress. */
 function turn(event: unknown) {

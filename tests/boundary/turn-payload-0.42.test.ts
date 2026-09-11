@@ -368,6 +368,9 @@ const KINDS_ADDED_SINCE_0_41 = [
   // entry is required here the moment the member joins the enum, which is this
   // guard doing its job — it is the reason a new kind cannot arrive unnoticed.
   'option_intervention_edit',
+  // 0.55.0 — the stated-reason carrier. Declared here the moment it joins the
+  // enum, which is this guard doing its job.
+  'finding_dissent',
 ] as const;
 
 describe('0.42.0 compatibility — every 0.41.0 system-event kind is byte-compatible', () => {

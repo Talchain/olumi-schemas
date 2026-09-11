@@ -68,6 +68,7 @@ function unionKinds(): string[] {
  * after it, or it silently stops being a 0.47.0 reader as the union grows.
  *   · 0.50.0 — structural_add, structural_add_edge, structural_rename
  *   · unversioned — option_intervention_edit
+ *   · 0.55.0 — finding_dissent
  */
 const KINDS_ADDED_SINCE_0_48 = [
   'structural_add',
@@ -79,6 +80,10 @@ const KINDS_ADDED_SINCE_0_48 = [
   // direction. Declaring it here is what keeps the 0.47.0-shaped reader below
   // an actual 0.47.0 reader rather than "the union minus one member".
   'option_intervention_edit',
+  // 0.55.0 — the stated-reason carrier. Belongs in the DERIVED half for the
+  // same reason its predecessor does: PRE_0_48_KINDS is the append-only record
+  // of what 0.48.0 inherited and must not be rewritten to stay current.
+  'finding_dissent',
 ] as const;
 
 // ---------------------------------------------------------------------------
