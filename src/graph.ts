@@ -152,6 +152,64 @@ export const OBSERVED_STATE_SOURCE_LITERALS = [
 export const KnownObservedStateSource = z.enum(OBSERVED_STATE_SOURCE_LITERALS);
 export type KnownObservedStateSourceLiteral = z.infer<typeof KnownObservedStateSource>;
 
+/**
+ * ⚠⚠ TWO SHAPES RIDE THIS ONE SCHEMA, ON TWO DIFFERENT SCALES.
+ *
+ * `ObservedStateSchema` is not factor-only. A CONSTRAINT node's threshold is
+ * carried by this same object, and every member comment below is written about
+ * the factor case. That is an OMISSION and not an error: those comments are
+ * scoped to factors by their own wording and assert nothing false about
+ * constraints. This paragraph closes the omission, because a consumer reading
+ * only them will apply a factor rule to a constraint and never be warned.
+ *
+ * DEMONSTRATED BY EXECUTION against this package's own build at this head:
+ * `{value: 85, metadata: {operator: '<='}}` parses clean against
+ * `ObservedStateSchema`, and again inside `NodeV3Schema` with
+ * `kind: 'constraint'`. `metadata` is not a declared member here; it rides the
+ * `.passthrough()` and survives the parse. The contrast control
+ * `{value: 'not-a-number', metadata: {operator: '<='}}` is REFUSED by both, so
+ * the pass is this schema agreeing rather than the probe failing open.
+ *
+ * ⚠ AND THE TWO SHAPES DISAGREE ABOUT SCALE. CEE holds them apart by name and
+ * says which is which at the bytes (`Talchain/olumi-assistants-service`,
+ * `src/schemas/graph.ts`, derived at staging `293b9cb5`):
+ *
+ *   * `ConstraintObservedState` (`:232`), whose `value` is documented
+ *     "Threshold value in user units - PLoT normalises" (`:233`);
+ *   * `FactorObservedState` (`:261`), whose `value` is documented "The
+ *     factor's current position on the model 0-1 scale (PLoT normalises)"
+ *     (`:262`).
+ *
+ * They are joined as `NodeObservedState = z.union([ConstraintObservedState,
+ * FactorObservedState])` (`:284`) and separated by the presence of `metadata`:
+ * the constraint branch is tried FIRST, and the factor branch carries a
+ * refinement REFUSING any `metadata` key (`:266-269`).
+ *
+ * ⚠⚠ THIS PACKAGE DECLARES NEITHER NAME. Neither is defined, exported or
+ * otherwise bound anywhere in `src/` here. Measured at `de0aa446` with
+ * contrast controls in the same sweep: the word `constraint` read 66 hits
+ * across 16 of the 49 `.ts` files, and a fabricated symbol read 0, so the
+ * sweep was neither blind to the subject nor passing everything.
+ *
+ * ⚠ AND A SWEEP RE-RUN AFTER THIS COMMENT LANDS WILL NOT READ ZERO. The
+ * paragraph above names both symbols, so the hits it returns will be this
+ * prose reading itself. Bind the question to a `z.object(` or an `export`,
+ * never to the bare string, or the absence you are testing will have been
+ * abolished by the note that documents it.
+ *
+ * One `value: z.number()` therefore carries USER
+ * UNITS on a constraint and the MODEL 0-1 SCALE on a factor, with nothing in
+ * this object to say which a consumer is holding. That is a SECOND dual-scale
+ * hazard living in the same schema as `baseline`'s, and it is the one this
+ * comment did not name until now.
+ *
+ * THE CONSUMER RULE, SAFE IN BOTH DIRECTIONS: establish the node's `kind`
+ * before applying any scale rule from the members below. Where the node is not
+ * in hand, `metadata.operator` is the constraint tell CEE's own union uses;
+ * absence of it is not proof of a factor, so decline rather than assume. Do
+ * not normalise a constraint threshold against a factor's cap, and do not read
+ * a factor `value` as user units because a constraint's is.
+ */
 export const ObservedStateSchema = z.object({
   /**
    * ⭐ THE LEVEL THE FACTOR IS AT TODAY, ON THE MODEL SCALE.
@@ -179,8 +237,10 @@ export const ObservedStateSchema = z.object({
    * both and will be wrong about one, so they are named apart here:
    *
    *   * WHAT LEVEL IS THIS FACTOR AT? Carried by a FACTOR node's
-   *     `observed_state`, where `value` is the CURRENT level. This object
-   *     answers only this question.
+   *     `observed_state`, where `value` is the CURRENT level. That is the
+   *     question the rest of this member comment answers. It is not the only
+   *     thing this object carries: see TWO SHAPES RIDE THIS ONE SCHEMA on
+   *     `ObservedStateSchema` itself, above.
    *   * WHAT MAGNITUDE DOES AN INTERVENTION PROPOSE? Carried by an OPTION.
    *     The target is a model-unit TO, and where the scale cannot be resolved
    *     the producer refuses rather than divides.
@@ -204,9 +264,21 @@ export const ObservedStateSchema = z.object({
    * GBP 59" as its worked example. That shape is a measured defect, not the
    * contract: it showed a user their TARGET as the present state of their
    * business. It is fixed and pinned, and for the same brief the shape is now
-   * `{value: 0.49, raw_value: 49, baseline: 49, cap: 100}`, asserted at
+   * `{value: 0.49, raw_value: 49, baseline: 49}`, asserted at
    * `src/cee/factor-extraction/__tests__/factor-current-level-is-the-stated-baseline.test.ts:122-126`.
-   * The reasoning that produced the wrong example is worth keeping too: it
+   *
+   * A SECOND, SMALLER WITHDRAWAL IN THE SAME PARAGRAPH, AND IT IS A CITATION
+   * RATHER THAN A SHAPE. A `cap: 100` sat inside that cited shape until this
+   * revision. The cap is
+   * right for this factor; the citation for it was not. `:122-126` asserts
+   * `display_value`, `raw_value`, `value` and `baseline`, and no cap at all.
+   * The file's only `expect(d.cap).toBe(100)` is at `:386`, in the contrast
+   * case whose `baseline` is asserted UNDEFINED at `:388`, so it is evidence
+   * about a different factor from the one worked here. The cap follows instead
+   * from `enricher.ts:1473-1477`, where a non-percentage raw value above 1 is
+   * divided by `computeExtractedFactorCap`.
+   *
+   * The reasoning that produced the wrong SHAPE is worth keeping too: it
    * counted `factors.push` sites, and those mint an extractor-internal
    * candidate rather than an `ObservedState`. The two share a field name and
    * part company at `enricher.ts:1468`, which is precisely where a stated
@@ -227,10 +299,42 @@ export const ObservedStateSchema = z.object({
    * WAS WRITTEN BESIDE.
    *
    * RAW for a currency from-to (49 beside 59). ALREADY FRACTIONAL for a
-   * percentage one (0.85 beside 0.95). One line in the producer decides which:
-   * `baseline: isPercent ? from.raw / 100 : from.raw`
-   * (`Talchain/olumi-assistants-service`,
-   * `src/cee/factor-extraction/index.ts:1851`, read at `712dd599`).
+   * percentage one (0.85 beside 0.95).
+   *
+   * ⚠ FOUR WRITE PATHS DECIDE THIS, NOT ONE, AND ONLY TWO OF THEM LOOK LIKE
+   * IT. An earlier revision of this comment credited a single producer line.
+   * All four sit in `Talchain/olumi-assistants-service`,
+   * `src/cee/factor-extraction/index.ts`, derived at staging `293b9cb5`:
+   *
+   *   1. `:1851` `baseline: isPercent ? from.raw / 100 : from.raw`, reaching a
+   *      factor at `:2180` as `baseline: goalPair.baseline`.
+   *   2. `:2203` `baseline: from`, where `from` was parsed at `:2193` with NO
+   *      division, because the pattern that matched is the currency one.
+   *   3. `:2227` `baseline: from`, where `from` was already divided by 100 at
+   *      `:2217`, at the parse, because the pattern that matched is the
+   *      percentage one.
+   *   4. `:2275` `baseline: normalizedBaseline`, computed at `:2266` as
+   *      `isPercent ? from / 100 : from`.
+   *
+   * All four implement the SAME rule, so the hazard stated below is unchanged
+   * by the count. What the count changes is the REPAIR. Cases 2 and 3 carry no
+   * `isPercent` ternary at the write at all: their scale is decided by WHICH
+   * PATTERN MATCHED, and the division, where there is one, happened at the
+   * parse. So a reader who greps this file for the ternary finds two of the
+   * four, fixes those, and leaves half the rule standing while believing the
+   * job done.
+   *
+   * THE BOUND ON THAT FOUR, from the same sweep, so it is a measured count and
+   * not an impression: across every non-test `.ts` file under CEE's `src/`
+   * (1,003 of 2,335), the only lines binding a from-value to a division by 100
+   * are `:1755`, `:1851`, `:2217` and `:2266` of this one file, and `:1755`
+   * feeds a log line at `:1759` rather than a factor.
+   *
+   * AND NOTHING DOWNSTREAM RESCALES IT. `enricher.ts` writes `baseline:
+   * factor.baseline` unchanged at `:705`, `:740`, `:1394` and `:1496`, while
+   * deriving `value` as `currentRaw / cap` in the same object literal
+   * (`:1473-1477`). Whichever of the four wrote the number is therefore the
+   * only thing that decided its scale.
    *
    * A consumer that normalises this field unconditionally is correct on the
    * currency factor and 100 times wrong on the percentage one, silently, and
