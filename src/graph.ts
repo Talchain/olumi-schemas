@@ -154,108 +154,166 @@ export type KnownObservedStateSourceLiteral = z.infer<typeof KnownObservedStateS
 
 export const ObservedStateSchema = z.object({
   /**
-   * ⭐ THE FACTOR'S LEVEL — AND *WHICH* LEVEL IT IS DEPENDS ON `baseline`.
+   * ⭐ THE LEVEL THE FACTOR IS AT TODAY, ON THE MODEL SCALE.
    *
-   * `value` answers ONE of two questions and THE DISAMBIGUATOR IS A SIBLING
-   * FIELD, which is why it must be stated here rather than left to each
-   * consumer to decide:
+   * `value` is the CURRENT level: where the factor sits before any option is
+   * applied. What an option would MAKE the factor become is carried by that
+   * option, not by this object. See TWO QUESTIONS below, because the two are
+   * easy to read as one.
    *
-   *   * `baseline` ABSENT — `value` is the level the factor is at TODAY (the
-   *     current observed level). This is the COMMON case: measured at CEE
-   *     staging `7aa49ec8`, 9 of the 13 `factors.push` mint sites in
-   *     `src/cee/factor-extraction/index.ts` write no `baseline`.
-   *   * `baseline` PRESENT AND DIFFERENT from `value` — `value` is the
-   *     PROPOSED level and `baseline` is the current one. A brief phrased
-   *     "from X to Y" lands as `{value: Y, baseline: X}`, so the factor is
-   *     born AT ITS TARGET. A consumer that reads `value` as "today" here
-   *     will conclude that an option changing the factor to Y changes
-   *     nothing.
-   *   * `baseline` PRESENT AND EQUAL to `value` — ONE number stamped TWICE,
-   *     not a from-to. Goal and constraint-target writers do this
-   *     deliberately, in model units, beside a raw `raw_value` (CEE
-   *     `src/cee/transforms/schema-v3.ts:353-355`, whose own comment states
-   *     it: "Both fields therefore carry the SAME single extracted number").
-   *     A consumer MUST NOT read the equal case as an intervention.
+   * THE PROPERTY, STATED AGAINST THE SPEC RATHER THAN AGAINST ANY FAILURE
+   * MODE: where an extracted factor states a current level distinct from the
+   * value beside it, the node's current-level fields carry that stated level,
+   * on the frame the node's own cap defines. That is a rule about levels, not
+   * about prices. It holds for a rate, a count or a duration exactly as it
+   * holds for a currency.
    *
-   * SCALE. `value` is on the MODEL scale — for a capped factor,
-   * `raw_value / cap` (`src/boundary/turn-payload.ts:196-197`; see also
-   * `declared_scale` below, which is how a producer ATTESTS the scale rather
-   * than leaving a consumer to guess it). `baseline` is NOT guaranteed to be
-   * on the same scale — see its own note.
+   * SCALE. `value` is on the MODEL scale. For a capped factor that is
+   * `raw_value / cap`, already stated in this package at
+   * `src/boundary/turn-payload.ts:196-197`. For a factor with no cap the
+   * number stands as written, so a rate stated as 85% arrives as 0.85 and must
+   * not be divided again. `declared_scale` (below) is how a producer attests
+   * the scale instead of leaving a consumer to recover it.
    *
-   * WHY THIS IS WRITTEN DOWN AT ALL. While these two fields were bare, every
-   * consumer grew a private and unreviewable opinion of them, and the
-   * opinions CONTRADICT. Two live readers in ONE repo, derived at CEE staging
-   * `7aa49ec8`: `src/validators/option-no-op.ts:144-170` reads `baseline` as
-   * "the level the user stated the factor is at today"; and
-   * `src/orchestrator-v5/tools/handlers/whatif/build-counterfactual-model.ts:205-214`
-   * reads the same field as the intervention TARGET ("then a `baseline` that
-   * differs from the current value") while treating `value` as current. Same
-   * field, opposite meanings, both shipped. The only definition that existed
-   * anywhere was CEE-local (`src/schemas/graph.ts:157`), where the other
-   * three services could not see it — the hand-maintained-mirror defect
-   * (trap 12) in its purest form: no mirror at all, just four guesses.
+   * ⚠ TWO QUESTIONS LIVE NEAR THIS FIELD. A sentence about "the value" governs
+   * both and will be wrong about one, so they are named apart here:
+   *
+   *   * WHAT LEVEL IS THIS FACTOR AT? Carried by a FACTOR node's
+   *     `observed_state`, where `value` is the CURRENT level. This object
+   *     answers only this question.
+   *   * WHAT MAGNITUDE DOES AN INTERVENTION PROPOSE? Carried by an OPTION.
+   *     The target is a model-unit TO, and where the scale cannot be resolved
+   *     the producer refuses rather than divides.
+   *
+   * Same word, opposite point in time, different carriers. The producer states
+   * it in the same terms: "the node carries where the factor IS, and the
+   * brief's target reaches the analysis on the OPTION's intervention"
+   * (`Talchain/olumi-assistants-service`,
+   * `src/cee/factor-extraction/enricher.ts:1466-1467`, read at `712dd599`).
+   *
+   * A consumer that DISPLAYS a magnitude needs the user-scale number and not
+   * this one. The formatter refuses any non-integer
+   * (`src/orchestrator-v5/compose/format-factor-value.ts:102`), so a
+   * model-scale 0.49 formats as nothing at all. Model units and display units
+   * are therefore two named fields, not one field read twice.
+   *
+   * WITHDRAWN, AND LEFT ON THE PAGE RATHER THAN TIDIED AWAY (trap 14). An
+   * earlier revision of this comment said `value` holds the PROPOSED level
+   * whenever `baseline` is present and different, and gave
+   * `{value: 0.59, raw_value: 59, baseline: 49}` for the brief "from GBP 49 to
+   * GBP 59" as its worked example. That shape is a measured defect, not the
+   * contract: it showed a user their TARGET as the present state of their
+   * business. It is fixed and pinned, and for the same brief the shape is now
+   * `{value: 0.49, raw_value: 49, baseline: 49, cap: 100}`, asserted at
+   * `src/cee/factor-extraction/__tests__/factor-current-level-is-the-stated-baseline.test.ts:122-126`.
+   * The reasoning that produced the wrong example is worth keeping too: it
+   * counted `factors.push` sites, and those mint an extractor-internal
+   * candidate rather than an `ObservedState`. The two share a field name and
+   * part company at `enricher.ts:1468`, which is precisely where a stated
+   * current level is moved into `value`.
+   *
+   * ⚠ THIS IS A STATEMENT ABOUT WHAT PRODUCERS WRITE, AND A STORED GRAPH MAY
+   * HAVE BEEN WRITTEN BY AN OLDER ONE. A consumer that must be right about a
+   * graph it did not just receive should read the level through the canonical
+   * reader named under `baseline`, not infer it from the pair. One guarded
+   * branch for a graph whose `value` is not the current level survives at
+   * `src/orchestrator-v5/tools/handlers/whatif/build-counterfactual-model.ts:338-349`,
+   * written so that it cannot fire once the two surfaces agree.
    */
   value: z.number(),
   std: z.number().positive().optional(),
   /**
-   * ⭐ THE LEVEL THE FACTOR IS AT TODAY — THE *FROM*, NEVER THE *TO*.
+   * ⚠⚠ `baseline` HAS NO SINGLE SCALE. IT IS IN THE UNITS OF THE `value` IT
+   * WAS WRITTEN BESIDE.
    *
-   * For a brief phrased "from X to Y", `baseline` is X and `value` is Y. It
-   * is the PRE-INTERVENTION level: where the factor sits before any option is
-   * applied. It is NEVER an intervention target and NEVER a ceiling — a
-   * declared ceiling is `cap`, and what an option would MAKE the factor
-   * become is carried by that option, not here.
+   * RAW for a currency from-to (49 beside 59). ALREADY FRACTIONAL for a
+   * percentage one (0.85 beside 0.95). One line in the producer decides which:
+   * `baseline: isPercent ? from.raw / 100 : from.raw`
+   * (`Talchain/olumi-assistants-service`,
+   * `src/cee/factor-extraction/index.ts:1851`, read at `712dd599`).
    *
-   * PRODUCER RULE — DERIVED AT THE BYTES (CEE staging `7aa49ec8`), NOT
-   * INFERRED FROM THE NAME. Every writer means the same thing by it. The
-   * regex from-to extractors write the FROM number
-   * (`src/cee/factor-extraction/index.ts:2177/2200/2224/2272` — the four of
-   * thirteen mint sites that populate it at all); the LLM factor extractor is
-   * instructed "baseline: (optional) Starting value for from-to patterns"
-   * (`src/cee/factor-extraction/llm-extractor.ts:78`); the structural-edit
-   * tool declares it to the model as "The amount before any change, when it
-   * differs" (`src/orchestrator-v5/tools/propose-structural-edit.ts:1029`).
-   * The drafting prompt never asks for it, so no LLM draft authors one.
+   * A consumer that normalises this field unconditionally is correct on the
+   * currency factor and 100 times wrong on the percentage one, silently, and
+   * in the plausible direction: 0.85 becomes 0.0085, and a rate of 85% renders
+   * as under one per cent. Dividing where no cap exists renders EVERY
+   * percentage factor 100 times wrong. Reading it raw against a model-scale
+   * `value` is the same size of error in the other direction.
    *
-   * ABSENCE SEMANTICS — DISTINCT, AND ABSENCE IS THE NORMAL CASE. Absent
-   * means "no separate current level was stated". It does NOT mean the
-   * current level is unknown, and it does NOT mean nothing changes: where
-   * `baseline` is absent, `value` IS the current level (see `value` above).
-   * A consumer MUST NOT default this field, MUST NOT read absence as zero,
-   * and MUST NOT synthesise it from a goal threshold or a cap.
+   * THE RULE HAS TWO HALVES AND A CONSUMER NEEDS BOTH:
    *
-   * ⚠⚠ THE SCALE — DO NOT ASSUME IT MATCHES `value`. THIS IS THE FIELD'S
-   * SHARPEST HAZARD AND IT IS ASYMMETRIC BY CONSTRUCTION. `baseline` is on
-   * whatever frame `value` was on AT WRITE TIME, and a LATER reframe of
-   * `value` DOES NOT REFRAME IT. Both halves measured at CEE staging
-   * `7aa49ec8`:
+   *   1. DIVIDE where a frame RESOLVES, taken from a stored scale frame or
+   *      from the `{value, raw_value}` pair written beside this field.
+   *   2. DO NOT DIVIDE where no frame resolves. Hold the number in its own
+   *      units, or decline to answer. Do not guess a divisor, and do not
+   *      reach for `cap` as one.
    *
-   *   1. The extractors write the pair on ONE frame — raw beside raw for a
-   *      currency from-to (`index.ts:2200`: `{value: 59, baseline: 49}`),
-   *      already-divided beside already-divided for a percent one
-   *      (`index.ts:2217-2227`: both `/ 100`).
-   *   2. `src/cee/factor-extraction/enricher.ts:1494-1495` then divides
-   *      `value` by `cap` and copies `baseline` through UNTOUCHED, and
-   *      `src/cee/transforms/schema-v3.ts:396-397` passes both on with NO
-   *      further scaling.
+   * A test kit for a consumer of this field needs a NON-DIVISION case for
+   * every DIVISION case it pins, or it cannot see half of this.
    *
-   * The shape that reaches the wire is therefore `{value: 0.59,
-   * raw_value: 59, baseline: 49}` — `value` framed, `baseline` raw.
+   * WHAT IT HOLDS. The level the factor is at today: the level a user stated,
+   * before any option is applied. It is never an intervention target and never
+   * a ceiling. A declared ceiling is `cap`.
    *
-   * SO, THE CONSUMER RULE: recover the frame from the `{value, raw_value}`
-   * pair (or from a producer-stamped scale carrier) and divide `baseline` by
-   * it before comparing the two — but ONLY where `baseline` and `value`
-   * DIFFER. Reading `baseline` raw against a model-scale `value` is an error
-   * the size of the cap (100x in the witnessed 59/0.59 case); dividing in the
-   * EQUAL case, where the pair is already in model units, is the same error
-   * in the other direction. CEE's `readStatedCurrentLevel`
-   * (`src/validators/option-no-op.ts:144-170`) is the worked implementation
-   * of exactly this rule.
+   * BESIDE A CURRENT `value`, `baseline` RESTATES THE SAME LEVEL. It is not
+   * the other end of a from-to. For "from GBP 49 to GBP 59" the pair is
+   * `{value: 0.49, baseline: 49}`: one level, two frames. Where the two are
+   * numerically EQUAL they are one number stamped twice, already in model
+   * units, and dividing there is the error above in the other direction. Goal
+   * and constraint-target writers stamp the equal pair deliberately
+   * (`src/cee/transforms/schema-v3.ts:352-354`).
    *
-   * ⚠ `raw_value` and `cap` are NOT declared members of this object. They
-   * ride `.passthrough()`, so the frame-recovery pair a consumer needs is
-   * itself untyped here.
+   * ⭐ THE CANONICAL READER, SO A CONSUMER NEED NOT HOLD A PRIVATE OPINION.
+   * `readFactorBaselineLevel` is DEFINED at
+   * `src/validators/option-no-op.ts:198`;
+   * `src/validators/graph-validator.ts:270` re-exports it and is not a second
+   * definition. Its precedence is a stated current level first, then
+   * `observed_state.value`, then `data.value`. Its refusal semantics are worth
+   * echoing verbatim, because they are the safe direction: it "Returns
+   * `undefined` when no surface carries a finite number. That is NOT a no-op
+   * verdict: a factor the brief states no value for cannot prove an option
+   * changes nothing."
+   *
+   * PRODUCERS AGREE ON WHAT THEY MEAN BY THE FIELD. The from-to extractors
+   * write the FROM number; the model is instructed "baseline: (optional)
+   * Starting value for from-to patterns"
+   * (`src/cee/factor-extraction/llm-extractor.ts:78`) and, at the edit tool,
+   * "The amount before any change, when it differs."
+   * (`src/orchestrator-v5/tools/propose-structural-edit.ts:1029`). The
+   * drafting prompt never asks for it, so no drafted graph authors one.
+   *
+   * ABSENCE IS THE NORMAL CASE, AND IT IS DISTINCT. Absent means no separate
+   * current level was stated, so `value` alone carries the level. It does NOT
+   * mean the current level is unknown, and it does NOT mean nothing changes. A
+   * consumer MUST NOT default this field, MUST NOT read absence as zero, and
+   * MUST NOT synthesise it from a goal threshold or from a cap.
+   *
+   * ⚠ A STATED LEVEL CAN SIT ABOVE THE FACTOR'S OWN `cap`. "cut the unit cost
+   * from GBP 150 to GBP 90" states a current level of 150 while the point
+   * picked out of the sentence is 90, so a cap chosen around 90 leaves the
+   * stated level above its own ceiling, and normalising it puts the factor off
+   * the top of its own scale. The producer rule is that the scale has to cover
+   * what the user wrote, not the point a service picked out of it. A consumer
+   * that finds `baseline` greater than `cap` is holding a factor whose scale
+   * does not cover it, which is not the same thing as a value out of range.
+   *
+   * ⚠ `raw_value` and `cap` are NOT declared members of this object. They ride
+   * `.passthrough()`, so the pair a consumer needs in order to recover a frame
+   * is itself untyped here.
+   *
+   * THIS IS NOT THE ONLY STATEMENT OF THIS CONTRACT, AND WRITING IT DOWN DOES
+   * NOT REDUCE THE COUNT. Read at the bytes, the same field is described in at
+   * least eleven places across this package and
+   * `Talchain/olumi-assistants-service`. Among them, here:
+   * `src/boundary/turn-payload.ts:194-199`, `src/boundary/blocks.ts:235-236`
+   * and `src/orchestrator/editable-fields.ts:244`. And there:
+   * `src/schemas/graph.ts:157-158` and `:261-263`, whose `value` line reads
+   * "The factor's current position on the model 0-1 scale" with no condition
+   * attached. Several of those objects are `.passthrough()`, so an untyped
+   * `baseline` rides through the very schema that documents `value`. A
+   * definition four services must remember to keep in step with is a
+   * hand-maintained mirror (trap 12). Consumers importing one reader, rather
+   * than each holding an opinion, is what would retire the others; this
+   * comment is the precondition for that and not a substitute for it.
    */
   baseline: z.number().optional(),
   unit: z.string().optional(),
