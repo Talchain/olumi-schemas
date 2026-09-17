@@ -400,9 +400,16 @@ export const ObservedStateSchema = z.object({
    * that finds `baseline` greater than `cap` is holding a factor whose scale
    * does not cover it, which is not the same thing as a value out of range.
    *
-   * ⚠ `raw_value` and `cap` are NOT declared members of this object. They ride
-   * `.passthrough()`, so the pair a consumer needs in order to recover a frame
-   * is itself untyped here.
+   * ⚠ WITHDRAWN 2026-09-17, AND LEFT ON THE PAGE RATHER THAN TIDIED AWAY
+   * (trap 14). This paragraph read: *"`raw_value` and `cap` are NOT declared
+   * members of this object. They ride `.passthrough()`, so the pair a consumer
+   * needs in order to recover a frame is itself untyped here."* It was true
+   * when written and is now false: both are DECLARED below, and the sentence
+   * is kept so a reader who inherited it can see it retired rather than
+   * wonder which of two contradictory memories is current. What does NOT
+   * change is the half of the rule this paragraph exists for: declaring the
+   * pair does not make a frame resolve. Where one does not, hold the number
+   * in its own units or decline to answer.
    *
    * THIS IS NOT THE ONLY STATEMENT OF THIS CONTRACT, AND WRITING IT DOWN DOES
    * NOT REDUCE THE COUNT. Read at the bytes, the same field is described in at
@@ -421,6 +428,181 @@ export const ObservedStateSchema = z.object({
    */
   baseline: z.number().optional(),
   unit: z.string().optional(),
+  /**
+   * ⭐ THE SAME LEVEL AS `value`, IN THE UNITS `unit` NAMES — the USER-SCALE
+   * twin, and half of the pair a frame is recovered from.
+   *
+   * `value` is on the MODEL scale; `raw_value` is the magnitude a person
+   * would recognise. For a capped factor the two are related by `value =
+   * raw_value / cap`; for a factor with no cap `raw_value` restates `value`
+   * in the same units. `£30,000` on a factor whose ladder rung is `100,000`
+   * is `{value: 0.3, raw_value: 30000, cap: 100000, unit: '£'}`.
+   *
+   * ⭐ 0.56.0-CANDIDATE: THIS DECLARES A FIELD, IT DOES NOT MINT ONE. The key
+   * has been on the wire for as long as factor normalisation has existed; it
+   * rode `.passthrough()` here while every other repo in the estate typed it.
+   * All four were read at their own authoritative tips before this line was
+   * written, and all four agree it is an OPTIONAL FINITE NUMBER:
+   *
+   *   · CEE   `src/schemas/cee-v3.ts:130` `ObservedStateV3.raw_value:
+   *           z.number().optional()`, "Raw value before normalization
+   *           (preserves original extraction)" — staging `a59f7901`. That
+   *           object's own comment calls itself "the narrowest validator in
+   *           the chain".
+   *   · PLoT  `src/types/engine-v3.ts:107` `raw_value?: number`, "V3
+   *           expansion: raw unscaled value for UI display" — staging
+   *           `d68d4ffb`. Listed in `ISL_DECLARED_OBSERVED_STATE_FIELDS`
+   *           (`src/integrations/isl/translator-v3.ts:426-437`), the
+   *           ten-field forwarding manifest pinned exhaustively at compile
+   *           time in both directions.
+   *   · ISL   `src/models/robustness_v2.py:193` `raw_value: Optional[float]`,
+   *           with `@field_validator("std", "raw_value", "cap")` refusing a
+   *           non-finite one at `:221-226` — staging `7781ca4f`.
+   *   · here  `src/boundary/turn-payload.ts`, `factor_value_edit.raw_value:
+   *           z.number().finite().optional()` — the same field name, already
+   *           declared with the same bound, one schema away.
+   *
+   * `.finite()` IS DERIVED FROM THAT LAST PAIR, NOT INVENTED HERE. ISL
+   * already refuses a non-finite value at the far end of the chain, and this
+   * package already applies the bound to the same field on the wire event, so
+   * a bare `z.number()` would be this schema alone being the loose one. JSON
+   * cannot transport `NaN`/`Infinity`, so the bound refuses nothing a wire
+   * payload can carry; it refuses an in-process object built by arithmetic.
+   *
+   * ⚠ ONE MEASURED DIVERGENCE, AND IT IS A READ TOLERANCE RATHER THAN A
+   * PRODUCER. The UI's own local schema types this field
+   * `z.union([z.string(), z.number()]).nullable().optional()`
+   * (`DecisionGuideAI` `src/canvas/domain/nodes.ts:256`, staging `0318d75a`).
+   * Nothing in the UI WRITES that: every write site guards `typeof === 'number'
+   * && Number.isFinite(...)` (`src/canvas/ui/inspector-v2/useInspectorMutations.ts:449`,
+   * `src/canvas/components/model-tab/utils.ts:298`), and the UI's own model-tab
+   * adapter narrows a non-numeric one away on the grounds that rendering it
+   * "would hand a STRING to `formatValueWithUnit(rawValue: number, …)` and
+   * print nonsense" (`src/canvas/model-tab-v2/adapters.ts:400-419`). So the
+   * string branch is inbound tolerance for stored graphs, and this declaration
+   * agrees with what the UI's own code says it wants. It is recorded here
+   * because a consumer that later adopts THIS schema as its validator would
+   * start refusing a shape its own domain schema still accepts, and that is a
+   * decision for that consumer's re-vendor rather than a surprise.
+   *
+   * NULL IS REFUSED, DELIBERATELY. Absent and `null` would be two bytes for
+   * one state, which is the question the absence-semantics census exists to
+   * ask; every sibling here (`value`, `baseline`, `std`) is non-nullable. A
+   * producer with no user-scale magnitude OMITS the key.
+   *
+   * ABSENCE SEMANTICS — DISTINCT. Absent means no user-scale magnitude was
+   * recorded. It does NOT mean zero (a factor legitimately sits at 0), and it
+   * does NOT mean "equal to `value`" — that is only true for an uncapped
+   * factor, and absence is exactly the state in which a consumer cannot tell
+   * whether the factor is capped. A CONSUMER MUST NOT SYNTHESISE IT. A
+   * PRODUCER may: CEE repairs the pair at the V3 boundary, writing
+   * `raw_value = value × cap` when the model omitted it, because it is the
+   * side that knows the cap it just applied (`olumi-assistants-service`
+   * `src/cee/transforms/schema-v3.ts`, pinned by
+   * `src/cee/transforms/__tests__/observed-state-cap-corroboration.test.ts`).
+   * The two are not the same act: one restores a frame the writer holds, the
+   * other invents one the reader does not.
+   */
+  raw_value: z
+    .number()
+    .finite()
+    .describe(
+      'The same level as `value`, in the units `unit` names. For a capped factor ' +
+        '`value = raw_value / cap`; with no cap it restates `value`. Absence means no ' +
+        'user-scale magnitude was recorded — it is NOT zero and NOT "equal to value", and ' +
+        'a consumer must not synthesise it. A producer may repair it, because it holds the cap.',
+    )
+    .optional(),
+  /**
+   * ⭐⭐ THE DENOMINATOR `value` IS A COORDINATE ON — AND IT IS PER FACTOR,
+   * NOT PER UNIT. This is the field without which `value` cannot be read back
+   * into anything a person stated.
+   *
+   * `unit` names the units. `cap` says WHICH RULER, and nothing else in this
+   * object does. Two factors that both read `{unit: '£', value: 0.3}` are
+   * £30,000 and £300 when their caps are 100,000 and 1,000 — the same unit,
+   * the same model number, two magnitudes three orders of magnitude apart.
+   * Anything that sums or compares `value` across factors without dividing
+   * back out is adding coordinates on different rulers.
+   *
+   * WHY THE CAPS DIFFER, derived at the producer rather than inferred from the
+   * symptom. CEE mints one per factor from an ORDER-OF-MAGNITUDE LADDER:
+   * `computeNormalisationCap` rounds up to the next power of ten (800 → 1,000;
+   * 50,000 → 100,000) and sends an exact power of ten ONE RUNG FURTHER, so a
+   * factor stated at a round £100,000 is not pinned to 1.0 on its own ceiling
+   * (`olumi-assistants-service` `src/cee/factor-extraction/enricher.ts:143-160`,
+   * staging `a59f7901`). GOAL THRESHOLDS DO NOT USE THAT LADDER — they
+   * delegate to `resolveGoalThresholdCap` (`src/utils/goal-threshold-cap.ts`),
+   * named apart deliberately at `enricher.ts:132-140`, so a cap that is not a
+   * power of ten is a normal sight and not a corruption. Measured on a
+   * 25-bundle corpus (lane brief, 2026-09-17): the single unit `£` carried
+   * FOUR distinct caps — 100, 1,000, 100,000 and 130,000.
+   *
+   * ⚠⚠ NAMED APART FROM `declared_scale` (trap 21 — two authorities that look
+   * like an inconsistency to reconcile). They answer DIFFERENT questions and
+   * neither is derivable from the other:
+   *
+   *   · `declared_scale` — WHICH CLASS OF SCALE `value` lives on. Is `[0,1]`
+   *     the admissible range, or may this number exceed 1? It bounds.
+   *   · `cap` — WHICH DENOMINATOR produced this number. It converts.
+   *
+   * `declared_scale: 'unit_interval'` is true of all four £ factors above and
+   * distinguishes none of them; only `cap` gets any of them back to pounds.
+   * Reading either for the other's question returns a plausible wrong answer.
+   *
+   * ⛔ THIS SCHEMA DOES NOT ENFORCE `value === raw_value / cap`, AND THAT IS A
+   * RULING RATHER THAN AN OMISSION. ISL records the attestation as
+   * "deliberately NOT implemented" (`Inference-Service-Layer`
+   * `src/services/robustness_analyzer_v2.py:4010-4012`, staging `7781ca4f`),
+   * and CEE LOGS an uncorroborated cap rather than refusing the graph
+   * (`olumi-assistants-service` `src/cee/transforms/schema-v3.ts:1227`). A
+   * cross-field refinement here would refuse stored graphs that three services
+   * accept today — a breaking change wearing an additive one's clothes.
+   *
+   * ⛔ AND NO READER IS MINTED HERE EITHER. CEE's `resolveScaleFrame`
+   * (`src/orchestrator-v5/tools/handlers/d1-shared/scale-frame.ts:231`) is
+   * already described in its own callers as "the estate's ONE owner of what
+   * divisor applies". A second reader in this package would be a competing
+   * authority, which is the defect this comment's neighbours were written to
+   * retire. This declaration gives that owner a TYPED input; it does not
+   * replace it.
+   *
+   * ⚠ `cap` IS NOT A BOUND ON THE LEVEL, and must not be validated as one. A
+   * stated level can sit above it — see the "A STATED LEVEL CAN SIT ABOVE THE
+   * FACTOR'S OWN `cap`" paragraph under `baseline`. A non-positive cap is
+   * likewise accepted rather than bounded: no producer mints one
+   * (`computeNormalisationCap` returns 1 for a non-positive input), and
+   * refusing it here would be a NEW rejection on stored graphs rather than an
+   * additive declaration. The safe consumer rule is the one already stated
+   * under `baseline` — where no frame resolves, decline rather than divide.
+   *
+   * ⭐ IT WAS ALREADY IN THIS PACKAGE'S HASH VOCABULARY WHILE UNDECLARED HERE.
+   * `CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields` lists
+   * `['value', 'baseline', 'cap']` (`src/boundary/graph-hash-contract.ts:125`)
+   * — so `cap` has been an analysis-affecting hash input, named by this
+   * package, on a schema that did not declare it. `raw_value` is deliberately
+   * absent from that list: it is the display/user-scale twin, and making it a
+   * hash input would let a repair to a number a user merely READS invalidate a
+   * committed receipt. The two-way agreement is asserted, not restated, in
+   * `tests/observed-state-scale-frame.test.ts`.
+   *
+   * ABSENCE SEMANTICS — DISTINCT. Absent means NO DENOMINATOR WAS DECLARED,
+   * which for CEE's writers means the factor was left un-normalised and
+   * `value` stands in `unit`'s own units. It does NOT mean 1, and a consumer
+   * MUST NOT default it to 1: that would silently assert an identity frame for
+   * every factor whose producer simply did not stamp one.
+   */
+  cap: z
+    .number()
+    .finite()
+    .describe(
+      'The PER-FACTOR denominator `value` is a coordinate on: `value = raw_value / cap`. ' +
+        'It is the only field that converts `value` back into the units `unit` names, and ' +
+        'two factors sharing a `unit` routinely carry different caps. It is NOT a bound on ' +
+        'the level — a stated level may sit above it. Absence means no denominator was ' +
+        'declared, which does NOT mean 1.',
+    )
+    .optional(),
   /**
    * How the value entered the model. A FREE STRING on the wire (see
    * `OBSERVED_STATE_SOURCE_LITERALS` above for the declared vocabulary and
