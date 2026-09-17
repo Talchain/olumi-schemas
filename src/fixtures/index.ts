@@ -350,6 +350,23 @@ export const maximalObservedState = deepFreeze({
   // proportion. Declaring `unit_interval` would make the fixture assert a
   // [0,1] bound that its own value violates.
   declared_scale: 'raw_count',
+  // ⭐ THE SCALE FRAME, and the pair is internally consistent BY ARITHMETIC:
+  // `value === raw_value / cap` holds exactly (42.5 / 1). `cap: 1` is the
+  // IDENTITY denominator — the only cap that does not contradict this
+  // fixture's own `declared_scale: 'raw_count'`, which asserts that `value` is
+  // an UN-NORMALISED magnitude in `unit`. A plausible-looking `cap: 100` would
+  // make the fixture claim a [0,1] frame its own 42.5 violates, and a fixture
+  // asserting something false is worse than one asserting something dull.
+  //
+  // ⚠ CEE'S PRODUCER WOULD OMIT `cap` ENTIRELY FOR SUCH A FACTOR, and that is
+  // the honest shape on the wire. This object is the MAXIMALITY fixture: its
+  // contract is that every optional is populated (`tests/fixtures/
+  // maximality.test.ts`, with `MAXIMALITY_EXCLUSIONS` deliberately empty), so
+  // "omit it" is not available here. The capped shape the field is really for
+  // — `{value: 0.3, raw_value: 30000, cap: 100000, unit: '£'}` — is exercised
+  // in `tests/observed-state-scale-frame.test.ts` instead, where it can vary.
+  raw_value: 42.5,
+  cap: 1,
   // 0.40.0 (PR4 evidence loop) — whose panel answer this value was applied
   // from. Ids only; the display label resolves at render from round data.
   elicited_from: maximalRoundParticipantRef,

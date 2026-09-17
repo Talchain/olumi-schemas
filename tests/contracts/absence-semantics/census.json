@@ -63,9 +63,9 @@
     }
   },
   "counts": {
-    "distinct": 75,
+    "distinct": 77,
     "same": 33,
-    "unresolved": 410
+    "unresolved": 412
   },
   "open_objects": {
     "_doc": [
@@ -3316,6 +3316,14 @@
       ],
       "verdict": "unresolved"
     },
+    "root/ObservedStateSchema.cap": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means NO DENOMINATOR WAS DECLARED, and no value expresses it. The two states drive different arithmetic: a declared cap says `value` is the coordinate `raw_value / cap` and is the only thing that converts it back to the units `unit` names, while absence says the factor was left un-normalised and `value` already stands in those units. A consumer that defaults absence to 1 asserts an identity frame for every factor whose producer simply did not stamp one; a consumer that reads a present cap as a BOUND refuses legitimate levels, because a stated level can sit above its own cap. `declared_scale` cannot substitute: it says which CLASS of scale `value` is on, not which denominator produced it, so four `unit_interval` factors on caps 100 / 1000 / 100000 / 130000 are indistinguishable by it and three orders of magnitude apart in fact. DEBT, and it is real: a graph written before any producer stamped a cap is permanently indistinguishable from one deliberately left un-normalised.",
+      "ref": "src/graph.ts - ObservedStateSchema.raw_value / .cap doc comments (declared 2026-09-17; the pair previously rode .passthrough())"
+    },
     "root/ObservedStateSchema.declared_scale": {
       "markers": [
         "optional"
@@ -3331,6 +3339,14 @@
       "verdict": "distinct",
       "note": "Absence means 'this value was not applied from a panel round' \u2014 which is every value written before 0.40.0 and every non-panel write after it \u2014 and it NEVER means 'attribution lost' (the field's own doc comment states both halves). No value can express that state: any present ref names a round and a participant, i.e. asserts an attribution. The producer rule couples it to source 'panel_elicited' (CEE stamps both together, server-verified, INV-F), so a consumer inferring panel provenance from source alone, or substituting any default ref for absence, would manufacture an attribution nobody made.",
       "ref": "src/graph.ts \u2014 ObservedStateSchema.elicited_from doc comment (0.40.0, PR4 evidence loop; EVIDENCE-LOOP-DERIVATION.md Q5/Q6)"
+    },
+    "root/ObservedStateSchema.raw_value": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absence means NO USER-SCALE MAGNITUDE WAS RECORDED, and no value expresses it. It is NOT zero - a factor legitimately sits at 0 - and it is NOT 'equal to value', which holds only for an uncapped factor and so assumes the very thing absence leaves unknown. The states differ behaviourally at the consumer this package names: CEE's `resolveScaleFrame` recovers a frame from the `{value, raw_value}` PAIR, so absence collapses it to `undefined` and the correct response is to decline rather than divide. A producer may repair the absence (CEE writes `raw_value = value x cap` at the V3 boundary, because it holds the cap it just applied); a consumer must not, because it does not.",
+      "ref": "src/graph.ts - ObservedStateSchema.raw_value / .cap doc comments (declared 2026-09-17; the pair previously rode .passthrough())"
     },
     "root/ObservedStateSchema.source": {
       "markers": [
@@ -3538,6 +3554,13 @@
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.baseline`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `unresolved`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
     },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.cap": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.cap`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `distinct`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
     "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.declared_scale": {
       "markers": [
         "optional"
@@ -3551,6 +3574,13 @@
       ],
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.elicited_from`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `distinct`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.raw_value": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.raw_value`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `distinct`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
     },
     "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.source": {
       "markers": [
