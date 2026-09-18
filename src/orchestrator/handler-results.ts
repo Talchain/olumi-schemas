@@ -6,6 +6,9 @@ import { FeedbackRating, FeedbackTargetKind } from '../boundary/turn-payload.js'
 // 0.55.0 — the statement bound, taken from the wire member so the two cannot
 // drift. See FindingDissentResultSchema below.
 import { MAX_STATED_REASON } from '../boundary/turn-payload.js';
+// 0.56.0 — the participation guard's withheld counts. Imported from the wire
+// member so the persisted fact and the published response carry ONE shape.
+import { AnalysisParticipationWithheldSchema } from '../boundary/olumi-response.js';
 
 // Per-handler result schemas. These validate the in-memory body a handler
 // returns; they also describe the JSONB payload persisted in the
@@ -144,6 +147,26 @@ export const RunAnalysisResultSchema = z.object({
   // `.min(1)`.
   /** Subject-scoped analysis facts. See {@link AnalysisFactSchema}. */
   analysis_facts: z.array(AnalysisFactSchema).optional(),
+  // 0.56.0 — THE PARTICIPATION GUARD'S WITHHELD COUNTS, ON THE PERSISTED FACT.
+  //
+  // This is the CARRIER, not the wire. CEE's participation guard runs inside
+  // `run_analysis`, and the only thing that survives from that handler to the
+  // response composer is this fact — so the counts ride here, and
+  // `composeToolCallResponse` stamps the wire-level
+  // `OlumiResponseSchema.analysis_participation_withheld` FROM THIS VALUE. One
+  // computation, two surfaces; nothing re-derives either count from graph shape.
+  //
+  // The SAME schema object as the wire member, imported rather than restated,
+  // so the persisted shape and the published shape cannot drift (CLAUDE.md
+  // trap 12 — the hand-maintained mirror).
+  //
+  // OPTIONAL, and it stays optional: every fact persisted before this release
+  // has none, and "this row predates the field" is a different claim from "the
+  // guard withheld nothing", which is what a present `{0, 0}` attests. A reader
+  // fails CLOSED on absence.
+  /** What the participation guard withheld from this run.
+   *  See {@link AnalysisParticipationWithheldSchema}. */
+  analysis_participation_withheld: AnalysisParticipationWithheldSchema.optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;
 
