@@ -204,6 +204,7 @@ import {
   ActionSchema,
   InsightSchema,
   ModelBuildingNoticesSchema,
+  AnalysisParticipationWithheldSchema,
   OlumiResponseSchema,
   DecisionClassificationSchema,
   // 0.46.0 — composed analysis-state verdict
@@ -2219,6 +2220,14 @@ export const maximalModelBuildingNotices = deepFreeze({
   details_redacted: true,
 });
 
+// 0.56.0 — the participation guard's withheld counts. DELIBERATELY DIFFERENT
+// INTEGERS: a consumer that reads the right field from the wrong slot cannot
+// pass by coincidence, which a {1, 1} or {2, 2} fixture would allow.
+export const maximalAnalysisParticipationWithheld = deepFreeze({
+  excluded_node_count: 2,
+  pruned_edge_count: 3,
+});
+
 // ----------------------------------------------------------------------------
 // 0.46.0 — AnalysisStateV1, the composed analysis-state verdict.
 //
@@ -2462,6 +2471,8 @@ export const maximalOlumiResponse = deepFreeze({
   model_version_receipt: maximalModelVersionMutationReceiptCommittedMutation,
   // 0.45.0 — response-only redacted construction notices.
   model_building_notices: maximalModelBuildingNotices,
+  // 0.56.0 — the participation guard's withheld counts.
+  analysis_participation_withheld: maximalAnalysisParticipationWithheld,
   // 0.19.0 — wave-2 producer fields (asks 4 + 5).
   framing_question: 'FIXTURE what would it take to reach the synthetic goal?',
   decision_classification: maximalDecisionClassification,
@@ -3756,6 +3767,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalAnalysisStateUnknownDegraded,
     notes:
       'The only variant with a non-empty contradictions list — the producer self-report channel. Every other variant carries [], which is the "found none" claim, not a consistency guarantee.',
+  },
+  {
+    family: 'boundary/AnalysisParticipationWithheldSchema',
+    schema: AnalysisParticipationWithheldSchema,
+    fixture: maximalAnalysisParticipationWithheld,
+    notes:
+      'Two counts, named apart and deliberately DIFFERENT integers so a consumer reading the right field from the wrong slot cannot pass by coincidence. Zero is a legitimate value on both members — a present carrier of {0, 0} attests the guard ran and withheld nothing, which is why absence of the carrier means something else entirely.',
   },
   {
     family: 'boundary/OlumiResponseSchema',

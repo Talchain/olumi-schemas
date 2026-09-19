@@ -1042,6 +1042,49 @@
         "Version 1 changes only when a nested inclusion or conditional rule changes. Top-level field",
         "  carriage remains governed by the separate canonical committed-receipt adoption row."
       ]
+    },
+    {
+      "field": "OlumiResponse.analysis_participation_withheld",
+      "declared_in": "schemas:src/boundary/olumi-response.ts::OlumiResponseSchema.analysis_participation_withheld + AnalysisParticipationWithheldSchema (0.56.0). PERSISTENCE CARRIER: schemas:src/orchestrator/handler-results.ts::RunAnalysisResultSchema.analysis_participation_withheld (0.56.0) — the SAME schema object, imported not restated, so the persisted fact and the published response cannot drift.",
+      "producer": "cee — run_analysis stamps it in composeToolCallResponse from the participation guard's own return value (same change train; lands with the CEE re-vendor PR)",
+      "consumer": "ui — the reduced-model disclosure surface (separate adoption train; the UI lane asked for this field, having refused to bind to CEE's exported sentence grammar)",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY AT THIS RELEASE. This PR adds the shared shape and nothing more; no service",
+        "  emits or reads it until the CEE producer PR re-vendors 0.56.0. producer_test and",
+        "  consumer_test stay null because schema transport tests are not adoption evidence — the",
+        "  producer test lands with the CEE PR in this same train, and this row moves to",
+        "  `produced_dark` then.",
+        "WHY IT EXISTS: CEE #1602 (merged, ef79fe6b) emits a user-facing sentence carrying both",
+        "  counts and exported its GRAMMAR (a regex) as the only machine-readable binding. The UI",
+        "  lane refused it: a regex binding fails silently and OPEN, so if the sentence changes the",
+        "  disclosure vanishes from the consumer surface with nothing red anywhere — the failure",
+        "  mode of the binding is identical to the failure mode it exists to close. Binding to CEE's",
+        "  exported constant was also impossible without COPYING it, since the UI does not consume",
+        "  CEE. This field is that binding, typed.",
+        "TOP-LEVEL, NOT NESTED, AND THE PLACEMENT IS LOAD-BEARING. Measured at UI staging aab14fc8:",
+        "  responseParser.ts demotes unknown TOP-LEVEL keys to the __additive__ sidecar before strict",
+        "  validation (splitAdditiveExtensions), and KNOWN_OLUMI_TOP_LEVEL_KEYS is DERIVED from",
+        "  OlumiResponseSchema.shape, so the key self-promotes on re-vendor. `analysis_result` is in",
+        "  the UI's LEGACY_SCHEMA_KNOWN_BLOCK_TYPES and IS strict-validated, and",
+        "  AnalysisResultBlockSchema is .strict() — so nesting this would have been a whole-turn",
+        "  schema_mismatch for every consumer not yet re-vendored. All three consumers pin 0.55.0",
+        "  today, so the intermediate deploy state had to be inert rather than fatal.",
+        "TWO COUNTS, NEVER A TOTAL. excluded_node_count is what the USER marked; pruned_edge_count",
+        "  followed as a consequence and the user did not mark it. A sum would destroy the only",
+        "  distinction that makes the second number worth telling anyone.",
+        "ZERO IS A VALUE, ABSENCE IS NOT. A present {0, 0} attests the guard ran and withheld",
+        "  nothing. Absence means no participation attestation was made by this turn, and consumers",
+        "  MUST fail closed — never defaulted to {0, 0}, never inferred from the graph, from the",
+        "  analysis_result block, or from the prose disclosure in assistant_text.",
+        "NO CROSS-FIELD REFINEMENT. CEE's guard cannot emit pruned_edge_count > 0 with",
+        "  excluded_node_count === 0; that rule is CEE doctrine and is deliberately NOT mirrored",
+        "  here, for the same reason ConstraintVerdictSchema refuses to mirror MAY_NAME_LEADING_OPTION."
+      ]
     }
   ]
 }

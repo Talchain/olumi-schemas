@@ -267,7 +267,7 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   as the five members above. The member is flat and EVERY field is
     //   REQUIRED, so the fixture is maximal by construction and the maximality
     //   walker has no optional field to report.
-    expect(MAXIMAL_FIXTURES.length).toBe(200);
+    expect(MAXIMAL_FIXTURES.length).toBe(201);
   });
 
   it('family keys are unique', () => {

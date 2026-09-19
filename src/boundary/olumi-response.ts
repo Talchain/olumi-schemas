@@ -182,6 +182,71 @@ export const ModelBuildingNoticesSchema = z.object({
 });
 export type ModelBuildingNotices = z.infer<typeof ModelBuildingNoticesSchema>;
 
+// ---------------------------------------------------------------------------
+// 0.56.0 — ANALYSIS PARTICIPATION: WHAT THE RUN WAS NOT ALLOWED TO SEE
+//
+// A user can mark a node as kept out of the calculation
+// (`node.analysis_participation === 'retained_excluded'`, CEE's participation
+// guard). The node is withheld from the graph CEE hands PLoT, and so is every
+// edge incident to it — PLoT's `/v2/run` preflight rejects a dangling endpoint,
+// so the edges cannot stay. The analysis then runs on a REDUCED MODEL, and
+// every number in the result is internally consistent with a graph the user is
+// not looking at, so they cannot detect it by reading carefully.
+//
+// ⭐ THIS EXISTS BECAUSE THE ONLY EXISTING CHANNEL WAS PROSE. CEE #1602 shipped
+// a user-facing sentence carrying both counts and exported its GRAMMAR (a
+// regex) as the machine-readable binding. The UI lane refused that binding, and
+// the argument is the reason this field exists:
+//
+//     "A regex binding fails silently and open. If you change the sentence, my
+//      match returns nothing, the disclosure vanishes from my surface, and
+//      nothing goes red anywhere. So the failure mode of the binding is
+//      identical to the failure mode it is meant to close."
+//
+// It is also a hand-maintained mirror (this estate's dominant defect): the
+// constant is exported from CEE, which the UI does not consume, so a consumer
+// binding to the grammar would be COPYING it. The sentence stays — it is what
+// reaches the user — but a consumer now reads integers.
+//
+// ⛔ TWO COUNTS, NAMED APART, NEVER COLLAPSED INTO A TOTAL. They answer
+// different questions and have different remedies:
+//   `excluded_node_count` — parts of the model the USER marked. The user did
+//       this, knows they did it, and can undo it node by node.
+//   `pruned_edge_count`   — connections dropped as a CONSEQUENCE of those
+//       marks. The user did NOT mark these and may not know they are gone; a
+//       single excluded factor can take several connections with it.
+// A sum would say "5 things were removed" and destroy exactly the distinction
+// that makes the second number worth telling anyone (CLAUDE.md trap 21).
+//
+// ⛔ NO CROSS-FIELD REFINEMENT, DELIBERATELY. CEE's guard cannot produce
+// `pruned_edge_count > 0` with `excluded_node_count === 0`, and this schema
+// does NOT encode that. It is CEE doctrine about how the guard walks the graph;
+// copying it here would create a rule that must change in two repos at once and
+// would reject counts a legitimately-newer CEE emits. The contract owns the
+// SHAPE; the meaning stays with the guard — the same reasoning
+// `ConstraintVerdictSchema` records for `may_name_leading_option`.
+//
+// Counts are non-negative because ZERO IS A LEGITIMATE VALUE HERE, unlike
+// `ModelBuildingNoticesSchema` above: a present carrier with `{0, 0}` is the
+// positive attestation "the guard ran on this analysis and withheld nothing",
+// which is a real and useful claim. That is what makes absence mean something
+// else entirely — see the field comment on `OlumiResponseSchema`.
+export const AnalysisParticipationWithheldSchema = z.object({
+  /**
+   * How many nodes the participation guard withheld from the graph this
+   * analysis ran against, because the user marked them kept out of the
+   * calculation. Never a count of nodes that merely failed validation.
+   */
+  excluded_node_count: z.number().int().min(0).finite().safe(),
+  /**
+   * How many edges were dropped as a CONSEQUENCE of those exclusions — edges
+   * incident to a withheld node, which cannot survive the run. The user did
+   * not mark these; they followed.
+   */
+  pruned_edge_count: z.number().int().min(0).finite().safe(),
+}).strict();
+export type AnalysisParticipationWithheld = z.infer<typeof AnalysisParticipationWithheldSchema>;
+
 // OlumiResponse — the only response shape produced by /orchestrate/v2/turn.
 // Egress validator must pass this schema; failure falls back to a typed error
 // envelope, never a 500 (per Boundary Contract v1.1 §3.2.3).
@@ -309,6 +374,40 @@ export const OlumiResponseSchema = z.object({
   // (replaces the `zero_overlap_drop` class). Optional so pinned consumers are
   // unaffected until they re-vendor 0.22.0; absent = no handshake asserted.
   graph_hash: z.string().min(1).optional(),
+  // 0.56.0 additive — the participation guard's own withheld counts.
+  //
+  // Present ⇒ CEE's participation guard RAN on this turn's analysis and these
+  // are its exact counts, taken from the guard's return value. `{0, 0}` is a
+  // positive attestation that nothing was withheld, and it is a DIFFERENT claim
+  // from absence.
+  //
+  // ⛔ ABSENCE IS DISTINCT AND CONSUMERS MUST FAIL CLOSED. Absent means NO
+  // participation attestation was made by this turn — a turn that ran no
+  // analysis, or a producer that predates this field. It NEVER means "nothing
+  // was withheld", it is never defaulted to `{0, 0}`, and it is never permission
+  // to infer the counts from the graph, from the block, or from the prose
+  // disclosure in `assistant_text`. A consumer that cannot find this field
+  // renders NO reduced-model disclosure and claims nothing — which is exactly
+  // what makes this safe to ship before any consumer migrates. A defaulted zero
+  // here would be a manufactured attestation: it would tell the user their model
+  // was complete on every turn produced by an un-upgraded CEE.
+  //
+  // ⚠ TOP-LEVEL, NOT INSIDE THE `analysis_result` BLOCK, AND THE PLACEMENT IS
+  // THE LOAD-BEARING PART. Measured at UI `staging` `aab14fc8`
+  // (`src/v5/responseParser.ts`): unknown TOP-LEVEL keys are split into the
+  // non-enumerable `__additive__` sidecar BEFORE strict validation
+  // (`splitAdditiveExtensions`, :339-356), and `KNOWN_OLUMI_TOP_LEVEL_KEYS` is
+  // DERIVED from `OlumiResponseSchema.shape` (:241-243) so this key promotes
+  // itself into the typed surface the moment the UI re-vendors, with no hand
+  // edit anywhere. By contrast `analysis_result` is a member of
+  // `LEGACY_SCHEMA_KNOWN_BLOCK_TYPES` (:370) and is therefore routed to STRICT
+  // validation, and `AnalysisResultBlockSchema` is `.strict()` — so an unknown
+  // key inside THAT block is a whole-turn `schema_mismatch` hard failure for
+  // every consumer that has not re-vendored. All three consumers pin 0.55.0
+  // today, so nesting this would have broken every run_analysis turn with an
+  // exclusion until the UI shipped. Here the intermediate deploy state is inert,
+  // not fatal.
+  analysis_participation_withheld: AnalysisParticipationWithheldSchema.optional(),
 }).strict();
 
 export type OlumiResponse = z.infer<typeof OlumiResponseSchema>;

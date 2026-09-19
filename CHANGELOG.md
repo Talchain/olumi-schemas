@@ -5,6 +5,130 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.56.0] — `analysis_participation_withheld`
+
+**Additive, and it ships the two unversioned declarations that have been sitting
+on `main` since `v0.55.0` was tagged** (#59 and #60 — `observed_state.raw_value`
+/ `.cap`). Those commits changed `contracts/adoption-manifest.json` without a
+version bump, so `main`'s `CONTRACT_MANIFEST_SHA` (`4d3b0995…`) has diverged from
+the published `0.55.0` tarball's (`088fb46a…`) since 17 Sep. That is unreleased
+work, not two byte-sets under one version string — `publish.yml` skips a version
+that already exists, so `main` could never have been published as `0.55.0`. This
+bump is what carries it to consumers.
+
+One new shape and two new optional fields. No existing field's shape, bounds or
+required-ness changes.
+
+### Added
+
+- **`AnalysisParticipationWithheldSchema` — what an analysis was not allowed to
+  see, as two integers rather than as a sentence.**
+
+  A user can mark a node kept out of the calculation
+  (`node.analysis_participation === 'retained_excluded'`). CEE's participation
+  guard withholds that node from the graph handed to PLoT, **and every edge
+  incident to it goes too** — PLoT's `/v2/run` preflight rejects a dangling
+  endpoint. The analysis then runs on a reduced model, and every number in the
+  result is internally consistent with a graph the user is not looking at, so
+  **they cannot detect it by reading carefully.**
+
+  ```ts
+  { excluded_node_count: number; pruned_edge_count: number }  // .strict()
+  ```
+
+  Both members are **required** integers, `>= 0`, finite and safe.
+
+  **⭐ WHY A FIELD AND NOT THE EXISTING SENTENCE.** CEE #1602 (merged,
+  `ef79fe6b`) already emits a user-facing disclosure carrying both counts, and
+  exported its *grammar* — a regex — as the machine-readable binding. The
+  consumer lane refused that binding, and the argument is the reason this
+  release exists:
+
+  > *"A regex binding fails silently and open. If you change the sentence, my
+  > match returns nothing, the disclosure vanishes from my surface, and nothing
+  > goes red anywhere. The user is then told nothing about a reduced model —
+  > which is the precise harm this disclosure exists to prevent. So the failure
+  > mode of the binding is identical to the failure mode it is meant to close."*
+
+  They also could not hold the grammar honestly: the constant is exported from
+  CEE, which the UI does not consume, so binding to it meant **copying** it —
+  the hand-maintained mirror this estate keeps paying for. **The sentence stays**
+  (it is what reaches the user); machines now read integers.
+
+  **⛔ TWO COUNTS, NAMED APART, NEVER A TOTAL.** `excluded_node_count` is what
+  the **user marked** — they did it, know they did it, and can undo it node by
+  node. `pruned_edge_count` **followed as a consequence**; the user did not mark
+  those and may not know they are gone. A sum would say "5 things were removed"
+  and destroy the only distinction that makes the second number worth telling
+  anyone.
+
+  **⛔ NO CROSS-FIELD REFINEMENT, DELIBERATELY.** CEE's guard cannot produce
+  `pruned_edge_count > 0` with `excluded_node_count === 0`. This schema does not
+  encode that: it is CEE doctrine about how the guard walks the graph, and
+  copying it here would create a rule that must change in two repos at once and
+  would reject counts a legitimately-newer CEE emits. Same reasoning
+  `ConstraintVerdictSchema` records for `may_name_leading_option`. A test pins
+  that the combination **parses**, so a future mirror fails loud.
+
+- **`OlumiResponseSchema.analysis_participation_withheld?`** — the wire member.
+
+  **⚠ TOP-LEVEL, NOT INSIDE THE `analysis_result` BLOCK, AND THAT IS THE
+  LOAD-BEARING DECISION.** Measured at UI `staging` `aab14fc8`
+  (`src/v5/responseParser.ts`):
+
+  - unknown **top-level** keys are split into the non-enumerable `__additive__`
+    sidecar *before* strict validation (`splitAdditiveExtensions`, `:339-356`),
+    and `KNOWN_OLUMI_TOP_LEVEL_KEYS` is **derived** from
+    `OlumiResponseSchema.shape` (`:241-243`) — so this key promotes itself into
+    the typed surface the moment a consumer re-vendors, with no hand-maintained
+    list anywhere to update;
+  - `analysis_result` is a member of `LEGACY_SCHEMA_KNOWN_BLOCK_TYPES` (`:370`)
+    and is therefore routed to **strict** validation, and
+    `AnalysisResultBlockSchema` is `.strict()` — so an unknown key inside *that*
+    block is a whole-turn **`schema_mismatch` hard failure** for any consumer
+    that has not re-vendored.
+
+  **UI, PLoT and CEE all pin `0.55.0` today.** Nesting this would have broken
+  every `run_analysis` turn that had an exclusion, from the moment CEE shipped
+  until the UI did. At the top level the intermediate deploy state is **inert**,
+  not fatal. `analysis-participation-withheld-0.56.test.ts` pins both halves —
+  the key IS declared on `OlumiResponseSchema`, and is NOT declared on
+  `AnalysisResultBlockSchema` — so a later tidy-up into the block fails loud.
+
+- **`RunAnalysisResultSchema.analysis_participation_withheld?`** — the
+  persistence carrier, and **the same schema object**, imported rather than
+  restated. CEE's guard runs inside `run_analysis`, and the only thing that
+  survives from that handler to the response composer is this fact, so the
+  counts ride here and `composeToolCallResponse` stamps the wire member from
+  this value. One computation, two surfaces; nothing re-derives either count
+  from graph shape. A test asserts **object identity**, not shape equality —
+  two structurally-identical copies would satisfy a shape comparison and then
+  drift the first time one is edited.
+
+### Absence semantics — `distinct` on both members
+
+**Present** ⇒ the guard **ran** on this turn's analysis and these are its exact
+counts. **`{0, 0}` is a positive attestation that nothing was withheld.**
+
+**Absent** ⇒ **no participation attestation was made by this turn** — a turn
+that ran no analysis, or a producer predating this field. It never means
+"nothing was withheld". Consumers **MUST fail closed**: render no reduced-model
+disclosure, never default to `{0, 0}`, and never infer the counts from the
+graph, from the `analysis_result` block, or from the prose disclosure in
+`assistant_text`.
+
+**A defaulted zero here would be a manufactured attestation** — it would tell
+every user of an un-upgraded CEE that their model was complete. Both rows are
+recorded `distinct` in the absence-semantics census, so adding a `.default()`
+later fails the gate.
+
+### Adoption
+
+`OlumiResponse.analysis_participation_withheld` is **`declared`** — this release
+adds the shape and nothing more. The CEE producer PR rides the same train and
+moves the row to `produced_dark` with its producer test. No consumer reads it
+yet.
+
 ## [0.55.0] — `finding_dissent`
 
 **Additive.** Two new union members — one on `SystemEventSchema` (the WIRE) and

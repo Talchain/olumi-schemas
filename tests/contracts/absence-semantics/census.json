@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 77,
+    "distinct": 79,
     "same": 33,
     "unresolved": 412
   },
@@ -2351,6 +2351,14 @@
       ],
       "verdict": "unresolved"
     },
+    "boundary/OlumiResponseSchema.analysis_participation_withheld": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: \"Present \u21d2 CEE's participation guard RAN on this turn's analysis and these are its exact counts ... {0, 0} is a positive attestation that nothing was withheld, and it is a DIFFERENT claim from absence. Absent means NO participation attestation was made by this turn ... It NEVER means 'nothing was withheld', it is never defaulted to {0, 0}.\" A defaulted zero would tell the user their model was complete on every turn produced by an un-upgraded CEE.",
+      "ref": "src/boundary/olumi-response.ts \u2014 OlumiResponseSchema.analysis_participation_withheld comment (0.56.0)"
+    },
     "boundary/OlumiResponseSchema.analysis_state": {
       "markers": [
         "optional"
@@ -2964,6 +2972,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "orchestrator/RunAnalysisResultSchema.analysis_participation_withheld": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment: \"every fact persisted before this release has none, and 'this row predates the field' is a different claim from 'the guard withheld nothing', which is what a present {0, 0} attests. A reader fails CLOSED on absence.\" The SAME schema object as the wire member, imported not restated, so the two cannot drift.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 RunAnalysisResultSchema.analysis_participation_withheld comment (0.56.0)"
     },
     "orchestrator/RunAnalysisResultSchema.computed_at": {
       "markers": [

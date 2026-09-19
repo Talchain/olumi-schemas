@@ -412,6 +412,8 @@ export {
   // 0.45.0 — response-only redacted model-building notices.
   ModelBuildingNoticeKindSchema,
   ModelBuildingNoticesSchema,
+  // 0.56.0 — the participation guard's withheld counts (nodes + edges).
+  AnalysisParticipationWithheldSchema,
   OlumiResponseSchema,
   // 0.19.0 — decision classification (wave-2 ask 5, UI-SEM-077)
   DecisionClassificationSchema,
@@ -427,6 +429,8 @@ export type {
   // 0.45.0 — response-only redacted model-building notices.
   ModelBuildingNoticeKind,
   ModelBuildingNotices,
+  // 0.56.0 — the participation guard's withheld counts (nodes + edges).
+  AnalysisParticipationWithheld,
   OlumiResponse,
   // 0.19.0 — decision classification (wave-2 ask 5, UI-SEM-077)
   DecisionClassification,
