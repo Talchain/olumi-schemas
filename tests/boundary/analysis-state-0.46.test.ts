@@ -88,6 +88,13 @@ describe('AnalysisStateV1 · run_state vocabulary', () => {
     expect(AnalysisStaleCauseSchema.options).toStrictEqual([
       'graph_changed',
       'options_changed',
+      // The only stale cause a hash comparison CANNOT see: a model restored to
+      // an earlier version is byte-identical to the one the analysis ran
+      // against, so every structural test reads `fresh`. Producer-side the
+      // reason has existed since C8 (`analysis_invalidated_at`); it had no wire
+      // member, so a consumer was told `stale` with no cause — or, worse, the
+      // binary fallthrough reported it as `graph_changed`, which is false.
+      'model_restored_after_analysis',
     ]);
     expect(AnalysisDegradedCauseSchema.options).toStrictEqual([
       'store_unreadable',
