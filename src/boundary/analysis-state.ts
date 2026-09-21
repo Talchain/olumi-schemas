@@ -186,7 +186,24 @@ export type AnalysisRunStateKind = z.infer<typeof AnalysisRunStateKindSchema>;
  * comparison itself — and collapsing them to one "stale" loses the only thing
  * a consumer could act on.
  */
-export const AnalysisStaleCauseSchema = z.enum(['graph_changed', 'options_changed']);
+export const AnalysisStaleCauseSchema = z.enum([
+  'graph_changed',
+  'options_changed',
+  // ⭐ THE THIRD CAUSE, AND IT IS THE ONLY ONE A HASH COMPARISON CANNOT SEE.
+  // A model RESTORED to an earlier version can be byte-identical to the one the
+  // analysis ran against — same graph, same hash, `fresh` by every structural
+  // test — while the analysis is no longer about the model the user is looking
+  // at. The producer has carried this reason internally since C8
+  // (`analysis_invalidated_at`, a DB-stamped chronology marker); it had no wire
+  // member, so a consumer could be told `stale` and never why, or — worse —
+  // told `fresh`.
+  //
+  // ⚠ It belongs in THIS enum and not as a fourth run-state: the analysis IS
+  // stale, and the docblock above is the reason — collapsing causes loses the
+  // only thing a consumer could act on, and "re-run because the model was
+  // rolled back" is a different sentence from "re-run because you changed it".
+  'model_restored_after_analysis',
+]);
 export type AnalysisStaleCause = z.infer<typeof AnalysisStaleCauseSchema>;
 
 /**
@@ -445,6 +462,59 @@ export const AnalysisLeaderClaimSchema = z
 export type AnalysisLeaderClaim = z.infer<typeof AnalysisLeaderClaimSchema>;
 
 // ----------------------------------------------------------------------------
+// comparison scope — WHICH options a comparative claim is actually about
+// ----------------------------------------------------------------------------
+
+/**
+ * The options this analysis actually RANKED, as distinct from the options that
+ * exist on the model.
+ *
+ * ⭐ WHY THIS IS NOT COSMETIC. Every comparative sentence the product emits is
+ * implicitly scoped — "X performs best" means "best OF THE ONES WE COMPARED" —
+ * and until this field existed no consumer could tell whether that set was the
+ * whole roster or three of five. A claim scoped to a subset, presented as if it
+ * were scoped to the whole, is a false claim made entirely out of true parts.
+ *
+ * ⚠ IDENTITY-BOUND, NEVER LABELS. These are option ids. The producer's own
+ * `win_probabilities` record is keyed by option LABEL first and falls back to
+ * id, so it CANNOT serve this question: a rename is invisible to the
+ * analysis-affecting hash, so two runs differing only in a label would read as
+ * different options. Anything populating this field must resolve ids from the
+ * raw per-option records and drop duplicates rather than guess.
+ *
+ * ⚠ ABSENCE IS DISTINCT, in both directions. An absent field means no scope was
+ * computed — NEVER "everything was ranked". An empty `ranked_option_ids` means
+ * the analysis ranked nothing, which is a real and different state.
+ */
+export const AnalysisComparisonScopeSchema = z
+  .object({
+    ranked_option_ids: z
+      .array(z.string().min(1))
+      .describe(
+        'The option ids this analysis actually ranked — the exact set any comparative claim ' +
+          'is about. Identity-bound; never labels. A consumer may state a comparative result ' +
+          'ONLY over these ids, and must not imply it covers any option absent from this list.',
+      ),
+    unranked_option_ids: z
+      .array(z.string().min(1))
+      .optional()
+      .describe(
+        'Option ids that exist on the model but which this analysis did NOT rank. Present so ' +
+          'a consumer can say what was left out rather than silently narrowing the claim. ' +
+          'ABSENCE IS DISTINCT: absent means the producer did not compute the difference, ' +
+          'NEVER "nothing was left out" — an empty array is how that is said.',
+      ),
+  })
+  .strict()
+  .describe(
+    'SCOPE OF A COMPARATIVE CLAIM. It answers "which options is this result about", and ' +
+      'nothing else: it makes no statement about which option is preferable, how stable the ' +
+      'result is, or whether a leader may be named — those are `leader_claim` and ' +
+      '`robustness`, and borrowing across them is how a scope becomes a recommendation.',
+  );
+export type AnalysisComparisonScope = z.infer<typeof AnalysisComparisonScopeSchema>;
+
+// ----------------------------------------------------------------------------
 // robustness — two named fields, two different questions
 // ----------------------------------------------------------------------------
 
@@ -504,6 +574,18 @@ const AnalysisStateV1ObjectSchema = z
     readiness: AnalysisReadinessSchema,
     leader_claim: AnalysisLeaderClaimSchema,
     robustness: AnalysisRobustnessSchema,
+    /**
+     * OPTIONAL and ADDITIVE. Absent on every producer that has not computed it,
+     * which is how this lands without a coordinated three-repo deploy —
+     * `AnalysisStateV1` is `.strict()`, so a consumer on an older pin would
+     * REJECT an unknown key, and that is why the field is introduced here
+     * before any producer emits it.
+     *
+     * ⚠ Absence means NO SCOPE WAS COMPUTED. It does NOT mean every option was
+     * ranked, and a consumer must not narrate a comparative claim as covering
+     * the whole roster on the strength of this field being missing.
+     */
+    comparison_scope: AnalysisComparisonScopeSchema.optional(),
     usable_for_prose: z.boolean().describe(
       'Whether this turn\'s analysis result may be referred to in PROSE — assistant sentences ' +
         'and narrative copy that describe or interpret the result. False means the result must ' +
