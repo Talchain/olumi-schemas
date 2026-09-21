@@ -45,7 +45,9 @@
     "generate:contract-constants": "node scripts/generate-contract-constants.mjs --write",
     "generate:contract-constants:check": "node scripts/generate-contract-constants.mjs",
     "generate:population-ref": "node scripts/generate-population-ref.mjs --write",
-    "generate:population-ref:check": "node scripts/generate-population-ref.mjs"
+    "generate:population-ref:check": "node scripts/generate-population-ref.mjs",
+    "check:consumer-pins": "node scripts/check-consumer-pins.mjs",
+    "check:consumer-pins:strict": "node scripts/check-consumer-pins.mjs --strict"
   },
   "keywords": [
     "olumi",
