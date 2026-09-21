@@ -408,6 +408,68 @@ export const OlumiResponseSchema = z.object({
   // exclusion until the UI shipped. Here the intermediate deploy state is inert,
   // not fatal.
   analysis_participation_withheld: AnalysisParticipationWithheldSchema.optional(),
+
+  /**
+   * THE CONTRACT THIS RESPONSE WAS BUILT AGAINST — the missing input to a check
+   * that already exists and has never been able to answer.
+   *
+   * ⚠ MEASURED, NOT SUPPOSED. A live debug bundle from a real user session on
+   * 2026-09-21 reported, verbatim:
+   *     cee_request / cee_response / plot_* / isl_*  : ALL null
+   *     consistency_status                           : "unknown"
+   *     unknown_reason                               : "missing_schema_versions"
+   * The client's schema-consistency check EXISTS, RUNS on every turn, and can
+   * never answer, because no service has ever put its contract version on the
+   * wire. Meanwhile CEE, UI and PLoT each pin a hand-vendored
+   * `talchain-schemas-0.55.0.tgz` while this repo is at 0.56.0 — so the
+   * platform's own documented dominant risk ("a consumer on an older pin
+   * silently drops fields it does not know") has NO RUNTIME DETECTOR AT ALL.
+   *
+   * ⭐ WHY THIS IS SAFE TO EMIT BEFORE ANY CONSUMER RE-VENDORS, and why it is
+   * TOP-LEVEL rather than nested. Measured at UI `staging`
+   * (`src/v5/responseParser.ts`): unknown TOP-LEVEL keys are split into the
+   * non-enumerable `__additive__` sidecar by `splitAdditiveExtensions` (:339)
+   * BEFORE strict validation (:742), and `KNOWN_OLUMI_TOP_LEVEL_KEYS` is
+   * DERIVED from `OlumiResponseSchema.shape` (:241) — so this key promotes
+   * itself into the typed surface the moment the UI re-vendors, with no hand
+   * edit anywhere. The intermediate deploy state is INERT, NOT FATAL.
+   *
+   * ⛔ DO NOT nest this inside `analysis_result` or any other block. Those are
+   * routed to STRICT block validation, where an unknown key is a whole-turn
+   * `schema_mismatch` hard failure for every consumer that has not re-vendored.
+   * The same reasoning is recorded above for `analysis_participation_withheld`.
+   *
+   * ⚠ ABSENCE IS DISTINCT: absent means the producer predates this field or
+   * chose not to stamp — NEVER "the versions agree". A consumer must report
+   * `unknown`, exactly as it does today, rather than inferring consistency.
+   */
+  contract: z
+    .object({
+      schemas_version: z
+        .string()
+        .min(1)
+        .describe(
+          'The `@talchain/schemas` version this producer was COMPILED against, taken from the ' +
+            "package's own generated constant — never a literal, which would be a copy free to " +
+            'drift from the thing it names.',
+        ),
+      schemas_sha: z
+        .string()
+        .min(1)
+        .optional()
+        .describe(
+          'sha256 over `<name>@<version>` plus every published json-schema document. Two builds ' +
+            'reporting the same version but different shas have been built against different ' +
+            'bytes, which a version alone cannot reveal.',
+        ),
+    })
+    .strict()
+    .optional()
+    .describe(
+      'CONTRACT PROVENANCE. It answers "which contract produced this response", and nothing ' +
+        'else: it makes no claim about whether the consumer agrees, which is the consumer\'s ' +
+        'comparison to make and report.',
+    ),
 }).strict();
 
 export type OlumiResponse = z.infer<typeof OlumiResponseSchema>;

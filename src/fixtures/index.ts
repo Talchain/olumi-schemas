@@ -2473,6 +2473,14 @@ export const maximalOlumiResponse = deepFreeze({
   model_building_notices: maximalModelBuildingNotices,
   // 0.56.0 — the participation guard's withheld counts.
   analysis_participation_withheld: maximalAnalysisParticipationWithheld,
+  // Maximal by design: BOTH members populated. `schemas_sha` is the one a
+  // version alone cannot substitute for — two builds can report the same
+  // version and different published bytes — so leaving it empty would exercise
+  // the field while hiding the only case it exists for.
+  contract: {
+    schemas_version: '0.57.0',
+    schemas_sha: 'fixture-sha-not-a-real-digest',
+  },
   // 0.19.0 — wave-2 producer fields (asks 4 + 5).
   framing_question: 'FIXTURE what would it take to reach the synthetic goal?',
   decision_classification: maximalDecisionClassification,
