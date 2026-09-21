@@ -186,7 +186,24 @@ export type AnalysisRunStateKind = z.infer<typeof AnalysisRunStateKindSchema>;
  * comparison itself — and collapsing them to one "stale" loses the only thing
  * a consumer could act on.
  */
-export const AnalysisStaleCauseSchema = z.enum(['graph_changed', 'options_changed']);
+export const AnalysisStaleCauseSchema = z.enum([
+  'graph_changed',
+  'options_changed',
+  // ⭐ THE THIRD CAUSE, AND IT IS THE ONLY ONE A HASH COMPARISON CANNOT SEE.
+  // A model RESTORED to an earlier version can be byte-identical to the one the
+  // analysis ran against — same graph, same hash, `fresh` by every structural
+  // test — while the analysis is no longer about the model the user is looking
+  // at. The producer has carried this reason internally since C8
+  // (`analysis_invalidated_at`, a DB-stamped chronology marker); it had no wire
+  // member, so a consumer could be told `stale` and never why, or — worse —
+  // told `fresh`.
+  //
+  // ⚠ It belongs in THIS enum and not as a fourth run-state: the analysis IS
+  // stale, and the docblock above is the reason — collapsing causes loses the
+  // only thing a consumer could act on, and "re-run because the model was
+  // rolled back" is a different sentence from "re-run because you changed it".
+  'model_restored_after_analysis',
+]);
 export type AnalysisStaleCause = z.infer<typeof AnalysisStaleCauseSchema>;
 
 /**
