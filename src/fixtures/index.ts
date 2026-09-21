@@ -2328,14 +2328,6 @@ export const maximalAnalysisStateBlocked = deepFreeze({
   readiness: maximalAnalysisReadiness,
   leader_claim: { permitted: false, withheld_reason: 'FIXTURE_MODEL_NOT_ANALYSABLE' },
   robustness: {},
-  // Maximal by design: BOTH members populated, and `unranked_option_ids`
-  // NON-EMPTY. An empty array here would exercise the field while hiding the
-  // only case that matters — a comparative claim covering a SUBSET, which is
-  // the state the field exists to make visible.
-  comparison_scope: {
-    ranked_option_ids: ['fixture-option-ranked-a', 'fixture-option-ranked-b'],
-    unranked_option_ids: ['fixture-option-unranked-c'],
-  },
   usable_for_prose: false,
   usable_for_chips: false,
   usable_for_followup: false,

@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 81,
+    "distinct": 79,
     "same": 33,
     "unresolved": 412
   },
@@ -448,22 +448,6 @@
       "verdict": "distinct",
       "note": "THE TWO-STATES-ONE-BYTE SHAPE THIS GATE EXISTS FOR, declared rather than hidden. Field .describe(): \"ABSENCE AND EMPTY ARE DIFFERENT STATES AND BOTH ARE REACHABLE: absent means the flip analysis was NOT COMPUTED (nothing is known); [] means it WAS computed and no single factor flips the leader (a positive, meaningful finding) ... reporting 'no factor changes the outcome' from an absent field is a fabricated finding.\" There is no discriminator on the wire. Per this gate's own rule a distinct row is DEBT, not a fix: the discriminator rides its own train, and the 0.46.0 CHANGELOG names it as the first question for the external adjudication.",
       "ref": "src/boundary/analysis-state.ts :: AnalysisRobustnessSchema.factors_that_flip_leader .describe() (0.46.0)"
-    },
-    "boundary/AnalysisStateV1Schema.comparison_scope": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "distinct",
-      "note": "Field .describe(): \"Absence means NO SCOPE WAS COMPUTED. It does NOT mean every option was ranked.\" Absence and an empty object are different facts and neither can express the other: absent = the producer did not compute the scope; {ranked_option_ids: []} = it computed one and the analysis ranked nothing. A consumer that defaults absence to 'all options' narrates a subset comparison as a complete one, which is the exact harm this field was added to prevent - a claim scoped to a subset, presented as the whole, is false while made entirely of true parts. DEBT ROW: there is no discriminator today; the field is optional so a producer that has not adopted it is indistinguishable from one that computed nothing.",
-      "ref": "src/boundary/analysis-state.ts :: AnalysisStateV1ObjectSchema.comparison_scope + AnalysisComparisonScopeSchema .describe() (0.57.0)"
-    },
-    "boundary/AnalysisStateV1Schema.comparison_scope.unranked_option_ids": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "distinct",
-      "note": "Field .describe(): \"ABSENCE IS DISTINCT: absent means the producer did not compute the difference, NEVER 'nothing was left out' - an empty array is how that is said.\" The producer omits it when the graph carries no options source, so it cannot know what was excluded; [] is the positive claim that nothing was. 'We could not work out what was left out' and 'nothing was left out' are different sentences and only one of them licenses a complete-comparison narration.",
-      "ref": "src/boundary/analysis-state.ts :: AnalysisComparisonScopeSchema.unranked_option_ids .describe() (0.57.0)"
     },
     "boundary/BlockSchema|type=evidence.action_intent": {
       "markers": [
