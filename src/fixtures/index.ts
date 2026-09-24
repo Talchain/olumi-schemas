@@ -186,6 +186,8 @@ import {
   EnrichmentConditionalProbabilitySchema,
   EnrichmentConditionalWinnerSchema,
   EnrichmentConditionalBucketSchema,
+  // 0.58.0 — the provisional-run marker
+  EnrichmentRunProvenanceSchema,
   // F6 — constraint margin + scale/decision-grade provenance (schemas #16)
   EnrichmentConstraintMarginSchema,
   EnrichmentScaleProvenanceSchema,
@@ -1177,6 +1179,21 @@ export const maximalEnrichmentConditionalWinner = deepFreeze({
   [PROBE]: true,
 });
 
+/**
+ * 0.58.0 — the provisional-run marker, MAXIMAL: both optional turn-id members
+ * are populated because the maximality ratchet requires every optional field
+ * exercised. A real CEE stamp carries ONE of them (the one matching its
+ * initiator); this combination is clearly synthetic and is not evidence about
+ * the wire.
+ */
+export const maximalEnrichmentRunProvenance = deepFreeze({
+  initiated_by: 'FIXTURE_auto_post_construction',
+  provisional: true,
+  draft_turn_id: 'fixture-draft-turn-0001',
+  construction_turn_id: 'fixture-construction-turn-0001',
+  [PROBE]: true,
+});
+
 export const maximalAnalysisEnrichment = deepFreeze({
   analysis_status: 'computed',
   status_reason: 'FIXTURE_computed_normally',
@@ -1216,6 +1233,8 @@ export const maximalAnalysisEnrichment = deepFreeze({
     options: [{ option_id: ID_OPTION_A, label: LABEL_OPTION_A, win_probability: 0.7, rank: 1 }],
     [PROBE]: true,
   },
+  // 0.58.0 — the provisional-run marker (CEE-authored, keep-listed).
+  run_provenance: maximalEnrichmentRunProvenance,
   // deprecated-inbound-only legacy array — see envelope disposition notes.
   results: [{ FIXTURE_legacy_key: 'FIXTURE_legacy_value' }],
   [PROBE]: true,
@@ -3548,6 +3567,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalEnrichmentFactorEvppiEntry,
     notes:
       'ISL emits rows sorted by `evppi` DESCENDING and OMITS levers entirely — absent is never zero. The fixture is a `resolved` row because that is the only kind a consumer may rank; `below_resolution` is a demotion band, not a maximal shape.',
+  },
+  {
+    family: 'boundary/EnrichmentRunProvenanceSchema',
+    schema: EnrichmentRunProvenanceSchema,
+    fixture: maximalEnrichmentRunProvenance,
+    notes:
+      'Both turn-id members populated for the maximality ratchet; a real CEE stamp carries only the one matching its initiator. `provisional` is the literal true — a not-provisional stamp is refused, not typed.',
   },
   {
     family: 'boundary/AnalysisEnrichmentSchema',

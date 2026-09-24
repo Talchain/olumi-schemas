@@ -267,7 +267,10 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   as the five members above. The member is flat and EVERY field is
     //   REQUIRED, so the fixture is maximal by construction and the maximality
     //   walker has no optional field to report.
-    expect(MAXIMAL_FIXTURES.length).toBe(201);
+    // 0.58.0 (+1): boundary/EnrichmentRunProvenanceSchema — the provisional-run
+    //   marker that joins the CEE→UI keep-list. Its maximal fixture populates
+    //   both turn-id members, which no real stamp does (see its notes).
+    expect(MAXIMAL_FIXTURES.length).toBe(202);
   });
 
   it('family keys are unique', () => {

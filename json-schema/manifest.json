@@ -132,6 +132,11 @@
       "definition": "#/definitions/EnrichmentRobustnessSchema"
     },
     {
+      "export": "EnrichmentRunProvenanceSchema",
+      "file": "EnrichmentRunProvenanceSchema.json",
+      "definition": "#/definitions/EnrichmentRunProvenanceSchema"
+    },
+    {
       "export": "EnrichmentScaleProvenanceSchema",
       "file": "EnrichmentScaleProvenanceSchema.json",
       "definition": "#/definitions/EnrichmentScaleProvenanceSchema"

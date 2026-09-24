@@ -1326,6 +1326,31 @@
             }
           ]
         },
+        "run_provenance": {
+          "type": "object",
+          "properties": {
+            "initiated_by": {
+              "type": "string",
+              "minLength": 1
+            },
+            "provisional": {
+              "type": "boolean",
+              "const": true
+            },
+            "draft_turn_id": {
+              "type": "string"
+            },
+            "construction_turn_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "initiated_by",
+            "provisional"
+          ],
+          "additionalProperties": true,
+          "description": "Present means the SERVER started this run and nobody asked for it: the result is a provisional first pass over machine-authored estimates. Absent means NO provenance attestation was made: a run the user asked for, OR a producer that predates this key on the transport keep-list. Absence is never evidence that a user confirmed anything, and a consumer must not infer provenance from the summary text, from missing win probabilities, or from a withheld leader."
+        },
         "results": {
           "type": "array",
           "items": {

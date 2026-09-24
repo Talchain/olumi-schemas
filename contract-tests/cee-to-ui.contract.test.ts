@@ -208,8 +208,12 @@ describe('CEE→UI: keep-list membership pins', () => {
     expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('conditional_winners');
   });
 
-  it('keep-list is exactly the CEE compose.ts P0B list (18 keys)', () => {
-    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(18);
+  it('run_provenance is keep-listed (0.58.0, the provisional-run marker)', () => {
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('run_provenance');
+  });
+
+  it('keep-list is exactly the CEE compose.ts P0B list (19 keys)', () => {
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(19);
   });
 });
 
@@ -357,5 +361,60 @@ describe('CEE→UI: the VOI family transports (0.30.0)', () => {
       expect(INTERNAL_KEYS.has(key), `${key} must not be an internal-strip key`).toBe(false);
     }
     expect(INTERNAL_KEYS.has('suppressed_attributions')).toBe(false);
+  });
+});
+
+// ============================================================================
+// 0.58.0 — run_provenance joins the keep-list.
+//
+// CEE stamps `enrichment.run_provenance` on the persisted fact of a run the
+// SERVER started (nobody asked for it). Until this release the strip loop
+// dropped it one hop before the browser, so an automatic first pass reached the
+// UI looking exactly like a run the user asked for.
+//
+// SYNTHESISED, NOT CAPTURED: the staging capture predates the marker (the fact
+// it came from was user-initiated), so the overlay below is built from the two
+// shapes CEE's writer produces. That makes this a SHAPE pin, not a live-wire pin.
+// ============================================================================
+
+const CONSTRUCTION_PROVENANCE = {
+  initiated_by: 'auto_post_construction',
+  provisional: true,
+  construction_turn_id: 'graph_registration:00000000-0000-4000-8000-000000000001',
+} as const;
+
+describe('CEE→UI: run_provenance transports (0.58.0)', () => {
+  it('POSITIVE CONTROL: the source capture carries no marker, so presence below is ours', () => {
+    expect(persisted).not.toHaveProperty('run_provenance');
+    expect(projected).not.toHaveProperty('run_provenance');
+  });
+
+  it('survives the projection whole: keep-listed, and no member is an internal-strip key', () => {
+    const shipped = projectKeepList({ ...persisted, run_provenance: CONSTRUCTION_PROVENANCE });
+    expect(shipped.run_provenance).toEqual(CONSTRUCTION_PROVENANCE);
+    const result = AnalysisEnrichmentSchema.safeParse(shipped);
+    if (!result.success) throw new Error(result.error.message);
+    expect(result.data.run_provenance?.provisional).toBe(true);
+  });
+
+  it('the deep strip WOULD eat a member named graph_hash — why the schema declares none', () => {
+    // Positive control for the rule on EnrichmentRunProvenanceSchema: a hash
+    // member put here would be declared and never arrive.
+    const shipped = projectKeepList({
+      ...persisted,
+      run_provenance: { ...CONSTRUCTION_PROVENANCE, graph_hash: 'h1', graph_hash_at_run: 'h1' },
+    });
+    expect(shipped.run_provenance).toEqual(CONSTRUCTION_PROVENANCE);
+  });
+
+  it('the pre-0.58.0 list strips it (the absence this release closes)', () => {
+    const PRE_0_57_0 = CEE_UI_ENRICHMENT_KEEP_LIST.filter((k) => k !== 'run_provenance');
+    expect(PRE_0_57_0).toHaveLength(CEE_UI_ENRICHMENT_KEEP_LIST.length - 1);
+    const source = { ...persisted, run_provenance: CONSTRUCTION_PROVENANCE } as Record<string, unknown>;
+    const old: Record<string, unknown> = {};
+    for (const key of PRE_0_57_0) {
+      if (source[key] !== undefined) old[key] = source[key];
+    }
+    expect(old).not.toHaveProperty('run_provenance');
   });
 });

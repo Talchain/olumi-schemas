@@ -295,6 +295,8 @@ export {
   // 0.44.0 — per-factor conditional winners (ROADMAP 2.177)
   EnrichmentConditionalWinnerSchema,
   EnrichmentConditionalBucketSchema,
+  // 0.58.0 — the provisional-run marker, now on the CEE→UI keep-list
+  EnrichmentRunProvenanceSchema,
   // F6 — constraint margin + scale/decision-grade provenance (schemas #16)
   EnrichmentConstraintMarginSchema,
   EnrichmentScaleProvenanceSchema,
@@ -330,6 +332,8 @@ export type {
   EnrichmentConditionalProbability,
   EnrichmentConditionalWinner,
   EnrichmentConditionalBucket,
+  // 0.58.0
+  EnrichmentRunProvenance,
   // F6 — constraint margin + scale/decision-grade provenance (schemas #16)
   EnrichmentConstraintMargin,
   EnrichmentScaleProvenance,

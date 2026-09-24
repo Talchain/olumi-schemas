@@ -364,7 +364,7 @@ describe('F6 (schemas #16) — constraint margins + scale/decision-grade provena
 });
 
 describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
-  it('matches the CEE compose.ts P0B keep-list exactly (18 keys)', () => {
+  it('matches the CEE compose.ts P0B keep-list exactly (19 keys)', () => {
     // Mirrored from olumi-assistants-service
     // src/orchestrator-v5/compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP.
     // The CEE-side contract test asserts the same list against its own
@@ -382,6 +382,9 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
     // is the 0.44.0 re-vendor PR, which adds it to
     // P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP and rules it `projected` in the
     // withheld-claim registry. Same deliberate out-of-step window as 0.31.0.
+    // 0.58.0 adds `run_provenance` (the provisional-run marker); the paired
+    // CEE change is the 0.58.0 re-vendor, which adds it to
+    // P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP and rules it `pass_through`.
     expect([...CEE_UI_ENRICHMENT_KEEP_LIST].sort()).toEqual([
       'conditional_probabilities',
       'conditional_winners',
@@ -401,6 +404,7 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
       'p_win_sensitivity',
       'results',
       'robustness',
+      'run_provenance',
     ]);
   });
 
@@ -442,6 +446,8 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
   const ADDED_0_31_0 = ['critiques'] as const;
   // 0.44.0 — conditional_winners (ROADMAP 2.177).
   const ADDED_0_44_0 = ['conditional_winners'] as const;
+  // 0.58.0 — run_provenance (the provisional-run marker).
+  const ADDED_0_58_0 = ['run_provenance'] as const;
 
   /**
    * The ledger, one row per release. 0.44.0 turns the per-release assertion
@@ -462,6 +468,7 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
     { release: '0.30.0', added: ADDED_0_30_0 },
     { release: '0.31.0', added: ADDED_0_31_0 },
     { release: '0.44.0', added: ADDED_0_44_0 },
+    { release: '0.58.0', added: ADDED_0_58_0 },
   ] as const;
 
   it('every release is PURELY ADDITIVE (no key ever changed or lost)', () => {
