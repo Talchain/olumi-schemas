@@ -1406,14 +1406,15 @@ const GoalTargetEditEvent = z.object({
       'add_constraint semantics, carried rather than redefined. Not `goal_direction` ' +
       '(maximise/minimise), which is the objective\'s sense and a different concept.',
   ),
-  raw_value: z.number().finite().positive().describe(
+  raw_value: z.number().finite().nonnegative().describe(
     'The target as an ABSOLUTE LEVEL on the metric\'s own scale, in the USER\'S units, as typed ' +
       '(e.g. 400000 for £400,000; 5 for 5%). Never a change from the current level and never ' +
       'the model scale: this declaration is what licenses the server to stamp the frame ' +
-      '`level`. Finite and strictly positive — for `at_most` too, which is DELIBERATELY ' +
-      'narrower than the chat add_constraint path (that accepts any finite value on `<=`): ' +
-      'the only producer, the success-target control, already refuses <= 0, and relaxing ' +
-      'this later is an additive widening. The server derives the cap, its provenance and ' +
+      '`level`. Finite and NON-NEGATIVE: zero is a meaningful `at_most` level ("at most 0 ' +
+      'defects"), so the contract admits it (Codex, #63 5821693599). Negative levels are ' +
+      'refused. The SERVER still refuses `at_least` 0 (a success target of "at least ' +
+      'nothing" is not a target), with an honest no-write refusal, exactly as the ' +
+      'add_constraint success-target guard does today. The server derives the cap, its provenance and ' +
       'the model-scale goal_threshold (raw_value / cap) from this value; the client sends ' +
       'none of them.',
   ),

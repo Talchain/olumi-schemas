@@ -208,14 +208,12 @@ describe('C — direction is a closed two-value vocabulary with NO default', () 
 });
 
 // ---------------------------------------------------------------------------
-describe('D — raw_value is a finite, strictly positive absolute level in user units', () => {
-  const nonPositive: Array<[string, number]> = [
-    ['zero', 0],
-    ['negative zero', -0],
+describe('D — raw_value is a finite, NON-NEGATIVE absolute level in user units', () => {
+  const negative: Array<[string, number]> = [
     ['just below zero', -0.000001],
     ['negative', -400000],
   ];
-  it.each(nonPositive)('refuses raw_value that is %s', (_name, raw_value) => {
+  it.each(negative)('refuses raw_value that is %s', (_name, raw_value) => {
     expect(SystemEventSchema.safeParse({ ...atLeast(), raw_value }).success).toBe(false);
     expect(SystemEventSchema.safeParse({ ...atMost(), raw_value }).success).toBe(false);
   });
@@ -243,6 +241,21 @@ describe('D — raw_value is a finite, strictly positive absolute level in user 
   ];
   it.each(positive)('accepts raw_value that is %s', (_name, raw_value) => {
     expect(SystemEventSchema.safeParse({ ...atLeast(), raw_value }).success).toBe(true);
+  });
+
+  // Zero is a meaningful `at_most` level ("at most 0 defects"; Codex, #63
+  // 5821693599). The CONTRACT admits it for both directions; the SERVER refuses
+  // `at_least` 0 with an honest no-write refusal, as add_constraint does today.
+  it('accepts raw_value 0 — "at most 0 defects" is a real target', () => {
+    expect(SystemEventSchema.safeParse({ ...atMost(), raw_value: 0 }).success).toBe(true);
+    expect(OrchestratorTurnPayloadSchema.safeParse(turn({ ...atMost(), raw_value: 0 })).success)
+      .toBe(true);
+    expect(SystemEventSchema.safeParse({ ...atLeast(), raw_value: 0 }).success).toBe(true);
+  });
+
+  it('round-trips raw_value 0 byte-identically (JSON has no -0)', () => {
+    const parsed = SystemEventSchema.parse({ ...atMost(), raw_value: 0 });
+    expect(JSON.stringify(parsed)).toBe(JSON.stringify({ ...atMost(), raw_value: 0 }));
   });
 });
 

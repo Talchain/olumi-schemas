@@ -32,7 +32,7 @@ reservation any tooling enforces.
     kind: 'goal_target_edit';
     goal_node_id: string;                     // canonical id, exact bytes
     constraint_type: 'at_least' | 'at_most';  // no default
-    raw_value: number;                        // finite, > 0 — absolute LEVEL, user units
+    raw_value: number;                        // finite, >= 0 — absolute LEVEL, user units
     unit: string;                             // non-empty
     base_graph_hash: string;                  // CanonicalBaseGraphHashSchema
   }
@@ -91,8 +91,8 @@ reservation any tooling enforces.
 
 - New `tests/boundary/turn-payload-goal-target-edit.test.ts` (60 tests, written
   RED-first: 14 failed at `7cee4fc5` before the member existed). Valid
-  `at_least` and `at_most`, byte-identical round trip; refuses `raw_value <= 0`
-  (including `-0`), `NaN` and `±Infinity`, numeric strings, every
+  `at_least` and `at_most`, byte-identical round trip; accepts `raw_value` 0
+  ("at most 0 defects"; the server refuses `at_least` 0) and refuses negatives, `NaN` and `±Infinity`, numeric strings, every
   server-derived key and an unknown key, a missing `base_graph_hash` (absent,
   null, empty), an unknown or defaulted `constraint_type`, blank or composite
   ids and an empty unit; pins the projection coverage; reconstructs a

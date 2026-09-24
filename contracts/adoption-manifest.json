@@ -515,7 +515,7 @@
     },
     {
       "field": "system_event.event[kind=goal_target_edit]",
-      "declared_in": "schemas:src/boundary/turn-payload.ts::GoalTargetEditEvent (0.59.0) — strict, six REQUIRED fields: canonical goal_node_id, constraint_type at_least | at_most (no default), raw_value (finite, > 0, an absolute LEVEL in the user's units), non-empty unit, and the non-optional base_graph_hash stale gate",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::GoalTargetEditEvent (0.59.0) — strict, six REQUIRED fields: canonical goal_node_id, constraint_type at_least | at_most (no default), raw_value (finite, >= 0, an absolute LEVEL in the user's units; zero is a real at_most level and the server refuses at_least 0), non-blank unit, and the non-optional base_graph_hash stale gate",
       "producer": null,
       "consumer": null,
       "producer_test": null,
