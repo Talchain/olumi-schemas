@@ -514,6 +514,27 @@
       ]
     },
     {
+      "field": "system_event.event[kind=goal_target_edit]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::GoalTargetEditEvent (0.59.0) — strict, six REQUIRED fields: canonical goal_node_id, constraint_type at_least | at_most (no default), raw_value (finite, > 0, an absolute LEVEL in the user's units), non-empty unit, and the non-optional base_graph_hash stale gate",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY. This release adds no UI emission, no CEE dispatch arm, no graph write and no deployment flag. Naming a producer or consumer now would overstate transport as adoption; their behavioural test refs land with those separate PRs.",
+        "THE DEFECT IT CLOSES: the Canvas success-target control has no wire verb of its own. The UI dispatches a typed add_constraint action plus a generated English sentence whose job is to attest 'This is an absolute level, not a change from the current level.' (DecisionGuideAI staging bfb2d0b2: useModelEditAuthority.proposeGoalTarget -> manualGoalTargetMessage in src/canvas/conversation/manualGoalTarget.ts). A structured gesture that travels as prose is one whose meaning depends on a sentence parser.",
+        "THE CLIENT SENDS INTENT; THE SERVER DERIVES EVERYTHING ELSE. The cap (goal_threshold_cap) and its provenance, the model-scale goal_threshold (raw_value / cap), the frame (goal_threshold_frame and the row's value_frame), and the row's provenance, label and constraint_id are server-derived and never sent. .strict() makes each a refusal, not a silently dropped key — pinned key by key in schemas:tests/boundary/turn-payload-goal-target-edit.test.ts block B. raw_value is DECLARED an absolute level by the contract; that declaration is the attestation the UI's sentence used to carry and what licenses the server to stamp the frame 'level'.",
+        "at_most WRITES ONLY THE goal_constraints ROW, mirroring the existing add_constraint handler rather than redefining it: at_least on a goal sets the success target (a >= row plus the node's threshold fields); at_most upserts the <= row and leaves the threshold untouched. The handler's own reason (olumi-assistants-service src/orchestrator-v5/tools/handlers/add-constraint.ts at 57f903c4, :917-920): ISL computes P(samples >= threshold), so encoding a keep-below bound as a threshold would invert the claim.",
+        "NAMED constraint_type, NOT direction: open schemas PR #48 proposes goal_direction (maximise/minimise, the objective's sense), a different concept. at_least | at_most is the vocabulary add_constraint already reads (AddConstraintTypeSchema, add-constraint.ts:110). goal_node_id is deliberately not target_id, which on this union means an arbitrary graph node; CEE MUST refuse an id whose node is not kind goal.",
+        "NO expected TWIN, and the reason is derived: goal_threshold, goal_threshold_raw and goal_threshold_cap are node fields of CANONICAL_GRAPH_HASH_NESTED_PROJECTION, and goal_constraints is in CANONICAL_GRAPH_HASH_ANALYSIS_STATE_FIELDS (schemas:src/boundary/graph-hash-contract.ts), so base_graph_hash already sees a concurrent change to the target. Pinned by execution in the test file's block F.",
+        "SEQUENCING: every SystemEventSchema member is .strict() and the union discriminates on kind, so a consumer pinned below 0.59.0 rejects the WHOLE turn (422). Order: publish 0.59.0 -> CEE re-vendors and deploys the reader and writer -> only then UI re-vendors and emits. UI-alone would 422 every success-target edit; CEE-alone is invisible and safe. PLoT/ISL do not read this UI-to-CEE seam.",
+        "VERSION: 0.58.0 is taken (#66 run_provenance, merged 24 Sep 2026) and 0.57.0 is claimed by three open PRs (#62, #63, #65 — package.json at each head, derived 24 Sep 2026); publish.yml silently skips an existing version, so this row names 0.59.0. Re-derive at merge time; if the number moves, this row's declared_in and sequencing note move with it."
+      ]
+    },
+    {
       "field": "system_event.event[kind=edge_adjudication]",
       "declared_in": "schemas:src/boundary/turn-payload.ts::EdgeAdjudicationEvent (0.34.0) — the contested-edge verdict, a new member of SystemEventSchema (P4 transport lane 2026-08-05; ROADMAP 2.396-adjacent)",
       "producer": null,

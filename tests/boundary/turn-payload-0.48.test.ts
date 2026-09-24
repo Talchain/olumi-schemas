@@ -69,6 +69,7 @@ function unionKinds(): string[] {
  *   · 0.50.0 — structural_add, structural_add_edge, structural_rename
  *   · unversioned — option_intervention_edit
  *   · 0.55.0 — finding_dissent
+ *   · 0.59.0 — goal_target_edit
  */
 const KINDS_ADDED_SINCE_0_48 = [
   'structural_add',
@@ -84,6 +85,8 @@ const KINDS_ADDED_SINCE_0_48 = [
   // same reason its predecessor does: PRE_0_48_KINDS is the append-only record
   // of what 0.48.0 inherited and must not be rewritten to stay current.
   'finding_dissent',
+  // 0.59.0 — the goal success-target carrier. DERIVED half, same reason.
+  'goal_target_edit',
 ] as const;
 
 // ---------------------------------------------------------------------------

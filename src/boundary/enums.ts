@@ -261,6 +261,19 @@ export type IntentLiteral = z.infer<typeof Intent>;
 // member added to the `SystemEventSchema` union in turn-payload.ts; parity pinned
 // by `tests/boundary/turn-payload-0.22.test.ts` as for every earlier addition.
 // Reader-first adoption is mandatory.
+// 0.59.0: `goal_target_edit` added — the structured, id-addressed edit of a
+// goal's success target (`constraint_type` at_least | at_most, `raw_value` as an
+// absolute level in the user's units, `unit`, and the non-optional
+// `base_graph_hash` stale gate). Until it, the Canvas success-target control
+// travelled as a message turn whose "absolute level" attestation was an English
+// sentence. The client sends intent only: the cap, goal_threshold (raw/cap), the
+// frame and provenance are all SERVER-derived and refused on the wire by
+// `.strict()`. `at_most` writes only the goal_constraints row, mirroring the
+// existing add_constraint semantics. Named `constraint_type`, NOT `direction`,
+// to stay apart from the proposed `goal_direction` (the objective's sense).
+// Mirrors the member added to the `SystemEventSchema` union in turn-payload.ts;
+// parity pinned by `tests/boundary/turn-payload-0.22.test.ts` as for every
+// earlier addition. Reader-first adoption is mandatory.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
@@ -280,6 +293,7 @@ export const SystemEventKind = z.enum([
   'structural_rename',
   'option_intervention_edit',
   'finding_dissent',
+  'goal_target_edit',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
 

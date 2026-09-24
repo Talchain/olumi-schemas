@@ -2703,6 +2703,19 @@ const eventFindingDissent = deepFreeze({
   analysis_id: 'fixture_analysis_01J0FIXTURE0000000000000',
   statement: '  FIXTURE capex is committed under the existing lease, so it cannot swing this.  ',
 });
+// Six fields, all REQUIRED, so the fixture is maximal by construction and the
+// maximality walker has no optional field to report. `raw_value` is a USER-UNIT
+// level deliberately far above 1, so a consumer that mistakes it for the model
+// scale (goal_threshold = raw / cap) is visibly wrong on the fixture every
+// roundtrip test replays.
+const eventGoalTargetEdit = deepFreeze({
+  kind: 'goal_target_edit',
+  goal_node_id: ID_GOAL,
+  constraint_type: 'at_least',
+  raw_value: 400000,
+  unit: '£',
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
   selected: [maximalSelectedElementRef],
@@ -3675,6 +3688,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: eventFindingDissent,
     notes:
       '0.55.0: the first wire shape for a human\'s STATED REASON, authorised by Paul\'s ruling of 2026-09-11 as the deliberate reviewed widening CEE\'s R-004 privacy ruling anticipated. Addressed by the PAIR (analysis_id, finding_id): a Reasoning-tab recommendation id is per-run, so the id alone dangles the moment the model is rerun and a dissent shown beside a later analysis would be a claim the user never made. `statement` is the user\'s words verbatim, non-blank, bounded by feedback.comment\'s own bound because that is the sibling free-text field R-004 is written about. NO base_graph_hash: this member writes no graph, and a stale gate would refuse a true statement of what a human said because the model had moved. NO authored_by/provenance: the event kind is the provenance claim and CEE stamps the rest. Distinct from the Disagreement ENTITY (a server-derived facilitation artefact) and from CEE\'s disagreement_resolution lens (the machine disagreeing with itself across two validation passes) — three concepts, named apart.',
+  },
+  {
+    family: 'boundary/SystemEventSchema#goal_target_edit',
+    schema: SystemEventSchema,
+    fixture: eventGoalTargetEdit,
+    notes:
+      '0.59.0: sets ONE goal\'s success target, addressed by the canonical goal node id. The client sends intent only — constraint_type (at_least | at_most, required, no default), raw_value (the absolute LEVEL in the user\'s units, finite and > 0), unit (non-blank) and the base_graph_hash stale gate. The cap, goal_threshold (raw / cap), the frame and provenance are SERVER-derived and refused on the wire by .strict(). at_most writes only the goal_constraints row and leaves the goal\'s threshold untouched, mirroring the add_constraint handler (ISL computes P(samples >= threshold), so a keep-below bound encoded as a threshold would invert the claim). No expected twin: goal_threshold, goal_threshold_raw, goal_threshold_cap and goal_constraints are all inside the analysis-affecting projection, so base_graph_hash already sees a concurrent change. Named constraint_type, not direction, to stay apart from the proposed goal_direction (the objective\'s sense).',
   },
   {
     family: 'boundary/SystemEventTurnPayloadSchema',
