@@ -473,18 +473,23 @@ export type {
 // provenance fields + DecisionRecordConfidenceSource). Standalone wire/API
 // contract, NOT wired into OlumiResponse — see decision-record.ts for scope
 // + persistence note (Supabase, coordinated separately).
+// 0.57.0 adds DecisionRecordNotReadyPositionSchema ("not ready to choose"),
+// the four optional reasoning fields, and DECISION_RECORD_TEXT_MAX_CHARS.
 export {
   DecisionRecordSchema,
   DecisionRecordDecisionSchema,
+  DecisionRecordNotReadyPositionSchema,
   DecisionRecordAnalysisSummarySchema,
   DecisionRecordPredictionSchema,
   DecisionRecordOutcomeSchema,
   DecisionRecordOutcomeResult,
   DecisionRecordConfidenceSource,
+  DECISION_RECORD_TEXT_MAX_CHARS,
 } from './decision-record.js';
 export type {
   DecisionRecord,
   DecisionRecordDecision,
+  DecisionRecordNotReadyPosition,
   DecisionRecordAnalysisSummary,
   DecisionRecordPrediction,
   DecisionRecordOutcome,

@@ -55,14 +55,91 @@ export type DecisionRecordAnalysisSummary = z.infer<typeof DecisionRecordAnalysi
 // action, distinguishing intentional commits from ambient auto-capture.
 // Optional; absent means the record predates the commit action (or was
 // auto-captured) — a disclosed inference, never a fabricated value.
+//
+// The user's own reasoning (0.57.0, additive — "Record your current view",
+// approved by Paul 2026-09-24). Four optional free-text fields the record
+// modal has elicited since it shipped but that had NO home in this .strict()
+// contract, so they lived on one device only:
+//
+//   rationale        why the user holds this position (backward-looking
+//                    justification — NEVER the scored claim; that is
+//                    `prediction.statement`)
+//   key_assumption   the assumption most likely to change the position
+//   revisit_trigger  the user's own words for when to look again. A DATE the
+//                    user gives is carried by `review_date`; this is the
+//                    trigger TEXT, recorded verbatim whether or not a date
+//                    was also read out of it
+//   next_action      what the user will do next
+//
+// Each is `min(1)`: the empty string is not a value, so ABSENCE is the one
+// and only encoding of "nothing written" (or of a record captured before
+// 0.57.0) — there is no default for it to be confused with. Bounded by
+// DECISION_RECORD_TEXT_MAX_CHARS, measured as JavaScript string length
+// (UTF-16 code units). That is never more permissive than Postgres
+// `char_length` (code points), so a value this schema admits always fits a
+// store that enforces the same number in code points.
+export const DECISION_RECORD_TEXT_MAX_CHARS = 1000;
+const DecisionRecordText = z.string().min(1).max(DECISION_RECORD_TEXT_MAX_CHARS);
+const DECISION_RECORD_REASONING_FIELDS = {
+  rationale: DecisionRecordText.optional(),
+  key_assumption: DecisionRecordText.optional(),
+  revisit_trigger: DecisionRecordText.optional(),
+  next_action: DecisionRecordText.optional(),
+} as const;
+
 export const DecisionRecordDecisionSchema = z.object({
   chosen_option_id: z.string().min(1),
   chosen_option_label: z.string().min(1),
   graph_hash: z.string().min(1),
   analysis_summary: DecisionRecordAnalysisSummarySchema.optional(),
   committed_by_user: z.boolean().optional(),
+  ...DECISION_RECORD_REASONING_FIELDS,
 }).strict();
 export type DecisionRecordDecision = z.infer<typeof DecisionRecordDecisionSchema>;
+
+// "Not ready to choose" (0.57.0, additive). The user recorded their current
+// view WITHOUT choosing an option. This is NOT a decision and must never be
+// read as one, so the rule lives in the TYPE, not in producer discipline
+// (the AnalysisFactSchema pattern):
+//
+//   - `position: 'not_ready'` is REQUIRED on this branch, and it is the only
+//     value `position` can take anywhere. A record with no `position` is a
+//     chosen-option record — every record written before 0.57.0 — so no
+//     existing record changes meaning.
+//   - `chosen_option_id` / `chosen_option_label` are NOT DECLARED here and the
+//     object is `.strict()`, so a not-ready record that names an option is an
+//     unrecognised key and fails to parse. "Not ready, but option B" is a
+//     contradiction the contract refuses rather than a state a consumer has
+//     to adjudicate.
+//   - `graph_hash` stays REQUIRED: a not-ready view is still anchored to the
+//     graph it was formed against, so a later review can tell whether the
+//     graph has moved underneath it.
+//   - `committed_by_user` is REQUIRED and can only be `true`. Ambient
+//     auto-capture records the analysis leader, so it can never produce this
+//     branch; only an explicit user action can. On the chosen branch the field
+//     is optional because its ABSENCE is meaningful there (pre-0.16.0 or
+//     auto-captured — see the census); here that absence could only ever be a
+//     producer bug, so the type does not admit it.
+//
+// `analysis_summary` is deliberately absent: it is the ambient-capture
+// snapshot of the analysis LEADER, and a not-ready record is made by an
+// explicit user action that names no option.
+//
+// A not-ready record makes NO PREDICTION (reconciled 2026-09-24, Paul's
+// product semantics: no option, no confidence, no expectation). The
+// expectation (`prediction.statement`) and the stated confidence
+// (`prediction.confidence`) are claims about a CHOSEN option's outcome, so
+// without a choice both would be claims about nothing. `DecisionRecordSchema`
+// therefore REFUSES a `prediction` on this branch and REQUIRES one on the
+// chosen branch — see the record-level refinement below. An outcome recorded
+// against a not-ready record is unscored: there is no staked confidence.
+export const DecisionRecordNotReadyPositionSchema = z.object({
+  position: z.literal('not_ready'),
+  graph_hash: z.string().min(1),
+  committed_by_user: z.literal(true),
+  ...DECISION_RECORD_REASONING_FIELDS,
+}).strict();
+export type DecisionRecordNotReadyPosition = z.infer<typeof DecisionRecordNotReadyPositionSchema>;
 
 // Provenance of `prediction.confidence` (0.16.0, additive — calibration pack
 // honesty constraint §2, docs-designs/CALIBRATION-LOOP-DESIGN-2026-07-11/
@@ -128,13 +205,49 @@ export type DecisionRecordOutcome = z.infer<typeof DecisionRecordOutcomeSchema>;
 // prompt) should come back and compare prediction to reality — set at
 // creation, independent of when `outcome` actually gets recorded (which may
 // be later than, earlier than, or never, relative to this date).
+//
+// `decision` (0.57.0) is EITHER a chosen option (DecisionRecordDecisionSchema,
+// unchanged apart from the four optional reasoning fields) OR an explicit
+// "not ready to choose" (DecisionRecordNotReadyPositionSchema). The two
+// branches are disjoint by construction: the first requires
+// `chosen_option_id` and declares no `position`; the second requires
+// `position: 'not_ready'` and declares no option. A consumer reading
+// `decision.chosen_option_label` must now narrow first — which is the point:
+// the type system will not let a not-ready record be rendered as a choice.
+//
+// `prediction` (0.57.0, reconciled 2026-09-24) is optional ON THE OBJECT and
+// TIED TO THE BRANCH by the refinement: REQUIRED on a chosen record (exactly
+// as before — every pre-0.57.0 record carries one), and ABSENT on a
+// not-ready record (it makes no forecast). ABSENCE IS DISTINCT: it means "the
+// user recorded that they are not ready to choose", never "a prediction
+// nobody wrote down" — so a consumer must never default it (to an empty
+// statement, a 0 confidence, or anything else). Storage mirrors it: CEE's
+// `decision_records.prediction` is NULL exactly on a not-ready row, and the
+// RPC returns the record through jsonb_strip_nulls, so the key is absent.
 export const DecisionRecordSchema = z.object({
   record_id: z.string().min(1),
   scenario_id: Uuid,
   created_at: z.string().datetime({ offset: true }),
-  decision: DecisionRecordDecisionSchema,
-  prediction: DecisionRecordPredictionSchema,
+  decision: z.union([DecisionRecordDecisionSchema, DecisionRecordNotReadyPositionSchema]),
+  prediction: DecisionRecordPredictionSchema.optional(),
   review_date: z.string().datetime({ offset: true }),
   outcome: DecisionRecordOutcomeSchema.optional(),
-}).strict();
+}).strict().superRefine((record, ctx) => {
+  const notReady = 'position' in record.decision;
+  if (notReady && record.prediction !== undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['prediction'],
+      message:
+        "a not-ready record makes no prediction: `prediction` must be absent when decision.position is 'not_ready'",
+    });
+  }
+  if (!notReady && record.prediction === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['prediction'],
+      message: 'a chosen-option record requires `prediction` (the claim its outcome is scored against)',
+    });
+  }
+});
 export type DecisionRecord = z.infer<typeof DecisionRecordSchema>;

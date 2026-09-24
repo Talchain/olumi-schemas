@@ -226,6 +226,7 @@ import {
   // decision record
   DecisionRecordSchema,
   DecisionRecordDecisionSchema,
+  DecisionRecordNotReadyPositionSchema,
   DecisionRecordAnalysisSummarySchema,
   DecisionRecordPredictionSchema,
   DecisionRecordOutcomeSchema,
@@ -2782,6 +2783,23 @@ export const maximalDecisionRecordDecision = deepFreeze({
   graph_hash: 'fixture_graph_hash_1',
   analysis_summary: maximalDecisionRecordAnalysisSummary,
   committed_by_user: true,
+  // 0.57.0 — the user's own reasoning, durable at last.
+  rationale: 'FIXTURE synthetic rationale.',
+  key_assumption: 'FIXTURE synthetic key assumption.',
+  revisit_trigger: 'FIXTURE synthetic revisit trigger.',
+  next_action: 'FIXTURE synthetic next action.',
+});
+
+// 0.57.0 — "not ready to choose". No option keys at all: the branch does not
+// declare them and is .strict().
+export const maximalDecisionRecordNotReadyPosition = deepFreeze({
+  position: 'not_ready',
+  graph_hash: 'fixture_graph_hash_1',
+  committed_by_user: true,
+  rationale: 'FIXTURE synthetic rationale for not choosing yet.',
+  key_assumption: 'FIXTURE synthetic key assumption.',
+  revisit_trigger: 'FIXTURE synthetic revisit trigger.',
+  next_action: 'FIXTURE synthetic next action.',
 });
 
 export const maximalDecisionRecordPrediction = deepFreeze({
@@ -2805,6 +2823,25 @@ export const maximalDecisionRecord = deepFreeze({
   created_at: TS_Z,
   decision: maximalDecisionRecordDecision,
   prediction: maximalDecisionRecordPrediction,
+  review_date: '2026-02-01T00:00:00.000Z',
+  outcome: maximalDecisionRecordOutcome,
+});
+
+// 0.57.0 — the SAME record contract carrying the not-ready branch of
+// `decision`. Registered as its own family so the maximality walk sees the
+// union's second branch exercised THROUGH DecisionRecordSchema, not only
+// standalone.
+// ⚠ NO `prediction` (reconciled 2026-09-24): a not-ready record makes no
+// forecast, and DecisionRecordSchema refuses one on this branch. The field is
+// still populated by `maximalDecisionRecord`, so the maximality walk (which
+// aggregates by schema identity) still sees it exercised. The outcome carries
+// no brier_component in real use (nothing staked), but the fixture keeps the
+// maximal outcome so the walk exercises it through this variant too.
+export const maximalDecisionRecordNotReady = deepFreeze({
+  record_id: 'fixture_record_2',
+  scenario_id: UUID_SCENARIO,
+  created_at: TS_Z,
+  decision: maximalDecisionRecordNotReadyPosition,
   review_date: '2026-02-01T00:00:00.000Z',
   outcome: maximalDecisionRecordOutcome,
 });
@@ -3850,6 +3887,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalDecisionRecordDecision,
   },
   {
+    family: 'boundary/DecisionRecordNotReadyPositionSchema',
+    schema: DecisionRecordNotReadyPositionSchema,
+    fixture: maximalDecisionRecordNotReadyPosition,
+  },
+  {
     family: 'boundary/DecisionRecordPredictionSchema',
     schema: DecisionRecordPredictionSchema,
     fixture: maximalDecisionRecordPrediction,
@@ -3860,6 +3902,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalDecisionRecordOutcome,
   },
   { family: 'boundary/DecisionRecordSchema', schema: DecisionRecordSchema, fixture: maximalDecisionRecord },
+  {
+    family: 'boundary/DecisionRecordSchema#not_ready',
+    schema: DecisionRecordSchema,
+    fixture: maximalDecisionRecordNotReady,
+  },
   // --- health manifest (0.24.0 — arch step 2, S0) ----------------------------
   { family: 'root/HealthManifestSchema', schema: HealthManifestSchema, fixture: maximalHealthManifest },
   // --- population ref (0.26.0 — arch step 2, S0; Codex F4) -------------------

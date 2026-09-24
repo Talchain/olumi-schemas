@@ -30,6 +30,8 @@ import {
   DecisionRecordOutcomeSchema,
   DecisionRecordOutcomeResult,
   DecisionRecordConfidenceSource,
+  DecisionRecordNotReadyPositionSchema,
+  DECISION_RECORD_TEXT_MAX_CHARS,
 } from '../../src/boundary/decision-record.js';
 
 const SCENARIO_ID = '22222222-2222-4222-8222-222222222222';
@@ -405,9 +407,13 @@ describe('0.15.0-shaped payload compat', () => {
   it('parses a maximal 0.15.0-shaped record unchanged (no injected 0.16.0 fields)', () => {
     const parsed = DecisionRecordSchema.parse(FULL_0_15_0_RECORD);
     expect(parsed).toEqual(FULL_0_15_0_RECORD);
-    expect('confidence_source' in parsed.prediction).toBe(false);
-    expect('probability_of_goal' in parsed.prediction).toBe(false);
-    expect('probability_of_joint_goal' in parsed.prediction).toBe(false);
+    // 0.57.0: `prediction` is optional in the TYPE (a not-ready record has
+    // none); a chosen-option record always carries it, so narrow explicitly.
+    const prediction = parsed.prediction;
+    if (prediction === undefined) throw new Error('a chosen-option record must carry its prediction');
+    expect('confidence_source' in prediction).toBe(false);
+    expect('probability_of_goal' in prediction).toBe(false);
+    expect('probability_of_joint_goal' in prediction).toBe(false);
     expect('committed_by_user' in parsed.decision).toBe(false);
   });
 
@@ -445,5 +451,184 @@ describe('component schemas — standalone import', () => {
   it('DecisionRecordOutcomeSchema validates standalone', () => {
     const outcome = { recorded_at: '2026-10-12T09:00:00Z', result: 'better' as const };
     expect(DecisionRecordOutcomeSchema.parse(outcome)).toEqual(outcome);
+  });
+});
+
+// ----------------------------------------------------------------------------
+// 0.57.0 — "not ready to choose", and the user's reasoning made durable.
+// ----------------------------------------------------------------------------
+
+describe('0.57.0 — the four optional reasoning fields', () => {
+  const REASONING = {
+    rationale: 'Cash runway is the binding constraint.',
+    key_assumption: 'The pilot customer renews in Q1.',
+    revisit_trigger: 'Runway falls below 9 months.',
+    next_action: 'Call the pilot customer this week.',
+  };
+
+  it('a chosen-option record carries all four and round-trips unchanged', () => {
+    const record = { ...MINIMAL_RECORD, decision: { ...MINIMAL_RECORD.decision, ...REASONING } };
+    expect(DecisionRecordSchema.parse(record)).toEqual(record);
+  });
+
+  it.each(Object.keys(REASONING))('rejects an EMPTY %s — absence is the only "nothing written"', (key) => {
+    expect(
+      DecisionRecordSchema.safeParse({
+        ...MINIMAL_RECORD,
+        decision: { ...MINIMAL_RECORD.decision, [key]: '' },
+      }).success,
+    ).toBe(false);
+  });
+
+  it.each(Object.keys(REASONING))('bounds %s at DECISION_RECORD_TEXT_MAX_CHARS exactly', (key) => {
+    const at = 'x'.repeat(DECISION_RECORD_TEXT_MAX_CHARS);
+    const over = 'x'.repeat(DECISION_RECORD_TEXT_MAX_CHARS + 1);
+    expect(
+      DecisionRecordSchema.safeParse({ ...MINIMAL_RECORD, decision: { ...MINIMAL_RECORD.decision, [key]: at } })
+        .success,
+    ).toBe(true);
+    expect(
+      DecisionRecordSchema.safeParse({ ...MINIMAL_RECORD, decision: { ...MINIMAL_RECORD.decision, [key]: over } })
+        .success,
+    ).toBe(false);
+  });
+
+  it('pins the bound at 1000 — the CEE route and the RPC enforce the same number', () => {
+    expect(DECISION_RECORD_TEXT_MAX_CHARS).toBe(1000);
+  });
+});
+
+describe('0.57.0 — decision is EITHER a chosen option OR an explicit not-ready position', () => {
+  // A not-ready record makes NO prediction (reconciled 2026-09-24), so the
+  // fixture is MINIMAL_RECORD without its `prediction`.
+  const { prediction: _minimalPrediction, ...MINIMAL_WITHOUT_PREDICTION } = MINIMAL_RECORD;
+  const NOT_READY = {
+    ...MINIMAL_WITHOUT_PREDICTION,
+    decision: {
+      position: 'not_ready' as const,
+      graph_hash: 'gh_abc123',
+      committed_by_user: true,
+      next_action: 'Get the Q1 renewal answer before choosing.',
+    },
+  };
+
+  it('accepts a not-ready record with NO option id and NO option label', () => {
+    const parsed = DecisionRecordSchema.parse(NOT_READY);
+    expect(parsed).toEqual(NOT_READY);
+    expect('chosen_option_id' in parsed.decision).toBe(false);
+    expect('chosen_option_label' in parsed.decision).toBe(false);
+  });
+
+  it('the parsed not-ready decision is the NOT-READY branch, by identity of its discriminator', () => {
+    expect(DecisionRecordNotReadyPositionSchema.safeParse(NOT_READY.decision).success).toBe(true);
+    expect(DecisionRecordDecisionSchema.safeParse(NOT_READY.decision).success).toBe(false);
+  });
+
+  it('REFUSES the contradiction: not_ready that also names an option id', () => {
+    expect(
+      DecisionRecordSchema.safeParse({
+        ...NOT_READY,
+        decision: { ...NOT_READY.decision, chosen_option_id: 'opt_launch_now' },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('REFUSES the contradiction: not_ready that also names an option label', () => {
+    expect(
+      DecisionRecordSchema.safeParse({
+        ...NOT_READY,
+        decision: { ...NOT_READY.decision, chosen_option_label: 'Launch now' },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('a not-ready record is ALWAYS user-committed: committed_by_user absent or false is refused', () => {
+    const { committed_by_user: _c, ...absent } = NOT_READY.decision;
+    expect(DecisionRecordSchema.safeParse({ ...NOT_READY, decision: absent }).success).toBe(false);
+    expect(
+      DecisionRecordSchema.safeParse({ ...NOT_READY, decision: { ...NOT_READY.decision, committed_by_user: false } })
+        .success,
+    ).toBe(false);
+  });
+
+  it('a not-ready record still needs its graph anchor', () => {
+    const { graph_hash: _g, ...rest } = NOT_READY.decision;
+    expect(DecisionRecordSchema.safeParse({ ...NOT_READY, decision: rest }).success).toBe(false);
+  });
+
+  it('a not-ready record makes NO prediction: one carrying `prediction` is REFUSED, at the prediction path', () => {
+    const withPrediction = { ...NOT_READY, prediction: MINIMAL_RECORD.prediction };
+    const result = DecisionRecordSchema.safeParse(withPrediction);
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues.map((i) => i.path.join('.'))).toEqual(['prediction']);
+    // Not even a confidence alone: it is still a claim about a chosen option.
+    expect(
+      DecisionRecordSchema.safeParse({
+        ...NOT_READY,
+        prediction: { statement: 'x', confidence: 0.5, confidence_source: 'user_stated' },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('a not-ready record WITHOUT a prediction parses, and the parsed record has no prediction key', () => {
+    const parsed = DecisionRecordSchema.parse(NOT_READY);
+    expect(parsed).toEqual(NOT_READY);
+    expect('prediction' in parsed).toBe(false);
+  });
+
+  it('CONTRAST — a chosen-option record still REQUIRES its prediction (every pre-0.57.0 record has one)', () => {
+    const { prediction: _p, ...chosenWithout } = MINIMAL_RECORD;
+    const result = DecisionRecordSchema.safeParse(chosenWithout);
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues.map((i) => i.path.join('.'))).toEqual(['prediction']);
+  });
+
+  it('a not-ready record may still carry an outcome (recorded, never scored against a forecast it never made)', () => {
+    const withOutcome = {
+      ...NOT_READY,
+      outcome: { recorded_at: '2026-11-30T09:00:00Z', result: 'as_expected' as const },
+    };
+    expect(DecisionRecordSchema.parse(withOutcome)).toEqual(withOutcome);
+  });
+
+  it("'not_ready' is the ONLY position value; 'chosen' or anything else is refused", () => {
+    for (const position of ['chosen', 'undecided', '']) {
+      expect(
+        DecisionRecordSchema.safeParse({ ...NOT_READY, decision: { ...NOT_READY.decision, position } }).success,
+      ).toBe(false);
+    }
+  });
+
+  it('a chosen-option record may NOT carry a position key (absence IS chosen)', () => {
+    expect(
+      DecisionRecordSchema.safeParse({
+        ...MINIMAL_RECORD,
+        decision: { ...MINIMAL_RECORD.decision, position: 'not_ready' },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('a decision with neither an option nor a not-ready position is refused', () => {
+    expect(
+      DecisionRecordSchema.safeParse({ ...MINIMAL_RECORD, decision: { graph_hash: 'gh_abc123' } }).success,
+    ).toBe(false);
+  });
+
+  it('the not-ready branch does not accept the ambient analysis_summary', () => {
+    expect(
+      DecisionRecordSchema.safeParse({
+        ...NOT_READY,
+        decision: { ...NOT_READY.decision, analysis_summary: { leading_option: 'Launch now' } },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('every pre-0.57.0 record still parses on the chosen branch, unchanged', () => {
+    const parsed = DecisionRecordSchema.parse(MINIMAL_RECORD);
+    expect(parsed).toEqual(MINIMAL_RECORD);
+    expect(DecisionRecordDecisionSchema.safeParse(parsed.decision).success).toBe(true);
+    expect('position' in parsed.decision).toBe(false);
   });
 });

@@ -5,6 +5,81 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.57.0] — decision records: "not ready to choose", and the user's reasoning made durable
+
+**Additive for every record that exists.** Approved by Paul, 24 Sep 2026. No
+existing field's shape or bounds changes, and every record written before
+0.57.0 parses exactly as before, on the same branch. (`prediction` becomes
+optional on the OBJECT, but the record-level refinement keeps it REQUIRED on
+every chosen-option record — so for every record that exists today its
+required-ness is unchanged.)
+
+⚠ **One TYPE-level change a consumer will feel, deliberately.**
+`DecisionRecord['decision']` is now a union, so code that reads
+`record.decision.chosen_option_label` without narrowing fails typecheck. That
+is the point: a not-ready record must never be rendered as a choice, and the
+rule lives in the type rather than in producer discipline (the
+`AnalysisFactSchema` pattern). No consumer at its current pin reads this type:
+CEE (`0.55.0`) imports only `DecisionRecordAnalysisSummary`,
+`DecisionRecordConfidenceSourceLiteral` and
+`DecisionRecordOutcomeResultLiteral`; the UI imports none of them.
+
+⚠ **A second, from the 24 Sep reconciliation.** `DecisionRecord['prediction']`
+is now optional in the TYPE (a not-ready record has none), so code that reads
+`record.prediction.statement` without a check fails typecheck — correctly. And
+`DecisionRecordSchema` is now a `ZodEffects` (the refinement below), so it no
+longer exposes `.shape` / `.extend()`; nothing in this package or at any
+consumer's pin calls either on it.
+
+### Added
+
+- **`DecisionRecordNotReadyPositionSchema`** — "not ready to choose".
+  `{ position: 'not_ready', graph_hash, committed_by_user: true, rationale?,
+  key_assumption?, revisit_trigger?, next_action? }`, `.strict()`.
+  - `position: 'not_ready'` is REQUIRED on this branch and is the only value
+    `position` takes anywhere. **Absence of `position` means a chosen option**
+    — which is every record written before 0.57.0.
+  - `chosen_option_id` / `chosen_option_label` are **not declared**, so a
+    not-ready record that names an option fails to parse. The contradiction is
+    refused by the contract, not left for a consumer to adjudicate.
+  - `committed_by_user` is REQUIRED and is `z.literal(true)`: ambient
+    auto-capture records the analysis leader and can never produce this
+    branch, so its absence here could only be a producer bug.
+  - `graph_hash` stays required (the view is still anchored to its graph).
+  - **A not-ready record makes NO prediction** (reconciled 24 Sep 2026, Paul's
+    product semantics: no option, no confidence, no expectation). Superseded
+    text: ~~`prediction` stays required on the record (the outcome is scored
+    against the user's stated expectation)~~. The expectation and the stated
+    confidence are claims about a CHOSEN option's outcome, so without a choice
+    both are claims about nothing.
+- **`DecisionRecordSchema.prediction`** is `.optional()` on the object and
+  TIED TO THE BRANCH by a `.superRefine`: REQUIRED on a chosen-option record
+  (unchanged), REFUSED on a not-ready one — both reported at the `prediction`
+  path. Absence is DISTINCT (census row added): it means "not ready to
+  choose", never "no one wrote a prediction down", and must never be
+  defaulted. CEE stores it as a NULL column exactly on a not-ready row.
+- **`DecisionRecordSchema.decision`** is now
+  `z.union([DecisionRecordDecisionSchema, DecisionRecordNotReadyPositionSchema])`.
+  The branches are disjoint by construction.
+- **Four optional reasoning fields on BOTH branches** — `rationale`,
+  `key_assumption`, `revisit_trigger`, `next_action`. Each `min(1)` and
+  `max(DECISION_RECORD_TEXT_MAX_CHARS)`. The record modal has elicited the
+  first three since it shipped and kept them on one device only, because this
+  `.strict()` contract had no home for them. `revisit_trigger` is the trigger
+  TEXT; a date is still carried by `review_date`.
+- **`DECISION_RECORD_TEXT_MAX_CHARS = 1000`** — exported so producers and
+  stores can bind to the number instead of copying it. Measured as JS string
+  length (UTF-16 code units), which is never more permissive than Postgres
+  `char_length`.
+
+### Not in this release
+
+- **No commit REQUEST schema.** The request the UI sends to CEE
+  (`POST /assist/v1/decision-records/commit`) is hand-parsed by CEE's route
+  and is not typed in this package. This release types the STORED record,
+  which CEE writes as a pass-through.
+- **No read-back shape.** Nothing reads a record back to the UI yet.
+
 ## [0.56.0] — `analysis_participation_withheld`
 
 **Additive, and it ships the two unversioned declarations that have been sitting

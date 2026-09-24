@@ -63,8 +63,8 @@
     }
   },
   "counts": {
-    "distinct": 79,
-    "same": 33,
+    "distinct": 80,
+    "same": 41,
     "unresolved": 412
   },
   "open_objects": {
@@ -720,6 +720,70 @@
       "note": "Schema comment: \"Optional; absent means the record predates the commit action (or was auto-captured) \u2014 a disclosed inference, never a fabricated value.\" Absence is explicitly NOT equal to `false`: false asserts ambient capture, absence asserts we cannot tell.",
       "ref": "src/boundary/decision-record.ts \u2014 DecisionRecordDecisionSchema.committed_by_user comment (0.16.0 lane 3a)"
     },
+    "boundary/DecisionRecordDecisionSchema.key_assumption": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Schema comment (0.57.0 reasoning fields): \"Each is `min(1)`: the empty string is not a value, so ABSENCE is the one and only encoding of 'nothing written' (or of a record captured before 0.57.0) \u2014 there is no default for it to be confused with.\" No .default(), no .nullable(), and min(1) refuses the empty string, so there is no second byte for absence to be confused WITH. Disclosed limit: absence does not distinguish 'the user wrote nothing' from 'captured before 0.57.0'; both mean no text is on the record.",
+      "ref": "src/boundary/decision-record.ts \u2014 reasoning-fields block comment above DECISION_RECORD_TEXT_MAX_CHARS (0.57.0)"
+    },
+    "boundary/DecisionRecordDecisionSchema.next_action": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Schema comment (0.57.0 reasoning fields): \"Each is `min(1)`: the empty string is not a value, so ABSENCE is the one and only encoding of 'nothing written' (or of a record captured before 0.57.0) \u2014 there is no default for it to be confused with.\" No .default(), no .nullable(), and min(1) refuses the empty string, so there is no second byte for absence to be confused WITH. Disclosed limit: absence does not distinguish 'the user wrote nothing' from 'captured before 0.57.0'; both mean no text is on the record.",
+      "ref": "src/boundary/decision-record.ts \u2014 reasoning-fields block comment above DECISION_RECORD_TEXT_MAX_CHARS (0.57.0)"
+    },
+    "boundary/DecisionRecordDecisionSchema.rationale": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Schema comment (0.57.0 reasoning fields): \"Each is `min(1)`: the empty string is not a value, so ABSENCE is the one and only encoding of 'nothing written' (or of a record captured before 0.57.0) \u2014 there is no default for it to be confused with.\" No .default(), no .nullable(), and min(1) refuses the empty string, so there is no second byte for absence to be confused WITH. Disclosed limit: absence does not distinguish 'the user wrote nothing' from 'captured before 0.57.0'; both mean no text is on the record.",
+      "ref": "src/boundary/decision-record.ts \u2014 reasoning-fields block comment above DECISION_RECORD_TEXT_MAX_CHARS (0.57.0)"
+    },
+    "boundary/DecisionRecordDecisionSchema.revisit_trigger": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Schema comment (0.57.0 reasoning fields): \"Each is `min(1)`: the empty string is not a value, so ABSENCE is the one and only encoding of 'nothing written' (or of a record captured before 0.57.0) \u2014 there is no default for it to be confused with.\" No .default(), no .nullable(), and min(1) refuses the empty string, so there is no second byte for absence to be confused WITH. Disclosed limit: absence does not distinguish 'the user wrote nothing' from 'captured before 0.57.0'; both mean no text is on the record.",
+      "ref": "src/boundary/decision-record.ts \u2014 reasoning-fields block comment above DECISION_RECORD_TEXT_MAX_CHARS (0.57.0)"
+    },
+    "boundary/DecisionRecordNotReadyPositionSchema.key_assumption": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Schema comment (0.57.0 reasoning fields): \"Each is `min(1)`: the empty string is not a value, so ABSENCE is the one and only encoding of 'nothing written' (or of a record captured before 0.57.0) \u2014 there is no default for it to be confused with.\" No .default(), no .nullable(), and min(1) refuses the empty string, so there is no second byte for absence to be confused WITH. Disclosed limit: absence does not distinguish 'the user wrote nothing' from 'captured before 0.57.0'; both mean no text is on the record.",
+      "ref": "src/boundary/decision-record.ts \u2014 reasoning-fields block comment above DECISION_RECORD_TEXT_MAX_CHARS (0.57.0)"
+    },
+    "boundary/DecisionRecordNotReadyPositionSchema.next_action": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Schema comment (0.57.0 reasoning fields): \"Each is `min(1)`: the empty string is not a value, so ABSENCE is the one and only encoding of 'nothing written' (or of a record captured before 0.57.0) \u2014 there is no default for it to be confused with.\" No .default(), no .nullable(), and min(1) refuses the empty string, so there is no second byte for absence to be confused WITH. Disclosed limit: absence does not distinguish 'the user wrote nothing' from 'captured before 0.57.0'; both mean no text is on the record.",
+      "ref": "src/boundary/decision-record.ts \u2014 reasoning-fields block comment above DECISION_RECORD_TEXT_MAX_CHARS (0.57.0)"
+    },
+    "boundary/DecisionRecordNotReadyPositionSchema.rationale": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Schema comment (0.57.0 reasoning fields): \"Each is `min(1)`: the empty string is not a value, so ABSENCE is the one and only encoding of 'nothing written' (or of a record captured before 0.57.0) \u2014 there is no default for it to be confused with.\" No .default(), no .nullable(), and min(1) refuses the empty string, so there is no second byte for absence to be confused WITH. Disclosed limit: absence does not distinguish 'the user wrote nothing' from 'captured before 0.57.0'; both mean no text is on the record.",
+      "ref": "src/boundary/decision-record.ts \u2014 reasoning-fields block comment above DECISION_RECORD_TEXT_MAX_CHARS (0.57.0)"
+    },
+    "boundary/DecisionRecordNotReadyPositionSchema.revisit_trigger": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Schema comment (0.57.0 reasoning fields): \"Each is `min(1)`: the empty string is not a value, so ABSENCE is the one and only encoding of 'nothing written' (or of a record captured before 0.57.0) \u2014 there is no default for it to be confused with.\" No .default(), no .nullable(), and min(1) refuses the empty string, so there is no second byte for absence to be confused WITH. Disclosed limit: absence does not distinguish 'the user wrote nothing' from 'captured before 0.57.0'; both mean no text is on the record.",
+      "ref": "src/boundary/decision-record.ts \u2014 reasoning-fields block comment above DECISION_RECORD_TEXT_MAX_CHARS (0.57.0)"
+    },
     "boundary/DecisionRecordOutcomeSchema.brier_component": {
       "markers": [
         "optional"
@@ -765,6 +829,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordSchema.prediction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment (0.57.0, reconciled 2026-09-24): \"ABSENCE IS DISTINCT: it means 'the user recorded that they are not ready to choose', never 'a prediction nobody wrote down' \u2014 so a consumer must never default it.\" Optional on the object but TIED TO THE BRANCH by DecisionRecordSchema's refinement: required when `decision` is the chosen branch (every pre-0.57.0 record carries one), refused when decision.position is 'not_ready'. The discriminator is on the wire (`decision.position`), and there is no empty encoding to confuse it with (`statement` is min(1)).",
+      "ref": "src/boundary/decision-record.ts \u2014 DecisionRecordSchema block comment + superRefine (0.57.0)"
     },
     "boundary/DisagreementSchema.round_id": {
       "markers": [
