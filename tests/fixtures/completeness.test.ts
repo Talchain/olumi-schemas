@@ -267,7 +267,14 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   as the five members above. The member is flat and EVERY field is
     //   REQUIRED, so the fixture is maximal by construction and the maximality
     //   walker has no optional field to report.
-    expect(MAXIMAL_FIXTURES.length).toBe(201);
+    // 0.57.0 decision-record not-ready position (+2):
+    //   boundary/DecisionRecordNotReadyPositionSchema — a NEW exported schema,
+    //   so it needs its own maximal fixture (every optional populated).
+    //   boundary/DecisionRecordSchema#not_ready — a second variant against the
+    //   existing DecisionRecordSchema identity, so the maximality walk sees the
+    //   `decision` union's SECOND branch exercised through the record, not
+    //   only standalone.
+    expect(MAXIMAL_FIXTURES.length).toBe(203);
   });
 
   it('family keys are unique', () => {

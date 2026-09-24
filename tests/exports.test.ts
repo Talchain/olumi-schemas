@@ -254,6 +254,12 @@ describe('package exports — boundary subpath (dist/boundary/index.js)', () => 
     expect(boundaryDist.DecisionRecordConfidenceSource).toBeDefined();
   });
 
+  // 0.57.0 — "not ready to choose" + the durable reasoning-text bound.
+  it('exposes DecisionRecordNotReadyPositionSchema and DECISION_RECORD_TEXT_MAX_CHARS at the boundary entry', () => {
+    expect(boundaryDist.DecisionRecordNotReadyPositionSchema).toBeDefined();
+    expect(boundaryDist.DECISION_RECORD_TEXT_MAX_CHARS).toBe(1000);
+  });
+
   it('does NOT expose the internal EvidenceBlockObjectSchema helper (boundary subpath)', () => {
     // The bare ZodObject is an implementation detail used to construct
     // `z.discriminatedUnion`. Consumers must import `EvidenceBlockSchema`
