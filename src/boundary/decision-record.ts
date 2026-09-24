@@ -125,10 +125,14 @@ export type DecisionRecordDecision = z.infer<typeof DecisionRecordDecisionSchema
 // snapshot of the analysis LEADER, and a not-ready record is made by an
 // explicit user action that names no option.
 //
-// `prediction` is UNCHANGED and still required on the record: a not-ready
-// view still states what the user expects to happen, and an outcome is
-// scored against THAT statement — never against an option, because there is
-// none.
+// A not-ready record makes NO PREDICTION (reconciled 2026-09-24, Paul's
+// product semantics: no option, no confidence, no expectation). The
+// expectation (`prediction.statement`) and the stated confidence
+// (`prediction.confidence`) are claims about a CHOSEN option's outcome, so
+// without a choice both would be claims about nothing. `DecisionRecordSchema`
+// therefore REFUSES a `prediction` on this branch and REQUIRES one on the
+// chosen branch — see the record-level refinement below. An outcome recorded
+// against a not-ready record is unscored: there is no staked confidence.
 export const DecisionRecordNotReadyPositionSchema = z.object({
   position: z.literal('not_ready'),
   graph_hash: z.string().min(1),
@@ -210,13 +214,40 @@ export type DecisionRecordOutcome = z.infer<typeof DecisionRecordOutcomeSchema>;
 // `position: 'not_ready'` and declares no option. A consumer reading
 // `decision.chosen_option_label` must now narrow first — which is the point:
 // the type system will not let a not-ready record be rendered as a choice.
+//
+// `prediction` (0.57.0, reconciled 2026-09-24) is optional ON THE OBJECT and
+// TIED TO THE BRANCH by the refinement: REQUIRED on a chosen record (exactly
+// as before — every pre-0.57.0 record carries one), and ABSENT on a
+// not-ready record (it makes no forecast). ABSENCE IS DISTINCT: it means "the
+// user recorded that they are not ready to choose", never "a prediction
+// nobody wrote down" — so a consumer must never default it (to an empty
+// statement, a 0 confidence, or anything else). Storage mirrors it: CEE's
+// `decision_records.prediction` is NULL exactly on a not-ready row, and the
+// RPC returns the record through jsonb_strip_nulls, so the key is absent.
 export const DecisionRecordSchema = z.object({
   record_id: z.string().min(1),
   scenario_id: Uuid,
   created_at: z.string().datetime({ offset: true }),
   decision: z.union([DecisionRecordDecisionSchema, DecisionRecordNotReadyPositionSchema]),
-  prediction: DecisionRecordPredictionSchema,
+  prediction: DecisionRecordPredictionSchema.optional(),
   review_date: z.string().datetime({ offset: true }),
   outcome: DecisionRecordOutcomeSchema.optional(),
-}).strict();
+}).strict().superRefine((record, ctx) => {
+  const notReady = 'position' in record.decision;
+  if (notReady && record.prediction !== undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['prediction'],
+      message:
+        "a not-ready record makes no prediction: `prediction` must be absent when decision.position is 'not_ready'",
+    });
+  }
+  if (!notReady && record.prediction === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['prediction'],
+      message: 'a chosen-option record requires `prediction` (the claim its outcome is scored against)',
+    });
+  }
+});
 export type DecisionRecord = z.infer<typeof DecisionRecordSchema>;

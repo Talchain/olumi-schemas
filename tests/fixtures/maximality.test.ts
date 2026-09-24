@@ -150,6 +150,9 @@ describe('negative control 1 — a stripped fixture is caught', () => {
       }
       if (entry.schema === DecisionRecordSchema) {
         const record = entry.fixture as Record<string, unknown>;
+        // Only where a prediction EXISTS: the not-ready variant carries none
+        // (0.57.0) and must stay a valid record.
+        if (record.prediction === undefined) return entry;
         return { ...entry, fixture: { ...record, prediction: strippedPrediction } };
       }
       return entry;

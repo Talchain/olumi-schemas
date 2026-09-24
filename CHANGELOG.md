@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.57.0] — decision records: "not ready to choose", and the user's reasoning made durable
 
 **Additive for every record that exists.** Approved by Paul, 24 Sep 2026. No
-existing field's shape, bounds or required-ness changes, and every record
-written before 0.57.0 parses exactly as before, on the same branch.
+existing field's shape or bounds changes, and every record written before
+0.57.0 parses exactly as before, on the same branch. (`prediction` becomes
+optional on the OBJECT, but the record-level refinement keeps it REQUIRED on
+every chosen-option record — so for every record that exists today its
+required-ness is unchanged.)
 
 ⚠ **One TYPE-level change a consumer will feel, deliberately.**
 `DecisionRecord['decision']` is now a union, so code that reads
@@ -20,6 +23,13 @@ rule lives in the type rather than in producer discipline (the
 CEE (`0.55.0`) imports only `DecisionRecordAnalysisSummary`,
 `DecisionRecordConfidenceSourceLiteral` and
 `DecisionRecordOutcomeResultLiteral`; the UI imports none of them.
+
+⚠ **A second, from the 24 Sep reconciliation.** `DecisionRecord['prediction']`
+is now optional in the TYPE (a not-ready record has none), so code that reads
+`record.prediction.statement` without a check fails typecheck — correctly. And
+`DecisionRecordSchema` is now a `ZodEffects` (the refinement below), so it no
+longer exposes `.shape` / `.extend()`; nothing in this package or at any
+consumer's pin calls either on it.
 
 ### Added
 
@@ -35,9 +45,19 @@ CEE (`0.55.0`) imports only `DecisionRecordAnalysisSummary`,
   - `committed_by_user` is REQUIRED and is `z.literal(true)`: ambient
     auto-capture records the analysis leader and can never produce this
     branch, so its absence here could only be a producer bug.
-  - `graph_hash` stays required (the view is still anchored to its graph);
-    `prediction` stays required on the record (the outcome is scored against
-    the user's stated expectation, never against an option).
+  - `graph_hash` stays required (the view is still anchored to its graph).
+  - **A not-ready record makes NO prediction** (reconciled 24 Sep 2026, Paul's
+    product semantics: no option, no confidence, no expectation). Superseded
+    text: ~~`prediction` stays required on the record (the outcome is scored
+    against the user's stated expectation)~~. The expectation and the stated
+    confidence are claims about a CHOSEN option's outcome, so without a choice
+    both are claims about nothing.
+- **`DecisionRecordSchema.prediction`** is `.optional()` on the object and
+  TIED TO THE BRANCH by a `.superRefine`: REQUIRED on a chosen-option record
+  (unchanged), REFUSED on a not-ready one — both reported at the `prediction`
+  path. Absence is DISTINCT (census row added): it means "not ready to
+  choose", never "no one wrote a prediction down", and must never be
+  defaulted. CEE stores it as a NULL column exactly on a not-ready row.
 - **`DecisionRecordSchema.decision`** is now
   `z.union([DecisionRecordDecisionSchema, DecisionRecordNotReadyPositionSchema])`.
   The branches are disjoint by construction.

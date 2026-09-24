@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 79,
+    "distinct": 80,
     "same": 41,
     "unresolved": 412
   },
@@ -829,6 +829,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/DecisionRecordSchema.prediction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Schema comment (0.57.0, reconciled 2026-09-24): \"ABSENCE IS DISTINCT: it means 'the user recorded that they are not ready to choose', never 'a prediction nobody wrote down' \u2014 so a consumer must never default it.\" Optional on the object but TIED TO THE BRANCH by DecisionRecordSchema's refinement: required when `decision` is the chosen branch (every pre-0.57.0 record carries one), refused when decision.position is 'not_ready'. The discriminator is on the wire (`decision.position`), and there is no empty encoding to confuse it with (`statement` is min(1)).",
+      "ref": "src/boundary/decision-record.ts \u2014 DecisionRecordSchema block comment + superRefine (0.57.0)"
     },
     "boundary/DisagreementSchema.round_id": {
       "markers": [

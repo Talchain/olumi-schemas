@@ -2831,12 +2831,17 @@ export const maximalDecisionRecord = deepFreeze({
 // `decision`. Registered as its own family so the maximality walk sees the
 // union's second branch exercised THROUGH DecisionRecordSchema, not only
 // standalone.
+// ⚠ NO `prediction` (reconciled 2026-09-24): a not-ready record makes no
+// forecast, and DecisionRecordSchema refuses one on this branch. The field is
+// still populated by `maximalDecisionRecord`, so the maximality walk (which
+// aggregates by schema identity) still sees it exercised. The outcome carries
+// no brier_component in real use (nothing staked), but the fixture keeps the
+// maximal outcome so the walk exercises it through this variant too.
 export const maximalDecisionRecordNotReady = deepFreeze({
   record_id: 'fixture_record_2',
   scenario_id: UUID_SCENARIO,
   created_at: TS_Z,
   decision: maximalDecisionRecordNotReadyPosition,
-  prediction: maximalDecisionRecordPrediction,
   review_date: '2026-02-01T00:00:00.000Z',
   outcome: maximalDecisionRecordOutcome,
 });

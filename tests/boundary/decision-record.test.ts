@@ -407,9 +407,13 @@ describe('0.15.0-shaped payload compat', () => {
   it('parses a maximal 0.15.0-shaped record unchanged (no injected 0.16.0 fields)', () => {
     const parsed = DecisionRecordSchema.parse(FULL_0_15_0_RECORD);
     expect(parsed).toEqual(FULL_0_15_0_RECORD);
-    expect('confidence_source' in parsed.prediction).toBe(false);
-    expect('probability_of_goal' in parsed.prediction).toBe(false);
-    expect('probability_of_joint_goal' in parsed.prediction).toBe(false);
+    // 0.57.0: `prediction` is optional in the TYPE (a not-ready record has
+    // none); a chosen-option record always carries it, so narrow explicitly.
+    const prediction = parsed.prediction;
+    if (prediction === undefined) throw new Error('a chosen-option record must carry its prediction');
+    expect('confidence_source' in prediction).toBe(false);
+    expect('probability_of_goal' in prediction).toBe(false);
+    expect('probability_of_joint_goal' in prediction).toBe(false);
     expect('committed_by_user' in parsed.decision).toBe(false);
   });
 
@@ -495,8 +499,11 @@ describe('0.57.0 — the four optional reasoning fields', () => {
 });
 
 describe('0.57.0 — decision is EITHER a chosen option OR an explicit not-ready position', () => {
+  // A not-ready record makes NO prediction (reconciled 2026-09-24), so the
+  // fixture is MINIMAL_RECORD without its `prediction`.
+  const { prediction: _minimalPrediction, ...MINIMAL_WITHOUT_PREDICTION } = MINIMAL_RECORD;
   const NOT_READY = {
-    ...MINIMAL_RECORD,
+    ...MINIMAL_WITHOUT_PREDICTION,
     decision: {
       position: 'not_ready' as const,
       graph_hash: 'gh_abc123',
@@ -549,9 +556,41 @@ describe('0.57.0 — decision is EITHER a chosen option OR an explicit not-ready
     expect(DecisionRecordSchema.safeParse({ ...NOT_READY, decision: rest }).success).toBe(false);
   });
 
-  it('a not-ready record still needs its prediction (scored against the statement, never an option)', () => {
-    const { prediction: _p, ...rest } = NOT_READY;
-    expect(DecisionRecordSchema.safeParse(rest).success).toBe(false);
+  it('a not-ready record makes NO prediction: one carrying `prediction` is REFUSED, at the prediction path', () => {
+    const withPrediction = { ...NOT_READY, prediction: MINIMAL_RECORD.prediction };
+    const result = DecisionRecordSchema.safeParse(withPrediction);
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues.map((i) => i.path.join('.'))).toEqual(['prediction']);
+    // Not even a confidence alone: it is still a claim about a chosen option.
+    expect(
+      DecisionRecordSchema.safeParse({
+        ...NOT_READY,
+        prediction: { statement: 'x', confidence: 0.5, confidence_source: 'user_stated' },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('a not-ready record WITHOUT a prediction parses, and the parsed record has no prediction key', () => {
+    const parsed = DecisionRecordSchema.parse(NOT_READY);
+    expect(parsed).toEqual(NOT_READY);
+    expect('prediction' in parsed).toBe(false);
+  });
+
+  it('CONTRAST — a chosen-option record still REQUIRES its prediction (every pre-0.57.0 record has one)', () => {
+    const { prediction: _p, ...chosenWithout } = MINIMAL_RECORD;
+    const result = DecisionRecordSchema.safeParse(chosenWithout);
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues.map((i) => i.path.join('.'))).toEqual(['prediction']);
+  });
+
+  it('a not-ready record may still carry an outcome (recorded, never scored against a forecast it never made)', () => {
+    const withOutcome = {
+      ...NOT_READY,
+      outcome: { recorded_at: '2026-11-30T09:00:00Z', result: 'as_expected' as const },
+    };
+    expect(DecisionRecordSchema.parse(withOutcome)).toEqual(withOutcome);
   });
 
   it("'not_ready' is the ONLY position value; 'chosen' or anything else is refused", () => {
