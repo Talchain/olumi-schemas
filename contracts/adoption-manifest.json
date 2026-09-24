@@ -1085,6 +1085,32 @@
         "  excluded_node_count === 0; that rule is CEE doctrine and is deliberately NOT mirrored",
         "  here, for the same reason ConstraintVerdictSchema refuses to mirror MAY_NAME_LEADING_OPTION."
       ]
+    },
+    {
+      "field": "enrichment.run_provenance (CEE->UI transport)",
+      "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentRunProvenanceSchema + AnalysisEnrichmentSchema.run_provenance + CEE_UI_ENRICHMENT_KEEP_LIST 'run_provenance' (0.58.0)",
+      "producer": "cee — handlers/chip-click-dispatch.ts stampAutoRunProvenance writes it on a server-initiated run_analysis fact (builders in context/run-initiator.ts); compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP carries it on the analysis_result block (Agent turn and the /assist/v1 scenario-graph reload read) from the CEE 0.58.0 re-vendor",
+      "consumer": "ui — the Panel's provisional label on an automatic first analysis (separate adoption train, not started at this release)",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY AT THIS RELEASE. CEE has PERSISTED the marker since R2 (2026-08-16); what is new is",
+        "  the type and the keep-list entry. producer_test stays null until the CEE re-vendor PR lands",
+        "  with a test that fails if the key stops reaching the analysis_result block, and this row moves",
+        "  to produced_dark then. A schema transport test is not adoption evidence.",
+        "LOCK-STEP: CEE's P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP must gain the same key in the same train; its",
+        "  element-for-element drift bolt against this list is RED in the window between them.",
+        "NO UI-FIRST WINDOW: the block's enrichment is z.record(z.unknown()) at every pin, so a consumer on",
+        "  0.55.0 carries the key without knowing it. Putting the marker on AnalysisStateV1 instead (.strict())",
+        "  would have made an un-upgraded UI drop the whole verdict.",
+        "ABSENCE IS NOT 'THE USER ASKED': absent means no attestation — a user-initiated run OR an",
+        "  un-upgraded CEE. initiated_by is an open string owned by CEE; `provisional` is the literal true.",
+        "NO MEMBER NAMED graph_hash / graph_hash_at_run: CEE's stripInternalKeysDeep drops those names at",
+        "  any depth. The revision is already on the block as computed_against_hash."
+      ]
     }
   ]
 }

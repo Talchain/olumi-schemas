@@ -63,9 +63,9 @@
     }
   },
   "counts": {
-    "distinct": 79,
+    "distinct": 80,
     "same": 33,
-    "unresolved": 412
+    "unresolved": 414
   },
   "open_objects": {
     "_doc": [
@@ -124,6 +124,7 @@
       "boundary/EnrichmentRobustnessEdgeSchema",
       "boundary/EnrichmentRobustnessSchema",
       "boundary/EnrichmentRobustnessSchema.normalization_errors[]",
+      "boundary/EnrichmentRunProvenanceSchema",
       "boundary/EnrichmentScaleProvenanceSchema",
       "boundary/ErrorBlockSchema.details",
       "boundary/GraphV3Schema",
@@ -382,6 +383,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.run_provenance": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"Present means the SERVER started this run and nobody asked for it ... Absent means NO provenance attestation was made: a run the user asked for, OR a producer that predates this key on the transport keep-list. Absence is never evidence that a user confirmed anything.\" Two states share the absent byte (user-initiated, and an un-upgraded CEE that strips the key), so absence is not a positive 'the user asked for this'. There is no default and no `provisional: false` to stand in for it; the object is a presence attestation only.",
+      "ref": "src/boundary/enrichment.ts \u2014 AnalysisEnrichmentSchema.run_provenance .describe() (RUN_PROVENANCE_ABSENCE_RULE, 0.58.0)"
     },
     "boundary/AnalysisEnrichmentSchema.status_reason": {
       "markers": [
@@ -1884,6 +1893,18 @@
       "verdict": "unresolved"
     },
     "boundary/EnrichmentRobustnessSchema.score": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRunProvenanceSchema.construction_turn_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/EnrichmentRunProvenanceSchema.draft_turn_id": {
       "markers": [
         "optional"
       ],

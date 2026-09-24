@@ -5,6 +5,86 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.58.0] — `run_provenance` on the CEE→UI keep-list
+
+**Additive.** One new exported shape, one new optional envelope field, one
+keep-list entry. No existing field's shape, bounds or required-ness changes.
+
+**Why a new version rather than 0.56.0:** `v0.56.0` is tagged at `7cee4fc5`
+(`main`), and publish run `35412972379` logged `Version 0.56.0 does not exist,
+will publish` then `+ @talchain/schemas@0.56.0` on 2026-09-19. It is published.
+`publish.yml` skips a version that already exists, so adding to 0.56.0 would
+never have reached a consumer. **Why not 0.57.0:** open PRs #62 and #65 both
+already claim it; this takes the next free version (RC, #63 5818628860).
+
+**A consumer vendoring this from `0.55.0` also receives `0.56.0`** — every
+consumer (CEE, UI, PLoT) still pins `vendor/talchain-schemas-0.55.0.tgz`. See
+the `0.56.0` entry below: `analysis_participation_withheld` (one new shape) and
+the two unversioned declarations it shipped, `observed_state.raw_value` and
+`.cap`. All additive; none changes an existing field's shape, bounds or
+required-ness.
+
+### Added
+
+- **`EnrichmentRunProvenanceSchema`: the provisional-run marker.**
+
+  ```ts
+  { initiated_by: string /* min 1, CEE-owned open vocabulary */;
+    provisional: true;
+    draft_turn_id?: string;
+    construction_turn_id?: string }  // .passthrough()
+  ```
+
+  CEE stamps it on the persisted fact of a run the **server** started (nobody
+  asked for it): `auto_post_draft` since R2 (2026-08-16), and
+  `auto_post_construction` for the Agent lane's first analysis after a build.
+  It has been persisted all along. The keep-list stripped it, so the browser
+  could not tell an automatic first pass over machine-authored estimates from
+  a run the user asked for.
+
+  - `initiated_by` is **open** on purpose. CEE owns the vocabulary, and a new
+    initiator must not fail the whole envelope parse at an older pin.
+  - `provisional` is the literal `true`. A stamp that says "not provisional"
+    is refused, not typed.
+  - **No member is named `graph_hash` or `graph_hash_at_run`.** CEE's transport
+    projection deletes those names at any depth. The revision is already on the
+    block as `computed_against_hash`.
+
+- **`AnalysisEnrichmentSchema.run_provenance?`**, typed, with its absence rule
+  on `.describe()`.
+
+- **`CEE_UI_ENRICHMENT_KEEP_LIST` gains `'run_provenance'`** (18 → 19 keys).
+  The CEE side must add the same key to `P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP` in
+  the same train. Its element-for-element drift bolt is red until it does.
+
+### Placement: inside the block's `enrichment`, not on `AnalysisStateV1`
+
+`AnalysisResultBlockSchema.enrichment` is `z.record(z.unknown())` at every
+published version, so a consumer still on 0.55.0 carries the key without knowing
+it. **CEE can ship first; there is no UI-first window.** A member on the
+`.strict()` `AnalysisStateV1` would instead have made an un-upgraded UI drop the
+whole verdict. `run-provenance-0.58.test.ts` pins both halves: the block accepts
+it inside `enrichment` and refuses it at the block top level.
+
+### Absence semantics: `distinct`
+
+**Present** ⇒ the server started this run, and its result is provisional.
+**Absent** ⇒ no attestation was made: either a run the user asked for, or an
+un-upgraded CEE that strips the key. Absence is never evidence that a user
+confirmed anything. A consumer must not infer provenance from the summary text,
+from missing win probabilities, or from a withheld leader.
+
+### Withheld-claim ruling (CEE's to enforce): `pass_through`
+
+The marker names no option. "This was not asked for and is not confirmed" is
+exactly what must survive when a leader is withheld.
+
+### Adoption
+
+`enrichment.run_provenance (CEE->UI transport)` is **`declared`**. The CEE
+re-vendor PR carries the producer test and moves the row to `produced_dark`.
+The Panel UI's provisional label is a separate train.
+
 ## [0.56.0] — `analysis_participation_withheld`
 
 **Additive, and it ships the two unversioned declarations that have been sitting

@@ -1028,6 +1028,55 @@ export type EnrichmentConditionalWinner =
   z.infer<typeof EnrichmentConditionalWinnerSchema>;
 
 // ----------------------------------------------------------------------------
+// run_provenance — who started this analysis (0.58.0, CEE-authored)
+// ----------------------------------------------------------------------------
+
+/**
+ * Absence rule for `run_provenance`, carried on the field via `.describe()` so
+ * it ships in `dist/` and in the published JSON-Schema where a consumer reads it.
+ */
+const RUN_PROVENANCE_ABSENCE_RULE =
+  'Present means the SERVER started this run and nobody asked for it: the result ' +
+  'is a provisional first pass over machine-authored estimates. Absent means NO ' +
+  'provenance attestation was made: a run the user asked for, OR a producer that ' +
+  'predates this key on the transport keep-list. Absence is never evidence that a ' +
+  'user confirmed anything, and a consumer must not infer provenance from the ' +
+  'summary text, from missing win probabilities, or from a withheld leader.';
+
+/**
+ * The provisional-run marker CEE stamps on a server-initiated `run_analysis`
+ * fact, and — from 0.58.0 — transports to the UI on the `analysis_result`
+ * block's enrichment.
+ *
+ * NOT a PLoT field. CEE's run dispatch writes it onto the persisted enrichment
+ * record (the same CEE-authored-key carrier as `decision_review`). It was
+ * persisted but stripped by the keep-list until this release, so the browser
+ * could not tell an automatic first pass from a run the user asked for.
+ *
+ * `initiated_by` is an OPEN string, deliberately. CEE owns the vocabulary
+ * (`auto_post_draft`, `auto_post_construction` at this release) and adding an
+ * initiator must not need a schemas train. The member a consumer reads is
+ * `provisional`, which is the literal `true`: a stamp that says "not
+ * provisional" is not a stamp, so it is refused rather than typed.
+ *
+ * `draft_turn_id` / `construction_turn_id` name the turn the run was started
+ * for (one per initiator). They are provenance, not identity for a comparison.
+ *
+ * ⛔ NO MEMBER MAY BE NAMED `graph_hash` OR `graph_hash_at_run`. CEE's transport
+ * projection deletes those exact keys at ANY depth (`stripInternalKeysDeep`), so
+ * a member with either name would be declared here and never arrive. The
+ * revision the run was computed against is already on the block as
+ * `computed_against_hash`.
+ */
+export const EnrichmentRunProvenanceSchema = z.object({
+  initiated_by: z.string().min(1),
+  provisional: z.literal(true),
+  draft_turn_id: z.string().optional(),
+  construction_turn_id: z.string().optional(),
+}).passthrough();
+export type EnrichmentRunProvenance = z.infer<typeof EnrichmentRunProvenanceSchema>;
+
+// ----------------------------------------------------------------------------
 // The envelope
 // ----------------------------------------------------------------------------
 
@@ -1160,6 +1209,10 @@ export const AnalysisEnrichmentSchema = z.object({
    */
   decision_brief: z.object({}).passthrough().nullable().optional(),
 
+  // --- provenance (0.58.0) --------------------------------------------------
+  /** See {@link EnrichmentRunProvenanceSchema} and RUN_PROVENANCE_ABSENCE_RULE. */
+  run_provenance: EnrichmentRunProvenanceSchema.optional().describe(RUN_PROVENANCE_ABSENCE_RULE),
+
   // --- legacy / inbound-tolerance ------------------------------------------
   /** See disposition note above — deprecated-inbound-only. */
   results: z.array(z.record(z.string(), z.unknown())).optional(),
@@ -1266,6 +1319,15 @@ export const CEE_UI_ENRICHMENT_KEEP_LIST = [
   // see the absence-semantics note on that schema. A required member there
   // would make CEE's own projected shape unparseable at the consumer.
   'conditional_winners',
+  // 0.58.0: `run_provenance` — the provisional marker on a server-initiated
+  // run. CEE has persisted it on the fact since R2 (2026-08-16) and this
+  // list stripped it, so the browser saw an automatic first pass as an
+  // ordinary analysis. Ruled `pass_through` on a withheld turn: it names no
+  // option, and "this was not asked for and is not confirmed" is exactly what
+  // must survive when a leader is withheld. Safe at every consumer pin: the
+  // block's `enrichment` is `z.record(z.unknown())`, so an older consumer
+  // carries the key without knowing it. See EnrichmentRunProvenanceSchema.
+  'run_provenance',
 ] as const;
 export type CeeUiEnrichmentKeepKey = (typeof CEE_UI_ENRICHMENT_KEEP_LIST)[number];
 
