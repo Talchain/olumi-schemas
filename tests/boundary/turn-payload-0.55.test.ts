@@ -72,6 +72,18 @@ const PRE_0_55_KINDS = [
   'option_intervention_edit',
 ] as const;
 
+/**
+ * Members added AFTER 0.55.0 — the derived present-tense half, the same idiom
+ * `KINDS_ADDED_SINCE_0_48` / `KINDS_ADDED_SINCE_0_50` use in the 0.48 and 0.50
+ * suites. `PRE_0_55_KINDS` above is a HISTORIC RECORD and may not be edited to
+ * stay current; a later member declares itself here instead, so block F keeps
+ * asserting what 0.55.0 itself did and its "0.54.0-shaped reader" stays a
+ * 0.54.0 reader rather than quietly becoming "the union minus one".
+ *
+ *   · 0.59.0 — goal_target_edit
+ */
+const KINDS_ADDED_SINCE_0_55 = ['goal_target_edit'] as const;
+
 /** A system_event turn wrapper — the shape CEE actually validates on ingress. */
 function turn(event: unknown) {
   return {
@@ -298,10 +310,16 @@ describe('E — VERBATIM: the parser returns the exact bytes it was given', () =
 describe('F — additive at 0.54.0: every existing member is untouched', () => {
   it('adds exactly one member and removes none', () => {
     const kinds = unionKinds();
-    expect(kinds).toHaveLength(PRE_0_55_KINDS.length + 1);
+    expect(kinds).toHaveLength(PRE_0_55_KINDS.length + 1 + KINDS_ADDED_SINCE_0_55.length);
     for (const kind of PRE_0_55_KINDS) expect(kinds).toContain(kind);
-    expect(kinds.filter((k) => !(PRE_0_55_KINDS as readonly string[]).includes(k)))
-      .toEqual([KIND]);
+    // Later trains are subtracted by NAME rather than by count, so this keeps
+    // asserting the 0.55.0 delta itself and still REDs if finding_dissent is
+    // ever replaced rather than appended to.
+    expect(
+      kinds
+        .filter((k) => !(PRE_0_55_KINDS as readonly string[]).includes(k))
+        .filter((k) => !(KINDS_ADDED_SINCE_0_55 as readonly string[]).includes(k)),
+    ).toEqual([KIND]);
   });
 
   it('the 0.54.0 members appear FIRST and in unchanged ORDER', () => {
@@ -345,8 +363,12 @@ describe('F — additive at 0.54.0: every existing member is untouched', () => {
   it('a 0.54.0-shaped reader (the union minus this member) REJECTS the new turn', () => {
     // The deploy-order guard. Reconstructed from the REAL union rather than a
     // hand-written twin, so it cannot drift from what 0.54.0 shipped.
+    // A 0.54.0 reader knows neither this member NOR anything added after it;
+    // filtering only KIND would leave later members in and quietly stop
+    // simulating 0.54.0. The length assertion is what makes that loud.
+    const EXCLUDED_FROM_0_54: readonly string[] = [KIND, ...KINDS_ADDED_SINCE_0_55];
     const priorOptions = unionOptions()
-      .filter((o) => (o.shape.kind as z.ZodLiteral<string>).value !== KIND);
+      .filter((o) => !EXCLUDED_FROM_0_54.includes((o.shape.kind as z.ZodLiteral<string>).value));
     expect(priorOptions).toHaveLength(PRE_0_55_KINDS.length);
 
     const priorReader = z.discriminatedUnion(

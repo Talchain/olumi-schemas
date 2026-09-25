@@ -5,6 +5,126 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.59.0] — `goal_target_edit`
+
+**Additive.** One new member, appended LAST to `SystemEventSchema`, and its
+entry in the `SystemEventKind` parity list. No existing member's shape, field
+set, bounds or union order changes.
+
+**⚠ Why 0.59.0.** `0.58.0` is taken: #66 (`run_provenance`) merged at 0.58.0
+on 24 Sep 2026. `0.57.0` is still claimed by three open PRs — #62 (comparison
+scope), #63 (contract version on the wire) and #65 (draft, decision-record
+`not_ready`) — each derived from the `version` field of `package.json` at its
+head. `publish.yml` silently skips a version that already exists, so a merge at
+a taken number would never reach the registry. This release takes the next
+free number, following the 0.54.0 precedent (`cc5c9e8`, "skip numbers claimed
+by open PRs"); #62, #63 and #65 now need **0.60.0 or higher**. **Re-derive at
+merge time**: this note is an expectation recorded in a changelog, not a
+reservation any tooling enforces.
+
+### Added
+
+- **`goal_target_edit` — the structured, id-addressed edit of a goal's success
+  target.** Six fields, all REQUIRED, `.strict()`:
+
+  ```ts
+  {
+    kind: 'goal_target_edit';
+    goal_node_id: string;                     // canonical id, exact bytes
+    constraint_type: 'at_least' | 'at_most';  // no default
+    raw_value: number;                        // finite, >= 0 — absolute LEVEL, user units
+    unit: string;                             // non-empty
+    base_graph_hash: string;                  // CanonicalBaseGraphHashSchema
+  }
+  ```
+
+  **What it closes.** The Canvas success-target control already exists, but the
+  edit had no wire verb of its own: the UI dispatches a typed `add_constraint`
+  action plus a generated English sentence whose job is to attest "This is an
+  absolute level, not a change from the current level." A structured gesture
+  that travels as prose is one whose meaning depends on a sentence parser. This
+  member is the typed carrier — the same move `factor_value_edit` made for the
+  factor inspector.
+
+  **The client sends intent; the server derives everything else.** The cap
+  (`goal_threshold_cap`) and its provenance, the model-scale `goal_threshold`
+  (`raw_value / cap`), the frame (`goal_threshold_frame`, and the constraint
+  row's `value_frame`), the row's `provenance`, `label` and `constraint_id` are
+  all server-derived, and the client never sends them. `.strict()` makes each a
+  **refusal** rather than a silently dropped key — pinned key by key. Accepting
+  a client cap would let an inspector edit rescale the goal with no consent
+  step: `factor_value_edit`'s "no `cap` field" reasoning, applied unchanged.
+  `raw_value` is **declared** an absolute level by the contract, which is the
+  attestation the UI's sentence used to carry, and what licenses the server to
+  stamp the frame `level`.
+
+  **`at_most` writes only the `goal_constraints` row.** This mirrors the
+  existing `add_constraint` handler rather than redefining it: `at_least` on a
+  goal sets the success target (a `>=` row plus the node's threshold fields),
+  while `at_most` upserts the `<=` row and leaves the goal's threshold
+  untouched. The handler's own reason (CEE `add-constraint.ts` at `57f903c4`,
+  :917-920): ISL computes `P(samples >= threshold)`, so encoding a keep-below
+  bound as a threshold would invert the claim.
+
+  **Names, swept for collision.** `constraint_type`, **not** `direction`: open
+  PR #48 proposes `goal_direction` (maximise/minimise — the objective's sense),
+  which is a different concept. `at_least | at_most` is the vocabulary the
+  `add_constraint` handler already reads, so the server can pass it through
+  verbatim. `goal_node_id` is the same token GraphV3 analysis state already uses
+  for the id of a goal node; deliberately not `target_id`, which on this union
+  means an arbitrary graph node — the server must refuse a node that is not
+  kind `goal`.
+
+  **The stale gate, and why there is no `expected` twin.** `base_graph_hash`
+  binds to `CanonicalBaseGraphHashSchema`, exactly as `structural_delete`,
+  `structural_rename` and `option_intervention_edit` do. Every analysis-affecting
+  value this edit writes — `goal_threshold`, `goal_threshold_raw`,
+  `goal_threshold_cap` and `goal_constraints` — is inside the analysis-affecting
+  projection (the one written field outside it, `goal_threshold_frame`, is always
+  written as `level` together with the hashed `goal_threshold`)
+  (`boundary/graph-hash-contract.ts`), so a concurrent change to the target
+  moves the hash and the server refuses rather than clobbering it. That claim
+  is about a different module, so it is pinned against the published
+  projection in the test file rather than asserted in prose.
+
+### Tests
+
+- New `tests/boundary/turn-payload-goal-target-edit.test.ts` (60 tests, written
+  RED-first: 14 failed at `7cee4fc5` before the member existed). Valid
+  `at_least` and `at_most`, byte-identical round trip; accepts `raw_value` 0
+  ("at most 0 defects"; the server refuses `at_least` 0) and refuses negatives, `NaN` and `±Infinity`, numeric strings, every
+  server-derived key and an unknown key, a missing `base_graph_hash` (absent,
+  null, empty), an unknown or defaulted `constraint_type`, blank or composite
+  ids and an empty unit; pins the projection coverage; reconstructs a
+  pre-release reader from the real union and proves it rejects the whole turn.
+- Eight schema mutants (non-negative, not strict, not finite, optional hash,
+  widened enum, empty unit allowed, defaulted direction, dropped from the union)
+  each turn this suite RED.
+- The derived present-tense lists were extended, never the historic records:
+  `KINDS_ADDED_SINCE_0_41` (0.42), `KINDS_ADDED_SINCE_0_48`,
+  `KINDS_ADDED_SINCE_0_50`, and a new `KINDS_ADDED_SINCE_0_55` in the 0.55
+  suite, whose delta and 0.54.0-reader assertions now subtract later trains by
+  name. Fixture completeness ratchet 201 → 202.
+
+### Contract metadata
+
+- `contracts/adoption-manifest.json`: row
+  `system_event.event[kind=goal_target_edit]`, `state: "declared"` — no
+  producer, consumer or deployment flag is named, because none exists yet.
+- `contracts/manifest.sha256` regenerated FIRST, then
+  `src/contracts/generated-constants.ts` (the order-dependence recorded in
+  `cc5c9e8`).
+
+### Sequencing — reader first, and it is load-bearing
+
+Every `SystemEventSchema` member is `.strict()` and the union discriminates on
+`kind`, so a consumer pinned below 0.59.0 that receives this member rejects the
+**whole** turn (422), not just this field. Order: publish 0.59.0 → CEE
+re-vendors and deploys the reader and writer → only then the UI re-vendors and
+emits. UI-alone would 422 every success-target edit; CEE-alone is invisible and
+safe. CEE `staging` (`caf7d1a3`, 25 Sep) vendors **0.55.0**, so its re-vendor
+also carries 0.56.0's and 0.58.0's additive changes.
+
 ## [0.58.0] — `run_provenance` on the CEE→UI keep-list
 
 **Additive.** One new exported shape, one new optional envelope field, one

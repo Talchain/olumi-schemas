@@ -1300,6 +1300,139 @@ const FindingDissentEvent = z.object({
     ),
 }).strict();
 
+/**
+ * `goal_target_edit` (0.59.0) — the structured, id-addressed edit of a goal's
+ * success target: "this goal must be at least / at most N <unit>".
+ *
+ * ── WHAT IT CLOSES ────────────────────────────────────────────────────────
+ * The Canvas success-target control already exists, but the edit has no wire
+ * verb of its own: the UI dispatches a typed `add_constraint` action plus a
+ * generated English sentence whose job is to attest "This is an absolute level,
+ * not a change from the current level." (DecisionGuideAI staging bfb2d0b2:
+ * `useModelEditAuthority.proposeGoalTarget` → `manualGoalTargetMessage` in
+ * `src/canvas/conversation/manualGoalTarget.ts`). A structured gesture
+ * that travels as prose is one whose meaning depends on a sentence parser. This
+ * member is the typed carrier, the same move `factor_value_edit` made for the
+ * factor inspector.
+ *
+ * ── WHAT THE CLIENT SENDS, AND WHAT IT NEVER SENDS ────────────────────────
+ * The client sends INTENT only: which goal, which direction, the absolute level
+ * in the user's own units, the unit, and the hash of the graph it was looking at.
+ * THE SERVER DERIVES EVERYTHING ELSE and the client never sends it:
+ *   · the CAP (`goal_threshold_cap`) and its provenance — CEE's cap doctrine
+ *     decides it from the raw value, the unit and any existing compatible cap.
+ *     Accepting a client cap would let an inspector edit rescale the goal with
+ *     no consent step — `factor_value_edit`'s "NO `cap` FIELD" reasoning, applied
+ *     unchanged;
+ *   · the MODEL-SCALE threshold `goal_threshold` = raw_value / cap — derived from
+ *     the server's cap, so a client copy could only ever disagree with it;
+ *   · the FRAME (`goal_threshold_frame`, and the constraint row's `value_frame`)
+ *     — `raw_value` is DECLARED an absolute LEVEL by this contract (below), so the
+ *     server stamps `'level'`. The declaration is the attestation the UI's
+ *     sentence used to carry; no per-event frame field exists to disagree with it;
+ *   · PROVENANCE and ROW IDENTITY (the row's `provenance`, its `label`, its
+ *     `constraint_id`) — the handler stamps `provenance: 'explicit'`, defaults
+ *     the label to the goal's own and mints or reuses the row id (add-constraint.ts
+ *     :711-714, :863-885). The event kind is the provenance claim (a user acts on
+ *     this surface); a client-supplied constant would add nothing the server
+ *     could trust.
+ * `.strict()` makes each of those a REFUSAL, not a silently dropped key — pinned
+ * key by key in tests/boundary/turn-payload-goal-target-edit.test.ts block B.
+ *
+ * ── `at_most` WRITES ONLY THE `goal_constraints` ROW ──────────────────────
+ * This mirrors the existing `add_constraint` handler's semantics exactly, and the
+ * member carries them rather than redefining them: `at_least` on a goal sets the
+ * success target (row `>=` plus the node's goal_threshold / _raw / _cap / _frame),
+ * while `at_most` upserts the `<=` constraint row and leaves the goal's threshold
+ * UNTOUCHED. The reason is the handler's own, quoted rather than paraphrased
+ * (olumi-assistants-service `src/orchestrator-v5/tools/handlers/add-constraint.ts`
+ * at 57f903c4, :917-920): "`at_most` goal constraints deliberately do NOT stamp a
+ * threshold: ISL computes P(samples >= threshold) (MINIMISATION doctrine —
+ * encoding a 'keep below' bound as a >=-threshold would invert the claim). The
+ * constraint entry still lands." A consumer that stamps the threshold on
+ * `at_most` has inverted the claim AND diverged from the chat path that writes
+ * the same gesture.
+ *
+ * ── NAMES, SWEPT FOR COLLISION (trap 21) ──────────────────────────────────
+ *   · `constraint_type`, NOT `direction`: open schemas PR #48 proposes
+ *     `goal_direction` (maximise / minimise — the objective's SENSE), a different
+ *     concept. `constraint_type` with `at_least | at_most` is the vocabulary the
+ *     `add_constraint` handler already reads (`AddConstraintTypeSchema`,
+ *     add-constraint.ts:110), so the server passes it through
+ *     verbatim rather than translating between two spellings. REQUIRED with NO
+ *     default: a defaulted direction is a manufactured statement of intent.
+ *   · `goal_node_id` is the same token GraphV3 analysis state already uses for
+ *     "the id of a goal node" (CANONICAL_GRAPH_HASH_ANALYSIS_STATE_FIELDS) — the
+ *     same id space and the same meaning. Deliberately NOT `target_id`, which on
+ *     this union means an arbitrary graph node: the server MUST refuse an id whose
+ *     node is not kind `goal`, and the name states that precondition.
+ *   · `raw_value`, reused from `factor_value_edit`, with the same meaning: the
+ *     USER-UNIT magnitude as typed. There is no model-scale `value` twin here.
+ *
+ * ── THE STALE GATE ────────────────────────────────────────────────────────
+ * `base_graph_hash` binds to `CanonicalBaseGraphHashSchema` exactly as
+ * structural_delete / structural_rename / option_intervention_edit do. It is
+ * meaningful because every ANALYSIS-AFFECTING value this edit writes is inside
+ * the projection: goal_threshold, goal_threshold_raw and goal_threshold_cap are
+ * node projection fields, and goal_constraints is an analysis-state hash field
+ * (boundary/graph-hash-contract.ts). So a concurrent change to the target moves
+ * the hash and the server refuses rather than clobbering it — and NO `expected`
+ * twin is needed (that is structural_rename's answer to `label` being OUTSIDE the
+ * projection). Pinned against the published projection in block F of the test
+ * file. The one written field OUTSIDE the projection is `goal_threshold_frame`:
+ * this verb always writes it (`level`) together with goal_threshold, which IS
+ * hashed, so a concurrent frame-only change is overwritten consistently with the
+ * new value rather than silently mixed with it.
+ *
+ * ── SEQUENCING, WHICH IS LOAD-BEARING ─────────────────────────────────────
+ * Every `SystemEventSchema` member is `.strict()` and the union discriminates on
+ * `kind`, so a consumer pinned below the release carrying this member rejects the
+ * WHOLE turn (422), not just this field. Order: publish → CEE re-vendors and
+ * deploys the reader + writer → only then the UI re-vendors and emits. UI-alone
+ * would 422 every success-target edit; CEE-alone is invisible and safe.
+ */
+const GoalTargetEditEvent = z.object({
+  kind: z.literal('goal_target_edit'),
+  goal_node_id: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical id of the GOAL node whose success target is being set. ID-ADDRESSED — ' +
+      'never a label. The server resolves it in its own persisted graph and MUST refuse, with ' +
+      'no write, an id that names no node or names a node whose kind is not `goal`.',
+  ),
+  constraint_type: z.enum(['at_least', 'at_most']).describe(
+    'The direction of the target. REQUIRED, no default. `at_least` sets the goal\'s success ' +
+      'target (a `>=` constraint row plus the node\'s goal_threshold, goal_threshold_raw, ' +
+      'goal_threshold_cap and goal_threshold_frame). `at_most` writes ONLY the `<=` ' +
+      'goal_constraints row and leaves the goal\'s threshold untouched — the existing ' +
+      'add_constraint semantics, carried rather than redefined. Not `goal_direction` ' +
+      '(maximise/minimise), which is the objective\'s sense and a different concept.',
+  ),
+  raw_value: z.number().finite().nonnegative().describe(
+    'The target as an ABSOLUTE LEVEL on the metric\'s own scale, in the USER\'S units, as typed ' +
+      '(e.g. 400000 for £400,000; 5 for 5%). Never a change from the current level and never ' +
+      'the model scale: this declaration is what licenses the server to stamp the frame ' +
+      '`level`. Finite and NON-NEGATIVE: zero is a meaningful `at_most` level ("at most 0 ' +
+      'defects"), so the contract admits it (Codex, #63 5821693599). Negative levels are ' +
+      'refused. The SERVER still refuses `at_least` 0 (a success target of "at least ' +
+      'nothing" is not a target), with an honest no-write refusal, exactly as the ' +
+      'add_constraint success-target guard does today. The server derives the cap, its provenance and ' +
+      'the model-scale goal_threshold (raw_value / cap) from this value; the client sends ' +
+      'none of them.',
+  ),
+  unit: z.string().min(1).regex(/\S/, 'unit must contain a non-whitespace character').describe(
+    'Unit symbol for `raw_value` (e.g. "£", "%", "customers"). REQUIRED and non-blank (a ' +
+      'whitespace-only unit is refused): a ' +
+      'unitless level is ambiguous against a capped goal. The server reconciles it against ' +
+      'the goal\'s existing unit and may refuse an incompatible one.',
+  ),
+  base_graph_hash: CanonicalBaseGraphHashSchema.describe(
+    'The canonical analysis-affecting graph hash the client last read. The stale gate: every ' +
+      'analysis-affecting value this edit writes (goal_threshold, goal_threshold_raw, ' +
+      'goal_threshold_cap, goal_constraints) is inside that projection, so a concurrent change to the target moves ' +
+      'the hash and the server MUST refuse rather than clobber it. Absent, null and empty are ' +
+      'all forbidden.',
+  ),
+}).strict();
+
 export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
@@ -1319,6 +1452,7 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   StructuralRenameEvent,
   OptionInterventionEditEvent,
   FindingDissentEvent,
+  GoalTargetEditEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 

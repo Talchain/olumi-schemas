@@ -270,7 +270,13 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.58.0 (+1): boundary/EnrichmentRunProvenanceSchema — the provisional-run
     //   marker that joins the CEE→UI keep-list. Its maximal fixture populates
     //   both turn-id members, which no real stamp does (see its notes).
-    expect(MAXIMAL_FIXTURES.length).toBe(202);
+    // goal_target_edit (+1, 0.59.0):
+    //   boundary/SystemEventSchema#goal_target_edit — one more branch variant
+    //   against the existing SystemEventSchema identity, on the same reasoning
+    //   as the six members above. The member is flat and EVERY field is
+    //   REQUIRED, so the fixture is maximal by construction and the maximality
+    //   walker has no optional field to report.
+    expect(MAXIMAL_FIXTURES.length).toBe(203);
   });
 
   it('family keys are unique', () => {
