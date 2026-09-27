@@ -5,6 +5,37 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.60.0] — per-limit + joint constraint verdicts; the band on `edge_strength_edit`
+
+**Additive.** Three OPTIONAL members; every schema stays `.strict()`. No existing member's shape, field set, bounds or
+order changes; every fact and event from before 0.60.0 still parses. ONE release carries all three (DL #70 5855499810
+/ 5856196763).
+
+**⚠ Version.** #62, #63 and #65 still claim 0.57.0 at their heads and need a fresh number; this takes the next free
+one after 0.59.0. **Re-derive at merge time** (`publish.yml` silently skips a version that already exists).
+
+### Added
+
+- **`ConstraintVerdictSchema.per_limit`** (optional) — one typed verdict per ratified limit (build train B5; shape
+  Model Generation #70 5855493847, meaning AI Quality 5855511541): `{ constraint_id, state: 'scored' | 'estimate_only'
+  | 'unscored', reason? }`. `scored` means P exists AND every precondition held (framed threshold, anchored level, no
+  clamp, convertible, the user's baseline); `estimate_only` = all but the last (the baseline is Olumi's estimate);
+  `unscored` = no P, `reason` names the first failed precondition. `reason` is a documented string CODE (hazard 1),
+  absent iff `scored` (enforced). There is deliberately no partial-precondition flag.
+- **`ConstraintVerdictSchema.joint`** (optional) — the run-level joint verdict: `scored` / `estimate_only` / `withheld`
+  (+ `withheld_reason`, `constraint_ids`, only when withheld; enforced). When withheld, the producer omits
+  `probability_of_joint_goal` on every option.
+- **`edge_strength_edit.band`** (optional) — the band the user chose on the canvas pill, in the contract's ONE band
+  vocabulary (`StrengthBand`). CEE sets the edge's std from its own band table; a band `confirm_current` moves the
+  analysis hash (AI Quality N2). A pre-0.60.0 reader rejects an event carrying it: CEE vendors a reader before the UI
+  sends it.
+- Adoption manifest rows for all three at `declared`; absence-semantics census rows (`distinct`, 80 → 86).
+
+### Not published
+
+- `estimate_only_constraint_ids` (drafted for 0.60.0 on this branch, never released) is folded into
+  `per_limit[].state = 'estimate_only'` — one field, one meaning.
+
 ## [0.59.0] — `goal_target_edit`
 
 **Additive.** One new member, appended LAST to `SystemEventSchema`, and its

@@ -1132,6 +1132,48 @@
         "NO MEMBER NAMED graph_hash / graph_hash_at_run: CEE's stripInternalKeysDeep drops those names at",
         "  any depth. The revision is already on the block as computed_against_hash."
       ]
+    },
+    {
+      "field": "constraint_verdict.per_limit",
+      "declared_in": "schemas:src/orchestrator/handler-results.ts::ConstraintVerdictSchema (0.60.0)",
+      "producer": "cee \u2014 run_analysis handler, beside constraint_verdict_state, from PLoT's per-limit scoring (B5, MG); populated only after A3 round 2 (threshold frame) so no 'scored' is ever published for a relabelled or raw threshold; NOT YET BUILT",
+      "consumer": "cee \u2014 C4 next-move selector (coaching/next-move.ts: breach and real_figure moves key on state === 'scored'); D-4 Reasoning tab; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-10-31",
+      "notes": [
+        "DECLARED 2026-09-27 (R&C f53f07b5; shape MG #70 5855493847, meaning AIQ 5855511541, one release DL 5855499810). Folds the unpublished estimate_only_constraint_ids into state 'estimate_only'."
+      ]
+    },
+    {
+      "field": "constraint_verdict.joint",
+      "declared_in": "schemas:src/orchestrator/handler-results.ts::ConstraintVerdictSchema (0.60.0)",
+      "producer": "cee \u2014 run_analysis handler (B5 rule 2, MG); when 'withheld' the producer also omits probability_of_joint_goal on every option; NOT YET BUILT",
+      "consumer": "cee/ui \u2014 any surface that says a joint goal chance (D-4); NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-10-31",
+      "notes": [
+        "DECLARED 2026-09-27 (AIQ 5855511541): joint lives in the verdict, run-level."
+      ]
+    },
+    {
+      "field": "edge_strength_edit.band",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::EdgeStrengthEditEvent (0.60.0)",
+      "producer": "ui \u2014 the canvas band pill (Canvas); sent only after CEE vendors a 0.60.0 reader (strict union); NOT YET BUILT",
+      "consumer": "cee \u2014 the edge_strength_edit writer sets std = (hi \u2212 lo)/\u221a12 from its band table (Canonical, A6); NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-10-31",
+      "notes": [
+        "DECLARED 2026-09-27 (Canonical #70 5856186322, routed DL 5856196763). A band confirm_current moves the analysis hash (AIQ N2)."
+      ]
     }
   ]
 }

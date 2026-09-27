@@ -2642,6 +2642,8 @@ const eventEdgeStrengthEdit = deepFreeze({
     effect_direction: 'negative',
   },
   intent: 'set',
+  // 0.60.0 — `band` populated (maximality): 0.85 sits inside `very_strong`, the band the user chose on the pill.
+  band: 'very_strong',
 });
 // 0.48.0 — BOTH arrays are populated deliberately. The maximality ratchet fails
 // on empty collections, and this is also the honest maximal case: a canvas delete
