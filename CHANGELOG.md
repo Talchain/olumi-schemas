@@ -5,6 +5,25 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.60.0] — `constraint_verdict.estimate_only_constraint_ids`
+
+**Additive.** One OPTIONAL member on `ConstraintVerdictSchema` (still `.strict()`). No existing member's shape,
+field set, bounds or order changes; every fact persisted before 0.60.0 still parses.
+
+**⚠ Version.** #62, #63 and #65 still claim 0.57.0 at their heads and need a fresh number; this takes the next
+free one after 0.59.0. **Re-derive at merge time** (`publish.yml` silently skips a version that already exists).
+
+### Added
+
+- **`estimate_only_constraint_ids: string[]` (optional)** — the ratified limits a verdict left unverified ONLY
+  because the leading option SETS the limit's target at a level that is not the user's own (CEE
+  `deriveConstraintVerdict` rule (d), AI Quality #70 5844226031). CEE computes the set at run time from the options
+  PLoT received, which no fact stores, so until now no reader could tell rule (d) ("checked only against Olumi's
+  estimate") from a limit that was genuinely not scored ("could not be checked"). Served case: eng-hiring-4
+  (#70 5851920084, traced by AIQ 5851938306). Constraint IDS only, never labels. Absent = not recorded (census
+  verdict `distinct`); `[]` = recorded, none.
+- Adoption manifest row `constraint_verdict.estimate_only_constraint_ids` at `declared`.
+
 ## [0.59.0] — `goal_target_edit`
 
 **Additive.** One new member, appended LAST to `SystemEventSchema`, and its

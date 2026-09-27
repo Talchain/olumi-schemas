@@ -1132,6 +1132,20 @@
         "NO MEMBER NAMED graph_hash / graph_hash_at_run: CEE's stripInternalKeysDeep drops those names at",
         "  any depth. The revision is already on the block as computed_against_hash."
       ]
+    },
+    {
+      "field": "constraint_verdict.estimate_only_constraint_ids",
+      "declared_in": "schemas:src/orchestrator/handler-results.ts::ConstraintVerdictSchema (0.60.0)",
+      "producer": "cee \u2014 run_analysis handler, beside constraint_verdict_state (collectLeaderEstimatedTargetIds \u2192 result.constraint_verdict.estimate_only_constraint_ids); NOT YET BUILT",
+      "consumer": "cee \u2014 the run-turn limit card's estimate-only arm (coaching/limit-unchecked-card.ts) via the scenario graph read; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-10-31",
+      "notes": [
+        "DECLARED 2026-09-27 (R&C f53f07b5, #70 5854446782): the CEE producer and consumer are built on a branch and land after Paul's all-clear; move to enforced only on named tests of the right KIND."
+      ]
     }
   ]
 }

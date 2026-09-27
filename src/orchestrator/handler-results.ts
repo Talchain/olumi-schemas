@@ -85,6 +85,19 @@ export const ConstraintVerdictSchema = z.object({
   /** Which of the five answers the producer evidence selected. Carried
    *  alongside the boolean for telemetry and triage. */
   constraint_verdict_state: ConstraintVerdictStateSchema,
+  /**
+   * 0.60.0 — the ratified limits this verdict left unverified ONLY because the leading option SETS the limit's
+   * target at a level that is not the user's own (Olumi's estimate, a ratified-only estimate, or a level with no
+   * readable owner): the score there restates that level, so it licenses neither a compliance nor a breach claim
+   * (CEE `deriveConstraintVerdict` rule (d), AI Quality #70 5844226031). CEE computes this set at run time from the
+   * options PLoT RECEIVED, which no fact stores — so without this member no reader can tell rule (d) from a limit
+   * that was genuinely not scored, and the words for the two differ ("checked only against Olumi's estimate" vs
+   * "could not be checked").
+   *
+   * Constraint IDS, never labels (the "second copy of a label" rule above). OPTIONAL and stays optional: absent =
+   * not recorded (every fact before 0.60.0), never "none"; `[]` = recorded, and no limit rests on an estimate.
+   */
+  estimate_only_constraint_ids: z.array(z.string().min(1)).optional(),
 }).strict();
 export type ConstraintVerdict = z.infer<typeof ConstraintVerdictSchema>;
 

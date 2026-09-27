@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 80,
+    "distinct": 81,
     "same": 33,
     "unresolved": 414
   },
@@ -3007,6 +3007,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "orchestrator/ConstraintVerdictSchema.estimate_only_constraint_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = not recorded (every fact before 0.60.0 predates the member), never 'none'; [] = recorded, and no limit rests on an estimate. The doc comment on the member says so. A defaulted reading of absence as [] would tell a reader rule (d) did NOT apply to a pre-0.60.0 fact that never measured it.",
+      "ref": "src/orchestrator/handler-results.ts :: ConstraintVerdictSchema.estimate_only_constraint_ids doc comment (0.60.0)"
     },
     "orchestrator/RunAnalysisResultSchema.constraint_verdict": {
       "markers": [
