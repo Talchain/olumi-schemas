@@ -16,10 +16,12 @@ free one after 0.59.0. **Re-derive at merge time** (`publish.yml` silently skips
 ### Added
 
 - **`estimate_only_constraint_ids: string[]` (optional)** — the ratified limits a verdict left unverified ONLY
-  because the leading option SETS the limit's target at a level that is not the user's own (CEE
-  `deriveConstraintVerdict` rule (d), AI Quality #70 5844226031). CEE computes the set at run time from the options
-  PLoT received, which no fact stores, so until now no reader could tell rule (d) ("checked only against Olumi's
-  estimate") from a limit that was genuinely not scored ("could not be checked"). Served case: eng-hiring-4
+  because the leading option SETS the limit's target, on the wire PLoT received, at a level that earns no
+  authorship credit (Olumi's draft, a figure the user adopted, a system repair, or no readable owner; CEE
+  `deriveConstraintVerdict` rule (d), AI Quality #70 5844226031 / 5854466559). CEE computes the set at run time from
+  the options PLoT received, which no fact stores, so until now no reader could tell rule (d) ("checked only against
+  an assumed figure") from a limit that was genuinely not scored ("could not be checked"). It says nothing about
+  whose the level is. Served case: eng-hiring-4
   (#70 5851920084, traced by AIQ 5851938306). Constraint IDS only, never labels. Absent = not recorded (census
   verdict `distinct`); `[]` = recorded, none.
 - Adoption manifest row `constraint_verdict.estimate_only_constraint_ids` at `declared`.

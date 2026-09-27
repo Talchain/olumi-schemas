@@ -1,7 +1,7 @@
 // 0.60.0 — `ConstraintVerdictSchema.estimate_only_constraint_ids`: the ratified limits a verdict left unverified ONLY
-// because the leading option sets their target at a level that is not the user's own (CEE rule (d), AI Quality #70
-// 5844226031). RED-first: before this member existed the verdict is `.strict()`, so a fact carrying it was REJECTED —
-// and without it no reader can tell rule (d) ("checked only against Olumi's estimate") from a limit that was genuinely
+// because the leading option sets their target at a level that earns no authorship credit (CEE rule (d), AI Quality
+// #70 5844226031 / 5854466559). RED-first: before this member existed the verdict is `.strict()`, so a fact carrying it was REJECTED —
+// and without it no reader can tell rule (d) ("checked only against an assumed figure") from a limit that was genuinely
 // not scored ("could not be checked"). Served case: MG eng-hiring-4 (#70 5851920084, traced by AIQ 5851938306).
 import { describe, it, expect } from 'vitest';
 import { ConstraintVerdictSchema, RunAnalysisResultSchema } from '../../src/orchestrator/handler-results.js';
