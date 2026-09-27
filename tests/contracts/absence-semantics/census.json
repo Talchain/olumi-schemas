@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 81,
+    "distinct": 86,
     "same": 33,
     "unresolved": 414
   },
@@ -2669,6 +2669,14 @@
       "note": "Absence means 'no value asserted', which no number can express \u2014 0 is a legitimate signed mean. The coupling is enforced ON THE WIRE at the union-root superRefine: 'overridden' REQUIRES the value (an override asserts a number), 'dismissed' FORBIDS it (a dismissal asserts none), accepted_pass1/2 may omit it because the authoritative copy lives in the edge's validation metadata. A consumer substituting a default for absence would manufacture a strength the user never stated.",
       "ref": "src/boundary/turn-payload.ts \u2014 refineEdgeAdjudication + OrchestratorTurnPayloadSchema superRefine (0.34.0); pinned by tests/boundary/turn-payload-0.34.test.ts"
     },
+    "boundary/SystemEventSchema|kind=edge_strength_edit.band": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the user gave an exact figure, no band (every event before 0.60.0). Present = the band the user chose; CEE sets std from its range.",
+      "ref": "src/boundary/turn-payload.ts :: EdgeStrengthEditEvent.band doc comment (0.60.0)"
+    },
     "boundary/SystemEventSchema|kind=factor_value_edit.applied_from": {
       "markers": [
         "optional"
@@ -3008,13 +3016,45 @@
       ],
       "verdict": "unresolved"
     },
-    "orchestrator/ConstraintVerdictSchema.estimate_only_constraint_ids": {
+    "orchestrator/ConstraintVerdictSchema.joint": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absent = not recorded (every fact before 0.60.0 predates the member), never 'none'; [] = recorded, and no limit rests on an estimate. The doc comment on the member says so. A defaulted reading of absence as [] would tell a reader rule (d) did NOT apply to a pre-0.60.0 fact that never measured it.",
-      "ref": "src/orchestrator/handler-results.ts :: ConstraintVerdictSchema.estimate_only_constraint_ids doc comment (0.60.0)"
+      "note": "Absent = not recorded (every fact before 0.60.0), never 'scored'. A reader must not treat a missing joint verdict as a joint pass.",
+      "ref": "src/orchestrator/handler-results.ts :: ConstraintVerdictSchema.joint / ConstraintJointVerdictSchema doc comment (0.60.0)"
+    },
+    "orchestrator/ConstraintVerdictSchema.joint.constraint_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present only on a 'withheld' joint verdict (enforced by the refinement): the limits that withheld it. Absent otherwise.",
+      "ref": "src/orchestrator/handler-results.ts :: ConstraintJointVerdictSchema refinement (0.60.0)"
+    },
+    "orchestrator/ConstraintVerdictSchema.joint.withheld_reason": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present iff state is 'withheld' (enforced): absence is fully determined by state, never 'no reason'.",
+      "ref": "src/orchestrator/handler-results.ts :: ConstraintJointVerdictSchema refinement (0.60.0)"
+    },
+    "orchestrator/ConstraintVerdictSchema.per_limit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = not recorded (every fact before 0.60.0), never 'every limit scored'; [] = recorded, no ratified limit.",
+      "ref": "src/orchestrator/handler-results.ts :: ConstraintVerdictSchema.per_limit / ConstraintPerLimitVerdictSchema doc comment (0.60.0)"
+    },
+    "orchestrator/ConstraintVerdictSchema.per_limit[].reason": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent iff state is 'scored' (enforced): every non-scored state names its first failed precondition as a documented code.",
+      "ref": "src/orchestrator/handler-results.ts :: ConstraintPerLimitVerdictSchema refinement (0.60.0)"
     },
     "orchestrator/RunAnalysisResultSchema.constraint_verdict": {
       "markers": [

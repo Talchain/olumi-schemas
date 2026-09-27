@@ -11,6 +11,7 @@ import {
 } from './enums.js';
 import { EffectDirection, GraphV3Schema, NodeKind, NodeV3Schema } from '../graph.js';
 import { RoundParticipantRefSchema } from './collab.js';
+import { StrengthBand } from '../causal-claims.js';
 
 // UUIDv4 pattern — keep loose; CEE also re-checks.
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -488,6 +489,11 @@ const PriorRangeEditEvent = z.object({
 // and analysis must not stale when the canonical hash is unchanged. The root
 // refinement below makes contradictory payloads invalid before dispatch.
 //
+// 0.60.0 — A BAND CONFIRM IS NOT HASH-NEUTRAL (AI Quality N2, #70 5856128077). When `band` is present on a
+// `confirm_current`, CEE sets the edge's std from that band's range, so the analysis-affecting hash MOVES and the
+// prior run goes stale — as it must: the user's band is a new belief about the spread, not a restatement. Without
+// `band`, the rule above holds unchanged (mean, direction and std untouched; no stale).
+//
 // ZERO IS DELIBERATE. `expected.effect_direction` remains required when mean is
 // zero, and explicit positive/negative direction intents remain legal at zero.
 // Direction cannot be recovered from the sign of zero; dropping this field or
@@ -546,6 +552,20 @@ const EdgeStrengthEditEvent = z.object({
   ),
   expected: EdgeStrengthExpectedSchema,
   intent: EdgeStrengthEditIntent,
+  /**
+   * 0.60.0 — THE BAND THE USER CHOSE (the canvas band pill; build train A6, Canonical #70 5856186322, routed
+   * 5856196763). The contract's ONE band vocabulary (`StrengthBand`, causal-claims.ts), never a second list.
+   *
+   * WHY. Without it a pill choice lands as an exact figure and the user's stated spread is lost; CEE's band path sets
+   * `std = (hi − lo)/√12` from its band table (CEE `format/edge-strength-bands.ts`, Canonical #2096). The band's
+   * range lives in CEE's table ONLY — this contract does not copy the cut points (a second copy would drift); CEE's
+   * writer refuses a `magnitude` outside the named band.
+   *
+   * Absent = the user gave an exact figure, no band (every event before 0.60.0). OPTIONAL and stays optional.
+   * SEQUENCING: every SystemEventSchema member is strict, so a pre-0.60.0 reader rejects an event carrying it —
+   * publish → CEE re-vendors and deploys a reader → only then does the UI send it.
+   */
+  band: StrengthBand.optional(),
 }).strict();
 
 /**

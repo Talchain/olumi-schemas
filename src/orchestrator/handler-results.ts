@@ -79,26 +79,72 @@ export type ConstraintVerdictState = z.infer<typeof ConstraintVerdictStateSchema
  * legitimately emits (CLAUDE.md trap 12 — the hand-maintained mirror). The
  * contract owns the SHAPE; the meaning stays with `deriveConstraintVerdict`.
  */
+/**
+ * 0.60.0 — ONE TYPED VERDICT PER RATIFIED LIMIT (build train B5; shape Model Generation #70 5855493847, meaning AI
+ * Quality 5855511541, one release with R&C's carrier 5855499810). One meaning per `state` value:
+ *
+ *   · `scored`        — P(meet) exists AND every precondition held: (a) the threshold went through the target's
+ *                       frame; (b) the target's level is anchored (a held level, a root, or an anchor); (c) nothing
+ *                       was clamped; (d) the limit was convertible in its frame; (e) the baseline is the user's.
+ *                       `reason` is ABSENT.
+ *   · `estimate_only` — as `scored` on (a)–(d), but (e) fails: the baseline is Olumi's estimate. P exists, and is
+ *                       never said as the user's limit met; the verdict names whose figure. `reason` is present
+ *                       (`baseline_is_estimate`). Replaces the unpublished `estimate_only_constraint_ids`.
+ *   · `unscored`      — no P is published (absent, never 0 or 1). `reason` names the FIRST failed precondition.
+ *
+ * `reason` is a DOCUMENTED CODE, never prose, and a `string` (not an enum) so a consumer on an older pin never fails
+ * to parse a new code (hazard 1). Codes today: `baseline_is_estimate`, `threshold_unframed`, `target_unanchored`,
+ * `threshold_clamped`, `CONSTRAINT_NOT_CONVERTIBLE`, `CONSTRAINT_TARGET_UNRELIABLE`, `tally_units_incoherent` (the two
+ * upper-case codes are PLoT's warning codes, verbatim). There is deliberately NO partial-precondition flag (AIQ
+ * 5855511541: a frame flag alone would have certified Paul's false "met" on 17d1cd3a).
+ *
+ * Constraint IDS, never labels (the "second copy of a label" rule).
+ */
+export const ConstraintPerLimitVerdictSchema = z.object({
+  constraint_id: z.string().min(1),
+  state: z.enum(['scored', 'estimate_only', 'unscored']),
+  reason: z.string().min(1).optional(),
+}).strict().superRefine((v, ctx) => {
+  if (v.state === 'scored' && v.reason !== undefined) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['reason'], message: "a 'scored' limit carries no reason" });
+  }
+  if (v.state !== 'scored' && v.reason === undefined) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['reason'], message: `a '${v.state}' limit names its reason` });
+  }
+});
+export type ConstraintPerLimitVerdict = z.infer<typeof ConstraintPerLimitVerdictSchema>;
+
+/**
+ * 0.60.0 — THE RUN-LEVEL JOINT VERDICT (AI Quality 5855511541, B5 rule 2): `scored` iff every limit is `scored`;
+ * `estimate_only` iff all are `scored`/`estimate_only` and at least one is `estimate_only`; `withheld` otherwise, with
+ * `withheld_reason` (a documented code: `limit_unscored`) and the `constraint_ids` that caused it. When `withheld`,
+ * the producer also OMITS `probability_of_joint_goal` on every option — a typed flag beside a still-present number
+ * is a leak.
+ */
+export const ConstraintJointVerdictSchema = z.object({
+  state: z.enum(['scored', 'estimate_only', 'withheld']),
+  withheld_reason: z.string().min(1).optional(),
+  constraint_ids: z.array(z.string().min(1)).optional(),
+}).strict().superRefine((v, ctx) => {
+  if (v.state === 'withheld' && v.withheld_reason === undefined) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['withheld_reason'], message: "a 'withheld' joint verdict names its reason" });
+  }
+  if (v.state !== 'withheld' && (v.withheld_reason !== undefined || v.constraint_ids !== undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['state'], message: 'only a withheld joint verdict carries a reason or ids' });
+  }
+});
+export type ConstraintJointVerdict = z.infer<typeof ConstraintJointVerdictSchema>;
+
 export const ConstraintVerdictSchema = z.object({
   /** May a leading option be NAMED as the answer on this turn? */
   may_name_leading_option: z.boolean(),
   /** Which of the five answers the producer evidence selected. Carried
    *  alongside the boolean for telemetry and triage. */
   constraint_verdict_state: ConstraintVerdictStateSchema,
-  /**
-   * 0.60.0 — the ratified limits this verdict left unverified ONLY because the leading option SETS the limit's
-   * target, on the wire PLoT received (a status-quo level the gate held included), at a level that earns NO
-   * authorship credit — Olumi's draft, a figure the user adopted but did not state, a system repair, or a level with
-   * no readable owner (AI Quality #70 5854466559). The score there restates that assumed level, so it licenses
-   * neither a compliance nor a breach claim (CEE `deriveConstraintVerdict` rule (d), AI Quality #70 5844226031). CEE
-   * computes this set at run time from the options PLoT RECEIVED, which no fact stores — so without this member no
-   * reader can tell rule (d) from a limit that was genuinely not scored, and the words for the two differ ("checked
-   * only against an assumed figure" vs "could not be checked"). The member says nothing about WHOSE the level is.
-   *
-   * Constraint IDS, never labels (the "second copy of a label" rule above). OPTIONAL and stays optional: absent =
-   * not recorded (every fact before 0.60.0), never "none"; `[]` = recorded, and no limit rests on an estimate.
-   */
-  estimate_only_constraint_ids: z.array(z.string().min(1)).optional(),
+  /** 0.60.0 — one typed verdict PER ratified limit ({@link ConstraintPerLimitVerdictSchema}). Absent = not recorded. */
+  per_limit: z.array(ConstraintPerLimitVerdictSchema).optional(),
+  /** 0.60.0 — the run-level joint verdict over every limit ({@link ConstraintJointVerdictSchema}). Absent = not recorded. */
+  joint: ConstraintJointVerdictSchema.optional(),
 }).strict();
 export type ConstraintVerdict = z.infer<typeof ConstraintVerdictSchema>;
 

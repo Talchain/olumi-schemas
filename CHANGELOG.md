@@ -5,26 +5,36 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.60.0] — `constraint_verdict.estimate_only_constraint_ids`
+## [0.60.0] — per-limit + joint constraint verdicts; the band on `edge_strength_edit`
 
-**Additive.** One OPTIONAL member on `ConstraintVerdictSchema` (still `.strict()`). No existing member's shape,
-field set, bounds or order changes; every fact persisted before 0.60.0 still parses.
+**Additive.** Three OPTIONAL members; every schema stays `.strict()`. No existing member's shape, field set, bounds or
+order changes; every fact and event from before 0.60.0 still parses. ONE release carries all three (DL #70 5855499810
+/ 5856196763).
 
-**⚠ Version.** #62, #63 and #65 still claim 0.57.0 at their heads and need a fresh number; this takes the next
-free one after 0.59.0. **Re-derive at merge time** (`publish.yml` silently skips a version that already exists).
+**⚠ Version.** #62, #63 and #65 still claim 0.57.0 at their heads and need a fresh number; this takes the next free
+one after 0.59.0. **Re-derive at merge time** (`publish.yml` silently skips a version that already exists).
 
 ### Added
 
-- **`estimate_only_constraint_ids: string[]` (optional)** — the ratified limits a verdict left unverified ONLY
-  because the leading option SETS the limit's target, on the wire PLoT received, at a level that earns no
-  authorship credit (Olumi's draft, a figure the user adopted, a system repair, or no readable owner; CEE
-  `deriveConstraintVerdict` rule (d), AI Quality #70 5844226031 / 5854466559). CEE computes the set at run time from
-  the options PLoT received, which no fact stores, so until now no reader could tell rule (d) ("checked only against
-  an assumed figure") from a limit that was genuinely not scored ("could not be checked"). It says nothing about
-  whose the level is. Served case: eng-hiring-4
-  (#70 5851920084, traced by AIQ 5851938306). Constraint IDS only, never labels. Absent = not recorded (census
-  verdict `distinct`); `[]` = recorded, none.
-- Adoption manifest row `constraint_verdict.estimate_only_constraint_ids` at `declared`.
+- **`ConstraintVerdictSchema.per_limit`** (optional) — one typed verdict per ratified limit (build train B5; shape
+  Model Generation #70 5855493847, meaning AI Quality 5855511541): `{ constraint_id, state: 'scored' | 'estimate_only'
+  | 'unscored', reason? }`. `scored` means P exists AND every precondition held (framed threshold, anchored level, no
+  clamp, convertible, the user's baseline); `estimate_only` = all but the last (the baseline is Olumi's estimate);
+  `unscored` = no P, `reason` names the first failed precondition. `reason` is a documented string CODE (hazard 1),
+  absent iff `scored` (enforced). There is deliberately no partial-precondition flag.
+- **`ConstraintVerdictSchema.joint`** (optional) — the run-level joint verdict: `scored` / `estimate_only` / `withheld`
+  (+ `withheld_reason`, `constraint_ids`, only when withheld; enforced). When withheld, the producer omits
+  `probability_of_joint_goal` on every option.
+- **`edge_strength_edit.band`** (optional) — the band the user chose on the canvas pill, in the contract's ONE band
+  vocabulary (`StrengthBand`). CEE sets the edge's std from its own band table; a band `confirm_current` moves the
+  analysis hash (AI Quality N2). A pre-0.60.0 reader rejects an event carrying it: CEE vendors a reader before the UI
+  sends it.
+- Adoption manifest rows for all three at `declared`; absence-semantics census rows (`distinct`, 80 → 86).
+
+### Not published
+
+- `estimate_only_constraint_ids` (drafted for 0.60.0 on this branch, never released) is folded into
+  `per_limit[].state = 'estimate_only'` — one field, one meaning.
 
 ## [0.59.0] — `goal_target_edit`
 
