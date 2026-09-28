@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 86,
+    "distinct": 87,
     "same": 34,
     "unresolved": 415
   },
@@ -1001,6 +1001,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/EnrichmentConstraintResultSchema.frame_verdict": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.61.0 (R1; R3 SCIENCE #72 5873480886). ISL's verdict on the FRAME a limit was stated in: `scored` or `estimate_only` (a `change_rel` read on a base that is not the user's). ABSENT means no verdict was carried (a pre-R1 ISL, or a hop that dropped it) - neither value. A consumer that defaults absence to `scored` presents an estimate on Olumi's base as a finding about the user's figure; absence must fail closed for a `change_rel` limit.",
+      "ref": "src/boundary/enrichment.ts - EnrichmentConstraintResultSchema.frame_verdict doc comment (0.61.0)"
     },
     "boundary/EnrichmentConstraintResultSchema.scale_provenance": {
       "markers": [

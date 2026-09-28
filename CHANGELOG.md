@@ -34,6 +34,10 @@ the same wave (DL ruling). ISL must accept `change_abs` / `change_rel` before an
 - **`QuantityFrame`** = `'level' | 'change'`, exported from `.` and `./boundary`, and
   **`NodeV3Schema.quantity_frame`** (optional). `change` means the node's value IS a change from today (0 today by
   definition). Absent means `level`. It is Olumi's reading and disclosed, never presented as the user's.
+- **`EnrichmentConstraintResultSchema.frame_verdict`** = `'scored' | 'estimate_only'`, optional (R3 SCIENCE #72
+  5873480886). ISL's verdict on the frame a limit was stated in; `estimate_only` = a `change_rel` read on a base that is
+  not the user's. ABSENT = no verdict carried, and fails closed for a `change_rel` limit (census `distinct`). Adoption
+  row `frame_verdict` (`declared`).
 - **`CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields`** appends `goal_threshold_frame`, `goal_direction` (the goal
   node's held comparator, which rides `.passthrough()`) and `quantity_frame`. **`CANONICAL_GRAPH_HASH_PROJECTION_VERSION`
   1 → 2**, per that constant's own rule ("bump whenever any nested inclusion … changes"). A limit's `value_frame` needs

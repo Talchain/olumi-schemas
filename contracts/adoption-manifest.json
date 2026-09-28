@@ -1198,6 +1198,20 @@
       "notes": [
         "DECLARED 2026-09-28 (R1 S2: design MG #72 5871257542, ruling DL #72 5871412823, meaning AIQ #72 5871459631). Every hop that drops an undeclared key must declare it in the ONE pin wave: CEE NodeV3 (strips unknown keys), PLoT toISLNode (fixed-field constructor), ISL NodeV2 (extra: ignore). An analysis-hash input from 0.61.0 (projection version 2)."
       ]
+    },
+    {
+      "field": "frame_verdict",
+      "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentConstraintResultSchema.frame_verdict (0.61.0) \u2014 ISL's verdict on the frame a limit was stated in: scored | estimate_only; absent = no verdict carried",
+      "producer": "isl \u2014 R1 S2 resolver stamps it on every limit row (R3 SCIENCE #72 5873093041); PLoT S3 must carry it PLoT\u2192CEE; NOT YET MERGED",
+      "consumer": "cee \u2014 R1 S4: an estimate_only limit is never presented as a finding about the user's figure; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-09-28 (R3 SCIENCE ask #72 5873480886; wire 5872798858). Absence fails closed for a change_rel limit (census verdict `distinct`)."
+      ]
     }
   ]
 }

@@ -19,6 +19,7 @@ import { z } from 'zod';
 
 import { GoalThresholdFrame, NodeV3Schema, QuantityFrame } from '../../src/graph.js';
 import { DraftGoalConstraintSchema } from '../../src/boundary/blocks.js';
+import { EnrichmentConstraintResultSchema } from '../../src/boundary/enrichment.js';
 import {
   CANONICAL_GRAPH_HASH_ANALYSIS_STATE_FIELDS,
   CANONICAL_GRAPH_HASH_NESTED_PROJECTION,
@@ -167,5 +168,26 @@ describe('0.61.0 · analysis-hash vocabulary: frame, direction and quantity move
   it('CONTRAST: `label` is still NOT a hash input (the vocabulary grew by exactly three)', () => {
     expect(nodeFields).not.toContain('label');
     expect(nodeFields.length).toBe(13);
+  });
+});
+
+describe('0.61.0 · EnrichmentConstraintResultSchema.frame_verdict (R3 SCIENCE 5873480886)', () => {
+  const row = { constraint_id: 'c_spend', node_id: 'monthly_cloud_bill', operator: '<=', value: -0.2, probability: 0.41 };
+
+  it.each(['scored', 'estimate_only'] as const)('CONTROL (passes at 0.60.0 too, by .passthrough()): carries frame_verdict %s through the parse', (v) => {
+    expect(EnrichmentConstraintResultSchema.parse({ ...row, frame_verdict: v }).frame_verdict).toBe(v);
+  });
+
+  it('RED: an off-vocabulary verdict is REFUSED (not waved through by .passthrough())', () => {
+    expect(EnrichmentConstraintResultSchema.safeParse({ ...row, frame_verdict: 'scored_ish' }).success).toBe(false);
+  });
+
+  it('absent stays ABSENT — never defaulted to scored', () => {
+    const parsed = EnrichmentConstraintResultSchema.parse(row);
+    expect('frame_verdict' in parsed).toBe(false);
+  });
+
+  it('is exported from the boundary namespace as the same instance', () => {
+    expect(boundary.EnrichmentConstraintResultSchema).toBe(EnrichmentConstraintResultSchema);
   });
 });

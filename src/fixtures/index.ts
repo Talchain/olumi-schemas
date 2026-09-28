@@ -1138,6 +1138,8 @@ export const maximalEnrichmentConstraintResult = deepFreeze({
   probability: 0.83,
   // F6 — normalisation-scale provenance + fail-closed decision-grade marker.
   scale_provenance: maximalEnrichmentScaleProvenance,
+  // 0.61.0 (R1) — ISL's verdict on the frame the limit was stated in.
+  frame_verdict: 'scored',
   [PROBE]: true,
 });
 
