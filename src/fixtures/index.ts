@@ -404,6 +404,9 @@ export const maximalNodeV3 = deepFreeze({
   // is the frame CEE mints today, so it is the honest default for a fixture
   // that models current production behaviour.
   goal_threshold_frame: 'level',
+  // 0.61.0 (R1) — what the node's value measures. `level` is what every node
+  // is today (absent means the same), so it models current behaviour honestly.
+  quantity_frame: 'level',
   [PROBE]: true,
 });
 
@@ -1135,6 +1138,8 @@ export const maximalEnrichmentConstraintResult = deepFreeze({
   probability: 0.83,
   // F6 — normalisation-scale provenance + fail-closed decision-grade marker.
   scale_provenance: maximalEnrichmentScaleProvenance,
+  // 0.61.0 (R1) — ISL's verdict on the frame the limit was stated in.
+  frame_verdict: 'scored',
   [PROBE]: true,
 });
 

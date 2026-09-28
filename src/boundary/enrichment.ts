@@ -930,6 +930,18 @@ export const EnrichmentConstraintResultSchema = z.object({
    * (contract-ahead; see EnrichmentScaleProvenanceSchema).
    */
   scale_provenance: EnrichmentScaleProvenanceSchema.optional().describe(ABSENCE_FAIL_CLOSED_RULE),
+  /**
+   * 0.61.0 additive (R1 S2 — wire R3 SCIENCE #72 5872798858, ask 5873480886; meaning AIQ #72
+   * 5871459631). ISL's verdict on the FRAME this limit was stated in:
+   *   · `scored`        — the comparison ISL ran is the one the user stated;
+   *   · `estimate_only` — a RELATIVE change (`change_rel`) read on a base that is not the user's
+   *                       (Olumi's estimate, or an owner ISL could not establish). The probability
+   *                       is an estimate on Olumi's base, never a finding about the user's figure.
+   * ABSENT means the producer carried NO verdict (a pre-R1 ISL, or a hop that dropped it). A
+   * consumer must not read absence as `scored` for a `change_rel` limit: fail closed, exactly as
+   * `scale_provenance` above.
+   */
+  frame_verdict: z.enum(['scored', 'estimate_only']).optional(),
 }).passthrough();
 export type EnrichmentConstraintResult =
   z.infer<typeof EnrichmentConstraintResultSchema>;

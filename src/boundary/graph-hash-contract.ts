@@ -91,22 +91,52 @@ export type CanonicalGraphHashKeepKey =
  * Version of the nested analysis-affecting projection vocabulary.
  *
  * The digest implementation remains CEE's single
- * `computeAnalysisAffectingGraphHash`. CEE imports the manifest below rather
- * than hand-maintaining its own key arrays; clients may use the same manifest
+ * `computeAnalysisAffectingGraphHash`. Clients may use the manifest below
  * when reconciling receipts. Bump this integer whenever any nested inclusion
  * or conditional rule changes.
+ *
+ * ⚠ CORRECTED 0.61.0: this comment said "CEE imports the manifest below
+ * rather than hand-maintaining its own key arrays". At CEE staging
+ * `fc89aa301a3b846bd52997ce6f233fbe08f160c6` it does NOT:
+ * `src/orchestrator-v5/context/graph-hash.ts` has zero `@talchain/schemas`
+ * imports and hand-lists its node keys in `projectNode` (~:280-293) — a list
+ * that already carries `nonlinear_identity`, which this vocabulary does not.
+ * So re-vendoring this package moves NO hash by itself; CEE's hand list has
+ * to change in the same pin wave.
+ *
+ * 2 (0.61.0, R1 S2): node `goal_threshold_frame`, `goal_direction` and
+ * `quantity_frame` join the node vocabulary (see the list below).
  */
-export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 1 as const;
+export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 2 as const;
 
 /**
  * The exact nested fields retained by the canonical analysis graph hash.
  *
  * This is a field VOCABULARY, not a second projection or hash
  * implementation. CEE owns the projection algorithm, ordering, stable JSON
- * encoding and SHA-256 digest; it derives every property name from this one
- * manifest. The `raw_interventions` rule is conditional because encoded-ready
+ * encoding and SHA-256 digest; its property names must match this manifest
+ * (by hand today — see the correction above). The `raw_interventions` rule is conditional because encoded-ready
  * options no longer depend on their raw source spelling, while an unresolved
  * option's raw value still affects analysis preconditions.
+ *
+ * 0.61.0 (R1 S2 — DL #72 5871412823, AIQ #72 5871459631): three node fields
+ * are APPENDED, because each changes what the analysis answers while leaving
+ * every other hashed field byte-identical — a frame or direction edit used to
+ * leave a stale analysis reading as FRESH:
+ *   · `goal_threshold_frame` — the frame the goal's threshold is stated in;
+ *   · `goal_direction`       — the goal node's HELD COMPARATOR (CEE writes
+ *                              `>=` / `<=` / `>` / `<`); undeclared on
+ *                              `NodeV3Schema`, it rides `.passthrough()`, like
+ *                              `factor_type` and `goal_threshold_raw` above.
+ *                              Not the run request's top-level objective
+ *                              sense (`maximise` / `minimise`);
+ *   · `quantity_frame`       — what the node's value measures.
+ * A limit's `value_frame` needs no entry: `goal_constraints` is hashed WHOLE
+ * (`CANONICAL_GRAPH_HASH_ANALYSIS_STATE_FIELDS`).
+ * ⚠ ONE-TIME MOVE: once CEE hashes these, every stored graph whose goal node
+ * carries `goal_threshold_frame` (every agent-built graph with a goal target)
+ * or a held `goal_direction` gets a new hash, so its existing analysis reads
+ * STALE once. Shared with R6 so the hash moves once.
  */
 export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
   node: {
@@ -121,6 +151,10 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'goal_threshold_cap',
       'intercept',
       'encoding_map',
+      // 0.61.0 (R1 S2) — appended; see the block comment above.
+      'goal_threshold_frame',
+      'goal_direction',
+      'quantity_frame',
     ],
     observed_state_fields: ['value', 'baseline', 'cap'],
     prior_fields: ['distribution', 'range_min', 'range_max'],

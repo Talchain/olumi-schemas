@@ -18,6 +18,8 @@ export {
   GoalThresholdFrame,
   DeclaredScale,
   DECLARED_SCALE_BOUNDS,
+  // 0.61.0 additive — R1: what a node's value measures (level | change).
+  QuantityFrame,
   // 0.40.0 additive — PR4 evidence loop: the declared observed_state.source
   // vocabulary (consumer-side; the wire field stays z.string()).
   OBSERVED_STATE_SOURCE_LITERALS,
@@ -39,6 +41,8 @@ export type {
   DeclaredScaleType,
   // 0.40.0 additive.
   KnownObservedStateSourceLiteral,
+  // 0.61.0 additive.
+  QuantityFrameType,
 } from './graph.js';
 
 // 0.40.0 (PR4 evidence loop) — the shared {round_id, participant_id}

@@ -49,6 +49,13 @@
           ],
           "additionalProperties": true,
           "description": "Absence of this marker means NOT decision-grade (fail-closed). Consumers MUST NOT treat a missing marker as trustworthy."
+        },
+        "frame_verdict": {
+          "type": "string",
+          "enum": [
+            "scored",
+            "estimate_only"
+          ]
         }
       },
       "required": [

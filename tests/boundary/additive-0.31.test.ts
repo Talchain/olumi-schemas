@@ -120,8 +120,11 @@ describe('0.31.0 · NodeV3Schema.goal_threshold_frame (ROADMAP 2.258)', () => {
       .toBe('code_constant');
   });
 
-  it('the vocabulary is exactly level|delta', () => {
-    expect([...GoalThresholdFrame.options].sort()).toEqual(['delta', 'level']);
+  it('the vocabulary is exactly level|delta|change_abs|change_rel (0.61.0 R1 appended the last two)', () => {
+    // PIN UPDATED DELIBERATELY in 0.61.0 (R1 S2): was ['delta', 'level'].
+    // The two 0.31.0 members are unchanged; tests/contracts/release-0.61.0.test.ts
+    // pins the order (append-only).
+    expect([...GoalThresholdFrame.options].sort()).toEqual(['change_abs', 'change_rel', 'delta', 'level']);
   });
 
   it('is a DECLARED key on the schema, not an unknown key riding passthrough', () => {

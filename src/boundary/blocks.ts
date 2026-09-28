@@ -210,11 +210,25 @@ export const DraftGoalConstraintSchema = z.object({
   }).passthrough().optional(),
   /**
    * 0.38.0 additive (ROADMAP 2.266 schemas-train half; reinforced by 2.298).
-   * The FRAME `value` is stated in — `'level'` (absolute target on the
-   * metric's own scale) or `'delta'` (change from the observed baseline).
-   * Reuses the canonical `GoalThresholdFrame` enum (0.31.0) — one frame
-   * vocabulary, two attestation sites; see its block comment in
-   * `src/graph.ts` for the full contract.
+   * The FRAME `value` is stated in. Reuses the canonical `GoalThresholdFrame`
+   * enum (0.31.0) — one frame vocabulary, two attestation sites; see its block
+   * comment in `src/graph.ts` for the full contract. Per limit:
+   *   · `'level'`      — an absolute level on the metric's own scale;
+   *   · `'delta'`      — LEGACY: already in the engine samples' own frame (a
+   *                      change from the MODEL'S ORIGIN, not from today). No
+   *                      new writers; existing rows are not migrated in bulk;
+   *   · `'change_abs'` — 0.61.0 (R1): a change from today, `value` stated on
+   *                      the scale a `level` value on this row would use
+   *                      ("2 points higher than now" is 2; "no worse" is 0);
+   *   · `'change_rel'` — 0.61.0 (R1): a relative change from today, `value` a
+   *                      fraction ("cut by 20%" is -0.20), based on the TARGET
+   *                      NODE's own `observed_state.baseline` (no per-limit
+   *                      base — see below).
+   * 0.61.0 changes nothing here but the shared enum: the two values arrive
+   * because this field IS that instance (identity-pinned in
+   * tests/boundary/draft-goal-constraint-value-frame.test.ts). A limit's
+   * frame is already an analysis-hash input, because `goal_constraints` is
+   * hashed whole (AIQ #72 5871459631).
    *
    * WHY: `goal_constraints[].value` carries the SAME unattested
    * level-vs-delta problem that made the goal probability a structural zero
@@ -229,8 +243,12 @@ export const DraftGoalConstraintSchema = z.object({
    * DELIVERY. Producer adoption rides separate trains: CEE stamps it as a
    * CODE CONSTANT at its constraint mint sites (never LLM-derivable — the
    * frame is a property of the minting arithmetic, exactly as for
-   * `goal_threshold_frame`), PLoT forwards it, ISL declares it (today
-   * `GoalConstraint` has `extra: 'ignore'` and silently drops it) and owns
+   * `goal_threshold_frame`; R1 S4 moves CEE to a typed drafter frame — see
+   * `GoalThresholdFrame`), PLoT forwards it, ISL declares it (0.38.0 said
+   * "today `GoalConstraint` has `extra: 'ignore'` and silently drops it";
+   * ISL staging `b2215d36` declares `value_frame: Optional[Literal["level",
+   * "delta"]]` at `src/models/robustness_v2.py:815`, which must widen before
+   * any producer stamps a 0.61.0 value — an unknown literal is a 422) and owns
    * the conversion at its comparison site, holding the `observed_state`
    * baselines. No per-constraint baseline member is added: the baseline is
    * a property of the TARGET NODE (`observed_state.baseline`, plus CEE's

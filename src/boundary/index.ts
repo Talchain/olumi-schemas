@@ -512,6 +512,8 @@ export {
   GoalThresholdFrame,
   DeclaredScale,
   DECLARED_SCALE_BOUNDS,
+  // 0.61.0 additive — R1: what a node's value measures (level | change).
+  QuantityFrame,
 } from '../graph.js';
 export type {
   NodeV3,
@@ -523,6 +525,8 @@ export type {
   // 0.31.0 additive.
   GoalThresholdFrameType,
   DeclaredScaleType,
+  // 0.61.0 additive.
+  QuantityFrameType,
 } from '../graph.js';
 
 // Coaching contract (v0.11.0 — per Boundary Contract v1.1 §2.1, MC-25)
