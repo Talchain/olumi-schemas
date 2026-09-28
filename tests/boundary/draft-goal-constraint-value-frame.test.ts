@@ -77,6 +77,8 @@ describe('DraftGoalConstraint.value_frame — frame attestation (2.266)', () => 
     // would pass a value comparison and still be a hand-maintained twin that
     // can drift the day one of them gains a member. `toBe` pins the instance.
     expect(unwrapped).toBe(GoalThresholdFrame);
-    expect(unwrapped.options).toEqual(['level', 'delta']);
+    // PIN UPDATED DELIBERATELY in 0.61.0 (R1 S2): was ['level', 'delta']. This
+    // field gains the two values BECAUSE it is the shared instance (line above).
+    expect(unwrapped.options).toEqual(['level', 'delta', 'change_abs', 'change_rel']);
   });
 });

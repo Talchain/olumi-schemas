@@ -621,7 +621,17 @@
         "  That is SAFE (ISL fails closed, no goal probability renders) but it is not 'it arrives'.",
         "The consumer test this row will need must FAIL if ISL stops USING the frame — i.e. it must",
         "  assert the level->delta CONVERSION, not merely that the field survives the hop. A test that",
-        "  proves transport is not a consumer test (see this manifest's own rule, and assistant_text)."
+        "  proves transport is not a consumer test (see this manifest's own rule, and assistant_text).",
+        "0.61.0 (R1 S2, DL #72 5871412823): the enum gains change_abs and change_rel, APPENDED. Legacy",
+        "  delta keeps its meaning (the samples' own frame, a change from the MODEL'S ORIGIN) with no new",
+        "  writers and no bulk migration (AIQ #72 5871459631). The field is now an analysis-hash input",
+        "  (CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields, projection version 2).",
+        "CORRECTED 0.61.0: the 'PLoT MUST ADD FORWARDING' note above is STALE. PLoT forwards the frame as a",
+        "  REQUEST-LEVEL scalar beside goal_threshold (staging b4eaa0c57994c5c0233715dd04b8e42b21723107,",
+        "  src/integrations/isl/translator-v3.ts:1631-1633), validated against this enum by",
+        "  parseGoalThresholdFrame (:99-102). The PRODUCER note is superseded by R1 S4: CEE admission",
+        "  writes the frame from the construction drafter's typed target frame. State stays declared: no",
+        "  row-grade producer/consumer test refs are verified in this PR."
       ]
     },
   {
@@ -1173,6 +1183,20 @@
       "n_minus_1_removal_date": "2026-10-31",
       "notes": [
         "DECLARED 2026-09-27 (Canonical #70 5856186322, routed DL 5856196763). A band confirm_current moves the analysis hash (AIQ N2)."
+      ]
+    },
+    {
+      "field": "quantity_frame",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.quantity_frame (0.61.0) \u2014 what a node's value measures: level | change (R1); absent = level",
+      "producer": "cee \u2014 R1 S4: the construction drafter declares it and admission writes it (Olumi's reading, disclosed, never the user's); NOT YET BUILT",
+      "consumer": "isl \u2014 R1 S2 resolver: a target on a change node is compared on the node's own change with no base; change_rel on it is refused by name; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-09-28 (R1 S2: design MG #72 5871257542, ruling DL #72 5871412823, meaning AIQ #72 5871459631). Every hop that drops an undeclared key must declare it in the ONE pin wave: CEE NodeV3 (strips unknown keys), PLoT toISLNode (fixed-field constructor), ISL NodeV2 (extra: ignore). An analysis-hash input from 0.61.0 (projection version 2)."
       ]
     }
   ]

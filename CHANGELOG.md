@@ -5,6 +5,69 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.61.0] — R1: one typed goal/limit target contract (frame values, node quantity, hash vocabulary)
+
+**Additive on the wire.** Two enum values APPENDED to `GoalThresholdFrame`, one OPTIONAL node member, three names
+appended to the analysis-hash vocabulary. Every graph, node and limit that parsed on 0.60.0 parses unchanged; no member
+is removed, narrowed or reordered, and `NodeV3Schema` stays `.passthrough()`. Design Model Generation #72 5871257542,
+ruling Delivery Lead #72 5871412823 (R1 S2 = this release + the ISL resolver), meaning AI Quality #72 5871459631.
+
+**⚠ NOT additive for the analysis hash.** Once CEE hashes the three new node fields, every stored graph whose goal node
+carries `goal_threshold_frame` (every agent-built graph with a goal target) or a held `goal_direction` gets a new hash,
+so each existing analysis reads STALE once. That is the intended one-time move, shared with R6 so it happens once.
+Re-vendoring this package moves no hash by itself: CEE's `graph-hash.ts` hand-lists its node keys (see Corrected).
+
+**⚠ ONE pin wave, reader first.** CEE, PLoT and UI move their vendored pin together and ISL's hand mirror moves in
+the same wave (DL ruling). ISL must accept `change_abs` / `change_rel` before any producer stamps them: its
+`Literal["level", "delta"]` fields reject an unknown value with a 422.
+
+**⚠ Version.** 0.61.0 is the next free number after 0.60.0 (tag `v0.60.0`; no open PR or branch claims 0.61.0 at
+`2a451c7`). **Re-derive at merge time** (`publish.yml` silently skips a version that already exists).
+
+### Added
+
+- **`GoalThresholdFrame`** gains **`change_abs`** (a change from today in the node's own unit: "+2 points" is 2,
+  "maintain" is a change >= 0) and **`change_rel`** (a relative change from today, as a fraction: "+10%" is 0.10,
+  "cut by 20%" is -0.20; its base is the target node's own `observed_state.baseline`, and whose base it is comes from
+  that stamp's `source`; **no new base field**). It is one shared instance, so `NodeV3Schema.goal_threshold_frame` and
+  `DraftGoalConstraintSchema.value_frame` both gain the two values.
+- **`QuantityFrame`** = `'level' | 'change'`, exported from `.` and `./boundary`, and
+  **`NodeV3Schema.quantity_frame`** (optional). `change` means the node's value IS a change from today (0 today by
+  definition). Absent means `level`. It is Olumi's reading and disclosed, never presented as the user's.
+- **`CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields`** appends `goal_threshold_frame`, `goal_direction` (the goal
+  node's held comparator, which rides `.passthrough()`) and `quantity_frame`. **`CANONICAL_GRAPH_HASH_PROJECTION_VERSION`
+  1 → 2**, per that constant's own rule ("bump whenever any nested inclusion … changes"). A limit's `value_frame` needs
+  no entry: `goal_constraints` is hashed whole.
+- Adoption manifest: a `quantity_frame` row at `declared`. Absence census: `NodeV3Schema.quantity_frame` (`same`,
+  quoting the contract's "absent means level") and its receipt-carrier view (`unresolved`); counts same 33 → 34,
+  unresolved 414 → 415.
+- Maximal fixture: `maximalNodeV3.quantity_frame = 'level'`.
+
+### Changed (meaning stated, not changed)
+
+- **Legacy `delta`** keeps its meaning: the threshold is already in the engine samples' own frame, a change from the
+  MODEL'S ORIGIN (not from today on a level node). It gets no new writers and existing rows are not migrated in bulk.
+  0.31.0's gloss "a change from the observed baseline" is withdrawn as the ambiguity R1 removes.
+
+### Corrected (prose only)
+
+- `src/graph.ts`: "PLoT DOES NOT FORWARD THIS FIELD TODAY" was true at PLoT `9beb4229` and is false now. PLoT forwards
+  `goal_threshold_frame` as a request-level scalar (staging `b4eaa0c5`, `translator-v3.ts:1631-1633`), validated
+  against this enum by `parseGoalThresholdFrame` (`:99-102`).
+- `src/boundary/graph-hash-contract.ts`: "CEE imports the manifest below" is false. At CEE staging `fc89aa30`,
+  `graph-hash.ts` has no `@talchain/schemas` import and hand-lists its node keys, including `nonlinear_identity`, which
+  this vocabulary does not list. That drift is recorded, not fixed here.
+- `src/boundary/blocks.ts` `value_frame`: ISL now DECLARES `value_frame` (`robustness_v2.py:815` at `b2215d36`); the
+  0.38.0 note that it silently drops it is corrected.
+- Adoption row `goal_threshold_frame`: its stale "PLoT MUST ADD FORWARDING" note is corrected by an appended note
+  (the original is kept).
+
+### Deliberately updated pins
+
+- `tests/boundary/additive-0.31.test.ts`: the `GoalThresholdFrame` vocabulary `['delta','level']` → four values.
+- `tests/boundary/draft-goal-constraint-value-frame.test.ts`: `value_frame` options `['level','delta']` → four values.
+- `tests/boundary/canonical-committed-graph-receipt-0.43.test.ts`: projection version `1` → `2`, and node fields +3.
+
 ## [0.60.0] — per-limit + joint constraint verdicts; the band on `edge_strength_edit`
 
 **Additive.** Three OPTIONAL members; every schema stays `.strict()`. No existing member's shape, field set, bounds or

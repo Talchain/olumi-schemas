@@ -675,30 +675,59 @@ export const StateSpaceSchema = z.object({
  * LOUD instead of silently computing the wrong question.
  *
  *   * `level` — an absolute target on the metric's own scale ("revenue of
- *     GBP 6M"), the frame CEE mints today.
- *   * `delta` — a change from the observed baseline ("revenue UP by GBP 6M"),
- *     the frame ISL's samples are already in.
+ *     GBP 6M"), the frame every CEE writer stamps through 0.60.0.
+ *   * `delta` — LEGACY (0.31.0). The threshold is already in the goal
+ *     SAMPLES' own frame: a change from the MODEL'S ORIGIN, used as-is by ISL.
+ *     On a level node that is NOT a change from today. (0.31.0 glossed it as
+ *     "a change from the observed baseline" — withdrawn in 0.61.0 as the
+ *     ambiguity R1 exists to remove.) It keeps its meaning and gets NO NEW
+ *     WRITERS: a change from today is `change_abs` or `change_rel`. Rows
+ *     already stamped `delta` are NOT migrated in bulk (AIQ #72 5871459631: a
+ *     blind migration would turn PLoT's named `DELTA_FRAME_VALUE_ALTERED`
+ *     refusal into a wrong probability).
+ *   * `change_abs` — 0.61.0 (R1). A change FROM TODAY in the node's own unit
+ *     (the scale a `level` threshold on the same node is stated in): "+2
+ *     points" is 2; "maintain" is a change >= 0.
+ *   * `change_rel` — 0.61.0 (R1). A RELATIVE change from today, as a fraction:
+ *     "+10%" is 0.10; "cut by 20%" is -0.20. Its BASE is the target node's own
+ *     `observed_state.baseline`, and WHOSE base it is comes from that stamp's
+ *     `source` (see `OBSERVED_STATE_SOURCE_LITERALS`). There is NO new base
+ *     field, per the rule already stated on `DraftGoalConstraintSchema.value_frame`:
+ *     the baseline is a property of the TARGET NODE. AIQ #72 5871459631 adds
+ *     that "the user's base" means BASELINE authorship, not factor
+ *     explicitness — a producer duty on the stamp, not a new field here.
  *
- * PRODUCER: CEE, stamped at its single mint site (`goal-threshold-cap.ts`) as
- * a **CODE CONSTANT**. This field is NEVER LLM-derivable and must never be
- * placed in a drafting prompt's output surface — the frame is a property of
- * the minting arithmetic, not of the user's phrasing, and an LLM writing it
- * would be guessing at exactly the seam this field exists to make certain.
+ * R1 — ONE TYPED TARGET CONTRACT (0.61.0; design MG #72 5871257542, ruling DL
+ * #72 5871412823, meaning AIQ #72 5871459631). The two new values are
+ * APPENDED, so every pre-0.61.0 value parses unchanged. They pair with
+ * `NodeV3Schema.quantity_frame` (what the node MEASURES) — a different
+ * vocabulary that deliberately shares no word with this one. A consumer that
+ * cannot resolve a frame (e.g. `change_rel` with no base, or `change_rel` on a
+ * `quantity_frame: 'change'` node — a relative change of a change) produces NO
+ * probability and names why; it never guesses a base or a frame.
+ *
+ * PRODUCER: CEE only. Through 0.60.0 every writer stamps `level` as a CODE
+ * CONSTANT (`CEE_GOAL_THRESHOLD_FRAME`). 0.61.0 LICENSES the two new values;
+ * WHICH writer may stamp them, from what evidence, is CEE's R1 S4 (admission
+ * derives the frame from the construction drafter's typed target frame and
+ * discloses it as Olumi's reading). What stays true from 0.31.0: a consumer
+ * never infers the frame from the threshold's value or from free text.
  *
  * CONSUMERS: ISL owns the conversion at its single comparison site, because it
  * alone knows its sample frame and holds the `observed_state` baselines.
  *
- * ⚠ PLoT DOES NOT FORWARD THIS FIELD TODAY, AND WILL NOT BY DEFAULT. Verified
- * at PLoT tip `9beb4229`: `toISLNode` (`translator-v3.ts:233-242`) is a
- * SIX-FIELD CONSTRUCTOR and `ISL_DECLARED_OBSERVED_STATE_FIELDS` is a
- * TEN-MEMBER ALLOW-LIST — neither carries this key, and neither fails loud
- * when the contract gains a field. (`translator-v3.ts:534` is the
- * `goal_threshold` SCALAR line, not a node-level passthrough — do not read it
- * as one.) So PLoT must ADD forwarding, either by extending `toISLNode` or by
- * carrying a request-level scalar beside `goal_threshold`; it rides the 2.258
- * PLoT stint. Until it does, the frame stamped by CEE is STRUCTURALLY DELETED
- * at the V3→ISL boundary — which is safe (ISL fails closed and renders no goal
- * probability) but is NOT the same thing as "it arrives".
+ * PLoT FORWARDS THIS FIELD — as a REQUEST-LEVEL scalar beside
+ * `goal_threshold`, not on the node (CORRECTED 0.61.0). The paragraph this
+ * replaces said "PLoT DOES NOT FORWARD THIS FIELD TODAY"; that was true at
+ * PLoT `9beb4229` and has been false since the 2.258 PLoT stint. Verified at
+ * PLoT staging `b4eaa0c57994c5c0233715dd04b8e42b21723107`:
+ * `parseGoalThresholdFrame` (`src/integrations/isl/translator-v3.ts:99-102`)
+ * validates the stamp against THIS enum, and the request builder sets
+ * `request.goal_threshold_frame` inside the `goal_threshold` branch
+ * (`:1631-1633`; `:1346-1348` at the earlier tip `b6904925`). Because PLoT
+ * validates against this enum, a PLoT re-vendored to 0.61.0 forwards
+ * `change_abs` / `change_rel` — so ISL must accept both BEFORE any producer
+ * stamps them (R1's reader-first order: schemas → ISL → PLoT → CEE).
  *
  * FAILURE SEMANTICS — FAIL CLOSED. When the frame is absent, OR when the
  * frame is `level` and no baseline is available for the conversion, the
@@ -722,8 +751,30 @@ export const StateSpaceSchema = z.object({
  * a scalar enum: the sibling path is what lets 2.215 land without a second
  * contract train.
  */
-export const GoalThresholdFrame = z.enum(['level', 'delta']);
+export const GoalThresholdFrame = z.enum(['level', 'delta', 'change_abs', 'change_rel']);
 export type GoalThresholdFrameType = z.infer<typeof GoalThresholdFrame>;
+
+/**
+ * 0.61.0 additive (R1). What a node's VALUE measures — the QUANTITY frame, as
+ * opposed to `GoalThresholdFrame`, which says how a TARGET on it is stated.
+ *
+ *   * `level`  — an amount on the node's own scale. Every node before 0.61.0.
+ *   * `change` — the node's value IS a change from today, so today's value is
+ *     0 by definition (Paul's "Code quality change", unit "percentage
+ *     points"). A target on such a node needs no base: `change_abs` or `level`
+ *     compares the node's own change directly; `change_rel` is refused by name
+ *     (a relative change of a change).
+ *
+ * ABSENT MEANS `level`. The parser never fabricates the key.
+ *
+ * WHOSE READING: Olumi's. CEE's construction drafter declares it and CEE
+ * discloses it; it is NEVER presented as the user's statement, and never
+ * guessed from a word list. A user-stated non-zero "today" on a node read as
+ * `change` makes Olumi's reading yield (AIQ #72 5871459631 Q-C). A per-period
+ * unit ("pp per month") is a rate, and a rate is a LEVEL.
+ */
+export const QuantityFrame = z.enum(['level', 'change']);
+export type QuantityFrameType = z.infer<typeof QuantityFrame>;
 
 export const NodeV3Schema = z.object({
   id: z.string().min(1).max(100).regex(NODE_ID_PATTERN),
@@ -742,6 +793,11 @@ export const NodeV3Schema = z.object({
    * UNATTESTED and consumers MUST fail closed (no goal probability).
    */
   goal_threshold_frame: GoalThresholdFrame.optional(),
+  /**
+   * 0.61.0 additive (R1). What this node's value measures — see
+   * `QuantityFrame` above. Absent means `level`. Olumi's reading, disclosed.
+   */
+  quantity_frame: QuantityFrame.optional(),
 }).passthrough();
 
 export const StrengthSchema = z.object({

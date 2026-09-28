@@ -64,8 +64,8 @@
   },
   "counts": {
     "distinct": 86,
-    "same": 33,
-    "unresolved": 414
+    "same": 34,
+    "unresolved": 415
   },
   "open_objects": {
     "_doc": [
@@ -2348,6 +2348,14 @@
       "note": "Absence means UNATTESTED, and no member of the enum can express it: 'level' and 'delta' are each a positive attestation of the frame. The schema's own comment makes the asymmetry explicit - consumers MUST FAIL CLOSED on absence (produce NO goal probability), which is a third behaviour neither value selects. The DEBT is that absence stays indistinguishable from a producer that simply has not re-vendored. The fix is to make the field required once every producer stamps it (ROADMAP 2.258's deploy-order gate), and it rides its own train - NOT this PR.",
       "ref": "src/graph.ts - GoalThresholdFrame doc comment + NodeV3Schema.goal_threshold_frame (0.31.0, ROADMAP 2.258)"
     },
+    "boundary/NodeV3Schema.quantity_frame": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.61.0 (R1 S2). The contract states it outright: \"ABSENT MEANS `level`. The parser never fabricates the key.\" (QuantityFrame doc comment) and \"Absent means `level`.\" (the field comment). Absence and 'level' therefore select the same reading - the node's value is an amount on its own scale, which is what every node before 0.61.0 is - so no consumer can be misled by treating them alike. Only 'change' is a different claim, and it is always explicit. Contrast goal_threshold_frame (distinct): there absence means UNATTESTED and fails closed; here absence is the documented default reading, not a missing attestation.",
+      "ref": "src/graph.ts - QuantityFrame doc comment + NodeV3Schema.quantity_frame (0.61.0, R1; design MG #72 5871257542, ruling DL #72 5871412823)"
+    },
     "boundary/NodeV3Schema.observed_state": {
       "markers": [
         "optional"
@@ -3624,6 +3632,13 @@
       ],
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.goal_threshold_frame`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `distinct`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].quantity_frame": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.quantity_frame`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
     },
     "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state": {
       "markers": [
