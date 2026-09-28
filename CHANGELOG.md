@@ -47,6 +47,23 @@ the same wave (DL ruling). ISL must accept `change_abs` / `change_rel` before an
   unresolved 414 → 415.
 - Maximal fixture: `maximalNodeV3.quantity_frame = 'level'`.
 
+### Base owner and raw bounds — ONE carrier per hop (DL #69 verdict 5873822541, decision (b))
+
+- **WHOSE base = the target node's `observed_state.source`, on every hop. No `baseline_owner` field exists on any
+  wire.** CEE → PLoT carries `source` (declared). PLoT → ISL forwards `source` (it is on PLoT's ISL projection list).
+  ISL derives the owner from the literal, per the classes documented on `OBSERVED_STATE_SOURCE_LITERALS`:
+  - `user` ← `brief_extraction`, `explicit`, `user_override`, `user_confirmed`, `user`, `user_edited`, `user_calibration`,
+    `panel_elicited`;
+  - `olumi` ← `cee_inference`, `inferred`, `cee_repair`;
+  - anything else (`user_assumption`, an unknown literal, absent) → UNKNOWN, which reads as not the user's
+    (`estimate_only`): the fail-safe direction.
+  - **Producer duty (AIQ 5871459631):** the `source` on a stamp that carries a `baseline` must say who stated the
+    BASELINE, not whether the factor was named explicitly.
+- **`raw_range {min, max}`** (the raw bounds a `change_rel` target's values are read on) is a PLoT → ISL request field
+  ONLY. It lives on PLoT's own ISL-request contract (`plot-lite-service/contracts/schemas/isl-request.schema.json`,
+  `additionalProperties: true`), not in this package, because no CEE, UI or PLoT response carries it. ISL's refresh
+  against 0.61.0 should read it as the PLoT request's field, not as drift from `NodeV3Schema`.
+
 ### Changed (meaning stated, not changed)
 
 - **Legacy `delta`** keeps its meaning: the threshold is already in the engine samples' own frame, a change from the

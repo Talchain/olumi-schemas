@@ -696,6 +696,8 @@ export const StateSpaceSchema = z.object({
  *     the baseline is a property of the TARGET NODE. AIQ #72 5871459631 adds
  *     that "the user's base" means BASELINE authorship, not factor
  *     explicitness — a producer duty on the stamp, not a new field here.
+ *     ONE CARRIER ON EVERY HOP (DL #69 5873822541, decision (b)): the owner is DERIVED from
+ *     `source` by the consumer that needs it (ISL); no `baseline_owner` field exists on any wire.
  *
  * R1 — ONE TYPED TARGET CONTRACT (0.61.0; design MG #72 5871257542, ruling DL
  * #72 5871412823, meaning AIQ #72 5871459631). The two new values are
