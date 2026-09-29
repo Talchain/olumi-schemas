@@ -1243,7 +1243,7 @@
     },
     {
       "field": "run_analysis.goal_certainty",
-      "declared_in": "schemas:src/orchestrator/handler-results.ts::RunAnalysisResultSchema.goal_certainty + GoalCertaintyDecisionSchema (0.63.0) \u2014 per option at P(goal) 0/1: earned, or unearned with its unsized path, exact break-even where the arithmetic on the user's own figures allows, and one sentence",
+      "declared_in": "schemas:src/orchestrator/handler-results.ts::RunAnalysisResultSchema.goal_certainty + GoalCertaintyDecisionSchema (0.63.0) \u2014 per option at P(goal) 0/1: earned, or unearned with EXACTLY ONE of its unsized path (`unsized_path`) or the goal's identity mismatch (`identity_mismatch`: an operand with no link into the goal, or a goal parent outside the operands), EXACTLY ONE of an exact break-even (where the arithmetic on the user's own figures allows) or its typed `no_break_even` reason, and one sentence",
       "producer": "cee \u2014 run_analysis writes the producer's decisions (MG's goal-certainty.ts, CEE #2270) on the Run fact beside graph_hash_at_run, after CEE vendors 0.63.0 (Canonical); NOT YET BUILT",
       "consumer": "cee read route analysis_goal_certainty (same fact and gates as analysis_limit_verdicts) + the Agent (Runtime #2272) + the UI goal display (Canvas): never an unearned 0/1 as certain; absent = not recorded, show today's wording; NOT YET BUILT",
       "producer_test": null,

@@ -5,6 +5,14 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+- **Adoption manifest, documentation only** (PR Review on CEE #2279, 5884461512): `run_analysis.goal_certainty`'s
+  `declared_in` now states the full unearned disjunction. EXACTLY ONE of `unsized_path` or `identity_mismatch`, and
+  EXACTLY ONE of `break_even` or a typed `no_break_even`, matching the Zod rules and JSDoc published in 0.63.0. No
+  schema, type or runtime change; `CONTRACT_MANIFEST_SHA` moves with the manifest bytes. Not a release: the version
+  stays 0.63.0, so publish.yml skips; it ships with the next release.
+
 ## [0.63.0] — the stored, Run-bound GOAL CERTAINTY: is each 0/1 P(goal) earned?
 
 **Why.** An option whose P(goal) is exactly 0 or 1 claims a certainty; on served models that certainty can rest on a
