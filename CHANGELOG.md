@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.65.0] — which options the Run LEFT OUT of the ordinary comparison, and why (`option_participation`)
+
+**Why.** An option Olumi added (`proposed_by: 'olumi'`, 0.64.0) is kept out of the ordinary comparison by the Run's
+post-gate filter. When leaving it out would leave fewer than two analysable user-owned options, it stays as an
+explicitly provisional, Olumi-labelled entry, and the unqualified leader claim is withheld (DL 5887489508 / 5887510885).
+`RunAnalysisResultSchema` is `.strict()`, so the Run could not record which options it left out, or why (Runtime #72
+5888380144).
+
+- `OptionParticipationEntrySchema` = `{option_id, state: 'excluded_olumi_proposed' | 'kept_olumi_provisional',
+  unanalysable_user_option_ids?}`. The ids are present EXACTLY on a provisional keep (superRefine).
+- `RunAnalysisResultSchema.option_participation?: OptionParticipationEntry[]` is written by CEE's run_analysis beside
+  `goal_certainty`, in the same write. `[]` = recorded, none left out. Absent = not recorded (an older Run), NEVER
+  "every compared option was the user's".
+- The carrier name is Canvas's (5887560895). The turn and cold-read legs validate with this schema (Runtime).
+
 ## [0.64.0] — which options are COMPARED enters the analysis revision (`proposed_by`)
 
 **Why.** Construction now marks an option Olumi added with `proposed_by: 'olumi'` on its node (MG 5887738387). The Run's

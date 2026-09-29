@@ -231,6 +231,27 @@ export const GoalCertaintyDecisionSchema = z.object({
 });
 export type GoalCertaintyDecision = z.infer<typeof GoalCertaintyDecisionSchema>;
 
+/**
+ * 0.65.0 — ONE OPTION OUTSIDE THE ORDINARY COMPARISON, and why (Runtime #72 5888341208 / 5888380144; DL 5887489508 /
+ * 5887510885; carrier name Canvas 5887560895). Construction marks an option Olumi added `proposed_by: 'olumi'`; the Run's
+ * post-gate filter keeps it OUT of the comparison (`excluded_olumi_proposed`) unless leaving it out would leave fewer than
+ * two analysable user-owned options, when it stays as an explicitly provisional, Olumi-labelled entry
+ * (`kept_olumi_provisional`) naming the user's option(s) the Run could not analyse — and the unqualified leader claim is
+ * withheld. Only options outside the ordinary comparison appear; a user-owned option never does.
+ */
+export const OptionParticipationEntrySchema = z.object({
+  option_id: z.string().min(1),
+  state: z.enum(['excluded_olumi_proposed', 'kept_olumi_provisional']),
+  /** `kept_olumi_provisional` only: the user's option(s) the Run could not analyse, which is why Olumi's stayed. */
+  unanalysable_user_option_ids: z.array(z.string().min(1)).min(1).optional(),
+}).strict().superRefine((e, ctx) => {
+  if ((e.state === 'kept_olumi_provisional') !== (e.unanalysable_user_option_ids !== undefined)) {
+    ctx.addIssue({ code: 'custom', path: ['unanalysable_user_option_ids'],
+      message: 'present exactly when an Olumi option is kept provisionally' });
+  }
+});
+export type OptionParticipationEntry = z.infer<typeof OptionParticipationEntrySchema>;
+
 export const RunAnalysisResultSchema = z.object({
   scenario_id: z.string().uuid(),
   leading_option_id: z.string().nullable(),
@@ -316,6 +337,11 @@ export const RunAnalysisResultSchema = z.object({
   // 5883197828), so ABSENT strictly means not recorded (an older Run) — NEVER "earned": a reader shows no raw 0/1 as
   // certain on absence or on a stale Run.
   goal_certainty: z.array(GoalCertaintyDecisionSchema).optional(),
+  // 0.65.0 — WHICH OPTIONS WERE LEFT OUT OF THE ORDINARY COMPARISON, and why ({@link OptionParticipationEntrySchema}).
+  // CEE-owned, written by run_analysis beside `goal_certainty` in the same write, so it is only ever read with the Run it
+  // was decided on. A completed Run with no such option writes `[]`; ABSENT strictly means not recorded (an older Run),
+  // NEVER "every option was the user's" — a reader must not present an unrecorded comparison as user-owned.
+  option_participation: z.array(OptionParticipationEntrySchema).optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;
 
