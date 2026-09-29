@@ -94,7 +94,7 @@ export {
   GoalCertaintyDecisionSchema,
   GoalCertaintyBreakEvenSchema,
   GoalCertaintyNoBreakEvenSchema,
-  GoalCertaintyStructuralGapSchema,
+  GoalCertaintyIdentityMismatchSchema,
   ExplainResultResultSchema,
   ExplainResultsResultSchema,
   ExplainFromStructureResultSchema,

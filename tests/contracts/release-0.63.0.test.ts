@@ -35,7 +35,7 @@ const unearnedSum = {
 /** CEE #2270's mismatch branch, truthfully: the goal has a parent outside its identity's operands — no path is claimed. */
 const unearnedStructural = {
   option_id: 'o-raise', probability_of_goal: 1, earned: false,
-  structural_gap: { kind: 'extra_goal_parent', node_id: 'annual_contracts', moved_factor_id: 'price' },
+  identity_mismatch: { node_id: 'annual_contracts', reason: 'extra_goal_parent' },
   no_break_even: 'extra_goal_parent',
   say: "Can't yet say how likely: the goal also depends on annual contracts, which the model's calculation doesn't include.",
 } as const;
@@ -57,13 +57,13 @@ describe('0.63.0 · GoalCertaintyDecisionSchema', () => {
     }
     // The two structural reasons travel with their gap, never with a claimed path (PR Review 5883666597).
     for (const why of ['extra_goal_parent', 'operand_not_parent'] as const) {
-      const d = { ...unearnedStructural, structural_gap: { ...unearnedStructural.structural_gap, kind: why }, no_break_even: why };
+      const d = { ...unearnedStructural, identity_mismatch: { ...unearnedStructural.identity_mismatch, reason: why }, no_break_even: why };
       expect(Decision().safeParse(d).success, why).toBe(true);
     }
   });
 
   it.each([['earned', earned], ['unearned product', unearnedProduct], ['unearned sum', unearnedSum], ['unearned, no break-even', unearnedNoBreakEven],
-    ['unearned, structural gap (no path claimed)', unearnedStructural]])(
+    ['unearned, identity mismatch (no path claimed)', unearnedStructural]])(
     'RED: %s parses', (_n, v) => {
       expect(Decision().safeParse(v).success).toBe(true);
     });
@@ -73,7 +73,7 @@ describe('0.63.0 · GoalCertaintyDecisionSchema', () => {
       ['earned with a path', { ...earned, unsized_path: unearnedProduct.unsized_path }],
       ['earned with a sentence', { ...earned, say: 'x' }],
       ['earned with a break-even', { ...earned, break_even: unearnedSum.break_even }],
-      ['unearned with neither a path nor a structural gap', { ...unearnedNoBreakEven, unsized_path: undefined }],
+      ['unearned with neither a path nor an identity mismatch', { ...unearnedNoBreakEven, unsized_path: undefined }],
       ['unearned without its sentence', { ...unearnedNoBreakEven, say: undefined }],
       ['a probability that is not 0 or 1', { ...earned, probability_of_goal: 0.97 }],
       ['product without its fraction', { ...unearnedProduct, break_even: { ...unearnedProduct.break_even, fraction: undefined } }],
@@ -88,12 +88,12 @@ describe('0.63.0 · GoalCertaintyDecisionSchema', () => {
       ['an off-vocabulary reason', { ...unearnedNoBreakEven, no_break_even: 'unknown' }],
       ['earned with a reason', { ...earned, no_break_even: 'addends' }],
       // PR Review 5883666597: a factor/parent pair no graph path connects is NEVER stored as a path.
-      ['a structural-gap reason beside a claimed path', { ...unearnedNoBreakEven, no_break_even: 'extra_goal_parent' }],
+      ['an identity-mismatch reason beside a claimed path', { ...unearnedNoBreakEven, no_break_even: 'extra_goal_parent' }],
       ['operand_not_parent beside a claimed path', { ...unearnedNoBreakEven, no_break_even: 'operand_not_parent' }],
-      ['both a path and a structural gap', { ...unearnedStructural, unsized_path: { from: 'price', enters_goal_through: 'annual_contracts' } }],
-      ['a structural gap whose kind is not its reason', { ...unearnedStructural, no_break_even: 'operand_not_parent' }],
-      ['a structural gap with a break-even', { ...unearnedStructural, no_break_even: undefined, break_even: unearnedSum.break_even }],
-      ['earned with a structural gap', { ...earned, structural_gap: unearnedStructural.structural_gap }],
+      ['both a path and an identity mismatch', { ...unearnedStructural, unsized_path: { from: 'price', enters_goal_through: 'annual_contracts' } }],
+      ['an identity mismatch whose reason is not its no-break-even', { ...unearnedStructural, no_break_even: 'operand_not_parent' }],
+      ['an identity mismatch with a break-even', { ...unearnedStructural, no_break_even: undefined, break_even: unearnedSum.break_even }],
+      ['earned with an identity mismatch', { ...earned, identity_mismatch: unearnedStructural.identity_mismatch }],
     ];
     for (const [name, v] of bad) expect(Decision().safeParse(v).success, name).toBe(false);
   });

@@ -188,16 +188,16 @@ export type GoalCertaintyNoBreakEven = z.infer<typeof GoalCertaintyNoBreakEvenSc
 
 /**
  * PR Review 5883666597: when the goal's parents are not exactly its identity's operands, the producer cannot walk the
- * option through the goal at all — so it claims NO path. `structural_gap` names what it found instead: an operand with no
- * link into the goal (`operand_not_parent`) or a goal parent outside the operands (`extra_goal_parent`), `node_id`, and
- * the factor the option moves. Never stored as `unsized_path`: a pair no graph path connects is not a path.
+ * option through the goal at all — so it claims NO path. `identity_mismatch` names what it found instead: an operand with
+ * no link into the goal (`operand_not_parent`) or a goal parent outside the operands (`extra_goal_parent`), and that
+ * `node_id`. Never stored as `unsized_path`: a pair no graph path connects is not a path. Mirrors the producer, CEE
+ * #2270 @ 401ea007 (MG 5883704593).
  */
-export const GoalCertaintyStructuralGapSchema = z.object({
-  kind: z.enum(['operand_not_parent', 'extra_goal_parent']),
+export const GoalCertaintyIdentityMismatchSchema = z.object({
   node_id: z.string().min(1),
-  moved_factor_id: z.string().min(1),
+  reason: z.enum(['operand_not_parent', 'extra_goal_parent']),
 }).strict();
-export type GoalCertaintyStructuralGap = z.infer<typeof GoalCertaintyStructuralGapSchema>;
+export type GoalCertaintyIdentityMismatch = z.infer<typeof GoalCertaintyIdentityMismatchSchema>;
 
 export const GoalCertaintyDecisionSchema = z.object({
   option_id: z.string().min(1),
@@ -205,23 +205,23 @@ export const GoalCertaintyDecisionSchema = z.object({
   earned: z.boolean(),
   /** A REAL graph path: the factor the option moves, and the goal parent it reaches through a link nobody has sized. */
   unsized_path: z.object({ from: z.string().min(1), enters_goal_through: z.string().min(1) }).strict().optional(),
-  structural_gap: GoalCertaintyStructuralGapSchema.optional(),
+  identity_mismatch: GoalCertaintyIdentityMismatchSchema.optional(),
   break_even: GoalCertaintyBreakEvenSchema.optional(),
   no_break_even: GoalCertaintyNoBreakEvenSchema.optional(),
   say: z.string().min(1).max(400).optional(),
 }).strict().superRefine((d, ctx) => {
-  if (d.earned && (d.unsized_path !== undefined || d.structural_gap !== undefined || d.break_even !== undefined
+  if (d.earned && (d.unsized_path !== undefined || d.identity_mismatch !== undefined || d.break_even !== undefined
     || d.no_break_even !== undefined || d.say !== undefined)) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['earned'], message: 'an earned certainty carries no path, gap, break-even, reason or sentence' });
   }
-  if (!d.earned && ((d.unsized_path === undefined) === (d.structural_gap === undefined) || d.say === undefined)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unsized_path'], message: 'an unearned certainty names exactly one of its unsized path or its structural gap, and its sentence' });
+  if (!d.earned && ((d.unsized_path === undefined) === (d.identity_mismatch === undefined) || d.say === undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unsized_path'], message: 'an unearned certainty names exactly one of its unsized path or its identity mismatch, and its sentence' });
   }
-  if (d.structural_gap !== undefined && d.no_break_even !== d.structural_gap.kind) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['structural_gap'], message: 'a structural gap is its own no-break-even reason' });
+  if (d.identity_mismatch !== undefined && d.no_break_even !== d.identity_mismatch.reason) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['identity_mismatch'], message: 'an identity mismatch is its own no-break-even reason' });
   }
   if (d.unsized_path !== undefined && (d.no_break_even === 'operand_not_parent' || d.no_break_even === 'extra_goal_parent')) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unsized_path'], message: 'a structural-gap reason claims no graph path' });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unsized_path'], message: 'an identity-mismatch reason claims no graph path' });
   }
   if (!d.earned && (d.break_even === undefined) === (d.no_break_even === undefined)) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['no_break_even'], message: 'an unearned certainty carries exactly one of break_even or no_break_even' });

@@ -110,7 +110,7 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         'GoalCertaintyDecisionSchema',
         'GoalCertaintyBreakEvenSchema',
         'GoalCertaintyNoBreakEvenSchema',
-        'GoalCertaintyStructuralGapSchema',
+        'GoalCertaintyIdentityMismatchSchema',
         // 0.27.0 — subject-scoped AnalysisFact union (additive; Codex F3)
         'AnalysisFactSchema',
         'ComputedFactSchema',

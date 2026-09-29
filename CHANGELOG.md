@@ -22,10 +22,11 @@ unearned 0/1 as certain. Proposal: Canonical #72 5883126969.
     `identity_not_evaluated` | `level_from_inputs` | `addends` | `extra_goal_parent` | `operand_not_parent` |
     `no_exact_figure`; AIQ 5883228443, mirroring the producer at CEE #2270 @ 8dd6343b) — exactly one of the two;
   - `say` is composed by ONE producer function from the typed members, never free text;
-  - `structural_gap {kind: operand_not_parent | extra_goal_parent, node_id, moved_factor_id}` — when the goal's parents
-    are not exactly its identity's operands, no path can be walked, so the decision names the gap and claims NO
+  - `identity_mismatch {node_id, reason: operand_not_parent | extra_goal_parent}` — when the goal's parents are not
+    exactly its identity's operands, no path can be walked, so the decision names the mismatch and claims NO
     `unsized_path` (PR Review 5883666597: a factor/parent pair no graph path connects is never stored as a path). An
-    unearned decision carries exactly one of the two; a gap is its own `no_break_even` reason.
+    unearned decision carries exactly one of the two; a mismatch is its own `no_break_even` reason. Mirrors the
+    producer, CEE #2270 @ 401ea007.
 - `RunAnalysisResultSchema.goal_certainty?: GoalCertaintyDecision[]` — CEE-owned, written by run_analysis beside
   `graph_hash_at_run`, so a decision is only ever read with the Run it was computed on. A completed Run with no option
   at exactly 0 or 1 writes `[]`; absent = not recorded (an older Run), never "earned".
