@@ -1,0 +1,51 @@
+# CONSUMER PIN DRIFT — does anything downstream actually receive what we publish?
+#
+# ⚠ It WARNS by default and never blocks a merge. Drift is the NORMAL state for a
+# window after any release, because consumers cannot vendor a version that does
+# not exist yet. A check that fails on the expected state gets disabled within a
+# week, and a disabled check is worse than none — it looks like coverage.
+#
+# The value is the RECORD: every run prints which consumers can and cannot
+# receive what this repo publishes, so the answer is in the log instead of in
+# nobody's head. Until the wire stamp (PR #63) ships, this is the only place that
+# question is asked at all.
+name: Consumer Pin Drift
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 8 * * 1'   # Monday morning, so a stale estate is visible weekly
+  workflow_dispatch:
+    inputs:
+      strict:
+        description: 'Fail the run when any consumer is behind or unreadable'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  pin-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Report consumer pin drift
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/check-consumer-pins.mjs \
+            ${{ inputs.strict && '--strict' || '' }} | tee drift.txt
+          {
+            echo '## Consumer pin drift'
+            echo
+            echo '```'
+            cat drift.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
