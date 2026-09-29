@@ -16,7 +16,9 @@ explicitly provisional, Olumi-labelled entry, and the unqualified leader claim i
 5888380144).
 
 - `OptionParticipationEntrySchema` = `{option_id, state: 'excluded_olumi_proposed' | 'kept_olumi_provisional',
-  unanalysable_user_option_ids?}`. The ids are present EXACTLY on a provisional keep (superRefine).
+  unanalysable_user_option_ids?}`. The ids are never present on an exclusion (superRefine). On a provisional keep they
+  are present (≥1) when the gate excluded the user's own option(s), and ABSENT when the user named fewer than two
+  options (Runtime 5888591648); absence is never said as "could not be analysed".
 - `RunAnalysisResultSchema.option_participation?: OptionParticipationEntry[]` is written by CEE's run_analysis beside
   `goal_certainty`, in the same write. `[]` = recorded, none left out. Absent = not recorded (an older Run), NEVER
   "every compared option was the user's".

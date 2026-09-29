@@ -3153,7 +3153,7 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Present iff state === 'kept_olumi_provisional' (superRefine): the user's option(s) the Run could not analyse, which is why Olumi's option stayed. Absent on 'excluded_olumi_proposed'.",
+      "note": "Never present on 'excluded_olumi_proposed' (superRefine). On 'kept_olumi_provisional': present (>=1) when the gate excluded the user's own option(s) — which ones; ABSENT when the user named fewer than two options and nothing was excluded (Runtime 5888591648), so absence must never be said as 'could not be analysed'.",
       "ref": "src/orchestrator/handler-results.ts \u2014 OptionParticipationEntrySchema / RunAnalysisResultSchema.option_participation (0.65.0)"
     },
     "orchestrator/RunAnalysisResultSchema.option_participation": {

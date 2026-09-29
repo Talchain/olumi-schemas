@@ -21,8 +21,12 @@ describe('0.65.0 · option_participation on the Run result', () => {
     expect(ok({ option_id: 'opt_54', state: 'kept_olumi_provisional', unanalysable_user_option_ids: ['opt_hire'] })).toBe(true);
   });
 
-  it('REFUSED: a provisional keep that names no unanalysable user option (it would hide WHY Olumi\'s option stayed)', () => {
-    expect(ok({ option_id: 'opt_54', state: 'kept_olumi_provisional' })).toBe(false);
+  it('RED (Runtime 5888591648): a provisional keep with NO unanalysable user option parses — the user named fewer than two', () => {
+    // "Should we raise to £59?" + two Olumi options: one user option, nothing excluded, so nothing is unanalysable.
+    expect(ok({ option_id: 'opt_54', state: 'kept_olumi_provisional' })).toBe(true);
+  });
+
+  it('REFUSED: a keep that names an EMPTY list (present means at least one unanalysable user option)', () => {
     expect(ok({ option_id: 'opt_54', state: 'kept_olumi_provisional', unanalysable_user_option_ids: [] })).toBe(false);
   });
 
@@ -52,7 +56,7 @@ describe('0.65.0 · option_participation on the Run result', () => {
 
   it('GUARD: a malformed entry on the Run is refused whole', () => {
     expect(RunAnalysisResultSchema.safeParse({ ...run,
-      option_participation: [{ option_id: 'opt_54', state: 'kept_olumi_provisional' }] }).success).toBe(false);
+      option_participation: [{ option_id: 'opt_54', state: 'excluded_olumi_proposed', unanalysable_user_option_ids: ['u'] }] }).success).toBe(false);
   });
 
   it('CONTROL: a Run with NO option_participation still parses (every older Run; absent = not recorded)', () => {

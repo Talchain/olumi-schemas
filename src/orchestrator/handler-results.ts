@@ -236,18 +236,22 @@ export type GoalCertaintyDecision = z.infer<typeof GoalCertaintyDecisionSchema>;
  * 5887510885; carrier name Canvas 5887560895). Construction marks an option Olumi added `proposed_by: 'olumi'`; the Run's
  * post-gate filter keeps it OUT of the comparison (`excluded_olumi_proposed`) unless leaving it out would leave fewer than
  * two analysable user-owned options, when it stays as an explicitly provisional, Olumi-labelled entry
- * (`kept_olumi_provisional`) naming the user's option(s) the Run could not analyse — and the unqualified leader claim is
- * withheld. Only options outside the ordinary comparison appear; a user-owned option never does.
+ * (`kept_olumi_provisional`) — and the unqualified leader claim is withheld. Only options outside the ordinary comparison
+ * appear; a user-owned option never does.
+ *
+ * `unanalysable_user_option_ids` says WHY a keep happened (Runtime 5888591648): PRESENT (≥1) when the gate excluded the
+ * user's own option(s) ("Olumi's stayed because your X couldn't be analysed"); ABSENT when the user simply named fewer
+ * than two options (nothing was excluded, so nothing may be said to be unanalysable). Never present on an exclusion.
  */
 export const OptionParticipationEntrySchema = z.object({
   option_id: z.string().min(1),
   state: z.enum(['excluded_olumi_proposed', 'kept_olumi_provisional']),
-  /** `kept_olumi_provisional` only: the user's option(s) the Run could not analyse, which is why Olumi's stayed. */
+  /** `kept_olumi_provisional` only, and only when the gate excluded the user's own option(s): which ones. */
   unanalysable_user_option_ids: z.array(z.string().min(1)).min(1).optional(),
 }).strict().superRefine((e, ctx) => {
-  if ((e.state === 'kept_olumi_provisional') !== (e.unanalysable_user_option_ids !== undefined)) {
+  if (e.state === 'excluded_olumi_proposed' && e.unanalysable_user_option_ids !== undefined) {
     ctx.addIssue({ code: 'custom', path: ['unanalysable_user_option_ids'],
-      message: 'present exactly when an Olumi option is kept provisionally' });
+      message: 'only a provisional keep names unanalysable user options' });
   }
 });
 export type OptionParticipationEntry = z.infer<typeof OptionParticipationEntrySchema>;
