@@ -95,6 +95,7 @@ export {
   GoalCertaintyBreakEvenSchema,
   GoalCertaintyNoBreakEvenSchema,
   GoalCertaintyIdentityMismatchSchema,
+  OptionParticipationEntrySchema,
   ExplainResultResultSchema,
   ExplainResultsResultSchema,
   ExplainFromStructureResultSchema,

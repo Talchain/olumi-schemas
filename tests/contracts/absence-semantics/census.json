@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 98,
+    "distinct": 100,
     "same": 34,
     "unresolved": 417
   },
@@ -3147,6 +3147,22 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "orchestrator/OptionParticipationEntrySchema.unanalysable_user_option_ids": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Never present on 'excluded_olumi_proposed' (superRefine). On 'kept_olumi_provisional': present (>=1) when the gate excluded the user's own option(s) — which ones; ABSENT when the user named fewer than two options and nothing was excluded (Runtime 5888591648), so absence must never be said as 'could not be analysed'.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 OptionParticipationEntrySchema / RunAnalysisResultSchema.option_participation (0.65.0)"
+    },
+    "orchestrator/RunAnalysisResultSchema.option_participation": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = not recorded (a Run from before 0.65.0), NEVER 'every compared option was the user's'. A completed Run with no option outside the ordinary comparison writes [], so absence and [] are different claims.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 OptionParticipationEntrySchema / RunAnalysisResultSchema.option_participation (0.65.0)"
     },
     "orchestrator/RunAnalysisResultSchema.goal_certainty": {
       "markers": [

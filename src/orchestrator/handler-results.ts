@@ -231,6 +231,35 @@ export const GoalCertaintyDecisionSchema = z.object({
 });
 export type GoalCertaintyDecision = z.infer<typeof GoalCertaintyDecisionSchema>;
 
+/**
+ * 0.65.0 — ONE OPTION OUTSIDE THE ORDINARY COMPARISON, and why (Runtime #72 5888341208 / 5888380144; DL 5887489508 /
+ * 5887510885; carrier name Canvas 5887560895). Construction marks an option Olumi added `proposed_by: 'olumi'`; the Run's
+ * post-gate filter keeps it OUT of the comparison (`excluded_olumi_proposed`) unless leaving it out would leave fewer than
+ * two analysable user-owned options, when it stays as an explicitly provisional, Olumi-labelled entry
+ * (`kept_olumi_provisional`) — and the unqualified leader claim is withheld. Only options outside the ordinary comparison
+ * appear; a user-owned option never does.
+ *
+ * `unanalysable_user_option_ids` says WHY a keep happened (Runtime 5888591648): PRESENT (≥1) when the gate excluded the
+ * user's own option(s) ("Olumi's stayed because your X couldn't be analysed"); ABSENT when the user simply named fewer
+ * than two options (nothing was excluded, so nothing may be said to be unanalysable). Never present on an exclusion.
+ */
+export const OptionParticipationEntrySchema = z.object({
+  option_id: z.string().min(1),
+  state: z.enum(['excluded_olumi_proposed', 'kept_olumi_provisional']),
+  /** `kept_olumi_provisional` only, and only when the gate excluded the user's own option(s): which ones. */
+  unanalysable_user_option_ids: z.array(z.string().min(1)).min(1).optional(),
+}).strict().superRefine((e, ctx) => {
+  if (e.state === 'excluded_olumi_proposed' && e.unanalysable_user_option_ids !== undefined) {
+    ctx.addIssue({ code: 'custom', path: ['unanalysable_user_option_ids'],
+      message: 'only a provisional keep names unanalysable user options' });
+  }
+  if (e.unanalysable_user_option_ids !== undefined
+    && new Set(e.unanalysable_user_option_ids).size !== e.unanalysable_user_option_ids.length) {
+    ctx.addIssue({ code: 'custom', path: ['unanalysable_user_option_ids'], message: 'an unanalysable user option is named once' });
+  }
+});
+export type OptionParticipationEntry = z.infer<typeof OptionParticipationEntrySchema>;
+
 export const RunAnalysisResultSchema = z.object({
   scenario_id: z.string().uuid(),
   leading_option_id: z.string().nullable(),
@@ -316,6 +345,24 @@ export const RunAnalysisResultSchema = z.object({
   // 5883197828), so ABSENT strictly means not recorded (an older Run) — NEVER "earned": a reader shows no raw 0/1 as
   // certain on absence or on a stale Run.
   goal_certainty: z.array(GoalCertaintyDecisionSchema).optional(),
+  // 0.65.0 — WHICH OPTIONS WERE LEFT OUT OF THE ORDINARY COMPARISON, and why ({@link OptionParticipationEntrySchema}).
+  // CEE-owned, written by run_analysis beside `goal_certainty` in the same write, so it is only ever read with the Run it
+  // was decided on. A completed Run with no such option writes `[]`; ABSENT strictly means not recorded (an older Run),
+  // NEVER "every option was the user's" — a reader must not present an unrecorded comparison as user-owned.
+  // ONE VERDICT PER OPTION (PR Review 5889746379): a Run cannot say an option was both left out and kept, so a repeated
+  // `option_id` refuses the whole record (never "first wins" — array order would decide what the user is told). Entries
+  // are Olumi's options only, so an entry's id named as a user's unanalysable option is the same contradiction.
+  option_participation: z.array(OptionParticipationEntrySchema).superRefine((entries, ctx) => {
+    const ids = entries.map((e) => e.option_id);
+    ids.forEach((id, i) => {
+      if (ids.indexOf(id) !== i) ctx.addIssue({ code: 'custom', path: [i, 'option_id'], message: 'one participation verdict per option' });
+    });
+    entries.forEach((e, i) => (e.unanalysable_user_option_ids ?? []).forEach((u, j) => {
+      if (ids.includes(u)) {
+        ctx.addIssue({ code: 'custom', path: [i, 'unanalysable_user_option_ids', j], message: "an Olumi option is not the user's" });
+      }
+    }));
+  }).optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;
 
