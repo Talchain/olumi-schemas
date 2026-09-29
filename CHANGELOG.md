@@ -23,14 +23,17 @@ pinned ≤0.61.0 rejects a turn carrying it. Order: publish → CEE re-vendors +
   **`CANONICAL_GRAPH_HASH_PROJECTION_VERSION` 2 → 3** (the constant's own bump rule). `unit`, `raw_value`,
   `extractionType`, `elicited_from` and `reviewed_by_user` stay out.
 - **`FactorValueEditIntent`** = `'set' | 'confirm_current'` (exported from `./boundary`) and
-  **`factor_value_edit.intent`** (optional; ABSENT = `set`, today's behaviour). `confirm_current` = review of Olumi's
-  current figure: CEE keeps `observed_state.source`, adds `reviewed_by_user`, and refuses a confirm whose value differs.
+  **`factor_value_edit.intent`** (optional). `set` = authorship even for the same number; `confirm_current` = review of
+  Olumi's current figure (CEE keeps `observed_state.source`, adds `reviewed_by_user`, refuses one whose value differs from
+  the PERSISTED value). **ABSENT IS CONDITIONAL** (AIQ #72 5881405845, DL 5881485082): absent + the same value as the
+  persisted one = review; absent + a different value = set — so today's UI confirm stops over-claiming at the CEE step,
+  before the UI sends the field (a same-number retype reads as review until then: an under-claim, the safe direction).
 - **`ObservedStateReviewSchema`** and **`ObservedStateSchema.reviewed_by_user`** (optional, strict):
   `{intent: 'confirm', at}` (a confirm-as-is) or `{intent: 'confirm_pairing', quote, at?}` (CEE #2258's approved
   figure→factor pairing). Never authorship: no `source` member; not a hash input.
 - Adoption rows `factor_value_edit.intent`, `observed_state.reviewed_by_user` (`declared`). Absence census: `intent`
-  (`same`: absent = set), `reviewed_by_user` (`distinct`: absent = no server-recorded review), its receipt-carrier view
-  (`unresolved` ×3); counts distinct 87 → 88, same 34 → 35, unresolved 415 → 418.
+  (`distinct`: absence is conditional on the persisted value), `reviewed_by_user` (`distinct`: absent = no server-recorded review), its receipt-carrier view
+  (`unresolved` ×3); counts distinct 87 → 89, same 34 (unchanged), unresolved 415 → 418.
 - Maximal fixtures populate `reviewed_by_user` and `intent`. Release test `tests/contracts/release-0.62.0.test.ts`.
 
 ### Changed (meaning stated, not changed)

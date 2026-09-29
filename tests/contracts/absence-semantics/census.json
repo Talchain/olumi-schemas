@@ -63,8 +63,8 @@
     }
   },
   "counts": {
-    "distinct": 88,
-    "same": 35,
+    "distinct": 89,
+    "same": 34,
     "unresolved": 418
   },
   "open_objects": {
@@ -3729,8 +3729,9 @@
       "markers": [
         "optional"
       ],
-      "verdict": "same",
-      "note": "0.62.0 (Shared Data row 1; AIQ #72 5881277231). The field's own .describe() states it: \"`set` (or absent): the user states this figure\". Absence and 'set' select the same server behaviour (CEE stamps `user_override`), which is every pre-0.62.0 client's behaviour, so no consumer may treat absence as a confirm."
+      "verdict": "distinct",
+      "note": "0.62.0 (Shared Data row 1). Absence is CONDITIONAL, so it is not the same as any value: absent + the same value as the PERSISTED one is read as `confirm_current` (review); absent + a different value is read as `set` (AIQ #72 5881405845, DL 5881485082). No single value expresses that state.",
+      "ref": "src/boundary/turn-payload.ts \u2014 FactorValueEditEvent.intent .describe() and comment (0.62.0)"
     },
     "root/ObservedStateSchema.reviewed_by_user": {
       "markers": [

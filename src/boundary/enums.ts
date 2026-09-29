@@ -313,7 +313,8 @@ export type EdgeStrengthEditIntentLiteral = z.infer<typeof EdgeStrengthEditInten
  * 0.62.0 — `factor_value_edit.intent` (Shared Data row 1; AIQ #72 5881277231: R11 extends to nodes).
  * `set` = the user states the figure (typed, even the same number): CEE stamps `observed_state.source: 'user_override'`,
  * which is authorship and an analysis input. `confirm_current` = the user reviews Olumi's figure as-is: CEE keeps
- * `source` and adds `observed_state.reviewed_by_user` — review, never authorship, and no analysis change.
+ * `source` and adds `observed_state.reviewed_by_user` — review, never authorship, and no analysis change. ABSENT is
+ * conditional (AIQ #72 5881405845): the same value as the persisted one = `confirm_current`; a different value = `set`.
  */
 export const FactorValueEditIntent = z.enum(['set', 'confirm_current']);
 export type FactorValueEditIntentLiteral = z.infer<typeof FactorValueEditIntent>;

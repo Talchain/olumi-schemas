@@ -1224,7 +1224,7 @@
       "state": "declared",
       "n_minus_1_removal_date": "2026-12-31",
       "notes": [
-        "DECLARED 2026-09-29 (Shared Data row 1: finding Canonical #72 5881225605, meaning AIQ 5881277231, order DL 5881332034). Before 0.62.0 a confirm-as-is and a typed figure were the same bytes, so CEE stamped user_override for both."
+        "DECLARED 2026-09-29 (Shared Data row 1: finding Canonical #72 5881225605, meaning AIQ 5881277231, order DL 5881332034). Before 0.62.0 a confirm-as-is and a typed figure were the same bytes, so CEE stamped user_override for both. ABSENT is conditional (AIQ #72 5881405845): absent + the same value as the persisted one = confirm_current; absent + a different value = set."
       ]
     },
     {

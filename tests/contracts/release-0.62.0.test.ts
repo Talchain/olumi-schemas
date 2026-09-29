@@ -6,7 +6,8 @@
 //   `source` in the hash: YES; `reviewed_by_user`: NO) · order DL 5881332034.
 //
 //   · CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields gains `source` (projection version 2 → 3).
-//   · factor_value_edit gains `intent: 'set' | 'confirm_current'` (optional; ABSENT = 'set', today's behaviour).
+//   · factor_value_edit gains `intent: 'set' | 'confirm_current'` (optional; ABSENT is conditional: same persisted value
+//     = confirm_current, a different value = set — AIQ 5881405845).
 //   · ObservedStateSchema declares `reviewed_by_user` ({intent: 'confirm', at} | {intent: 'confirm_pairing', quote}),
 //     NOT a hash input (review changes no analysis meaning).
 //
@@ -47,7 +48,7 @@ describe('0.62.0 · factor_value_edit.intent — a confirm is distinct from a ty
     expect(parsed.intent).toBe(intent);
   });
 
-  it('CONTROL: an edit with NO intent still parses (absent = set; every pre-0.62.0 client)', () => {
+  it('CONTROL: an edit with NO intent still parses (every pre-0.62.0 client; absence is read against the persisted value)', () => {
     const parsed = SystemEventSchema.parse(edit) as { intent?: string };
     expect(parsed.intent).toBeUndefined();
   });
