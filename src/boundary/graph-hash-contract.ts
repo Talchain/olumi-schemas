@@ -132,8 +132,17 @@ export type CanonicalGraphHashKeepKey =
  *   5881815357): the placeholder-parts predicate (DL 5881593118) withholds a limit moved only through placeholder links
  *   and tells them apart by these keys (`source: 'user_specified'` wins over `magnitude` at read time). Listed now so
  *   that predicate does not force a version 4 and a second one-time stale.
+ *
+ * 4 (0.64.0, proposed-option participation — Canonical #72 5887528088, DL 5887534233, marker MG 5887738387): node
+ * `proposed_by` joins `fields`. Construction writes `proposed_by: 'olumi'` on an option node Olumi added (never `'user'`;
+ * absent otherwise), and the Run's post-gate filter keeps such an option out of the ordinary comparison — so WHICH options
+ * are compared depends on it. MEASURED with CEE's `computeAnalysisAffectingGraphHash` at staging 0497e52e: an
+ * authorship-only change to an option (provenance + origin, node and option) left the hash unchanged, so an approved
+ * "add to comparison" would have left the Run that excluded the option reading CURRENT. Hashed as stored. ⚠ NO MASS
+ * STALE: the field is absent on every graph with no Olumi-proposed option, and absent fields are not projected, so those
+ * graphs keep their exact hash; only a graph carrying the marker moves, once.
  */
-export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 3 as const;
+export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 4 as const;
 
 /**
  * The exact nested fields retained by the canonical analysis graph hash.
@@ -185,6 +194,8 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'scale_frame',
       'nonlinear_identity',
       'analysis_participation',
+      // 0.64.0 — appended (projection version 4); see the version comment above.
+      'proposed_by',
     ],
     // 0.62.0 — `source`, `unit`, `raw_value` and `std` appended (projection version 3); see the version comment above.
     observed_state_fields: ['value', 'baseline', 'cap', 'source', 'unit', 'raw_value', 'std'],
