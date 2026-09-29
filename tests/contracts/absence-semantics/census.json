@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 97,
+    "distinct": 98,
     "same": 34,
     "unresolved": 417
   },
@@ -3028,12 +3028,20 @@
       "note": "Absent iff earned (superRefine): every surface says the result as it does today. Required on an unearned decision (the producer's one sentence).",
       "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
     },
+    "orchestrator/GoalCertaintyDecisionSchema.structural_gap": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present iff an unearned decision found the goal's parents NOT equal to its identity's operands (no path can be walked); then no unsized_path is claimed (superRefine: exactly one of the two on an unearned decision). PR Review 5883666597.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyStructuralGapSchema (0.63.0)"
+    },
     "orchestrator/GoalCertaintyDecisionSchema.unsized_path": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absent iff earned (superRefine): no unsized path could reverse the certainty. Required on an unearned decision.",
+      "note": "Absent on an earned decision, and on an unearned one whose goal parents are not its operands (then structural_gap names the gap instead; no path is claimed). Present = a REAL graph path through a link nobody sized.",
       "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
     },
     "orchestrator/LLMAdapterRequestSchema.max_tokens": {

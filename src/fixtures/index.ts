@@ -4045,6 +4045,7 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   'orchestrator/ConstraintVerdictSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/GoalCertaintyDecisionSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/GoalCertaintyBreakEvenSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/GoalCertaintyStructuralGapSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainFallbackReasonSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/RunAnalysisHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainResultHandlerFactSchema': ORCHESTRATOR_INTERNAL,

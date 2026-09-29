@@ -186,20 +186,42 @@ export const GoalCertaintyNoBreakEvenSchema = z.enum(['not_an_identity', 'identi
   'extra_goal_parent', 'operand_not_parent', 'no_exact_figure']);
 export type GoalCertaintyNoBreakEven = z.infer<typeof GoalCertaintyNoBreakEvenSchema>;
 
+/**
+ * PR Review 5883666597: when the goal's parents are not exactly its identity's operands, the producer cannot walk the
+ * option through the goal at all — so it claims NO path. `structural_gap` names what it found instead: an operand with no
+ * link into the goal (`operand_not_parent`) or a goal parent outside the operands (`extra_goal_parent`), `node_id`, and
+ * the factor the option moves. Never stored as `unsized_path`: a pair no graph path connects is not a path.
+ */
+export const GoalCertaintyStructuralGapSchema = z.object({
+  kind: z.enum(['operand_not_parent', 'extra_goal_parent']),
+  node_id: z.string().min(1),
+  moved_factor_id: z.string().min(1),
+}).strict();
+export type GoalCertaintyStructuralGap = z.infer<typeof GoalCertaintyStructuralGapSchema>;
+
 export const GoalCertaintyDecisionSchema = z.object({
   option_id: z.string().min(1),
   probability_of_goal: z.union([z.literal(0), z.literal(1)]),
   earned: z.boolean(),
+  /** A REAL graph path: the factor the option moves, and the goal parent it reaches through a link nobody has sized. */
   unsized_path: z.object({ from: z.string().min(1), enters_goal_through: z.string().min(1) }).strict().optional(),
+  structural_gap: GoalCertaintyStructuralGapSchema.optional(),
   break_even: GoalCertaintyBreakEvenSchema.optional(),
   no_break_even: GoalCertaintyNoBreakEvenSchema.optional(),
   say: z.string().min(1).max(400).optional(),
 }).strict().superRefine((d, ctx) => {
-  if (d.earned && (d.unsized_path !== undefined || d.break_even !== undefined || d.no_break_even !== undefined || d.say !== undefined)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['earned'], message: 'an earned certainty carries no path, break-even, reason or sentence' });
+  if (d.earned && (d.unsized_path !== undefined || d.structural_gap !== undefined || d.break_even !== undefined
+    || d.no_break_even !== undefined || d.say !== undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['earned'], message: 'an earned certainty carries no path, gap, break-even, reason or sentence' });
   }
-  if (!d.earned && (d.unsized_path === undefined || d.say === undefined)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unsized_path'], message: 'an unearned certainty names its unsized path and its sentence' });
+  if (!d.earned && ((d.unsized_path === undefined) === (d.structural_gap === undefined) || d.say === undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unsized_path'], message: 'an unearned certainty names exactly one of its unsized path or its structural gap, and its sentence' });
+  }
+  if (d.structural_gap !== undefined && d.no_break_even !== d.structural_gap.kind) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['structural_gap'], message: 'a structural gap is its own no-break-even reason' });
+  }
+  if (d.unsized_path !== undefined && (d.no_break_even === 'operand_not_parent' || d.no_break_even === 'extra_goal_parent')) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unsized_path'], message: 'a structural-gap reason claims no graph path' });
   }
   if (!d.earned && (d.break_even === undefined) === (d.no_break_even === undefined)) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['no_break_even'], message: 'an unearned certainty carries exactly one of break_even or no_break_even' });
