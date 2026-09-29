@@ -138,7 +138,8 @@ describe('0.61.0 · analysis-hash vocabulary: frame, direction and quantity move
   });
 
   it('RED: the projection version moves 1 → 2 (the module rule: bump on ANY nested inclusion change)', () => {
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(2);
+    // 0.62.0 moved it again (2 → 3, observed_state.source; release-0.62.0.test.ts pins the exact value).
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBeGreaterThanOrEqual(2);
   });
 
   it('APPEND-ONLY: the ten pre-0.61.0 node fields keep their exact order as the prefix', () => {
@@ -167,7 +168,8 @@ describe('0.61.0 · analysis-hash vocabulary: frame, direction and quantity move
 
   it('CONTRAST: `label` is still NOT a hash input (the vocabulary grew by exactly three)', () => {
     expect(nodeFields).not.toContain('label');
-    expect(nodeFields.length).toBe(13);
+    // 0.62.0 appended `scale_frame` (release-0.62.0.test.ts pins the exact list); 0.61.0's three stay at 10–12.
+    expect(nodeFields.slice(10, 13)).toEqual(['goal_threshold_frame', 'goal_direction', 'quantity_frame']);
   });
 });
 

@@ -210,6 +210,27 @@ export type KnownObservedStateSourceLiteral = z.infer<typeof KnownObservedStateS
  * not normalise a constraint threshold against a factor's cap, and do not read
  * a factor `value` as user units because a constraint's is.
  */
+/**
+ * 0.62.0 — the user's REVIEW of a value (Shared Data row 1; AIQ #72 5881277231: R11 extends to nodes). Two acts:
+ *   · `confirm`         — a canvas "confirm as-is" of the current figure (`factor_value_edit.intent: 'confirm_current'`,
+ *                         or an absent intent whose value equals the PERSISTED one), stamped with the ISO instant `at`
+ *                         (required);
+ *   · `confirm_pairing` — the user approved a card whose figure→factor pairing Olumi matched from their words
+ *                         (CEE #2258), carrying the verbatim `quote` it was matched from (required; `at` optional).
+ * Discriminated on `intent`, each variant strict: a member of the other variant is refused, not ignored.
+ * A review is NEVER authorship: it carries no `source` (strict), leaves `observed_state.source` untouched, and is not
+ * an analysis-hash input. Server-stamped by CEE only.
+ */
+export const ObservedStateReviewSchema = z.discriminatedUnion('intent', [
+  z.object({ intent: z.literal('confirm'), at: z.string().datetime() }).strict(),
+  z.object({
+    intent: z.literal('confirm_pairing'),
+    quote: z.string().min(1).max(400),
+    at: z.string().datetime().optional(),
+  }).strict(),
+]);
+export type ObservedStateReviewType = z.infer<typeof ObservedStateReviewSchema>;
+
 export const ObservedStateSchema = z.object({
   /**
    * ⭐ THE LEVEL THE FACTOR IS AT TODAY, ON THE MODEL SCALE.
@@ -632,6 +653,11 @@ export const ObservedStateSchema = z.object({
    * `elicited_from` carries the identity.
    */
   elicited_from: RoundParticipantRefSchema.optional(),
+  /**
+   * 0.62.0 — the user's review of this value (see `ObservedStateReviewSchema`). ABSENCE SEMANTICS — DISTINCT: absent
+   * means "no server-recorded review", never "the user disagreed". Not an analysis-hash input.
+   */
+  reviewed_by_user: ObservedStateReviewSchema.optional(),
 }).passthrough();
 
 export type ObservedStateType = z.infer<typeof ObservedStateSchema>;

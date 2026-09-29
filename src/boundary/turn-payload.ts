@@ -8,6 +8,7 @@ import {
   EdgeAdjudicationVerdict,
   EdgeStrengthDirectionIntent,
   EdgeStrengthEditIntent,
+  FactorValueEditIntent,
 } from './enums.js';
 import { EffectDirection, GraphV3Schema, NodeKind, NodeV3Schema } from '../graph.js';
 import { RoundParticipantRefSchema } from './collab.js';
@@ -278,6 +279,23 @@ const FactorValueEditEvent = z.object({
       'its own collab store before stamping any provenance, and MUST refuse the edit ' +
       'loudly on any mismatch — the wire never carries a provenance claim the server ' +
       'could not verify for itself.',
+  ),
+  // 0.62.0 — Shared Data row 1 (Canonical #72 5881225605; meaning AIQ 5881277231; order DL 5881332034).
+  // A canvas "confirm as-is" and a typed figure were the SAME bytes on this wire, so CEE stamped `user_override` for
+  // both and the server could not tell review from authorship (UI `valueProvenance.ts` names the residual). This field
+  // says which act it is. ABSENCE IS CONDITIONAL (AIQ #72 5881405845, DL 5881485082): absent + the SAME value as the
+  // PERSISTED one = a review (`confirm_current`); absent + a DIFFERENT value = `set`. So today's UI "Looks right" click is
+  // no longer authorship even before it sends this field; the cost — a same-number retype reads as review until the UI
+  // sends `set` — is an under-claim, the safe direction.
+  // ⚠ SEQUENCING — READER-FIRST IS MANDATORY: this object is .strict(), so a CEE pinned ≤0.61.0 that receives `intent`
+  // REJECTS THE WHOLE TURN. Order: publish 0.62.0 → CEE re-vendors + deploys the reader → only then the UI sends it.
+  intent: FactorValueEditIntent.optional().describe(
+    '`set`: the user states this figure, even the same number — CEE stamps it as the user\'s (`user_override`), an ' +
+      'analysis input. `confirm_current`: the user reviews Olumi\'s CURRENT figure as-is — CEE keeps ' +
+      '`observed_state.source` and adds `observed_state.reviewed_by_user`; review is never authorship and changes no ' +
+      'analysis meaning; CEE MUST refuse one whose value differs from the PERSISTED value rather than turning it into a ' +
+      'set. ABSENCE IS CONDITIONAL: absent with the same value as the persisted one is read as `confirm_current`; absent ' +
+      'with a different value is read as `set`. Compare against the persisted value, never a client copy.',
   ),
 }).strict();
 

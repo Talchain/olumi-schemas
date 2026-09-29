@@ -133,12 +133,14 @@ describe('ObservedState declares its scale frame', () => {
     expect(hashed.filter((f) => !declared.has(f))).toStrictEqual([]);
   });
 
-  it('raw_value is deliberately NOT a hash input, while cap is', () => {
+  it('raw_value IS a hash input (0.62.0), like cap', () => {
     const hashed: readonly string[] = CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields;
     expect(hashed).toContain('cap');
-    // A display/user-scale twin must not move the analysis identity: repairing
-    // a magnitude a user reads would otherwise invalidate a committed receipt.
-    expect(hashed).not.toContain('raw_value');
+    // REVERSED in 0.62.0 (AIQ #72 5881494849): this said a display twin must not move the analysis identity. It is not
+    // a display twin — CEE's run path reads raw_value (with unit and scale_frame) into percentLimitFrameProvable, which
+    // decides whether a percent limit's frame goes out framed or withheld. A raw_value edit changed the Run under the
+    // same hash, so a Run read CURRENT after it. Over-staling once on a repair is the safe direction.
+    expect(hashed).toContain('raw_value');
   });
 
   it('the maximal fixture states a RESOLVABLE frame — a fixture that cannot recover one cannot exercise the pair', () => {

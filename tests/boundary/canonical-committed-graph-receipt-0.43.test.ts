@@ -167,7 +167,7 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
   it('publishes the exact versioned nested hash projection vocabulary', () => {
     // PINS UPDATED DELIBERATELY in 0.61.0 (R1 S2): version 1 -> 2, and three node
     // fields appended (goal_threshold_frame, goal_direction, quantity_frame).
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(2);
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(3); // 0.62.0: observed_state.source/unit/raw_value/std + node scale_frame/nonlinear_identity/analysis_participation joined (Shared Data row 1)
     expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION).toEqual({
       node: {
         fields: [
@@ -184,14 +184,19 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
           'goal_threshold_frame',
           'goal_direction',
           'quantity_frame',
+          'scale_frame',
+          'nonlinear_identity',
+          'analysis_participation',
         ],
-        observed_state_fields: ['value', 'baseline', 'cap'],
+        observed_state_fields: ['value', 'baseline', 'cap', 'source', 'unit', 'raw_value', 'std'],
         prior_fields: ['distribution', 'range_min', 'range_max'],
         interventions_field: 'interventions',
       },
       edge: {
         fields: ['from', 'to', 'edge_type', 'exists_probability', 'effect_direction'],
         strength_fields: ['mean', 'std'],
+        provenance_fields: ['source', 'magnitude'],
+        provenance_natural_effect_fields: ['amount_unit'],
       },
       option: {
         fields: ['id', 'status', 'is_baseline'],

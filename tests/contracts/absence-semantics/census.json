@@ -63,9 +63,9 @@
     }
   },
   "counts": {
-    "distinct": 87,
+    "distinct": 89,
     "same": 34,
-    "unresolved": 415
+    "unresolved": 417
   },
   "open_objects": {
     "_doc": [
@@ -3724,6 +3724,36 @@
       ],
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.type`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `unresolved`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/SystemEventSchema|kind=factor_value_edit.intent": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.62.0 (Shared Data row 1). Absence is CONDITIONAL, so it is not the same as any value: absent + the same value as the PERSISTED one is read as `confirm_current` (review); absent + a different value is read as `set` (AIQ #72 5881405845, DL 5881485082). No single value expresses that state.",
+      "ref": "src/boundary/turn-payload.ts \u2014 FactorValueEditEvent.intent .describe() and comment (0.62.0)"
+    },
+    "root/ObservedStateSchema.reviewed_by_user": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.62.0 (Shared Data row 1). Absence means 'no server-recorded review' \u2014 every value before 0.62.0 and every value the user has not reviewed \u2014 and it NEVER means 'the user disagreed'. No value can express that state: any present record asserts a review act (`confirm` or `confirm_pairing`).",
+      "ref": "schema comment: src/graph.ts ObservedStateSchema.reviewed_by_user + ObservedStateReviewSchema (0.62.0)"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.reviewed_by_user": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.reviewed_by_user` (0.62.0). The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts); this field is inherited unchanged, so what its absence means on a receipt is the carrier's question, not this contract's."
+    },
+    "root/ObservedStateReviewSchema|object#1.at": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "0.62.0: the `confirm_pairing` variant's `at`. CEE #2258 writes the pairing record with no timestamp, so absent = the approval time was not recorded. Whether that differs from any value is not yet established. (The `confirm` variant's `at` is REQUIRED; PR Review #70 CHANGES_REQUIRED at 37329b24.)"
     }
   }
 }

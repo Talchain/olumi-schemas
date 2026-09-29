@@ -106,8 +106,34 @@ export type CanonicalGraphHashKeepKey =
  *
  * 2 (0.61.0, R1 S2): node `goal_threshold_frame`, `goal_direction` and
  * `quantity_frame` join the node vocabulary (see the list below).
+ *
+ * 3 (0.62.0, Shared Data row 1 — Canonical #72 5881225605, meaning AIQ 5881277231): `observed_state.source` joins
+ * `observed_state_fields`. WHOSE a value is decides the science: ISL derives the base/level owner from this literal
+ * and CEE's per-limit verdict reads `level_olumi_estimate` from it. Live on served CEE f79119b the same 3.2% moving
+ * cee_inference → user_override left the hash unchanged, so a Run whose verdict was `estimate_only` stayed CURRENT
+ * while a rerun gave `scored`. The literal is hashed as stored (fail closed: a move between two user-class literals
+ * over-stales once, never under-stales). `reviewed_by_user` is deliberately NOT a hash input: a review changes no
+ * analysis meaning (R11). ⚠ ONE-TIME MOVE: every stored graph with a stamped `source` rehashes, so each existing
+ * analysis reads STALE once — ride the same CEE re-vendor as version 2 so the hash moves once.
+ *   The same version also adds `observed_state.unit`, `observed_state.raw_value` and node `scale_frame` (AIQ #72
+ *   5881494849, CODE-READ at CEE e25d0aa): CEE's run path reads all three to build the PLoT wire —
+ *   `level-limit-baseline.ts` `statedUnitAcrossPeriod` picks a relabelled `%` limit's wire unit from the node's `unit`,
+ *   and `targetScaleOf` feeds `unit` / `raw_value` / `scale_frame` into `percentLimitFrameProvable` (framed vs withheld).
+ *   So they are not display twins: an edit to any of them changed the Run under the same hash. `scale_frame` is
+ *   undeclared on `NodeV3Schema` and rides `.passthrough()`, like `goal_direction`. `extractionType`, `elicited_from`
+ *   and `reviewed_by_user` stay out (no analysis reader).
+ *   Also in version 3, the remaining compute inputs named by the Shared Data closure (#72 5881225605, row 1):
+ *   `observed_state.std` (a stated spread: PLoT honours it first, unfloored, and ISL reads it), node
+ *   `analysis_participation` (`retained_excluded` removes the node and its edges from the run) and node
+ *   `nonlinear_identity` (the C46 carrier CEE ALREADY hashes, so listing it moves no hash — it closes the gap the 0.61.0
+ *   correction above names). With these the vocabulary is CEE's whole stored-field projection, so CEE can import it
+ *   instead of hand-listing. Both node fields ride `.passthrough()`.
+ *   And the edge's `provenance.source`, `provenance.magnitude` and `provenance.natural_effect.amount_unit` (AIQ #72
+ *   5881815357): the placeholder-parts predicate (DL 5881593118) withholds a limit moved only through placeholder links
+ *   and tells them apart by these keys (`source: 'user_specified'` wins over `magnitude` at read time). Listed now so
+ *   that predicate does not force a version 4 and a second one-time stale.
  */
-export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 2 as const;
+export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 3 as const;
 
 /**
  * The exact nested fields retained by the canonical analysis graph hash.
@@ -155,8 +181,13 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'goal_threshold_frame',
       'goal_direction',
       'quantity_frame',
+      // 0.62.0 — appended (projection version 3); see the version comment above.
+      'scale_frame',
+      'nonlinear_identity',
+      'analysis_participation',
     ],
-    observed_state_fields: ['value', 'baseline', 'cap'],
+    // 0.62.0 — `source`, `unit`, `raw_value` and `std` appended (projection version 3); see the version comment above.
+    observed_state_fields: ['value', 'baseline', 'cap', 'source', 'unit', 'raw_value', 'std'],
     prior_fields: ['distribution', 'range_min', 'range_max'],
     interventions_field: 'interventions',
   },
@@ -169,6 +200,10 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'effect_direction',
     ],
     strength_fields: ['mean', 'std'],
+    // 0.62.0 — appended (projection version 3; AIQ #72 5881815357): who sized the link, and the unit its natural size
+    // is stated in. The placeholder-parts predicate the DL accepted (5881593118) decides withhold vs score from them.
+    provenance_fields: ['source', 'magnitude'],
+    provenance_natural_effect_fields: ['amount_unit'],
   },
   option: {
     fields: ['id', 'status', 'is_baseline'],

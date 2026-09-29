@@ -65,6 +65,7 @@ import type {
 import {
   // graph
   ObservedStateSchema,
+  ObservedStateReviewSchema,
   PriorSchema,
   StateSpaceSchema,
   NodeV3Schema,
@@ -333,6 +334,10 @@ export const maximalRoundParticipantRef = deepFreeze({
   evidence_event_id: UUID_ELICITATION_EVENT,
 });
 
+// 0.62.0 — the `confirm` variant of the review record (a canvas confirm-as-is). The maximal observed state carries the
+// `confirm_pairing` variant; this entry exercises the other branch of the discriminated union.
+export const maximalObservedStateConfirmReview = deepFreeze({ intent: 'confirm', at: '2026-09-29T00:40:00.000Z' } as const);
+
 export const maximalObservedState = deepFreeze({
   value: 42.5,
   std: 3.2,
@@ -373,6 +378,9 @@ export const maximalObservedState = deepFreeze({
   // 0.40.0 (PR4 evidence loop) — whose panel answer this value was applied
   // from. Ids only; the display label resolves at render from round data.
   elicited_from: maximalRoundParticipantRef,
+  // 0.62.0 — the user's review (Shared Data row 1). Maximal: every member populated. A review never carries
+  // authorship (the object is strict), so `source` above is untouched by it.
+  reviewed_by_user: { intent: 'confirm_pairing', at: '2026-09-29T00:00:00.000Z', quote: 'FIXTURE the figure as the user wrote it' },
   [PROBE]: true,
 });
 
@@ -2602,6 +2610,9 @@ const eventFactorValueEdit = deepFreeze({
   // participant's panel answer. CEE verifies the claim against its own
   // collab store before stamping provenance; the ref is identity-only.
   applied_from: maximalRoundParticipantRef,
+  // 0.62.0 — the act is stated: `set` = the user states the figure (a panel apply is one). Absent is conditional:
+  // the same value as the PERSISTED one = confirm_current; a different value = set.
+  intent: 'set',
 });
 const eventChipClick = deepFreeze({ kind: 'chip_click', chip_id: 'fixture_chip_1' });
 const eventUndo = deepFreeze({ kind: 'undo' });
@@ -3100,6 +3111,7 @@ const maximalSuppressedFact: SuppressedFact = {
 export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   // --- graph -----------------------------------------------------------------
   { family: 'root/ObservedStateSchema', schema: ObservedStateSchema, fixture: maximalObservedState },
+  { family: 'root/ObservedStateReviewSchema', schema: ObservedStateReviewSchema, fixture: maximalObservedStateConfirmReview },
   { family: 'root/PriorSchema', schema: PriorSchema, fixture: maximalPrior },
   { family: 'root/StateSpaceSchema', schema: StateSpaceSchema, fixture: maximalStateSpace },
   { family: 'root/NodeV3Schema', schema: NodeV3Schema, fixture: maximalNodeV3 },

@@ -17,6 +17,7 @@ export {
   // 0.42.0 — server-authoritative edge-strength edit vocabularies
   EdgeStrengthDirectionIntent,
   EdgeStrengthEditIntent,
+  FactorValueEditIntent,
   TurnSource,
 } from './enums.js';
 export type {
@@ -31,6 +32,7 @@ export type {
   EdgeAdjudicationVerdictLiteral,
   EdgeStrengthDirectionIntentLiteral,
   EdgeStrengthEditIntentLiteral,
+  FactorValueEditIntentLiteral,
   TurnSourceLiteral,
 } from './enums.js';
 
