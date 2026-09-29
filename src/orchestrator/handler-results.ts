@@ -176,8 +176,14 @@ export const GoalCertaintyBreakEvenSchema = z.object({
 });
 export type GoalCertaintyBreakEven = z.infer<typeof GoalCertaintyBreakEvenSchema>;
 
-/** Why an unearned certainty has no exact break-even (AIQ #72 5883228443) — so an audit can tell. */
-export const GoalCertaintyNoBreakEvenSchema = z.enum(['level_from_inputs', 'addends', 'extra_goal_parent', 'not_an_identity', 'identity_not_evaluated']);
+/**
+ * Why an unearned certainty has no exact break-even (AIQ #72 5883228443), so an audit can tell: the goal declares no
+ * identity · this run did not evaluate it · ISL's level came from the operands, not the stated level · the identity has
+ * addends · the goal has a parent outside its operands · an operand has no link into the goal · or the figure itself
+ * cannot be formed. Mirrors the producer's `NoBreakEven` (CEE #2270 @ 8dd6343b).
+ */
+export const GoalCertaintyNoBreakEvenSchema = z.enum(['not_an_identity', 'identity_not_evaluated', 'level_from_inputs', 'addends',
+  'extra_goal_parent', 'operand_not_parent', 'no_exact_figure']);
 export type GoalCertaintyNoBreakEven = z.infer<typeof GoalCertaintyNoBreakEvenSchema>;
 
 export const GoalCertaintyDecisionSchema = z.object({
