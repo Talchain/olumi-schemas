@@ -154,8 +154,9 @@ export type ConstraintVerdict = z.infer<typeof ConstraintVerdictSchema>;
  * certainty; it is EARNED only if no path through a link nobody has sized could reverse it. An UNEARNED certainty is
  * never said as certain: it names the first unsized path and, where the arithmetic on the user's own figures is exact,
  * the break-even (product → the operand's `fraction`, and `operand_count` only on the user's stated level; sum → the
- * `margin` in the goal's unit). `say` is the producer's one sentence for an unearned certainty (display; the typed
- * members are the contract). Ids, never labels.
+ * `margin` in the goal's unit); where no exact break-even exists, `no_break_even` says why (AIQ #72 5883228443). `say` is
+ * the producer's one sentence for an unearned certainty, composed by ONE producer function from the typed members (every
+ * number in it equals its typed field after display rounding; never free text). Ids, never labels.
  */
 export const GoalCertaintyBreakEvenSchema = z.object({
   kind: z.enum(['product', 'sum']),
@@ -175,19 +176,27 @@ export const GoalCertaintyBreakEvenSchema = z.object({
 });
 export type GoalCertaintyBreakEven = z.infer<typeof GoalCertaintyBreakEvenSchema>;
 
+/** Why an unearned certainty has no exact break-even (AIQ #72 5883228443) — so an audit can tell. */
+export const GoalCertaintyNoBreakEvenSchema = z.enum(['level_from_inputs', 'addends', 'extra_goal_parent', 'not_an_identity', 'identity_not_evaluated']);
+export type GoalCertaintyNoBreakEven = z.infer<typeof GoalCertaintyNoBreakEvenSchema>;
+
 export const GoalCertaintyDecisionSchema = z.object({
   option_id: z.string().min(1),
   probability_of_goal: z.union([z.literal(0), z.literal(1)]),
   earned: z.boolean(),
   unsized_path: z.object({ from: z.string().min(1), enters_goal_through: z.string().min(1) }).strict().optional(),
   break_even: GoalCertaintyBreakEvenSchema.optional(),
+  no_break_even: GoalCertaintyNoBreakEvenSchema.optional(),
   say: z.string().min(1).max(400).optional(),
 }).strict().superRefine((d, ctx) => {
-  if (d.earned && (d.unsized_path !== undefined || d.break_even !== undefined || d.say !== undefined)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['earned'], message: 'an earned certainty carries no path, break-even or sentence' });
+  if (d.earned && (d.unsized_path !== undefined || d.break_even !== undefined || d.no_break_even !== undefined || d.say !== undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['earned'], message: 'an earned certainty carries no path, break-even, reason or sentence' });
   }
   if (!d.earned && (d.unsized_path === undefined || d.say === undefined)) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unsized_path'], message: 'an unearned certainty names its unsized path and its sentence' });
+  }
+  if (!d.earned && (d.break_even === undefined) === (d.no_break_even === undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['no_break_even'], message: 'an unearned certainty carries exactly one of break_even or no_break_even' });
   }
 });
 export type GoalCertaintyDecision = z.infer<typeof GoalCertaintyDecisionSchema>;
@@ -273,8 +282,9 @@ export const RunAnalysisResultSchema = z.object({
   analysis_participation_withheld: AnalysisParticipationWithheldSchema.optional(),
   // 0.63.0 — IS EACH 0/1 GOAL CERTAINTY EARNED ({@link GoalCertaintyDecisionSchema}). CEE-owned, written by run_analysis
   // beside `graph_hash_at_run`, so a decision is only ever read with the Run it was computed on (a stale Run's
-  // certainty is never current). Absent = not recorded (an older Run), NEVER "earned": a reader shows no unearned 0/1
-  // as certain on absence.
+  // certainty is never current). A completed Run with no option at exactly 0 or 1 writes `[]` (Runtime 5883189956, DL
+  // 5883197828), so ABSENT strictly means not recorded (an older Run) — NEVER "earned": a reader shows no raw 0/1 as
+  // certain on absence or on a stale Run.
   goal_certainty: z.array(GoalCertaintyDecisionSchema).optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;

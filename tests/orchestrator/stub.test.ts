@@ -109,6 +109,7 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         // 0.63.0 — the stored, Run-bound goal certainty (additive)
         'GoalCertaintyDecisionSchema',
         'GoalCertaintyBreakEvenSchema',
+        'GoalCertaintyNoBreakEvenSchema',
         // 0.27.0 — subject-scoped AnalysisFact union (additive; Codex F3)
         'AnalysisFactSchema',
         'ComputedFactSchema',

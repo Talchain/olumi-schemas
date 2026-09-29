@@ -35,6 +35,7 @@ const unearnedSum = {
 const unearnedNoBreakEven = {
   option_id: 'o-x', probability_of_goal: 1, earned: false,
   unsized_path: { from: 'ai_use', enters_goal_through: 'quality' },
+  no_break_even: 'not_an_identity',
   say: "Can't yet say how likely: it depends on how much AI use changes quality, which isn't sized.",
 } as const;
 
@@ -62,6 +63,11 @@ describe('0.63.0 · GoalCertaintyDecisionSchema', () => {
       ['sum carrying a fraction or a count', { ...unearnedSum, break_even: { ...unearnedSum.break_even, operand_count: 3 } }],
       ['an unknown member', { ...earned, confidence: 'high' }],
       ['an over-long sentence', { ...unearnedNoBreakEven, say: 'x'.repeat(401) }],
+      // AIQ 5883228443: an unearned certainty says WHY there is no break-even, and never both.
+      ['unearned with neither a break-even nor a reason', { ...unearnedNoBreakEven, no_break_even: undefined }],
+      ['unearned with both a break-even and a reason', { ...unearnedProduct, no_break_even: 'addends' }],
+      ['an off-vocabulary reason', { ...unearnedNoBreakEven, no_break_even: 'unknown' }],
+      ['earned with a reason', { ...earned, no_break_even: 'addends' }],
     ];
     for (const [name, v] of bad) expect(Decision().safeParse(v).success, name).toBe(false);
   });
@@ -78,6 +84,11 @@ describe('0.63.0 · RunAnalysisResultSchema.goal_certainty — stored on the Run
 
   it('GUARD: a malformed decision on the Run is refused (a certainty said wrongly never reaches a stored Run)', () => {
     expect(RunResult().safeParse({ ...run, goal_certainty: [{ ...earned, say: 'certain!' }] }).success).toBe(false);
+  });
+
+  it('a completed Run with no option at exactly 0 or 1 records [] (absent is reserved for "not recorded")', () => {
+    const parsed = RunResult().parse({ ...run, goal_certainty: [] }) as { goal_certainty?: unknown[] };
+    expect(parsed.goal_certainty).toEqual([]);
   });
 
   it('CONTROL: a Run with NO goal_certainty still parses (every older Run; absent = not recorded, never "earned")', () => {

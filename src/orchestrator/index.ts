@@ -93,6 +93,7 @@ export {
   RunAnalysisResultSchema,
   GoalCertaintyDecisionSchema,
   GoalCertaintyBreakEvenSchema,
+  GoalCertaintyNoBreakEvenSchema,
   ExplainResultResultSchema,
   ExplainResultsResultSchema,
   ExplainFromStructureResultSchema,

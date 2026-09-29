@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 96,
+    "distinct": 97,
     "same": 34,
     "unresolved": 417
   },
@@ -3012,6 +3012,14 @@
       "note": "Absent on an earned decision, or on an unearned one with no exact arithmetic on the user's own figures ('can't yet say how likely'). Present = the exact break-even.",
       "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
     },
+    "orchestrator/GoalCertaintyDecisionSchema.no_break_even": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present iff earned === false AND break_even is absent (superRefine: exactly one of the two on an unearned decision); says why no exact break-even exists (AIQ 5883228443).",
+      "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
+    },
     "orchestrator/GoalCertaintyDecisionSchema.say": {
       "markers": [
         "optional"
@@ -3137,7 +3145,7 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absent = not recorded (a Run from before 0.63.0), NEVER 'earned': a reader shows no unearned 0/1 as certain on absence. Present = one decision per option the Run reported at P(goal) exactly 0 or 1.",
+      "note": "Absent = not recorded (a Run from before 0.63.0), NEVER 'earned': a reader shows no raw 0/1 as certain on absence. A completed Run with no option at exactly 0 or 1 writes [] (Runtime 5883189956, DL 5883197828), so absence and [] are different claims.",
       "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
     },
     "orchestrator/RunAnalysisResultSchema.graph_hash_at_run": {

@@ -17,15 +17,18 @@ unearned 0/1 as certain. Proposal: Canonical #72 5883126969.
 - `GoalCertaintyDecisionSchema` / `GoalCertaintyBreakEvenSchema` (`@talchain/schemas/orchestrator`), strict:
   - `{option_id, probability_of_goal: 0 | 1, earned, unsized_path?, break_even?, say? (≤ 400)}`;
   - earned ⇒ no path, break-even or sentence; unearned ⇒ `unsized_path` + `say` required;
-  - break-even `product` carries `fraction` (and `operand_count` only on the user's stated level), `sum` carries `margin`.
+  - break-even `product` carries `fraction` (and `operand_count` only on the user's stated level), `sum` carries `margin`;
+  - an unearned decision with no exact break-even says why: `no_break_even` (`level_from_inputs` | `addends` |
+    `extra_goal_parent` | `not_an_identity` | `identity_not_evaluated`; AIQ 5883228443) — exactly one of the two;
+  - `say` is composed by ONE producer function from the typed members, never free text.
 - `RunAnalysisResultSchema.goal_certainty?: GoalCertaintyDecision[]` — CEE-owned, written by run_analysis beside
-  `graph_hash_at_run`, so a decision is only ever read with the Run it was computed on. Absent = not recorded (an older
-  Run), never "earned".
+  `graph_hash_at_run`, so a decision is only ever read with the Run it was computed on. A completed Run with no option
+  at exactly 0 or 1 writes `[]`; absent = not recorded (an older Run), never "earned".
 
 ### Compatibility
 - Additive. `RunAnalysisResultSchema` is `.strict()`: a consumer on an older pin REFUSES a Run fact carrying
   `goal_certainty` (hazard 1, the loud direction), so CEE writes it only after it vendors 0.63.0.
-- Census: 7 rows, `distinct` (96). No hash-vocabulary change (a Run fact is not a graph input).
+- Census: 8 rows, `distinct` (97). No hash-vocabulary change (a Run fact is not a graph input).
 
 ## [0.62.0] — Shared Data row 1: whose a value is enters the analysis revision; a confirm is REVIEW, not authorship
 
