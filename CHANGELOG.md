@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 bytes as a typed figure, so CEE stamped authorship for a review. Meaning AI Quality #72 5881277231 (R11 extends to
 nodes: confirm = review; `source` in the hash YES, `reviewed_by_user` NO); order Delivery Lead #72 5881332034.
 
-**⚠ NOT additive for the analysis hash** (as 0.61.0): once CEE hashes `source`, `unit`, `raw_value` and `scale_frame`,
+**⚠ NOT additive for the analysis hash** (as 0.61.0): once CEE hashes `source`, `unit`, `raw_value`, `std`, `scale_frame` and `analysis_participation`,
 every stored graph carrying one rehashes and each existing analysis reads STALE once. Ride the SAME CEE re-vendor as 0.61.0's projection
 version 2 so the hash moves once. **⚠ READER-FIRST for `intent`**: `FactorValueEditEvent` is `.strict()`, so a CEE
 pinned ≤0.61.0 rejects a turn carrying it. Order: publish → CEE re-vendors + deploys the reader → then the UI sends it.
@@ -23,8 +23,11 @@ pinned ≤0.61.0 rejects a turn carrying it. Order: publish → CEE re-vendors +
   `node.fields` appends **`scale_frame`**; **`CANONICAL_GRAPH_HASH_PROJECTION_VERSION` 2 → 3** (the constant's own bump
   rule). `unit` / `raw_value` / `scale_frame` are not display twins (AIQ #72 5881494849): CEE's run path reads them into
   the PLoT wire (`level-limit-baseline.ts`: the relabelled-`%` wire unit and `percentLimitFrameProvable`), so an edit to
-  one changed the Run under the same hash. `extractionType`, `elicited_from` and `reviewed_by_user` stay out (no
-  analysis reader). **Changed:** `tests/observed-state-scale-frame.test.ts` "raw_value is deliberately NOT a hash
+  one changed the Run under the same hash. The same version also lists `observed_state.std` (a stated spread PLoT and
+  ISL read), node `analysis_participation` (`retained_excluded` removes the node from the run) and node
+  `nonlinear_identity` (already hashed by CEE — listing it moves no hash), so the vocabulary is CEE's whole stored-field
+  projection and CEE can import it instead of hand-listing. `extractionType`, `elicited_from` and `reviewed_by_user`
+  stay out (no analysis reader). **Changed:** `tests/observed-state-scale-frame.test.ts` "raw_value is deliberately NOT a hash
   input" is reversed, with the reason in place.
 - **`FactorValueEditIntent`** = `'set' | 'confirm_current'` (exported from `./boundary`) and
   **`factor_value_edit.intent`** (optional). `set` = authorship even for the same number; `confirm_current` = review of
@@ -33,11 +36,14 @@ pinned ≤0.61.0 rejects a turn carrying it. Order: publish → CEE re-vendors +
   persisted one = review; absent + a different value = set — so today's UI confirm stops over-claiming at the CEE step,
   before the UI sends the field (a same-number retype reads as review until then: an under-claim, the safe direction).
 - **`ObservedStateReviewSchema`** and **`ObservedStateSchema.reviewed_by_user`** (optional, strict):
-  `{intent: 'confirm', at}` (a confirm-as-is) or `{intent: 'confirm_pairing', quote, at?}` (CEE #2258's approved
-  figure→factor pairing). Never authorship: no `source` member; not a hash input.
+  `{intent: 'confirm', at}` (a confirm-as-is; `at` required) or `{intent: 'confirm_pairing', quote, at?}` (CEE
+  #2258's approved figure→factor pairing). Discriminated on `intent`, each variant strict, so a member of the other
+  variant is refused. Never authorship: no `source` member; not a hash input.
 - Adoption rows `factor_value_edit.intent`, `observed_state.reviewed_by_user` (`declared`). Absence census: `intent`
   (`distinct`: absence is conditional on the persisted value), `reviewed_by_user` (`distinct`: absent = no server-recorded review), its receipt-carrier view
-  (`unresolved` ×3); counts distinct 87 → 89, same 34 (unchanged), unresolved 415 → 418.
+  (`unresolved` ×1), the pairing variant's optional `at` (`unresolved`); counts distinct 87 → 89, same 34 (unchanged),
+  unresolved 415 → 417. `ObservedStateReviewSchema` / `ObservedStateReviewType` are exported from the root; a
+  `root/ObservedStateReviewSchema` maximal fixture exercises the `confirm` variant (registry 203 → 204).
 - Maximal fixtures populate `reviewed_by_user` and `intent`. Release test `tests/contracts/release-0.62.0.test.ts`.
 
 ### Changed (meaning stated, not changed)

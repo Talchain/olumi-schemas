@@ -65,7 +65,7 @@
   "counts": {
     "distinct": 89,
     "same": 34,
-    "unresolved": 418
+    "unresolved": 417
   },
   "open_objects": {
     "_doc": [
@@ -3748,19 +3748,12 @@
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.reviewed_by_user` (0.62.0). The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts); this field is inherited unchanged, so what its absence means on a receipt is the carrier's question, not this contract's."
     },
-    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.reviewed_by_user.at": {
+    "root/ObservedStateReviewSchema|object#1.at": {
       "markers": [
         "optional"
       ],
       "verdict": "unresolved",
-      "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.reviewed_by_user` (0.62.0). The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts); this field is inherited unchanged, so what its absence means on a receipt is the carrier's question, not this contract's."
-    },
-    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.reviewed_by_user.quote": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "unresolved",
-      "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.reviewed_by_user` (0.62.0). The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts); this field is inherited unchanged, so what its absence means on a receipt is the carrier's question, not this contract's."
+      "note": "0.62.0: the `confirm_pairing` variant's `at`. CEE #2258 writes the pairing record with no timestamp, so absent = the approval time was not recorded. Whether that differs from any value is not yet established. (The `confirm` variant's `at` is REQUIRED; PR Review #70 CHANGES_REQUIRED at 37329b24.)"
     }
   }
 }

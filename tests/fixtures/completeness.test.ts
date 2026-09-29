@@ -276,7 +276,10 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   as the six members above. The member is flat and EVERY field is
     //   REQUIRED, so the fixture is maximal by construction and the maximality
     //   walker has no optional field to report.
-    expect(MAXIMAL_FIXTURES.length).toBe(203);
+    // 0.62.0 (+1): root/ObservedStateReviewSchema — the review record is a
+    //   discriminated union; the maximal observed state carries the
+    //   `confirm_pairing` variant, and this entry exercises `confirm`.
+    expect(MAXIMAL_FIXTURES.length).toBe(204);
   });
 
   it('family keys are unique', () => {

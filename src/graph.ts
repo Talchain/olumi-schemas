@@ -212,24 +212,23 @@ export type KnownObservedStateSourceLiteral = z.infer<typeof KnownObservedStateS
  */
 /**
  * 0.62.0 — the user's REVIEW of a value (Shared Data row 1; AIQ #72 5881277231: R11 extends to nodes). Two acts:
- *   · `confirm`         — a canvas "confirm as-is" of Olumi's figure (`factor_value_edit.intent: 'confirm_current'`),
- *                         stamped with the ISO instant `at`;
+ *   · `confirm`         — a canvas "confirm as-is" of the current figure (`factor_value_edit.intent: 'confirm_current'`,
+ *                         or an absent intent whose value equals the PERSISTED one), stamped with the ISO instant `at`
+ *                         (required);
  *   · `confirm_pairing` — the user approved a card whose figure→factor pairing Olumi matched from their words
- *                         (CEE #2258), carrying the verbatim `quote` it was matched from.
+ *                         (CEE #2258), carrying the verbatim `quote` it was matched from (required; `at` optional).
+ * Discriminated on `intent`, each variant strict: a member of the other variant is refused, not ignored.
  * A review is NEVER authorship: it carries no `source` (strict), leaves `observed_state.source` untouched, and is not
  * an analysis-hash input. Server-stamped by CEE only.
  */
-export const ObservedStateReviewSchema = z
-  .object({
-    intent: z.enum(['confirm', 'confirm_pairing']),
+export const ObservedStateReviewSchema = z.discriminatedUnion('intent', [
+  z.object({ intent: z.literal('confirm'), at: z.string().datetime() }).strict(),
+  z.object({
+    intent: z.literal('confirm_pairing'),
+    quote: z.string().min(1).max(400),
     at: z.string().datetime().optional(),
-    quote: z.string().min(1).max(400).optional(),
-  })
-  .strict()
-  .refine((r) => r.intent !== 'confirm_pairing' || typeof r.quote === 'string', {
-    message: 'a confirm_pairing review carries the quote the pairing was matched from',
-    path: ['quote'],
-  });
+  }).strict(),
+]);
 export type ObservedStateReviewType = z.infer<typeof ObservedStateReviewSchema>;
 
 export const ObservedStateSchema = z.object({

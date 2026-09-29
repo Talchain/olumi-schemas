@@ -1215,9 +1215,9 @@
     },
     {
       "field": "factor_value_edit.intent",
-      "declared_in": "schemas:src/boundary/turn-payload.ts::FactorValueEditEvent.intent (0.62.0) \u2014 'set' | 'confirm_current'; absent = set",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::FactorValueEditEvent.intent (0.62.0) \u2014 'set' | 'confirm_current'; absent is conditional: the same value as the PERSISTED one = confirm_current, a different value = set",
       "producer": "ui \u2014 the canvas 'Looks right (keep as Olumi's estimate)' action sends confirm_current; typing sends set (Canvas); sent only after CEE vendors a 0.62.0 reader (strict union); NOT YET BUILT",
-      "consumer": "cee \u2014 factor_value_edit: confirm_current keeps observed_state.source and adds reviewed_by_user {intent:'confirm', at}; refuses a confirm whose value differs from the stored one; set stamps user_override (Canonical); NOT YET BUILT",
+      "consumer": "cee \u2014 factor_value_edit: confirm_current keeps observed_state.source and adds reviewed_by_user {intent:'confirm', at}; reads an absent intent with the same persisted value as confirm_current; refuses a confirm whose value differs from the stored one; set stamps user_override (Canonical); NOT YET BUILT",
       "producer_test": null,
       "consumer_test": null,
       "deployment_flag": null,

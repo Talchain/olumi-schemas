@@ -122,6 +122,12 @@ export type CanonicalGraphHashKeepKey =
  *   So they are not display twins: an edit to any of them changed the Run under the same hash. `scale_frame` is
  *   undeclared on `NodeV3Schema` and rides `.passthrough()`, like `goal_direction`. `extractionType`, `elicited_from`
  *   and `reviewed_by_user` stay out (no analysis reader).
+ *   Also in version 3, the remaining compute inputs named by the Shared Data closure (#72 5881225605, row 1):
+ *   `observed_state.std` (a stated spread: PLoT honours it first, unfloored, and ISL reads it), node
+ *   `analysis_participation` (`retained_excluded` removes the node and its edges from the run) and node
+ *   `nonlinear_identity` (the C46 carrier CEE ALREADY hashes, so listing it moves no hash — it closes the gap the 0.61.0
+ *   correction above names). With these the vocabulary is CEE's whole stored-field projection, so CEE can import it
+ *   instead of hand-listing. Both node fields ride `.passthrough()`.
  */
 export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 3 as const;
 
@@ -173,9 +179,11 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'quantity_frame',
       // 0.62.0 — appended (projection version 3); see the version comment above.
       'scale_frame',
+      'nonlinear_identity',
+      'analysis_participation',
     ],
-    // 0.62.0 — `source`, `unit` and `raw_value` appended (projection version 3); see the version comment above.
-    observed_state_fields: ['value', 'baseline', 'cap', 'source', 'unit', 'raw_value'],
+    // 0.62.0 — `source`, `unit`, `raw_value` and `std` appended (projection version 3); see the version comment above.
+    observed_state_fields: ['value', 'baseline', 'cap', 'source', 'unit', 'raw_value', 'std'],
     prior_fields: ['distribution', 'range_min', 'range_max'],
     interventions_field: 'interventions',
   },

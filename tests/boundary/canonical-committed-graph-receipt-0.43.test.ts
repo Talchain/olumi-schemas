@@ -167,7 +167,7 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
   it('publishes the exact versioned nested hash projection vocabulary', () => {
     // PINS UPDATED DELIBERATELY in 0.61.0 (R1 S2): version 1 -> 2, and three node
     // fields appended (goal_threshold_frame, goal_direction, quantity_frame).
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(3); // 0.62.0: observed_state.source/unit/raw_value + node scale_frame joined (Shared Data row 1)
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(3); // 0.62.0: observed_state.source/unit/raw_value/std + node scale_frame/nonlinear_identity/analysis_participation joined (Shared Data row 1)
     expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION).toEqual({
       node: {
         fields: [
@@ -185,8 +185,10 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
           'goal_direction',
           'quantity_frame',
           'scale_frame',
+          'nonlinear_identity',
+          'analysis_participation',
         ],
-        observed_state_fields: ['value', 'baseline', 'cap', 'source', 'unit', 'raw_value'],
+        observed_state_fields: ['value', 'baseline', 'cap', 'source', 'unit', 'raw_value', 'std'],
         prior_fields: ['distribution', 'range_min', 'range_max'],
         interventions_field: 'interventions',
       },

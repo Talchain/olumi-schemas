@@ -16,6 +16,7 @@
 // RED-first: before 0.62.0 `source` is absent from the vocabulary (version 2), `intent` on factor_value_edit is REFUSED
 // by the strict event, and `reviewed_by_user` rides .passthrough() with NO validation (any shape is waved through).
 // ============================================================================
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { ObservedStateSchema } from '../../src/graph.js';
@@ -28,15 +29,17 @@ import { SystemEventSchema } from '../../src/boundary/turn-payload.js';
 const edit = { kind: 'factor_value_edit', target_id: 'monthly_churn', value: 0.032, raw_value: 3.2, unit: '%' } as const;
 
 describe('0.62.0 · whose a value is enters the analysis revision', () => {
-  it('RED: observed_state.source, unit and raw_value are hash inputs, appended after value/baseline/cap', () => {
+  it('RED: observed_state.source, unit, raw_value and std are hash inputs, appended after value/baseline/cap', () => {
     expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields)
-      .toEqual(['value', 'baseline', 'cap', 'source', 'unit', 'raw_value']);
+      .toEqual(['value', 'baseline', 'cap', 'source', 'unit', 'raw_value', 'std']);
   });
 
-  it('RED: node scale_frame is a hash input, appended after the 0.61.0 fields', () => {
+  it('RED: node scale_frame, nonlinear_identity and analysis_participation are hash inputs, appended after 0.61.0', () => {
     const fields: readonly string[] = CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields;
-    expect(fields.slice(10, 14)).toEqual(['goal_threshold_frame', 'goal_direction', 'quantity_frame', 'scale_frame']);
-    expect(fields.length).toBe(14);
+    expect(fields.slice(10)).toEqual([
+      'goal_threshold_frame', 'goal_direction', 'quantity_frame',
+      'scale_frame', 'nonlinear_identity', 'analysis_participation',
+    ]);
   });
 
   it('RED: the projection version moves 2 → 3 (the module\'s own bump rule)', () => {
@@ -53,6 +56,18 @@ describe('0.62.0 · whose a value is enters the analysis revision', () => {
 });
 
 describe('0.62.0 · factor_value_edit.intent — a confirm is distinct from a typed value', () => {
+  it('the machine-readable adoption row states the CONDITIONAL absence rule, not "absent = set"', () => {
+    const manifest = JSON.parse(readFileSync(new URL('../../contracts/adoption-manifest.json', import.meta.url), 'utf8')) as {
+      fields: Array<{ field: string; declared_in: string; consumer: string }>;
+    };
+    expect(manifest.fields.length).toBeGreaterThan(0);
+    const row = manifest.fields.find((r) => r.field === 'factor_value_edit.intent');
+    expect(row, 'factor_value_edit.intent adoption row').toBeDefined();
+    expect(row!.declared_in).toMatch(/absent is conditional: the same value as the PERSISTED one = confirm_current, a different value = set/);
+    expect(row!.declared_in).not.toMatch(/absent = set/);
+    expect(row!.consumer).toMatch(/absent intent with the same persisted value as confirm_current/);
+  });
+
   it.each(['set', 'confirm_current'] as const)('RED: intent %s parses and is preserved', (intent) => {
     const parsed = SystemEventSchema.parse({ ...edit, intent }) as { intent?: string };
     expect(parsed.intent).toBe(intent);
@@ -89,6 +104,9 @@ describe('0.62.0 · ObservedStateSchema.reviewed_by_user — the review record i
       { intent: 'authored' },                      // not a review intent
       { intent: 'confirm', at: 'yesterday' },      // not an ISO instant
       { intent: 'confirm', at: '2026-09-29T00:40:00.000Z', source: 'user_override' }, // a review never carries authorship
+      { intent: 'confirm' },                       // a confirm without its timestamp
+      { intent: 'confirm', at: '2026-09-29T00:40:00.000Z', quote: 'our churn is 3.2%' }, // a pairing member on a confirm
+      { intent: 'confirm_pairing', quote: 'x', note: 'extra' }, // an unknown member on a pairing
     ]) {
       expect(ObservedStateSchema.safeParse({ value: 1, reviewed_by_user: bad }).success, JSON.stringify(bad)).toBe(false);
     }
