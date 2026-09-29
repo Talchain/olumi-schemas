@@ -168,7 +168,8 @@ describe('0.61.0 · analysis-hash vocabulary: frame, direction and quantity move
 
   it('CONTRAST: `label` is still NOT a hash input (the vocabulary grew by exactly three)', () => {
     expect(nodeFields).not.toContain('label');
-    expect(nodeFields.length).toBe(13);
+    // 0.62.0 appended `scale_frame` (release-0.62.0.test.ts pins the exact list); 0.61.0's three stay at 10–12.
+    expect(nodeFields.slice(10, 13)).toEqual(['goal_threshold_frame', 'goal_direction', 'quantity_frame']);
   });
 });
 

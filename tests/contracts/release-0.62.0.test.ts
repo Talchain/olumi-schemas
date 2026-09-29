@@ -5,7 +5,9 @@
 //   `scored`). Claim 5881253593 · meaning AIQ 5881277231 (a canvas confirm-as-is is REVIEW, R11 extends to nodes;
 //   `source` in the hash: YES; `reviewed_by_user`: NO) · order DL 5881332034.
 //
-//   · CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields gains `source` (projection version 2 → 3).
+//   · CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields gains `source`, `unit`, `raw_value`, and node
+//     `fields` gains `scale_frame` (projection version 2 → 3; the last three: AIQ 5881494849 — CEE's run path reads them
+//     into the PLoT wire, so they were never display twins).
 //   · factor_value_edit gains `intent: 'set' | 'confirm_current'` (optional; ABSENT is conditional: same persisted value
 //     = confirm_current, a different value = set — AIQ 5881405845).
 //   · ObservedStateSchema declares `reviewed_by_user` ({intent: 'confirm', at} | {intent: 'confirm_pairing', quote}),
@@ -26,19 +28,27 @@ import { SystemEventSchema } from '../../src/boundary/turn-payload.js';
 const edit = { kind: 'factor_value_edit', target_id: 'monthly_churn', value: 0.032, raw_value: 3.2, unit: '%' } as const;
 
 describe('0.62.0 · whose a value is enters the analysis revision', () => {
-  it('RED: observed_state.source is a hash input, appended after value/baseline/cap', () => {
-    expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields).toEqual(['value', 'baseline', 'cap', 'source']);
+  it('RED: observed_state.source, unit and raw_value are hash inputs, appended after value/baseline/cap', () => {
+    expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields)
+      .toEqual(['value', 'baseline', 'cap', 'source', 'unit', 'raw_value']);
+  });
+
+  it('RED: node scale_frame is a hash input, appended after the 0.61.0 fields', () => {
+    const fields: readonly string[] = CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields;
+    expect(fields.slice(10, 14)).toEqual(['goal_threshold_frame', 'goal_direction', 'quantity_frame', 'scale_frame']);
+    expect(fields.length).toBe(14);
   });
 
   it('RED: the projection version moves 2 → 3 (the module\'s own bump rule)', () => {
     expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(3);
   });
 
-  it('CONTROL: display twins and the review record stay OUT of the vocabulary', () => {
-    const fields: readonly string[] = CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields;
-    for (const display of ['unit', 'raw_value', 'extractionType', 'reviewed_by_user', 'elicited_from']) {
-      expect(fields, display).not.toContain(display);
+  it('CONTROL: fields no analysis path reads — extraction trace, elicitation, the review record, the label — stay OUT', () => {
+    const observed: readonly string[] = CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields;
+    for (const unread of ['extractionType', 'reviewed_by_user', 'elicited_from']) {
+      expect(observed, unread).not.toContain(unread);
     }
+    expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields as readonly string[]).not.toContain('label');
   });
 });
 

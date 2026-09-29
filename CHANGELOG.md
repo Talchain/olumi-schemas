@@ -13,15 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 bytes as a typed figure, so CEE stamped authorship for a review. Meaning AI Quality #72 5881277231 (R11 extends to
 nodes: confirm = review; `source` in the hash YES, `reviewed_by_user` NO); order Delivery Lead #72 5881332034.
 
-**⚠ NOT additive for the analysis hash** (as 0.61.0): once CEE hashes `source`, every stored graph with a stamped
-source rehashes and each existing analysis reads STALE once. Ride the SAME CEE re-vendor as 0.61.0's projection
+**⚠ NOT additive for the analysis hash** (as 0.61.0): once CEE hashes `source`, `unit`, `raw_value` and `scale_frame`,
+every stored graph carrying one rehashes and each existing analysis reads STALE once. Ride the SAME CEE re-vendor as 0.61.0's projection
 version 2 so the hash moves once. **⚠ READER-FIRST for `intent`**: `FactorValueEditEvent` is `.strict()`, so a CEE
 pinned ≤0.61.0 rejects a turn carrying it. Order: publish → CEE re-vendors + deploys the reader → then the UI sends it.
 
 ### Added
-- `CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields` appends **`source`**;
-  **`CANONICAL_GRAPH_HASH_PROJECTION_VERSION` 2 → 3** (the constant's own bump rule). `unit`, `raw_value`,
-  `extractionType`, `elicited_from` and `reviewed_by_user` stay out.
+- `CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields` appends **`source`, `unit`, `raw_value`**, and
+  `node.fields` appends **`scale_frame`**; **`CANONICAL_GRAPH_HASH_PROJECTION_VERSION` 2 → 3** (the constant's own bump
+  rule). `unit` / `raw_value` / `scale_frame` are not display twins (AIQ #72 5881494849): CEE's run path reads them into
+  the PLoT wire (`level-limit-baseline.ts`: the relabelled-`%` wire unit and `percentLimitFrameProvable`), so an edit to
+  one changed the Run under the same hash. `extractionType`, `elicited_from` and `reviewed_by_user` stay out (no
+  analysis reader). **Changed:** `tests/observed-state-scale-frame.test.ts` "raw_value is deliberately NOT a hash
+  input" is reversed, with the reason in place.
 - **`FactorValueEditIntent`** = `'set' | 'confirm_current'` (exported from `./boundary`) and
   **`factor_value_edit.intent`** (optional). `set` = authorship even for the same number; `confirm_current` = review of
   Olumi's current figure (CEE keeps `observed_state.source`, adds `reviewed_by_user`, refuses one whose value differs from

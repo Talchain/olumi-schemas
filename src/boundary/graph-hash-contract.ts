@@ -115,6 +115,13 @@ export type CanonicalGraphHashKeepKey =
  * over-stales once, never under-stales). `reviewed_by_user` is deliberately NOT a hash input: a review changes no
  * analysis meaning (R11). ⚠ ONE-TIME MOVE: every stored graph with a stamped `source` rehashes, so each existing
  * analysis reads STALE once — ride the same CEE re-vendor as version 2 so the hash moves once.
+ *   The same version also adds `observed_state.unit`, `observed_state.raw_value` and node `scale_frame` (AIQ #72
+ *   5881494849, CODE-READ at CEE e25d0aa): CEE's run path reads all three to build the PLoT wire —
+ *   `level-limit-baseline.ts` `statedUnitAcrossPeriod` picks a relabelled `%` limit's wire unit from the node's `unit`,
+ *   and `targetScaleOf` feeds `unit` / `raw_value` / `scale_frame` into `percentLimitFrameProvable` (framed vs withheld).
+ *   So they are not display twins: an edit to any of them changed the Run under the same hash. `scale_frame` is
+ *   undeclared on `NodeV3Schema` and rides `.passthrough()`, like `goal_direction`. `extractionType`, `elicited_from`
+ *   and `reviewed_by_user` stay out (no analysis reader).
  */
 export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 3 as const;
 
@@ -164,9 +171,11 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'goal_threshold_frame',
       'goal_direction',
       'quantity_frame',
+      // 0.62.0 — appended (projection version 3); see the version comment above.
+      'scale_frame',
     ],
-    // 0.62.0 — `source` appended (projection version 3); see the version comment above.
-    observed_state_fields: ['value', 'baseline', 'cap', 'source'],
+    // 0.62.0 — `source`, `unit` and `raw_value` appended (projection version 3); see the version comment above.
+    observed_state_fields: ['value', 'baseline', 'cap', 'source', 'unit', 'raw_value'],
     prior_fields: ['distribution', 'range_min', 'range_max'],
     interventions_field: 'interventions',
   },
