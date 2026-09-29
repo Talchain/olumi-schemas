@@ -148,6 +148,50 @@ export const ConstraintVerdictSchema = z.object({
 }).strict();
 export type ConstraintVerdict = z.infer<typeof ConstraintVerdictSchema>;
 
+/**
+ * 0.63.0 — IS A GOAL CERTAINTY EARNED? (DL #72 5882763151; producer MG, CEE #2270 `GoalCertaintyDecision`; meaning AIQ
+ * 5882366427 + R3 5882389030; proposal Canonical 5883126969). An option whose P(goal) is exactly 0 or 1 claims a
+ * certainty; it is EARNED only if no path through a link nobody has sized could reverse it. An UNEARNED certainty is
+ * never said as certain: it names the first unsized path and, where the arithmetic on the user's own figures is exact,
+ * the break-even (product → the operand's `fraction`, and `operand_count` only on the user's stated level; sum → the
+ * `margin` in the goal's unit). `say` is the producer's one sentence for an unearned certainty (display; the typed
+ * members are the contract). Ids, never labels.
+ */
+export const GoalCertaintyBreakEvenSchema = z.object({
+  kind: z.enum(['product', 'sum']),
+  projected_if_held: z.number().finite(),
+  threshold: z.number().finite(),
+  operand_id: z.string().min(1),
+  fraction: z.number().finite().optional(),
+  margin: z.number().finite().optional(),
+  operand_count: z.number().finite().optional(),
+}).strict().superRefine((b, ctx) => {
+  if (b.kind === 'product' && (b.fraction === undefined || b.margin !== undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['fraction'], message: 'a product break-even carries its fraction and no margin' });
+  }
+  if (b.kind === 'sum' && (b.margin === undefined || b.fraction !== undefined || b.operand_count !== undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['margin'], message: 'a sum break-even carries its margin, and no fraction or count' });
+  }
+});
+export type GoalCertaintyBreakEven = z.infer<typeof GoalCertaintyBreakEvenSchema>;
+
+export const GoalCertaintyDecisionSchema = z.object({
+  option_id: z.string().min(1),
+  probability_of_goal: z.union([z.literal(0), z.literal(1)]),
+  earned: z.boolean(),
+  unsized_path: z.object({ from: z.string().min(1), enters_goal_through: z.string().min(1) }).strict().optional(),
+  break_even: GoalCertaintyBreakEvenSchema.optional(),
+  say: z.string().min(1).max(400).optional(),
+}).strict().superRefine((d, ctx) => {
+  if (d.earned && (d.unsized_path !== undefined || d.break_even !== undefined || d.say !== undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['earned'], message: 'an earned certainty carries no path, break-even or sentence' });
+  }
+  if (!d.earned && (d.unsized_path === undefined || d.say === undefined)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['unsized_path'], message: 'an unearned certainty names its unsized path and its sentence' });
+  }
+});
+export type GoalCertaintyDecision = z.infer<typeof GoalCertaintyDecisionSchema>;
+
 export const RunAnalysisResultSchema = z.object({
   scenario_id: z.string().uuid(),
   leading_option_id: z.string().nullable(),
@@ -227,6 +271,11 @@ export const RunAnalysisResultSchema = z.object({
   /** What the participation guard withheld from this run.
    *  See {@link AnalysisParticipationWithheldSchema}. */
   analysis_participation_withheld: AnalysisParticipationWithheldSchema.optional(),
+  // 0.63.0 — IS EACH 0/1 GOAL CERTAINTY EARNED ({@link GoalCertaintyDecisionSchema}). CEE-owned, written by run_analysis
+  // beside `graph_hash_at_run`, so a decision is only ever read with the Run it was computed on (a stale Run's
+  // certainty is never current). Absent = not recorded (an older Run), NEVER "earned": a reader shows no unearned 0/1
+  // as certain on absence.
+  goal_certainty: z.array(GoalCertaintyDecisionSchema).optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;
 

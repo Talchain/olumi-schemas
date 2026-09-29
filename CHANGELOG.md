@@ -5,6 +5,28 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.63.0] — the stored, Run-bound GOAL CERTAINTY: is each 0/1 P(goal) earned?
+
+**Why.** An option whose P(goal) is exactly 0 or 1 claims a certainty; on served models that certainty can rest on a
+link nobody has sized, which could reverse it (AIQ 5882366427, R3 5882389030). MG's producer (CEE #2270,
+`GoalCertaintyDecision`) decides it; the DL (#72 5882763151) put the STORED, typed decision with Canonical, bound to the
+Run's graph hash and read identically on a cold reload, so Runtime and Canvas consume one decision and never display an
+unearned 0/1 as certain. Proposal: Canonical #72 5883126969.
+
+### Added
+- `GoalCertaintyDecisionSchema` / `GoalCertaintyBreakEvenSchema` (`@talchain/schemas/orchestrator`), strict:
+  - `{option_id, probability_of_goal: 0 | 1, earned, unsized_path?, break_even?, say? (≤ 400)}`;
+  - earned ⇒ no path, break-even or sentence; unearned ⇒ `unsized_path` + `say` required;
+  - break-even `product` carries `fraction` (and `operand_count` only on the user's stated level), `sum` carries `margin`.
+- `RunAnalysisResultSchema.goal_certainty?: GoalCertaintyDecision[]` — CEE-owned, written by run_analysis beside
+  `graph_hash_at_run`, so a decision is only ever read with the Run it was computed on. Absent = not recorded (an older
+  Run), never "earned".
+
+### Compatibility
+- Additive. `RunAnalysisResultSchema` is `.strict()`: a consumer on an older pin REFUSES a Run fact carrying
+  `goal_certainty` (hazard 1, the loud direction), so CEE writes it only after it vendors 0.63.0.
+- Census: 7 rows, `distinct` (96). No hash-vocabulary change (a Run fact is not a graph input).
+
 ## [0.62.0] — Shared Data row 1: whose a value is enters the analysis revision; a confirm is REVIEW, not authorship
 
 **Why.** Live on served CEE `f79119b` (Canonical #72 5881225605): the churn estimate 3.2% moved `cee_inference` →

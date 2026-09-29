@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 89,
+    "distinct": 96,
     "same": 34,
     "unresolved": 417
   },
@@ -2980,6 +2980,54 @@
       ],
       "verdict": "unresolved"
     },
+    "orchestrator/GoalCertaintyBreakEvenSchema.fraction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present iff kind === 'product' (superRefine).",
+      "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
+    },
+    "orchestrator/GoalCertaintyBreakEvenSchema.margin": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Present iff kind === 'sum' (superRefine).",
+      "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
+    },
+    "orchestrator/GoalCertaintyBreakEvenSchema.operand_count": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the operand's level is not the user's own stated figure, so no count is said (never a figure the user did not give). Product only.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
+    },
+    "orchestrator/GoalCertaintyDecisionSchema.break_even": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent on an earned decision, or on an unearned one with no exact arithmetic on the user's own figures ('can't yet say how likely'). Present = the exact break-even.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
+    },
+    "orchestrator/GoalCertaintyDecisionSchema.say": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent iff earned (superRefine): every surface says the result as it does today. Required on an unearned decision (the producer's one sentence).",
+      "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
+    },
+    "orchestrator/GoalCertaintyDecisionSchema.unsized_path": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent iff earned (superRefine): no unsized path could reverse the certainty. Required on an unearned decision.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
+    },
     "orchestrator/LLMAdapterRequestSchema.max_tokens": {
       "markers": [
         "optional"
@@ -3083,6 +3131,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "orchestrator/RunAnalysisResultSchema.goal_certainty": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = not recorded (a Run from before 0.63.0), NEVER 'earned': a reader shows no unearned 0/1 as certain on absence. Present = one decision per option the Run reported at P(goal) exactly 0 or 1.",
+      "ref": "src/orchestrator/handler-results.ts \u2014 GoalCertaintyDecisionSchema / RunAnalysisResultSchema.goal_certainty (0.63.0)"
     },
     "orchestrator/RunAnalysisResultSchema.graph_hash_at_run": {
       "markers": [
