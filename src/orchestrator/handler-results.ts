@@ -253,6 +253,10 @@ export const OptionParticipationEntrySchema = z.object({
     ctx.addIssue({ code: 'custom', path: ['unanalysable_user_option_ids'],
       message: 'only a provisional keep names unanalysable user options' });
   }
+  if (e.unanalysable_user_option_ids !== undefined
+    && new Set(e.unanalysable_user_option_ids).size !== e.unanalysable_user_option_ids.length) {
+    ctx.addIssue({ code: 'custom', path: ['unanalysable_user_option_ids'], message: 'an unanalysable user option is named once' });
+  }
 });
 export type OptionParticipationEntry = z.infer<typeof OptionParticipationEntrySchema>;
 
@@ -345,7 +349,20 @@ export const RunAnalysisResultSchema = z.object({
   // CEE-owned, written by run_analysis beside `goal_certainty` in the same write, so it is only ever read with the Run it
   // was decided on. A completed Run with no such option writes `[]`; ABSENT strictly means not recorded (an older Run),
   // NEVER "every option was the user's" — a reader must not present an unrecorded comparison as user-owned.
-  option_participation: z.array(OptionParticipationEntrySchema).optional(),
+  // ONE VERDICT PER OPTION (PR Review 5889746379): a Run cannot say an option was both left out and kept, so a repeated
+  // `option_id` refuses the whole record (never "first wins" — array order would decide what the user is told). Entries
+  // are Olumi's options only, so an entry's id named as a user's unanalysable option is the same contradiction.
+  option_participation: z.array(OptionParticipationEntrySchema).superRefine((entries, ctx) => {
+    const ids = entries.map((e) => e.option_id);
+    ids.forEach((id, i) => {
+      if (ids.indexOf(id) !== i) ctx.addIssue({ code: 'custom', path: [i, 'option_id'], message: 'one participation verdict per option' });
+    });
+    entries.forEach((e, i) => (e.unanalysable_user_option_ids ?? []).forEach((u, j) => {
+      if (ids.includes(u)) {
+        ctx.addIssue({ code: 'custom', path: [i, 'unanalysable_user_option_ids', j], message: "an Olumi option is not the user's" });
+      }
+    }));
+  }).optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;
 

@@ -22,6 +22,9 @@ explicitly provisional, Olumi-labelled entry, and the unqualified leader claim i
 - `RunAnalysisResultSchema.option_participation?: OptionParticipationEntry[]` is written by CEE's run_analysis beside
   `goal_certainty`, in the same write. `[]` = recorded, none left out. Absent = not recorded (an older Run), NEVER
   "every compared option was the user's".
+- **One verdict per option** (PR Review 5889746379). A repeated `option_id` refuses the whole array, in either order, so
+  array order can never decide what the user is told. An entry's id named in a keep's `unanalysable_user_option_ids`
+  is refused too (entries are Olumi's options, never the user's), and so is a keep naming one user option twice.
 - The carrier name is Canvas's (5887560895). The turn and cold-read legs validate with this schema (Runtime).
 
 ## [0.64.0] — which options are COMPARED enters the analysis revision (`proposed_by`)

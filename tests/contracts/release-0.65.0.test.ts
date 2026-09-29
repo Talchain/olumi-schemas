@@ -59,6 +59,37 @@ describe('0.65.0 · option_participation on the Run result', () => {
       option_participation: [{ option_id: 'opt_54', state: 'excluded_olumi_proposed', unanalysable_user_option_ids: ['u'] }] }).success).toBe(false);
   });
 
+  // ONE VERDICT PER OPTION (PR Review 5889746379): the contradiction is refused whole, in either order.
+  const refused = (option_participation: unknown[]) => RunAnalysisResultSchema.safeParse({ ...run, option_participation }).success === false;
+  it('REFUSED: one option both left out and kept — exclusion first', () => {
+    expect(refused([{ option_id: 'x', state: 'excluded_olumi_proposed' }, { option_id: 'x', state: 'kept_olumi_provisional' }])).toBe(true);
+  });
+  it('REFUSED: one option both left out and kept — keep first (order never decides)', () => {
+    expect(refused([{ option_id: 'x', state: 'kept_olumi_provisional' }, { option_id: 'x', state: 'excluded_olumi_proposed' }])).toBe(true);
+  });
+  it('REFUSED: the same verdict repeated for one option (one verdict per option)', () => {
+    expect(refused([{ option_id: 'x', state: 'excluded_olumi_proposed' }, { option_id: 'x', state: 'excluded_olumi_proposed' }])).toBe(true);
+  });
+  it("REFUSED: an Olumi option (an entry) named as the user's unanalysable option", () => {
+    expect(refused([{ option_id: 'x', state: 'excluded_olumi_proposed' },
+      { option_id: 'y', state: 'kept_olumi_provisional', unanalysable_user_option_ids: ['x'] }])).toBe(true);
+  });
+  it('REFUSED: a keep naming the same unanalysable user option twice', () => {
+    expect(ok({ option_id: 'y', state: 'kept_olumi_provisional', unanalysable_user_option_ids: ['u', 'u'] })).toBe(false);
+  });
+  it('POSITIVE CONTROL: two distinct options, one left out and one kept with its reason, parse and keep both', () => {
+    const parsed = RunAnalysisResultSchema.parse({ ...run, option_participation: [
+      { option_id: 'x', state: 'excluded_olumi_proposed' },
+      { option_id: 'y', state: 'kept_olumi_provisional', unanalysable_user_option_ids: ['u'] },
+    ] }) as { option_participation?: unknown[] };
+    expect(parsed.option_participation).toHaveLength(2);
+  });
+  it('POSITIVE: the no-ID provisional keep (the user named fewer than two) still parses on the Run', () => {
+    const parsed = RunAnalysisResultSchema.parse({ ...run,
+      option_participation: [{ option_id: 'y', state: 'kept_olumi_provisional' }] }) as { option_participation?: unknown[] };
+    expect(parsed.option_participation).toEqual([{ option_id: 'y', state: 'kept_olumi_provisional' }]);
+  });
+
   it('CONTROL: a Run with NO option_participation still parses (every older Run; absent = not recorded)', () => {
     const parsed = RunAnalysisResultSchema.parse(run) as { option_participation?: unknown };
     expect(parsed.option_participation).toBeUndefined();
