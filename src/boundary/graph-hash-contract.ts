@@ -128,6 +128,10 @@ export type CanonicalGraphHashKeepKey =
  *   `nonlinear_identity` (the C46 carrier CEE ALREADY hashes, so listing it moves no hash — it closes the gap the 0.61.0
  *   correction above names). With these the vocabulary is CEE's whole stored-field projection, so CEE can import it
  *   instead of hand-listing. Both node fields ride `.passthrough()`.
+ *   And the edge's `provenance.source`, `provenance.magnitude` and `provenance.natural_effect.amount_unit` (AIQ #72
+ *   5881815357): the placeholder-parts predicate (DL 5881593118) withholds a limit moved only through placeholder links
+ *   and tells them apart by these keys (`source: 'user_specified'` wins over `magnitude` at read time). Listed now so
+ *   that predicate does not force a version 4 and a second one-time stale.
  */
 export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 3 as const;
 
@@ -196,6 +200,10 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'effect_direction',
     ],
     strength_fields: ['mean', 'std'],
+    // 0.62.0 — appended (projection version 3; AIQ #72 5881815357): who sized the link, and the unit its natural size
+    // is stated in. The placeholder-parts predicate the DL accepted (5881593118) decides withhold vs score from them.
+    provenance_fields: ['source', 'magnitude'],
+    provenance_natural_effect_fields: ['amount_unit'],
   },
   option: {
     fields: ['id', 'status', 'is_baseline'],

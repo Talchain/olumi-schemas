@@ -26,8 +26,10 @@ pinned ≤0.61.0 rejects a turn carrying it. Order: publish → CEE re-vendors +
   one changed the Run under the same hash. The same version also lists `observed_state.std` (a stated spread PLoT and
   ISL read), node `analysis_participation` (`retained_excluded` removes the node from the run) and node
   `nonlinear_identity` (already hashed by CEE — listing it moves no hash), so the vocabulary is CEE's whole stored-field
-  projection and CEE can import it instead of hand-listing. `extractionType`, `elicited_from` and `reviewed_by_user`
-  stay out (no analysis reader). **Changed:** `tests/observed-state-scale-frame.test.ts` "raw_value is deliberately NOT a hash
+  projection and CEE can import it instead of hand-listing. The edge gains `provenance_fields: ['source', 'magnitude']`
+  and `provenance_natural_effect_fields: ['amount_unit']` (AIQ #72 5881815357): the accepted placeholder-parts predicate
+  (DL 5881593118) decides withhold vs score from them, so listing them now avoids a version 4 and a second one-time
+  stale. `extractionType`, `elicited_from` and `reviewed_by_user` stay out (no analysis reader). **Changed:** `tests/observed-state-scale-frame.test.ts` "raw_value is deliberately NOT a hash
   input" is reversed, with the reason in place.
 - **`FactorValueEditIntent`** = `'set' | 'confirm_current'` (exported from `./boundary`) and
   **`factor_value_edit.intent`** (optional). `set` = authorship even for the same number; `confirm_current` = review of

@@ -46,6 +46,13 @@ describe('0.62.0 · whose a value is enters the analysis revision', () => {
     expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(3);
   });
 
+  it('RED: edge provenance source / magnitude and natural_effect.amount_unit are hash inputs (the placeholder predicate)', () => {
+    expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.edge.provenance_fields).toEqual(['source', 'magnitude']);
+    expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.edge.provenance_natural_effect_fields).toEqual(['amount_unit']);
+    // Contrast: the edge's own members are unchanged.
+    expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.edge.strength_fields).toEqual(['mean', 'std']);
+  });
+
   it('CONTROL: fields no analysis path reads — extraction trace, elicitation, the review record, the label — stay OUT', () => {
     const observed: readonly string[] = CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields;
     for (const unread of ['extractionType', 'reviewed_by_user', 'elicited_from']) {

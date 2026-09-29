@@ -195,6 +195,8 @@ describe('0.43.0 canonical committed-graph receipt contract', () => {
       edge: {
         fields: ['from', 'to', 'edge_type', 'exists_probability', 'effect_direction'],
         strength_fields: ['mean', 'std'],
+        provenance_fields: ['source', 'magnitude'],
+        provenance_natural_effect_fields: ['amount_unit'],
       },
       option: {
         fields: ['id', 'status', 'is_baseline'],
