@@ -14,13 +14,15 @@ Run's graph hash and read identically on a cold reload, so Runtime and Canvas co
 unearned 0/1 as certain. Proposal: Canonical #72 5883126969.
 
 ### Added
-- `GoalCertaintyDecisionSchema` / `GoalCertaintyBreakEvenSchema` (`@talchain/schemas/orchestrator`), strict:
-  - `{option_id, probability_of_goal: 0 | 1, earned, unsized_path?, break_even?, say? (≤ 400)}`;
-  - earned ⇒ no path, break-even or sentence; unearned ⇒ `unsized_path` + `say` required;
+- `GoalCertaintyDecisionSchema` / `GoalCertaintyBreakEvenSchema` / `GoalCertaintyNoBreakEvenSchema` /
+  `GoalCertaintyIdentityMismatchSchema` (`@talchain/schemas/orchestrator`), strict:
+  - `{option_id, probability_of_goal: 0 | 1, earned, unsized_path?, identity_mismatch?, break_even?, no_break_even?, say? (≤ 400)}`;
+  - earned ⇒ none of the optional members; unearned ⇒ `say` + EXACTLY ONE of a real `unsized_path` or
+    `identity_mismatch` + EXACTLY ONE of `break_even` or `no_break_even`;
   - break-even `product` carries `fraction` (and `operand_count` only on the user's stated level), `sum` carries `margin`;
   - an unearned decision with no exact break-even says why: `no_break_even` (`not_an_identity` |
     `identity_not_evaluated` | `level_from_inputs` | `addends` | `extra_goal_parent` | `operand_not_parent` |
-    `no_exact_figure`; AIQ 5883228443, mirroring the producer at CEE #2270 @ 8dd6343b) — exactly one of the two;
+    `no_exact_figure`; AIQ 5883228443, mirroring the producer at CEE #2270 @ 401ea007) — exactly one of the two;
   - `say` is composed by ONE producer function from the typed members, never free text;
   - `identity_mismatch {node_id, reason: operand_not_parent | extra_goal_parent}` — when the goal's parents are not
     exactly its identity's operands, no path can be walked, so the decision names the mismatch and claims NO

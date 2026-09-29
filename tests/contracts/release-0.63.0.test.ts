@@ -51,7 +51,7 @@ describe('0.63.0 · GoalCertaintyDecisionSchema', () => {
     expect(Decision()).toBeDefined();
   });
 
-  it('the no-break-even vocabulary is exactly the producer\'s seven reasons (CEE #2270 @ 8dd6343b)', () => {
+  it('the no-break-even vocabulary is exactly the producer\'s seven reasons (CEE #2270 @ 401ea007)', () => {
     for (const why of ['not_an_identity', 'identity_not_evaluated', 'level_from_inputs', 'addends', 'no_exact_figure']) {
       expect(Decision().safeParse({ ...unearnedNoBreakEven, no_break_even: why }).success, why).toBe(true);
     }

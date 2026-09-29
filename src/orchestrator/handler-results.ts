@@ -152,7 +152,9 @@ export type ConstraintVerdict = z.infer<typeof ConstraintVerdictSchema>;
  * 0.63.0 — IS A GOAL CERTAINTY EARNED? (DL #72 5882763151; producer MG, CEE #2270 `GoalCertaintyDecision`; meaning AIQ
  * 5882366427 + R3 5882389030; proposal Canonical 5883126969). An option whose P(goal) is exactly 0 or 1 claims a
  * certainty; it is EARNED only if no path through a link nobody has sized could reverse it. An UNEARNED certainty is
- * never said as certain: it names the first unsized path and, where the arithmetic on the user's own figures is exact,
+ * never said as certain: it names EXACTLY ONE of the first REAL graph path through a link nobody has sized
+ * (`unsized_path`) or, when the goal's parents are not exactly its identity's operands, the `identity_mismatch` (no path
+ * is claimed then; PR Review 5883666597) — and, where the arithmetic on the user's own figures is exact,
  * the break-even (product → the operand's `fraction`, and `operand_count` only on the user's stated level; sum → the
  * `margin` in the goal's unit); where no exact break-even exists, `no_break_even` says why (AIQ #72 5883228443). `say` is
  * the producer's one sentence for an unearned certainty, composed by ONE producer function from the typed members (every
@@ -180,7 +182,7 @@ export type GoalCertaintyBreakEven = z.infer<typeof GoalCertaintyBreakEvenSchema
  * Why an unearned certainty has no exact break-even (AIQ #72 5883228443), so an audit can tell: the goal declares no
  * identity · this run did not evaluate it · ISL's level came from the operands, not the stated level · the identity has
  * addends · the goal has a parent outside its operands · an operand has no link into the goal · or the figure itself
- * cannot be formed. Mirrors the producer's `NoBreakEven` (CEE #2270 @ 8dd6343b).
+ * cannot be formed. Mirrors the producer's `NoBreakEven` (CEE #2270 @ 401ea007).
  */
 export const GoalCertaintyNoBreakEvenSchema = z.enum(['not_an_identity', 'identity_not_evaluated', 'level_from_inputs', 'addends',
   'extra_goal_parent', 'operand_not_parent', 'no_exact_figure']);
