@@ -4043,6 +4043,9 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   // itself excluded on the same grounds: CEE-internal fact persistence, not a
   // cross-service wire format.
   'orchestrator/ConstraintVerdictSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/GoalCertaintyDecisionSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/GoalCertaintyBreakEvenSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/GoalCertaintyIdentityMismatchSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainFallbackReasonSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/RunAnalysisHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainResultHandlerFactSchema': ORCHESTRATOR_INTERNAL,

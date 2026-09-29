@@ -91,6 +91,10 @@ export type {
 // Per-handler result schemas (content of HandlerFact.result)
 export {
   RunAnalysisResultSchema,
+  GoalCertaintyDecisionSchema,
+  GoalCertaintyBreakEvenSchema,
+  GoalCertaintyNoBreakEvenSchema,
+  GoalCertaintyIdentityMismatchSchema,
   ExplainResultResultSchema,
   ExplainResultsResultSchema,
   ExplainFromStructureResultSchema,
