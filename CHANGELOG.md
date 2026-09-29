@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.64.0] — which options are COMPARED enters the analysis revision (`proposed_by`)
+
+**Why.** Construction now marks an option Olumi added with `proposed_by: 'olumi'` on its node (MG 5887738387). The Run's
+post-gate filter keeps such an option out of the ordinary comparison, and an approved "add to comparison" removes the
+mark (DL 5887489508 / 5887510885). MEASURED with CEE's `computeAnalysisAffectingGraphHash` at staging `0497e52e`
+(Canonical #72 5887528088): an authorship-only change to an option left the hash unchanged. So the Run that excluded
+the option would have kept reading CURRENT after the user adopted it.
+
+- `CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields` gains `proposed_by` (appended last). Projection version 3 → 4.
+- **No mass stale.** The field is absent on every graph with no Olumi-proposed option, and absent fields are not
+  projected, so those graphs keep their exact hash. A graph carrying the marker moves once when CEE re-vendors.
+- Contract DL 5887534233: one graph-only predicate for the Run filter and the hash projection (CEE
+  `context/olumi-proposed-option.ts`); the other authorship fields (`provenance`, `origin`, `label`) stay out.
+- Also ships the 0.63.0 adoption-manifest documentation fix below (PR Review on CEE #2279, 5884461512).
+
+### Earlier unreleased note, now shipped in 0.64.0
+
 - **Adoption manifest, documentation only** (PR Review on CEE #2279, 5884461512): `run_analysis.goal_certainty`'s
   `declared_in` now states the full unearned disjunction. EXACTLY ONE of `unsized_path` or `identity_mismatch`, and
   EXACTLY ONE of `break_even` or a typed `no_break_even`, matching the Zod rules and JSDoc published in 0.63.0. No

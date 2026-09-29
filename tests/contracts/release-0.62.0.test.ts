@@ -36,14 +36,15 @@ describe('0.62.0 · whose a value is enters the analysis revision', () => {
 
   it('RED: node scale_frame, nonlinear_identity and analysis_participation are hash inputs, appended after 0.61.0', () => {
     const fields: readonly string[] = CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields;
-    expect(fields.slice(10)).toEqual([
+    // 0.64.0 appends `proposed_by` after these (release-0.64.0.test.ts); this release's six keep their exact place.
+    expect(fields.slice(10, 16)).toEqual([
       'goal_threshold_frame', 'goal_direction', 'quantity_frame',
       'scale_frame', 'nonlinear_identity', 'analysis_participation',
     ]);
   });
 
-  it('RED: the projection version moves 2 → 3 (the module\'s own bump rule)', () => {
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(3);
+  it('RED: the projection version moves 2 → 3 (the module\'s own bump rule; 0.64.0 moves it on to 4)', () => {
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBeGreaterThanOrEqual(3);
   });
 
   it('RED: edge provenance source / magnitude and natural_effect.amount_unit are hash inputs (the placeholder predicate)', () => {
