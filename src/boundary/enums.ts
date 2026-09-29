@@ -309,6 +309,15 @@ export type EdgeStrengthDirectionIntentLiteral = z.infer<typeof EdgeStrengthDire
 export const EdgeStrengthEditIntent = z.enum(['set', 'confirm_current']);
 export type EdgeStrengthEditIntentLiteral = z.infer<typeof EdgeStrengthEditIntent>;
 
+/**
+ * 0.62.0 — `factor_value_edit.intent` (Shared Data row 1; AIQ #72 5881277231: R11 extends to nodes).
+ * `set` = the user states the figure (typed, even the same number): CEE stamps `observed_state.source: 'user_override'`,
+ * which is authorship and an analysis input. `confirm_current` = the user reviews Olumi's figure as-is: CEE keeps
+ * `source` and adds `observed_state.reviewed_by_user` — review, never authorship, and no analysis change.
+ */
+export const FactorValueEditIntent = z.enum(['set', 'confirm_current']);
+export type FactorValueEditIntentLiteral = z.infer<typeof FactorValueEditIntent>;
+
 // 0.34.0 — the verdict vocabulary for `edge_adjudication`. Transcribed from
 // the UI's `UserAction` union (DecisionGuideAI `canvas/domain/validation`)
 // MINUS `pending`: `pending` is the UNRESOLVED state, not a verdict — an event

@@ -1212,6 +1212,34 @@
       "notes": [
         "DECLARED 2026-09-28 (R3 SCIENCE ask #72 5873480886; wire 5872798858). Absence fails closed for a change_rel limit (census verdict `distinct`)."
       ]
+    },
+    {
+      "field": "factor_value_edit.intent",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::FactorValueEditEvent.intent (0.62.0) \u2014 'set' | 'confirm_current'; absent = set",
+      "producer": "ui \u2014 the canvas 'Looks right (keep as Olumi's estimate)' action sends confirm_current; typing sends set (Canvas); sent only after CEE vendors a 0.62.0 reader (strict union); NOT YET BUILT",
+      "consumer": "cee \u2014 factor_value_edit: confirm_current keeps observed_state.source and adds reviewed_by_user {intent:'confirm', at}; refuses a confirm whose value differs from the stored one; set stamps user_override (Canonical); NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-09-29 (Shared Data row 1: finding Canonical #72 5881225605, meaning AIQ 5881277231, order DL 5881332034). Before 0.62.0 a confirm-as-is and a typed figure were the same bytes, so CEE stamped user_override for both."
+      ]
+    },
+    {
+      "field": "observed_state.reviewed_by_user",
+      "declared_in": "schemas:src/graph.ts::ObservedStateSchema.reviewed_by_user (0.62.0) \u2014 {intent:'confirm', at} | {intent:'confirm_pairing', quote, at?}; strict, never authorship",
+      "producer": "cee \u2014 confirm_pairing: the #2235 node record (CEE #2258, merged 8519428, served-witnessed #72 5874890766); confirm: the factor_value_edit confirm_current writer (Canonical); NOT YET BUILT",
+      "consumer": "ui \u2014 the canvas/model provenance reads the server review instead of local autosave stamps (Panel); NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-09-29 (Shared Data row 1). NOT an analysis-hash input: a review changes no analysis meaning (R11; AIQ 5881277231). observed_state.source IS a hash input from 0.62.0 (projection version 3)."
+      ]
     }
   ]
 }

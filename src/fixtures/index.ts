@@ -373,6 +373,9 @@ export const maximalObservedState = deepFreeze({
   // 0.40.0 (PR4 evidence loop) — whose panel answer this value was applied
   // from. Ids only; the display label resolves at render from round data.
   elicited_from: maximalRoundParticipantRef,
+  // 0.62.0 — the user's review (Shared Data row 1). Maximal: every member populated. A review never carries
+  // authorship (the object is strict), so `source` above is untouched by it.
+  reviewed_by_user: { intent: 'confirm_pairing', at: '2026-09-29T00:00:00.000Z', quote: 'FIXTURE the figure as the user wrote it' },
   [PROBE]: true,
 });
 
@@ -2602,6 +2605,8 @@ const eventFactorValueEdit = deepFreeze({
   // participant's panel answer. CEE verifies the claim against its own
   // collab store before stamping provenance; the ref is identity-only.
   applied_from: maximalRoundParticipantRef,
+  // 0.62.0 — the act is stated: `set` = the user states the figure (a panel apply is one). Absent = set.
+  intent: 'set',
 });
 const eventChipClick = deepFreeze({ kind: 'chip_click', chip_id: 'fixture_chip_1' });
 const eventUndo = deepFreeze({ kind: 'undo' });

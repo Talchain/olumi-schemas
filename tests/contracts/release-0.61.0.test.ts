@@ -138,7 +138,8 @@ describe('0.61.0 · analysis-hash vocabulary: frame, direction and quantity move
   });
 
   it('RED: the projection version moves 1 → 2 (the module rule: bump on ANY nested inclusion change)', () => {
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(2);
+    // 0.62.0 moved it again (2 → 3, observed_state.source; release-0.62.0.test.ts pins the exact value).
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBeGreaterThanOrEqual(2);
   });
 
   it('APPEND-ONLY: the ten pre-0.61.0 node fields keep their exact order as the prefix', () => {

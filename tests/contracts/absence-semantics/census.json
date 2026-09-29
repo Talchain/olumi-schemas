@@ -63,9 +63,9 @@
     }
   },
   "counts": {
-    "distinct": 87,
-    "same": 34,
-    "unresolved": 415
+    "distinct": 88,
+    "same": 35,
+    "unresolved": 418
   },
   "open_objects": {
     "_doc": [
@@ -3724,6 +3724,42 @@
       ],
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.type`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `unresolved`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/SystemEventSchema|kind=factor_value_edit.intent": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.62.0 (Shared Data row 1; AIQ #72 5881277231). The field's own .describe() states it: \"`set` (or absent): the user states this figure\". Absence and 'set' select the same server behaviour (CEE stamps `user_override`), which is every pre-0.62.0 client's behaviour, so no consumer may treat absence as a confirm."
+    },
+    "root/ObservedStateSchema.reviewed_by_user": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.62.0 (Shared Data row 1). Absence means 'no server-recorded review' \u2014 every value before 0.62.0 and every value the user has not reviewed \u2014 and it NEVER means 'the user disagreed'. No value can express that state: any present record asserts a review act (`confirm` or `confirm_pairing`).",
+      "ref": "schema comment: src/graph.ts ObservedStateSchema.reviewed_by_user + ObservedStateReviewSchema (0.62.0)"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.reviewed_by_user": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.reviewed_by_user` (0.62.0). The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts); this field is inherited unchanged, so what its absence means on a receipt is the carrier's question, not this contract's."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.reviewed_by_user.at": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.reviewed_by_user` (0.62.0). The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts); this field is inherited unchanged, so what its absence means on a receipt is the carrier's question, not this contract's."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state.reviewed_by_user.quote": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `root/ObservedStateSchema.reviewed_by_user` (0.62.0). The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts); this field is inherited unchanged, so what its absence means on a receipt is the carrier's question, not this contract's."
     }
   }
 }

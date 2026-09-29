@@ -106,8 +106,17 @@ export type CanonicalGraphHashKeepKey =
  *
  * 2 (0.61.0, R1 S2): node `goal_threshold_frame`, `goal_direction` and
  * `quantity_frame` join the node vocabulary (see the list below).
+ *
+ * 3 (0.62.0, Shared Data row 1 — Canonical #72 5881225605, meaning AIQ 5881277231): `observed_state.source` joins
+ * `observed_state_fields`. WHOSE a value is decides the science: ISL derives the base/level owner from this literal
+ * and CEE's per-limit verdict reads `level_olumi_estimate` from it. Live on served CEE f79119b the same 3.2% moving
+ * cee_inference → user_override left the hash unchanged, so a Run whose verdict was `estimate_only` stayed CURRENT
+ * while a rerun gave `scored`. The literal is hashed as stored (fail closed: a move between two user-class literals
+ * over-stales once, never under-stales). `reviewed_by_user` is deliberately NOT a hash input: a review changes no
+ * analysis meaning (R11). ⚠ ONE-TIME MOVE: every stored graph with a stamped `source` rehashes, so each existing
+ * analysis reads STALE once — ride the same CEE re-vendor as version 2 so the hash moves once.
  */
-export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 2 as const;
+export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 3 as const;
 
 /**
  * The exact nested fields retained by the canonical analysis graph hash.
@@ -156,7 +165,8 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'goal_direction',
       'quantity_frame',
     ],
-    observed_state_fields: ['value', 'baseline', 'cap'],
+    // 0.62.0 — `source` appended (projection version 3); see the version comment above.
+    observed_state_fields: ['value', 'baseline', 'cap', 'source'],
     prior_fields: ['distribution', 'range_min', 'range_max'],
     interventions_field: 'interventions',
   },

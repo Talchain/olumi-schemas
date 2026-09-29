@@ -5,6 +5,38 @@ All notable changes to `@talchain/schemas` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.62.0] — Shared Data row 1: whose a value is enters the analysis revision; a confirm is REVIEW, not authorship
+
+**Why.** Live on served CEE `f79119b` (Canonical #72 5881225605): the churn estimate 3.2% moved `cee_inference` →
+`user_override` with the value unchanged; the analysis hash did not move, so a Run whose limit verdict was
+`estimate_only` stayed CURRENT while a rerun on the same hash gave `scored`. And a canvas "confirm as-is" was the same
+bytes as a typed figure, so CEE stamped authorship for a review. Meaning AI Quality #72 5881277231 (R11 extends to
+nodes: confirm = review; `source` in the hash YES, `reviewed_by_user` NO); order Delivery Lead #72 5881332034.
+
+**⚠ NOT additive for the analysis hash** (as 0.61.0): once CEE hashes `source`, every stored graph with a stamped
+source rehashes and each existing analysis reads STALE once. Ride the SAME CEE re-vendor as 0.61.0's projection
+version 2 so the hash moves once. **⚠ READER-FIRST for `intent`**: `FactorValueEditEvent` is `.strict()`, so a CEE
+pinned ≤0.61.0 rejects a turn carrying it. Order: publish → CEE re-vendors + deploys the reader → then the UI sends it.
+
+### Added
+- `CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.observed_state_fields` appends **`source`**;
+  **`CANONICAL_GRAPH_HASH_PROJECTION_VERSION` 2 → 3** (the constant's own bump rule). `unit`, `raw_value`,
+  `extractionType`, `elicited_from` and `reviewed_by_user` stay out.
+- **`FactorValueEditIntent`** = `'set' | 'confirm_current'` (exported from `./boundary`) and
+  **`factor_value_edit.intent`** (optional; ABSENT = `set`, today's behaviour). `confirm_current` = review of Olumi's
+  current figure: CEE keeps `observed_state.source`, adds `reviewed_by_user`, and refuses a confirm whose value differs.
+- **`ObservedStateReviewSchema`** and **`ObservedStateSchema.reviewed_by_user`** (optional, strict):
+  `{intent: 'confirm', at}` (a confirm-as-is) or `{intent: 'confirm_pairing', quote, at?}` (CEE #2258's approved
+  figure→factor pairing). Never authorship: no `source` member; not a hash input.
+- Adoption rows `factor_value_edit.intent`, `observed_state.reviewed_by_user` (`declared`). Absence census: `intent`
+  (`same`: absent = set), `reviewed_by_user` (`distinct`: absent = no server-recorded review), its receipt-carrier view
+  (`unresolved` ×3); counts distinct 87 → 88, same 34 → 35, unresolved 415 → 418.
+- Maximal fixtures populate `reviewed_by_user` and `intent`. Release test `tests/contracts/release-0.62.0.test.ts`.
+
+### Changed (meaning stated, not changed)
+- `tests/contracts/release-0.61.0.test.ts` pins the projection version as ≥ 2 (0.62.0 pins 3);
+  `canonical-committed-graph-receipt-0.43.test.ts` pins version 3 and the new vocabulary.
+
 ## [0.61.0] — R1: one typed goal/limit target contract (frame values, node quantity, hash vocabulary)
 
 **Additive on the wire.** Two enum values APPENDED to `GoalThresholdFrame`, one OPTIONAL node member, three names
