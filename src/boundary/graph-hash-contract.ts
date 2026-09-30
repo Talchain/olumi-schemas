@@ -141,8 +141,15 @@ export type CanonicalGraphHashKeepKey =
  * "add to comparison" would have left the Run that excluded the option reading CURRENT. Hashed as stored. ⚠ NO MASS
  * STALE: the field is absent on every graph with no Olumi-proposed option, and absent fields are not projected, so those
  * graphs keep their exact hash; only a graph carrying the marker moves, once.
+ *
+ * 5 (0.66.0, TEMPORAL S2 — #75 5914193872; engine: ISL #216, PLoT #424): intervention `range` joins
+ * `intervention.fields`. An option's stated range for a value it sets ({low, high, meaning}, raw units) now decides
+ * that option's chance of meeting a limit on that value, so editing "5–20 days" to "5–30 days" must move the revision;
+ * otherwise the old chance reads as CURRENT. Hashed as stored, on the intervention it qualifies. ⚠ NO MASS STALE: the
+ * field is absent on every intervention without a stated range, and absent fields are not projected, so only a graph
+ * carrying a range moves, once.
  */
-export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 4 as const;
+export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 5 as const;
 
 /**
  * The exact nested fields retained by the canonical analysis graph hash.
@@ -225,7 +232,7 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
     },
   },
   intervention: {
-    fields: ['value', 'value_type', 'encoding_map'],
+    fields: ['value', 'value_type', 'encoding_map', 'range'],
     target_match_field: 'target_match',
     target_match_fields: ['node_id'],
   },

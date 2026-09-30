@@ -106,6 +106,8 @@ export {
   DetailLevel,
   ConfidenceLevel,
   OptionForAnalysisSchema,
+  InterventionRangeSchema,
+  InterventionRangeMeaning,
   AnalysisReadyV3Schema,
   AnalysisRequestIdChainSchema,
   DraftGraphTraceSchema,

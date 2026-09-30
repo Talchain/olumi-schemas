@@ -279,7 +279,10 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.62.0 (+1): root/ObservedStateReviewSchema — the review record is a
     //   discriminated union; the maximal observed state carries the
     //   `confirm_pairing` variant, and this entry exercises `confirm`.
-    expect(MAXIMAL_FIXTURES.length).toBe(204);
+    // 0.66.0 (+1): root/InterventionRangeSchema — an option's stated range for a
+    //   value it sets (TEMPORAL S1). Flat and every field REQUIRED, so maximal by
+    //   construction.
+    expect(MAXIMAL_FIXTURES.length).toBe(205);
   });
 
   it('family keys are unique', () => {

@@ -87,6 +87,7 @@ import {
   CausalClaimsArraySchema,
   // analysis
   OptionForAnalysisSchema,
+  InterventionRangeSchema,
   AnalysisReadyV3Schema,
   AnalysisRequestIdChainSchema,
   DraftGraphTraceSchema,
@@ -551,6 +552,14 @@ export const maximalCausalClaimsArray = deepFreeze([
 // Analysis family (root)
 // ----------------------------------------------------------------------------
 
+export const maximalInterventionRange = deepFreeze({
+  low: 40,
+  high: 75,
+  meaning: 'likely_range',
+  source: 'brief_extraction',
+  source_quote: 'FIXTURE between 40 and 75, most likely',
+});
+
 export const maximalOptionForAnalysis = deepFreeze({
   id: ID_OPTION_A,
   label: LABEL_OPTION_A,
@@ -562,6 +571,7 @@ export const maximalOptionForAnalysis = deepFreeze({
     fixture_factor_flag: true,
     fixture_factor_level: 'FIXTURE_high',
   },
+  intervention_ranges: { [ID_FACTOR]: maximalInterventionRange },
   [PROBE]: true,
 });
 
@@ -3150,6 +3160,7 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   },
   // --- analysis ---------------------------------------------------------------
   { family: 'root/OptionForAnalysisSchema', schema: OptionForAnalysisSchema, fixture: maximalOptionForAnalysis },
+  { family: 'root/InterventionRangeSchema', schema: InterventionRangeSchema, fixture: maximalInterventionRange },
   { family: 'root/AnalysisReadyV3Schema', schema: AnalysisReadyV3Schema, fixture: maximalAnalysisReadyV3 },
   {
     family: 'root/AnalysisRequestIdChainSchema',

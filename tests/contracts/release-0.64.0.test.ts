@@ -25,7 +25,8 @@ describe('0.64.0 · which options are compared enters the analysis revision', ()
   });
 
   it('RED: the projection version moves 3 → 4 (the module\'s own bump rule)', () => {
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(4);
+    // A later release may bump again (0.66.0 → 5, TEMPORAL S2); this release's move is 3 → 4, so ≥ 4 holds.
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBeGreaterThanOrEqual(4);
   });
 
   it('APPEND-ONLY: every pre-0.64.0 node field keeps its exact order as the prefix', () => {
