@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 100,
-    "same": 34,
+    "same": 36,
     "unresolved": 417
   },
   "open_objects": {
@@ -3153,7 +3153,7 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Never present on 'excluded_olumi_proposed' (superRefine). On 'kept_olumi_provisional': present (>=1) when the gate excluded the user's own option(s) — which ones; ABSENT when the user named fewer than two options and nothing was excluded (Runtime 5888591648), so absence must never be said as 'could not be analysed'.",
+      "note": "Never present on 'excluded_olumi_proposed' (superRefine). On 'kept_olumi_provisional': present (>=1) when the gate excluded the user's own option(s) \u2014 which ones; ABSENT when the user named fewer than two options and nothing was excluded (Runtime 5888591648), so absence must never be said as 'could not be analysed'.",
       "ref": "src/orchestrator/handler-results.ts \u2014 OptionParticipationEntrySchema / RunAnalysisResultSchema.option_participation (0.65.0)"
     },
     "orchestrator/RunAnalysisResultSchema.option_participation": {
@@ -3499,6 +3499,14 @@
       ],
       "verdict": "unresolved"
     },
+    "root/InterventionRangeSchema.source_quote": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "One state only: an empty quote is refused (min 1), so absence is the single way to say no quote was recorded. Authorship never rides on it: `source` is required and carries the author, so an absent quote cannot make an Olumi range read as the user's (AIQ 5914222384).",
+      "ref": "src/analysis.ts - InterventionRangeSchema doc comment (0.66.0)"
+    },
     "root/ObservedStateSchema.baseline": {
       "markers": [
         "optional"
@@ -3566,6 +3574,14 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "root/OptionForAnalysisSchema.intervention_ranges": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Absence means the user stated no range for any factor this option sets, which is exactly what an empty record says: the option is scored at its point, as before 0.66.0. No discriminator is needed. A factor in `interventions` with no range entry means the same for that factor.",
+      "ref": "src/analysis.ts - OptionForAnalysisSchema.intervention_ranges (0.66.0, TEMPORAL S1)"
     },
     "root/PlotCeeUpstreamEnvelopeSchema.elapsed_ms": {
       "markers": [

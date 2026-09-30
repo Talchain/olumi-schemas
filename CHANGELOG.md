@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.66.0] — an option's stated RANGE for a value it sets, and editing it moves the analysis revision (TEMPORAL S1/S2)
+
+**Why.** Every option's value was one number, so a time limit ("keep migration downtime within 14 days") scored exactly
+100% or 0%. ISL #216 now samples an option's stated range and PLoT #424 forwards it, failing closed without ISL's echo;
+both are merged on staging. The contract did not carry the range, and the analysis hash could not see it: changing
+"5–20 days" to "5–30 days" would have left the Run reading CURRENT. Placement: olumi-programme-docs #75 5914193872.
+
+- **S1 (additive).** `InterventionRangeSchema = {low, high, meaning, source, source_quote?}` is `.strict()`, with
+  `low > 0`, `high > low`, both finite, in RAW units (the value's `raw_value` unit, never normalised; R3 5914230653 (1)).
+  `OptionForAnalysisSchema.intervention_ranges?: Record<factor_id, InterventionRange>`. Absent means no range stated
+  (census `same`).
+  - `meaning` is **enumerated** (R3 (3)): `likely_range | min_max | at_most | at_least`. ISL samples only
+    `likely_range`, read as the quartiles of a lognormal (R3 5911436566). The hard-bound meanings are carried so the
+    engine refuses them by name rather than misreading them.
+  - **The range carries its own author** (AIQ 5914222384). `source` is required, with the `OBSERVED_STATE_SOURCE_LITERALS`
+    vocabulary (the wire stays `z.string()`, as there), plus the optional `source_quote`. So an Olumi-proposed range can
+    never inherit the value's user authorship.
+  - Producer rule (R3 (2), CEE writer): refuse a range that does not contain the value (`low ≤ raw_value ≤ high`).
+- **S2 (hash vocabulary).** `intervention.fields` gains `range` (appended last), and `CANONICAL_GRAPH_HASH_PROJECTION_VERSION`
+  moves 4 → 5. It is hashed as stored, on the intervention it qualifies. **No mass stale:** absent fields are not
+  projected, so only a graph carrying a range moves, once. CEE's hand-listed `projectIntervention` must add `range` in
+  the consumer PR, or the vocabulary change moves no hash.
+- Adoption: `analysis_ready.options[].intervention_ranges` is `declared`. The CEE producer (extractor rung, writer, ask)
+  and the CEE hash change are not yet built.
+- Tests: `tests/contracts/release-0.66.0.test.ts` (15 rows; RED at 0.65.0). The 0.43 vocabulary pin and the 0.64
+  version pin were updated (the 0.64 pin now reads ≥ 4). The maximal fixture registry is 204 → 205.
+
 ## [0.65.0] — which options the Run LEFT OUT of the ordinary comparison, and why (`option_participation`)
 
 **Why.** An option Olumi added (`proposed_by: 'olumi'`, 0.64.0) is kept out of the ordinary comparison by the Run's

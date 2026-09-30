@@ -6,6 +6,37 @@ export const DetailLevel = z.enum(['quick', 'standard', 'deep']);
 export const ConfidenceLevel = z.enum(['high', 'medium', 'low']);
 export type ConfidenceLevelType = z.infer<typeof ConfidenceLevel>;
 
+/**
+ * 0.66.0 (TEMPORAL S1): what a stated range MEANS. R3 #75 5914230653 (3): enumerated. `likely_range` is the only meaning
+ * ISL samples (the fitted QUARTILES of a lognormal, ISL RATIFIED_COVERAGE 0.5, R3 5911436566). The others are hard bounds
+ * ("between X and Y at the outside", "at most", "at least"): carried so the engine refuses them BY NAME, never misreads
+ * them as quartiles (AIQ 5911370944).
+ */
+export const InterventionRangeMeaning = z.enum(['likely_range', 'min_max', 'at_most', 'at_least']);
+
+/**
+ * 0.66.0 (TEMPORAL S1): an option's stated RANGE for a value it sets, in RAW units: the SAME unit as the value's
+ * `raw_value`, never normalised (R3 5914230653 (1)). Positive support: a duration-like quantity.
+ *
+ * ⚠ THE RANGE CARRIES ITS OWN AUTHOR (AIQ 5914222384). `source` is required: an Olumi-proposed "3–6 weeks" must never
+ * inherit the value's user authorship and read as the user's range. Its vocabulary is `OBSERVED_STATE_SOURCE_LITERALS`
+ * (graph.ts), and the wire field stays `z.string()` for the same reason given there. `source_quote` is the user's words
+ * when the user stated it.
+ *
+ * Producer rule (R3 (2), not expressible here): the writer REFUSES a range that does not contain the option's value
+ * (`low ≤ raw_value ≤ high`).
+ */
+export const InterventionRangeSchema = z
+  .object({
+    low: z.number().finite().positive(),
+    high: z.number().finite(),
+    meaning: InterventionRangeMeaning,
+    source: z.string().min(1),
+    source_quote: z.string().min(1).optional(),
+  })
+  .strict()
+  .refine((r) => r.high > r.low, { message: 'high must exceed low', path: ['high'] });
+
 export const OptionForAnalysisSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -13,6 +44,8 @@ export const OptionForAnalysisSchema = z.object({
   status: ProductReadiness,
   interventions: z.record(z.string(), z.number()),
   raw_interventions: z.record(z.string(), z.union([z.number(), z.string(), z.boolean()])).optional(),
+  /** 0.66.0 (TEMPORAL S1): per factor the option sets, the user's stated range. Absent = no range stated. */
+  intervention_ranges: z.record(z.string(), InterventionRangeSchema).optional(),
 }).passthrough();
 
 export const AnalysisReadyV3Schema = z.object({

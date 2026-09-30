@@ -1254,6 +1254,20 @@
       "notes": [
         "DECLARED 2026-09-29 (DL #72 5882763151: Canonical owns the stored-Run schema after the 0.62 consumer; producer MG; meaning AIQ 5882366427 + R3 5882389030; proposal Canonical 5883126969)."
       ]
+    },
+    {
+      "field": "analysis_ready.options[].intervention_ranges",
+      "declared_in": "schemas:src/analysis.ts::OptionForAnalysisSchema.intervention_ranges + InterventionRangeSchema (0.66.0) - per factor the option sets, the stated range {low, high, meaning (enum), source (its OWN author), source_quote?} in raw units; hash input as intervention `range` (graph-hash-contract projection v5)",
+      "producer": "cee - the TEMPORAL CEE hop (extractor rung + writer + the 'each option's downtime range?' ask); NOT YET BUILT. Engine halves served on staging: ISL #216 (reader, samples `likely_range` as lognormal quartiles), PLoT #424 (forward + fail-closed without ISL's echo)",
+      "consumer": "plot /v2/run options[].intervention_ranges (PLoT #424, merged) -> ISL InterventionOption.intervention_ranges (ISL #216, merged); CEE analysis hash (projectIntervention must hash `range`) - NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-09-30 (TEMPORAL S1/S2, olumi-programme-docs #75 5914193872; science R3 5911436566; words AIQ 5912321226). Absence = no range stated (census verdict `same`)."
+      ]
     }
   ]
 }
