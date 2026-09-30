@@ -804,6 +804,46 @@ export type GoalThresholdFrameType = z.infer<typeof GoalThresholdFrame>;
 export const QuantityFrame = z.enum(['level', 'change']);
 export type QuantityFrameType = z.infer<typeof QuantityFrame>;
 
+/**
+ * 0.67.0 additive (MG; PTL "A" — Paul's funding brief; proposal P0 SHARED DATA #75 5914707462; meaning AIQ 5914471584 /
+ * 5914731075). WHICH UNIT a node's quantity is read in, and WHO read it.
+ *
+ * - `unit`: the unit as read ("GBP", "hours/week").
+ * - `source`: `olumi_reading` (Olumi read it from context, e.g. a funding goal typed in GBP because the brief speaks of
+ *   £1–2m deals) or `user_stated` (the user wrote the unit for this quantity).
+ * - `source_quote`: the exact, non-empty words the reading rests on.
+ *
+ * ⛔ A unit is a READING, never a figure: it carries no value, level, target or cap, and it never makes a goal
+ * target-testable or permits a chance or a currency mean on its own (AIQ 5914471584). Absence means UNATTESTED: nobody
+ * has recorded which unit this quantity is in. The object is closed, so a value cannot ride on it.
+ */
+export const UnitReadingSource = z.enum(['olumi_reading', 'user_stated']);
+export type UnitReadingSourceType = z.infer<typeof UnitReadingSource>;
+export const UnitReadingSchema = z.object({
+  unit: z.string().min(1).max(40),
+  source: UnitReadingSource,
+  source_quote: z.string().min(1).max(500),
+}).strict();
+export type UnitReading = z.infer<typeof UnitReadingSchema>;
+
+/**
+ * 0.67.0 additive (MG; CEE #2357, the stable entity references its graph writers already persist). A node's display
+ * reference — `G1`, `O2`, `F3`, `OC1`, `R1`, `D1`, `A1` — that NEVER renumbers and is NEVER reused, so an old
+ * reference ("O2") can never come to name a different entity. The prefix is fixed by `kind`
+ * (goal G · option O · factor F · outcome OC · risk R · decision D · action A); the number is a safe positive integer
+ * of at most 9 digits. Display identity only: CEE hashes it into the graph IDENTITY hash and keeps it OUT of the
+ * analysis projection (`boundary/graph-hash-contract.ts` is unchanged), so writing refs never makes a Run stale.
+ * Absence means no ref was issued (a graph from before refs; there is no backfill).
+ */
+export const ENTITY_REF_PATTERN = /^(OC|G|O|F|R|D|A)[1-9][0-9]{0,8}$/;
+export const EntityRefSchema = z.string().regex(ENTITY_REF_PATTERN);
+/**
+ * 0.67.0 additive (MG; CEE #2357). The highest ref number ever issued, per prefix, so a retired ref is never
+ * reissued. A counter, not content: CEE keeps it out of both the identity and the analysis hash. Absence means no
+ * ref has been issued on this graph.
+ */
+export const RefHighWaterSchema = z.record(z.string(), z.number().int().nonnegative().max(999_999_999));
+
 export const NodeV3Schema = z.object({
   id: z.string().min(1).max(100).regex(NODE_ID_PATTERN),
   kind: NodeKind,
@@ -826,6 +866,10 @@ export const NodeV3Schema = z.object({
    * `QuantityFrame` above. Absent means `level`. Olumi's reading, disclosed.
    */
   quantity_frame: QuantityFrame.optional(),
+  /** 0.67.0 additive (MG). Stable display reference — see `EntityRefSchema`. */
+  ref: EntityRefSchema.optional(),
+  /** 0.67.0 additive (MG). Which unit this quantity is read in, and who read it — see `UnitReadingSchema`. */
+  unit_reading: UnitReadingSchema.optional(),
 }).passthrough();
 
 export const StrengthSchema = z.object({
@@ -852,6 +896,8 @@ export const EdgeV3Schema = z.object({
 export const GraphV3Schema = z.object({
   nodes: z.array(NodeV3Schema),
   edges: z.array(EdgeV3Schema),
+  /** 0.67.0 additive (MG). The ref counter per prefix — see `RefHighWaterSchema`. */
+  ref_high_water: RefHighWaterSchema.optional(),
 }).passthrough();
 
 export const TopologyPlanSchema = z.array(z.string());

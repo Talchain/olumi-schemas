@@ -21,6 +21,12 @@ export {
   DECLARED_SCALE_BOUNDS,
   // 0.61.0 additive — R1: what a node's value measures (level | change).
   QuantityFrame,
+  // 0.67.0 additive — MG: a node's unit reading (who read which unit), and stable entity refs.
+  UnitReadingSource,
+  UnitReadingSchema,
+  ENTITY_REF_PATTERN,
+  EntityRefSchema,
+  RefHighWaterSchema,
   // 0.40.0 additive — PR4 evidence loop: the declared observed_state.source
   // vocabulary (consumer-side; the wire field stays z.string()).
   OBSERVED_STATE_SOURCE_LITERALS,
@@ -45,6 +51,9 @@ export type {
   KnownObservedStateSourceLiteral,
   // 0.61.0 additive.
   QuantityFrameType,
+  // 0.67.0 additive.
+  UnitReadingSourceType,
+  UnitReading,
 } from './graph.js';
 
 // 0.40.0 (PR4 evidence loop) — the shared {round_id, participant_id}

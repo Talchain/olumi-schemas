@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.67.0] — a node's UNIT READING (who read which unit), and STABLE ENTITY REFS (MG)
+
+**Why.** Paul's funding brief (PTL "A") speaks of "deals between £1-2 million", so Olumi can read the funding goal in
+GBP. But no carrier could say that the unit is Olumi's READING and not a figure the user gave, so the reading either
+stayed unwritten or would have read as the user's. And CEE #2357's graph writers persist stable entity references
+(`O2` never renumbers and is never reused) that the contract did not declare.
+
+- **`NodeV3Schema.unit_reading` (additive).** `UnitReadingSchema = {unit, source: olumi_reading | user_stated,
+  source_quote}` is `.strict()`, and every member is required (`source_quote` non-empty). A unit is a READING, never a
+  figure: it carries no value, level, target or cap, and on its own it never makes a goal target-testable or permits a
+  chance or a currency mean (AIQ 5914471584). Absent means UNATTESTED (census `same`: the closed object has no empty
+  form). Proposal P0 SHARED DATA #75 5914707462; meaning AIQ 5914731075; name MG 5914771697. Producer: CEE construction
+  and its stripping NodeV3 twin (`src/schemas/cee-v3.ts`), not yet built.
+- **`NodeV3Schema.ref` + `GraphV3Schema.ref_high_water` (additive).** `ENTITY_REF_PATTERN = /^(OC|G|O|F|R|D|A)[1-9][0-9]{0,8}$/`,
+  the prefix fixed by `kind`; the counter is a per-prefix record of safe integers (≤ 999,999,999). Identity only: CEE
+  hashes `ref` into the graph IDENTITY hash and keeps both out of the analysis projection. **No analysis hash input
+  changes** (`graph-hash-contract.ts` untouched; projection stays v5). Absent means no ref issued; there is no backfill
+  (census `same`). Producer: CEE #2357 (in review).
+- **Not in this release:** typed intervention `kind` (MG's SC-24 forward contract) ships with its CEE resolution seam, so
+  A is not held for C.
+- Release test `release-0.67.0.test.ts` (30 rows; mutant "undeclare the three carriers" turns 17 RED). Fixture registry
+  205 → 208; census +3 `same` and +3 receipt-view `unresolved` rows; adoption rows `declared`.
+
 ## [0.66.0] — an option's stated RANGE for a value it sets, and editing it moves the analysis revision (TEMPORAL S1/S2)
 
 **Why.** Every option's value was one number, so a time limit ("keep migration downtime within 14 days") scored exactly
