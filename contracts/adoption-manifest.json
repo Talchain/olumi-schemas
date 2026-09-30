@@ -1268,6 +1268,48 @@
       "notes": [
         "DECLARED 2026-09-30 (TEMPORAL S1/S2, olumi-programme-docs #75 5914193872; science R3 5911436566; words AIQ 5912321226). Absence = no range stated (census verdict `same`)."
       ]
+    },
+    {
+      "field": "graph.nodes[].unit_reading",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.unit_reading + UnitReadingSchema (0.67.0) - {unit, source: olumi_reading | user_stated, source_quote}, closed; a READING of which unit a quantity is in and who read it, never a value, level, target or cap",
+      "producer": "cee - construction (Constructor B source-first, contextual GBP for Paul's funding goal) + CEE's stripping NodeV3 twin (src/schemas/cee-v3.ts); NOT YET BUILT",
+      "consumer": "ui canvas + CEE Agent authority reader (show the unit as Olumi's reading until the user states it); NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-09-30 (PTL A; proposal P0 SHARED DATA #75 5914707462; meaning AIQ 5914471584 + 5914731075; name MG 5914771697). Absence = unattested (census verdict `same`: the closed object has no empty form). It never makes a goal target-testable on its own."
+      ]
+    },
+    {
+      "field": "graph.nodes[].ref",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.ref + EntityRefSchema/ENTITY_REF_PATTERN (0.67.0) - a stable display reference (G1, O2, F3, OC1, R1, D1, A1), never renumbered, never reused; identity-hash only, not an analysis hash input",
+      "producer": "cee - graph writers assign refs before they hash (orchestrator-v5/graph/entity-refs.ts; CEE #2357, in review)",
+      "consumer": "ui canvas + Agent references (read the stored ref, never recompute a number); NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-09-30 (PTL #77 5909519622 s2; DL lease 5909544405; AIQ 5909556023 / 5909608045 / 5909721329; release train DL 5914474485). Absence = no ref issued; no backfill (census verdict `same`)."
+      ]
+    },
+    {
+      "field": "graph.ref_high_water",
+      "declared_in": "schemas:src/graph.ts::GraphV3Schema.ref_high_water + RefHighWaterSchema (0.67.0) - the highest ref number ever issued per prefix; a counter, not content (out of both hashes)",
+      "producer": "cee - the same writers as graph.nodes[].ref (CEE #2357, in review)",
+      "consumer": "cee - the allocator itself (never reissue a number at or below it); no UI reader",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-09-30 with graph.nodes[].ref. Absence = no ref issued (census verdict `same`); the allocator also reads every node ref, so dropping the key never lowers a number."
+      ]
     }
   ]
 }

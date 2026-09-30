@@ -69,6 +69,9 @@ import {
   PriorSchema,
   StateSpaceSchema,
   NodeV3Schema,
+  UnitReadingSchema,
+  EntityRefSchema,
+  RefHighWaterSchema,
   StrengthSchema,
   EdgeV3Schema,
   GraphV3Schema,
@@ -398,6 +401,13 @@ export const maximalStateSpace = deepFreeze({
   [PROBE]: true,
 });
 
+export const maximalUnitReading = deepFreeze({
+  // 0.67.0 (MG) — closed object: known keys only.
+  unit: 'GBP',
+  source: 'olumi_reading',
+  source_quote: 'FIXTURE deals between £1-2 million',
+});
+
 export const maximalNodeV3 = deepFreeze({
   id: ID_FACTOR,
   kind: 'factor',
@@ -416,6 +426,9 @@ export const maximalNodeV3 = deepFreeze({
   // 0.61.0 (R1) — what the node's value measures. `level` is what every node
   // is today (absent means the same), so it models current behaviour honestly.
   quantity_frame: 'level',
+  // 0.67.0 (MG) — a stable display reference, and the unit this quantity is read in.
+  ref: 'F1',
+  unit_reading: maximalUnitReading,
   [PROBE]: true,
 });
 
@@ -480,6 +493,8 @@ export const maximalGraphV3 = deepFreeze({
       label: 'FIXTURE_option_lifts_demand',
     },
   ],
+  // 0.67.0 (MG) — the ref counter: the maximal factor holds F1.
+  ref_high_water: { F: 1 },
   [PROBE]: true,
 });
 
@@ -3125,6 +3140,9 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'root/PriorSchema', schema: PriorSchema, fixture: maximalPrior },
   { family: 'root/StateSpaceSchema', schema: StateSpaceSchema, fixture: maximalStateSpace },
   { family: 'root/NodeV3Schema', schema: NodeV3Schema, fixture: maximalNodeV3 },
+  { family: 'root/UnitReadingSchema', schema: UnitReadingSchema, fixture: maximalUnitReading },
+  { family: 'root/EntityRefSchema', schema: EntityRefSchema, fixture: 'F1' },
+  { family: 'root/RefHighWaterSchema', schema: RefHighWaterSchema, fixture: deepFreeze({ F: 1 }) },
   { family: 'root/StrengthSchema', schema: StrengthSchema, fixture: maximalStrength },
   { family: 'root/EdgeV3Schema', schema: EdgeV3Schema, fixture: maximalEdgeV3 },
   {

@@ -50,12 +50,18 @@ export const CANONICAL_GRAPH_HASH_FUNCTION_NAME = 'computeCanonicalGraphHash' as
 export const CANONICAL_GRAPH_HASH_GRAPHV3_FIELDS = ['nodes', 'edges'] as const;
 
 /**
- * GraphV3 top-level fields DELIBERATELY excluded from the hash. Currently NONE
- * — both `nodes` and `edges` are analysis-affecting. Present so the
+ * GraphV3 top-level fields DELIBERATELY excluded from the hash. Present so the
  * classification test can assert `keep ∪ excluded == every GraphV3 field`; an
  * excluded entry that no longer names a real field is rejected as stale.
+ *
+ * - `ref_high_water` (0.67.0, MG): the stable-ref COUNTER — the highest ref
+ *   number ever issued per prefix, so a retired ref is never reissued. A counter,
+ *   not content: it changes no figure the analysis computes, and CEE keeps it out
+ *   of both its identity and its analysis hash (a restore that raises it still
+ *   binds to the restored version). Hashing it would mark a Run stale when no
+ *   input moved.
  */
-export const GRAPH_HASH_EXCLUDED_GRAPHV3_FIELDS = [] as const;
+export const GRAPH_HASH_EXCLUDED_GRAPHV3_FIELDS = ['ref_high_water'] as const;
 
 /**
  * The analysis-state fields carried ALONGSIDE the graph (not on GraphV3 itself

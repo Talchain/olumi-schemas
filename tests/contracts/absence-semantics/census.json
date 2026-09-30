@@ -64,8 +64,8 @@
   },
   "counts": {
     "distinct": 100,
-    "same": 36,
-    "unresolved": 417
+    "same": 39,
+    "unresolved": 420
   },
   "open_objects": {
     "_doc": [
@@ -2364,6 +2364,30 @@
       "note": "0.61.0 (R1 S2). The contract states it outright: \"ABSENT MEANS `level`. The parser never fabricates the key.\" (QuantityFrame doc comment) and \"Absent means `level`.\" (the field comment). Absence and 'level' therefore select the same reading - the node's value is an amount on its own scale, which is what every node before 0.61.0 is - so no consumer can be misled by treating them alike. Only 'change' is a different claim, and it is always explicit. Contrast goal_threshold_frame (distinct): there absence means UNATTESTED and fails closed; here absence is the documented default reading, not a missing attestation.",
       "ref": "src/graph.ts - QuantityFrame doc comment + NodeV3Schema.quantity_frame (0.61.0, R1; design MG #72 5871257542, ruling DL #72 5871412823)"
     },
+    "boundary/NodeV3Schema.ref": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.67.0 (MG; CEE #2357). One state only: an empty or malformed ref is refused (ENTITY_REF_PATTERN), so absence is the single way to say no ref was issued to this entity (a graph from before refs; there is no backfill). No consumer can read absence as a different entity: a ref only ever names the node that carries it.",
+      "ref": "src/graph.ts - EntityRefSchema doc comment + NodeV3Schema.ref (0.67.0)"
+    },
+    "boundary/NodeV3Schema.unit_reading": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.67.0 (MG; P0 SHARED DATA 5914707462, AIQ 5914471584). One state only: the object is closed and every member is required (unit, source, a non-empty source_quote), so it has no empty or default form; absence is the single way to say UNATTESTED - nobody has recorded which unit this quantity is in. It carries no value, so neither state can move a figure.",
+      "ref": "src/graph.ts - UnitReadingSchema doc comment (0.67.0)"
+    },
+    "boundary/GraphV3Schema.ref_high_water": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.67.0 (MG; CEE #2357). Absence and an empty record say the same thing - no ref has been issued on this graph. The counter can never be lowered by its absence: CEE's allocator takes the larger of the counter and every ref the graph's nodes hold (orchestrator-v5/graph/entity-refs.ts combinedHighWater), so a graph that drops the key still never reissues a number.",
+      "ref": "src/graph.ts - RefHighWaterSchema doc comment + GraphV3Schema.ref_high_water (0.67.0)"
+    },
     "boundary/NodeV3Schema.observed_state": {
       "markers": [
         "optional"
@@ -3751,6 +3775,27 @@
       ],
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.quantity_frame`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].ref": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.ref`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].unit_reading": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.unit_reading`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.ref_high_water": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/GraphV3Schema.ref_high_water`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
     },
     "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].observed_state": {
       "markers": [

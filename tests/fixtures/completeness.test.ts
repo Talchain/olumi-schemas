@@ -282,7 +282,10 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.66.0 (+1): root/InterventionRangeSchema — an option's stated range for a
     //   value it sets (TEMPORAL S1). Flat and every field REQUIRED, so maximal by
     //   construction.
-    expect(MAXIMAL_FIXTURES.length).toBe(205);
+    // 0.67.0 (+3): root/UnitReadingSchema (closed, every field REQUIRED), and
+    //   root/EntityRefSchema + root/RefHighWaterSchema (a ref string and the
+    //   per-prefix counter record) — MG, unit readings and stable entity refs.
+    expect(MAXIMAL_FIXTURES.length).toBe(208);
   });
 
   it('family keys are unique', () => {
