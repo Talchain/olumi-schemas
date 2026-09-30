@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 127,
+    "distinct": 124,
     "same": 52,
     "unresolved": 420
   },
@@ -2561,22 +2561,6 @@
       "note": "null = the input did not exist on the prior Run (change 'added'). Bound to `change` by refineRunDeltaInputChange: 'added' requires null, every other change requires a value.",
       "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
     },
-    "boundary/OlumiResponseSchema.run_delta.input_changes[].kind_after": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "distinct",
-      "note": "Absent = the current Run was sent no typed intervention kind (MG 0.68.0 absent = today's absolute meaning, displayed as such). Carried verbatim only when sent; never inferred.",
-      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
-    },
-    "boundary/OlumiResponseSchema.run_delta.input_changes[].kind_before": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "distinct",
-      "note": "Absent = the prior Run was sent no typed intervention kind. Carried verbatim only when sent; never inferred.",
-      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
-    },
     "boundary/OlumiResponseSchema.run_delta.input_changes[].label_after": {
       "markers": [
         "optional"
@@ -3441,14 +3425,6 @@
       "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
     },
     "orchestrator/RunInputLinkSchema.std": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "distinct",
-      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
-      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
-    },
-    "orchestrator/RunInputSettingSchema.kind": {
       "markers": [
         "optional"
       ],

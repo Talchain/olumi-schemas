@@ -57,8 +57,6 @@ export const RunInputSettingSchema = z.object({
   encoded: z.number().finite(),
   /** True when CEE HELD this factor at its current value (the status-quo option), rather than the option setting it. */
   held: z.literal(true).optional(),
-  /** MG's typed intervention reading (0.68.0), carried verbatim when sent; absent = today's absolute meaning. */
-  kind: z.string().min(1).max(32).optional(),
 }).strict();
 export type RunInputSetting = z.infer<typeof RunInputSettingSchema>;
 

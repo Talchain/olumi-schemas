@@ -21,7 +21,7 @@ show nothing. Design SC-24 v2, agreed on programme-docs #84 (5913851822 / 591387
   `{snapshot_version: 1, sent_digest, goal | null, options[], options_not_sent[], factors[], constraints[], links[]}`.
   - Every member copies what was sent; an unsent member is ABSENT, never inferred (a missing unit never becomes GBP).
   - `raw` + `unit` are the authored user-unit figure; `encoded` is the number PLoT received. `held: true` marks a
-    status-quo value CEE held rather than one the option set. `kind` carries MG's typed intervention reading verbatim.
+    status-quo value CEE held rather than one the option set. No `kind`: no writer exists (MG B1, #76 5916764589).
   - `goal {node_id, label?, target_raw?, unit?, operator?, direction?, frame?}` IS the Run-attested goal unit that P0
     SHARED DATA's `complete_current` gate reads (AIQ 5912905493) — one carrier, no second snapshot.
   - Bounded (ids and labels only, no graph bytes) and one row per input (repeats refused).
@@ -31,10 +31,10 @@ show nothing. Design SC-24 v2, agreed on programme-docs #84 (5913851822 / 591387
   - `endpoints {prior, current}` (`{run_id, computed_at?}` each; a Run is never compared with itself);
   - `input_coverage: complete | partial | not_recorded`;
   - `input_changes[]` (`RunDeltaInputChangeSchema`): `{entity_kind, entity_id, option_id?, link?, field, label_before?,
-    label_after?, before | null, after | null, change: changed | added | removed, kind_before?, kind_after?}`.
+    label_after?, before | null, after | null, change: changed | added | removed}`.
   - **Independent of attribution:** a C2 pair still carries its true input differences. `input_changes` travels iff
     coverage is complete/partial, and then with endpoints; `not_recorded` carries no list and may travel alone.
-  - A row says one thing: `changed` needs a different value, unit or kind (a label-only difference is refused);
+  - A row says one thing: `changed` needs a different value or unit (a label-only difference is refused);
     `added` has no before, `removed` no after; `option_id` only on option settings, `link` only on links; one row per input.
 - **`RunDeltaAttributionCase` appends `C5_unattributed`**: the pair exists but the §b table names no case for its
   echoes. It licenses no causal reading and no magnitude, and is refused where C0 or C1's preconditions hold.

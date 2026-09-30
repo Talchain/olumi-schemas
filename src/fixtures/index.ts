@@ -1671,7 +1671,7 @@ export const maximalRunDeltaEndpoints = deepFreeze({
 
 export const maximalRunInputValue = deepFreeze({ raw: 59, unit: 'GBP' });
 
-/** £59 → £60 on one option, with MG's typed kind on both ends. */
+/** £59 → £60 on one option. */
 export const maximalRunDeltaInputChange = deepFreeze({
   entity_kind: 'option_setting',
   entity_id: 'fixture_factor_1',
@@ -1682,8 +1682,6 @@ export const maximalRunDeltaInputChange = deepFreeze({
   before: maximalRunInputValue,
   after: { raw: 60, unit: 'GBP' },
   change: 'changed',
-  kind_before: 'absolute',
-  kind_after: 'absolute',
 });
 
 export const maximalRunDeltaInputChangeLink = deepFreeze({

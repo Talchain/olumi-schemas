@@ -14,7 +14,7 @@ import {
   RunDeltaInputChangeSchema,
   RunDeltaSchema,
 } from '../../src/boundary/run-delta.js';
-import { RunAnalysisResultSchema, RunInputSnapshotSchema } from '../../src/orchestrator/index.js';
+import { RunAnalysisResultSchema, RunInputSettingSchema, RunInputSnapshotSchema } from '../../src/orchestrator/index.js';
 
 const DIGEST = 'd'.repeat(64);
 
@@ -196,8 +196,14 @@ describe('0.68.0 · one input-change row says exactly one thing', () => {
     expect(row({ ...PRICE_ROW, before: { raw: 60, unit: 'GBP' }, after: { raw: 60, unit: 'USD' } })).toBe(true);
   });
 
-  it('a kind change with the same level is a change (MG typed intervention semantics)', () => {
-    expect(row({ ...PRICE_ROW, after: PRICE_ROW.before, kind_before: 'absolute', kind_after: 'delta' })).toBe(true);
+  it('MG B1 (#76 5916764589): no row and no setting carries a `kind` — no writer exists, so a free string would be an unwritten claim', () => {
+    expect(row({ ...PRICE_ROW, kind_before: 'absolute', kind_after: 'delta' })).toBe(false);
+    expect(RunInputSettingSchema.safeParse({ factor_id: 'fac_price', raw: 60, unit: 'GBP', encoded: 60, kind: 'absolute' }).success).toBe(false);
+    expect(RunInputSettingSchema.safeParse({ factor_id: 'fac_price', raw: 60, unit: 'GBP', encoded: 60 }).success).toBe(true);
+  });
+
+  it('the same value and unit on both ends is not a change (nothing else can make it one)', () => {
+    expect(row({ ...PRICE_ROW, after: PRICE_ROW.before })).toBe(false);
   });
 
   it('added has no before; removed has no after', () => {

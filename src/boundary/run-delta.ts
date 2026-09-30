@@ -255,9 +255,6 @@ export const RunDeltaInputChangeObjectSchema = z.object({
   before: RunInputValueSchema.nullable(),
   after: RunInputValueSchema.nullable(),
   change: z.enum(['changed', 'added', 'removed']),
-  /** MG's typed intervention reading on each end (`absolute` | `delta` | `range` …), carried verbatim when sent. */
-  kind_before: z.string().min(1).max(32).optional(),
-  kind_after: z.string().min(1).max(32).optional(),
 }).strict();
 
 const sameValue = (a: RunInputValue, b: RunInputValue): boolean => a.raw === b.raw && a.unit === b.unit;
@@ -284,9 +281,9 @@ export function refineRunDeltaInputChange(
   if (row.change === 'changed') {
     if (row.before === null || row.after === null) {
       issue('change', 'changed has both ends.');
-    } else if (sameValue(row.before, row.after) && row.kind_before === row.kind_after) {
+    } else if (sameValue(row.before, row.after)) {
       // A label-only difference is not an input change (SC-24 v2 §2).
-      issue('change', 'changed needs a different value, unit or kind — a label-only difference is not an input change.');
+      issue('change', 'changed needs a different value or unit — a label-only difference is not an input change.');
     }
   }
 }
