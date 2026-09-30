@@ -22,6 +22,9 @@ show nothing. Design SC-24 v2, agreed on programme-docs #84 (5913851822 / 591387
   - Every member copies what was sent; an unsent member is ABSENT, never inferred (a missing unit never becomes GBP).
   - `raw` + `unit` are the authored user-unit figure; `encoded` is the number PLoT received. `held: true` marks a
     status-quo value CEE held rather than one the option set. No `kind`: no writer exists (MG B1, #76 5916764589).
+    `range?` is the option's stated range AS SENT (TEMPORAL 0.66.0 `InterventionRangeSchema`, reused, with its own
+    `source`), so a pair differing only in a range reads `input_coverage: partial`, never "complete, no change" (AIQ
+    5918201688, PROMPT STRIKE 5918324383).
   - `goal {node_id, label?, target_raw?, unit?, operator?, direction?, frame?}` IS the Run-attested goal unit that P0
     SHARED DATA's `complete_current` gate reads (AIQ 5912905493) — one carrier, no second snapshot.
   - Bounded (ids and labels only, no graph bytes) and one row per input (repeats refused).

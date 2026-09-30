@@ -202,6 +202,15 @@ describe('0.68.0 · one input-change row says exactly one thing', () => {
     expect(RunInputSettingSchema.safeParse({ factor_id: 'fac_price', raw: 60, unit: 'GBP', encoded: 60 }).success).toBe(true);
   });
 
+  it('TEMPORAL seam (AIQ 5918201688): a setting records the stated range AS SENT, with its own author', () => {
+    const range = { low: 40, high: 75, meaning: 'likely_range', source: 'user_stated' };
+    expect(RunInputSettingSchema.safeParse({ factor_id: 'fac_price', raw: 60, unit: 'GBP', encoded: 60, range }).success).toBe(true);
+    // The SAME InterventionRangeSchema (not a mirror): an authorless range, or high <= low, is refused.
+    const { source: _s, ...authorless } = range;
+    expect(RunInputSettingSchema.safeParse({ factor_id: 'fac_price', raw: 60, unit: 'GBP', encoded: 60, range: authorless }).success).toBe(false);
+    expect(RunInputSettingSchema.safeParse({ factor_id: 'fac_price', raw: 60, unit: 'GBP', encoded: 60, range: { ...range, high: 40 } }).success).toBe(false);
+  });
+
   it('the same value and unit on both ends is not a change (nothing else can make it one)', () => {
     expect(row({ ...PRICE_ROW, after: PRICE_ROW.before })).toBe(false);
   });

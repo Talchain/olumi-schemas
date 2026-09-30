@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 124,
+    "distinct": 125,
     "same": 52,
     "unresolved": 420
   },
@@ -3440,6 +3440,22 @@
       "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
       "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
     },
+    "orchestrator/RunInputSettingSchema.range": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT a range for this setting; the snapshot copies the request and never infers or defaults. No value can say \"not sent\". A pair differing only in a range is marked input_coverage partial by the producer (PROMPT STRIKE 5918324383, AIQ 5918201688).",
+      "ref": "src/orchestrator/run-input-snapshot.ts RunInputSettingSchema.range (0.68.0, TEMPORAL 0.66.0 InterventionRangeSchema reused)"
+    },
+    "orchestrator/RunInputSettingSchema.range.source_quote": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "One state only: an empty quote is refused (min 1), so absence is the single way to say no quote was recorded. Authorship never rides on it: `source` is required and carries the author, so an absent quote cannot make an Olumi range read as the user's (AIQ 5914222384).",
+      "ref": "src/analysis.ts - InterventionRangeSchema doc comment (0.66.0); first reached via RunInputSettingSchema.range since 0.68.0 (the census names a shared schema by its first path)"
+    },
     "orchestrator/RunInputSettingSchema.unit": {
       "markers": [
         "optional"
@@ -3818,14 +3834,6 @@
         "nullable"
       ],
       "verdict": "unresolved"
-    },
-    "root/InterventionRangeSchema.source_quote": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "same",
-      "note": "One state only: an empty quote is refused (min 1), so absence is the single way to say no quote was recorded. Authorship never rides on it: `source` is required and carries the author, so an absent quote cannot make an Olumi range read as the user's (AIQ 5914222384).",
-      "ref": "src/analysis.ts - InterventionRangeSchema doc comment (0.66.0)"
     },
     "root/ObservedStateSchema.baseline": {
       "markers": [

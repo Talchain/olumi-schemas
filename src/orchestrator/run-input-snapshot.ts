@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { InterventionRangeSchema } from '../analysis.js';
 
 // ============================================================================
 // 0.68.0 — SC-24: THE INPUT A RUN WAS SENT, recorded on the Run fact.
@@ -57,6 +58,13 @@ export const RunInputSettingSchema = z.object({
   encoded: z.number().finite(),
   /** True when CEE HELD this factor at its current value (the status-quo option), rather than the option setting it. */
   held: z.literal(true).optional(),
+  /**
+   * The option's stated RANGE for this factor, AS SENT (TEMPORAL 0.66.0 `intervention_ranges`), in the setting's own
+   * raw unit and carrying its OWN author (`source`) — the same schema, never a mirror. Absent = no range was sent.
+   * Recorded so a Run pair that differs only in a range is never read as "complete, no change": the producer marks such
+   * a pair `input_coverage: partial` and emits no row (PROMPT STRIKE #75 5918324383, AIQ 5918201688).
+   */
+  range: InterventionRangeSchema.optional(),
 }).strict();
 export type RunInputSetting = z.infer<typeof RunInputSettingSchema>;
 
