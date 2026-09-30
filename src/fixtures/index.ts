@@ -149,6 +149,10 @@ import {
   RunDeltaLeaderDeltaSchema,
   RunDeltaWinProbabilityDeltaSchema,
   RunDeltaFlipThresholdDeltaSchema,
+  RunDeltaEndpointSchema,
+  RunDeltaEndpointsSchema,
+  RunInputValueSchema,
+  RunDeltaInputChangeSchema,
   // Persisted model-version history and semantic diff.
   ModelVersionSummaryV2Schema,
   ModelVersionMutationReceiptV1Schema,
@@ -1654,6 +1658,44 @@ export const maximalRunDeltaFlipThresholdDelta = deepFreeze({
   band_verdict: 'bands_disjoint',
 });
 
+// 0.68.0 (SC-24) — the pair's endpoints and its exact input changes.
+export const maximalRunDeltaEndpoint = deepFreeze({
+  run_id: 'fixture_run_a',
+  computed_at: '2026-09-30T14:02:00.000Z',
+});
+
+export const maximalRunDeltaEndpoints = deepFreeze({
+  prior: maximalRunDeltaEndpoint,
+  current: { run_id: 'fixture_run_b', computed_at: '2026-09-30T14:09:00.000Z' },
+});
+
+export const maximalRunInputValue = deepFreeze({ raw: 59, unit: 'GBP' });
+
+/** £59 → £60 on one option, with MG's typed kind on both ends. */
+export const maximalRunDeltaInputChange = deepFreeze({
+  entity_kind: 'option_setting',
+  entity_id: 'fixture_factor_1',
+  option_id: 'fixture_option_a',
+  field: 'value',
+  label_before: 'Pro price',
+  label_after: 'Pro price',
+  before: maximalRunInputValue,
+  after: { raw: 60, unit: 'GBP' },
+  change: 'changed',
+  kind_before: 'absolute',
+  kind_after: 'absolute',
+});
+
+export const maximalRunDeltaInputChangeLink = deepFreeze({
+  entity_kind: 'link',
+  entity_id: 'fixture_factor_1->fixture_factor_2',
+  link: { from: 'fixture_factor_1', to: 'fixture_factor_2' },
+  field: 'strength',
+  before: { raw: 0.4 },
+  after: null,
+  change: 'removed',
+});
+
 /**
  * A maximal C1 (attributable) delta — the ONLY case whose preconditions
  * admit every optional at once (`edit_list` requires `!hash_equal`; C1
@@ -1675,6 +1717,28 @@ export const maximalRunDelta = deepFreeze({
   ],
   flip_thresholds: [maximalRunDeltaFlipThresholdDelta],
   edit_list: ['nodes.fixture_factor_1.observed_state.value'],
+  endpoints: maximalRunDeltaEndpoints,
+  input_coverage: 'complete',
+  input_changes: [
+    maximalRunDeltaInputChange,
+    maximalRunDeltaInputChangeLink,
+    {
+      entity_kind: 'goal',
+      entity_id: 'fixture_goal',
+      field: 'unit',
+      before: { raw: 'GBP per month' },
+      after: { raw: 'USD per month' },
+      change: 'changed',
+    },
+    {
+      entity_kind: 'option',
+      entity_id: 'fixture_option_c',
+      field: 'presence',
+      before: null,
+      after: { raw: true },
+      change: 'added',
+    },
+  ],
 });
 
 // ----------------------------------------------------------------------------
@@ -3284,6 +3348,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   },
   // --- 0.39.0 car 3 — run-over-run delta --------------------------------------------
   { family: 'boundary/RunDeltaSchema', schema: RunDeltaSchema, fixture: maximalRunDelta },
+  // --- 0.68.0 — SC-24 endpoints + input changes ---------------------------------------
+  { family: 'boundary/RunDeltaEndpointSchema', schema: RunDeltaEndpointSchema, fixture: maximalRunDeltaEndpoint },
+  { family: 'boundary/RunDeltaEndpointsSchema', schema: RunDeltaEndpointsSchema, fixture: maximalRunDeltaEndpoints },
+  { family: 'boundary/RunInputValueSchema', schema: RunInputValueSchema, fixture: maximalRunInputValue },
+  { family: 'boundary/RunDeltaInputChangeSchema', schema: RunDeltaInputChangeSchema, fixture: maximalRunDeltaInputChange },
   {
     family: 'boundary/RunDeltaPairProvenanceSchema',
     schema: RunDeltaPairProvenanceSchema,
@@ -4076,6 +4145,15 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   'orchestrator/GoalCertaintyBreakEvenSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/GoalCertaintyIdentityMismatchSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/OptionParticipationEntrySchema': ORCHESTRATOR_INTERNAL,
+  // 0.68.0 — SC-24: the Run fact's input snapshot (persisted handler-fact payload; never crosses the UI wire).
+  'orchestrator/RunInputSnapshotSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/RunInputGoalSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/RunInputOptionSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/RunInputSettingSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/RunInputOptionNotSentSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/RunInputFactorSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/RunInputConstraintSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/RunInputLinkSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainFallbackReasonSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/RunAnalysisHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainResultHandlerFactSchema': ORCHESTRATOR_INTERNAL,

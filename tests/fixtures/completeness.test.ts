@@ -285,7 +285,10 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.67.0 (+3): root/UnitReadingSchema (closed, every field REQUIRED), and
     //   root/EntityRefSchema + root/RefHighWaterSchema (a ref string and the
     //   per-prefix counter record) — MG, unit readings and stable entity refs.
-    expect(MAXIMAL_FIXTURES.length).toBe(208);
+    // 0.68.0 (+4): boundary/RunDeltaEndpointSchema, RunDeltaEndpointsSchema,
+    //   RunInputValueSchema, RunDeltaInputChangeSchema — SC-24's pair endpoints and
+    //   exact input changes, which cross the UI wire inside run_delta.
+    expect(MAXIMAL_FIXTURES.length).toBe(212);
   });
 
   it('family keys are unique', () => {

@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.68.0] — SC-24: "previous Run vs this Run", with what the user changed in their own units
+
+**Why.** "What's changed" compared two Runs' outcomes but could not say what the user CHANGED between them: a Run
+recorded no inputs (`graph_hash_at_run` hashes the persisted read, not the request CEE sent PLoT), `edit_list` is paths
+and is never emitted, and a pair the §b table cannot classify got no `run_delta` at all. So £59 → £60 then Re-run could
+show nothing. Design SC-24 v2, agreed on programme-docs #84 (5913851822 / 5913873645 / 5914416431); lease DL #75
+5914474485 (schemas train, numbered in merge order: TEMPORAL 0.66.0 → MG 0.67.0 (#77) → SC-24 0.68.0, DL 5915164590). One Run-unit carrier: AIQ 5912905493 +
+5914731075, P0 SHARED DATA 5914750268.
+
+- **`RunAnalysisResultSchema.input_snapshot?`** (`RunInputSnapshotSchema`, new module `orchestrator/run-input-snapshot.ts`):
+  the input the Run was SENT, captured by CEE's run_analysis between building the PLoT request and dispatching it.
+  `{snapshot_version: 1, sent_digest, goal | null, options[], options_not_sent[], factors[], constraints[], links[]}`.
+  - Every member copies what was sent; an unsent member is ABSENT, never inferred (a missing unit never becomes GBP).
+  - `raw` + `unit` are the authored user-unit figure; `encoded` is the number PLoT received. `held: true` marks a
+    status-quo value CEE held rather than one the option set. `kind` carries MG's typed intervention reading verbatim.
+  - `goal {node_id, label?, target_raw?, unit?, operator?, direction?, frame?}` IS the Run-attested goal unit that P0
+    SHARED DATA's `complete_current` gate reads (AIQ 5912905493) — one carrier, no second snapshot.
+  - Bounded (ids and labels only, no graph bytes) and one row per input (repeats refused).
+- **`RunAnalysisResultSchema.run_id?`**: the Run's execution identity — one per execution, the SAME on a replay of the
+  turn that ran it. Never a display number or result equality.
+- **`RunDeltaSchema`** gains, all optional:
+  - `endpoints {prior, current}` (`{run_id, computed_at?}` each; a Run is never compared with itself);
+  - `input_coverage: complete | partial | not_recorded`;
+  - `input_changes[]` (`RunDeltaInputChangeSchema`): `{entity_kind, entity_id, option_id?, link?, field, label_before?,
+    label_after?, before | null, after | null, change: changed | added | removed, kind_before?, kind_after?}`.
+  - **Independent of attribution:** a C2 pair still carries its true input differences. `input_changes` travels iff
+    coverage is complete/partial, and then with endpoints; `not_recorded` carries no list and may travel alone.
+  - A row says one thing: `changed` needs a different value, unit or kind (a label-only difference is refused);
+    `added` has no before, `removed` no after; `option_id` only on option settings, `link` only on links; one row per input.
+- **`RunDeltaAttributionCase` appends `C5_unattributed`**: the pair exists but the §b table names no case for its
+  echoes. It licenses no causal reading and no magnitude, and is refused where C0 or C1's preconditions hold.
+
+### Compatibility
+- Additive, but every carrier is `.strict()` (hazard 1, the loud direction). **Reader first:** the UI vendors 0.68.0
+  and serves it before CEE emits `endpoints` / `input_*` / `C5_unattributed` (an older UI's parser quarantines the
+  whole `run_delta`). CEE vendors before writing `input_snapshot` / `run_id` (its fact reads re-parse strictly), and a
+  CEE rollback below 0.68.0 would fail to read those facts.
+- No hash-vocabulary change (a Run fact is not a graph input).
+- Census +40 rows (distinct 127, same 52, unresolved unchanged 420). Registry 208 → 212 (four wire-crossing
+  RunDelta families); the snapshot schemas are ORCHESTRATOR_INTERNAL exclusions.
+- **Changed (meaning stated):** `tests/boundary/run-delta-0.39.test.ts` pins the case list with `C5_unattributed`
+  appended; C0–C4 and their order are unchanged.
 ## [0.67.0] — a node's UNIT READING (who read which unit), and STABLE ENTITY REFS (MG)
 
 **Why.** Paul's funding brief (PTL "A") speaks of "deals between £1-2 million", so Olumi can read the funding goal in

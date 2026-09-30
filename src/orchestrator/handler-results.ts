@@ -9,6 +9,8 @@ import { MAX_STATED_REASON } from '../boundary/turn-payload.js';
 // 0.56.0 — the participation guard's withheld counts. Imported from the wire
 // member so the persisted fact and the published response carry ONE shape.
 import { AnalysisParticipationWithheldSchema } from '../boundary/olumi-response.js';
+// 0.68.0 — SC-24: the input the Run was sent.
+import { RunInputSnapshotSchema } from './run-input-snapshot.js';
 
 // Per-handler result schemas. These validate the in-memory body a handler
 // returns; they also describe the JSONB payload persisted in the
@@ -363,6 +365,14 @@ export const RunAnalysisResultSchema = z.object({
       }
     }));
   }).optional(),
+  // 0.68.0 — SC-24. THE RUN'S EXECUTION IDENTITY: opaque, one per Run execution, and the SAME on a replay of the turn
+  // that ran it (so a re-delivered turn is never compared with itself, while two intentional Runs with equal results
+  // stay distinct). Never a display run number, never result equality. CEE-owned. ABSENT = an older Run (not recorded).
+  run_id: z.string().min(1).max(200).optional(),
+  // 0.68.0 — SC-24. The input this Run was SENT ({@link RunInputSnapshotSchema}), captured by run_analysis from the
+  // PLoT request it dispatched. `input_snapshot.goal` is the ONE Run-attested goal unit (AIQ 5912905493, P0 SHARED
+  // DATA 5914750268). ABSENT = an older Run: inputs not recorded — never reconstructed from today's graph.
+  input_snapshot: RunInputSnapshotSchema.optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;
 

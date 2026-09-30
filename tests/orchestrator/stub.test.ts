@@ -113,6 +113,15 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         'GoalCertaintyIdentityMismatchSchema',
         // 0.65.0 — options outside the ordinary comparison (additive)
         'OptionParticipationEntrySchema',
+        // 0.68.0 — SC-24: the input a Run was sent (additive)
+        'RunInputSnapshotSchema',
+        'RunInputGoalSchema',
+        'RunInputOptionSchema',
+        'RunInputSettingSchema',
+        'RunInputOptionNotSentSchema',
+        'RunInputFactorSchema',
+        'RunInputConstraintSchema',
+        'RunInputLinkSchema',
         // 0.27.0 — subject-scoped AnalysisFact union (additive; Codex F3)
         'AnalysisFactSchema',
         'ComputedFactSchema',

@@ -160,6 +160,15 @@ export {
   RunDeltaFlipBandVerdict,
   RunDeltaFlipThresholdDeltaSchema,
   refineRunDelta,
+  // 0.68.0 (SC-24)
+  RunDeltaEndpointSchema,
+  RunDeltaEndpointsSchema,
+  RunInputCoverage,
+  RunInputEntityKind,
+  RunInputField,
+  RunInputValueSchema,
+  RunDeltaInputChangeSchema,
+  refineRunDeltaInputChange,
 } from './run-delta.js';
 export type {
   RunDelta,
@@ -171,6 +180,13 @@ export type {
   RunDeltaLeaderDelta,
   RunDeltaFlipBandVerdictLiteral,
   RunDeltaFlipThresholdDelta,
+  RunDeltaEndpoint,
+  RunDeltaEndpoints,
+  RunInputCoverageLiteral,
+  RunInputEntityKindLiteral,
+  RunInputFieldLiteral,
+  RunInputValue,
+  RunDeltaInputChange,
 } from './run-delta.js';
 
 // Persisted model-version history and semantic diff. This is intentionally a

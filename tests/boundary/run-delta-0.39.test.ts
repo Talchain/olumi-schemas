@@ -72,13 +72,16 @@ const VALID_C2 = {
 } as const;
 
 describe('RunDelta vocabulary (0.39.0 car 3)', () => {
-  it('the attribution case enum is exactly the §b C0–C4 table', () => {
+  // CHANGED 0.68.0 (SC-24): `C5_unattributed` is APPENDED — a pair the §b table names no case for. The C0–C4 literals
+  // and their order are unchanged; see tests/contracts/release-0.68.0.test.ts.
+  it('the attribution case enum is the §b C0–C4 table, then SC-24\'s C5 appended', () => {
     expect(RunDeltaAttributionCase.options).toStrictEqual([
       'C0_identical',
       'C1_attributable',
       'C2_unpaired',
       'C3_engine_drift',
       'C4_budget_drift',
+      'C5_unattributed',
     ]);
   });
 
