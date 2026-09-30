@@ -88,6 +88,19 @@ export type {
   AdjustEdgeStrengthArgs,
 } from './handler-args.js';
 
+// 0.68.0 — SC-24: the input a Run was sent (RunAnalysisResultSchema.input_snapshot).
+export {
+  RunInputSnapshotSchema,
+  RunInputGoalSchema,
+  RunInputOptionSchema,
+  RunInputSettingSchema,
+  RunInputOptionNotSentSchema,
+  RunInputFactorSchema,
+  RunInputConstraintSchema,
+  RunInputLinkSchema,
+} from './run-input-snapshot.js';
+export type { RunInputSnapshot, RunInputGoal, RunInputOption, RunInputSetting } from './run-input-snapshot.js';
+
 // Per-handler result schemas (content of HandlerFact.result)
 export {
   RunAnalysisResultSchema,

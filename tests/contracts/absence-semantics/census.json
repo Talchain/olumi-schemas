@@ -63,8 +63,8 @@
     }
   },
   "counts": {
-    "distinct": 100,
-    "same": 39,
+    "distinct": 125,
+    "same": 52,
     "unresolved": 420
   },
   "open_objects": {
@@ -2529,6 +2529,94 @@
       "note": "Absent = the prior fact predates edit tracking, so the list is underivable - C1's edit clause degrades honestly to 'you changed the model'. Present => the COMPLETE projection diff under the hash whitelist, never empty and never on an equal-hash pair (both refused by refineRunDelta) - so no array value, including [], can express 'underivable'.",
       "ref": "src/boundary/run-delta.ts - edit_list doc comment + refineRunDelta (0.39.0 car 3, RUN-DELTA-DESIGN \u00a7b rule 2 / \u00a7d)"
     },
+    "boundary/OlumiResponseSchema.run_delta.endpoints": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = a pre-0.68 producer that did not name the pair. A present value always names two different execution ids, so no value can say 'pair not named'. Required whenever input_coverage or input_changes travel (refined).",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.input_changes": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the input diff is underivable (a pre-0.68 producer, or input_coverage 'not_recorded' because an end predates input snapshots). [] = both Runs were sent the same inputs. Present iff input_coverage is complete or partial (refined), so [] can never stand for 'not recorded'.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.input_changes[].after": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "null = the input did not exist on the current Run (change 'removed'). Bound to `change` by refineRunDeltaInputChange: 'removed' requires null, every other change requires a value.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.input_changes[].before": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "null = the input did not exist on the prior Run (change 'added'). Bound to `change` by refineRunDeltaInputChange: 'added' requires null, every other change requires a value.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.input_changes[].label_after": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "A display label only; absence means the current Run's snapshot named no label, and the consumer falls back to its own name for the id. Never an input change by itself.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.input_changes[].label_before": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "A display label only; absence means the prior Run's snapshot named no label, and the consumer falls back to its own name for the id. Never an input change by itself.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.input_changes[].link": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Structural, not semantic: present on a 'link' row and on no other (refined), so entity_kind is the discriminator.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.input_changes[].option_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Structural, not semantic: present on an 'option_setting' row and on no other (refined), so entity_kind is the discriminator.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.input_coverage": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = a pre-0.68 producer (no input comparison attempted). 'not_recorded' = attempted, but an end predates input snapshots. Different claims, so absence is never read as either value.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/RunDeltaEndpointSchema.computed_at": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "Display only (\"Compared with your run at 14:02\"); identity is run_id. Absent = the fact recorded no execution time, and the consumer names the Run without a time.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/RunInputValueSchema.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was SENT no unit for this input (AIQ 5914731075: a missing unit never defaults, e.g. never becomes GBP). A consumer shows the bare figure; it never borrows a unit from the current graph.",
+      "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
     "boundary/OptimiseResponseSchema.meta.constraints_resolved.*.value": {
       "markers": [
         "optional"
@@ -3216,6 +3304,230 @@
       ],
       "verdict": "unresolved"
     },
+    "orchestrator/RunAnalysisResultSchema.input_snapshot": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = an older Run: its inputs were not recorded. Never reconstructed from today's graph; a delta over it reports input_coverage 'not_recorded'.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunAnalysisResultSchema.run_id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = an older Run with no recorded execution identity. It is never derived from display order or result equality; a delta cannot name such an end in `endpoints`.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputSnapshotSchema.goal": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "null = the Run was sent no goal (no goal_node_id). The snapshot itself exists, so this differs from an absent snapshot.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputConstraintSchema.frame": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputConstraintSchema.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputFactorSchema.encoded": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputFactorSchema.raw": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputFactorSchema.source": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputFactorSchema.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputGoalSchema.direction": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputGoalSchema.frame": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputGoalSchema.operator": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputGoalSchema.target_raw": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputGoalSchema.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputLinkSchema.exists_probability": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputLinkSchema.std": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputSettingSchema.raw": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputSettingSchema.range": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT a range for this setting; the snapshot copies the request and never infers or defaults. No value can say \"not sent\". A pair differing only in a range is marked input_coverage partial by the producer (PROMPT STRIKE 5918324383, AIQ 5918201688).",
+      "ref": "src/orchestrator/run-input-snapshot.ts RunInputSettingSchema.range (0.68.0, TEMPORAL 0.66.0 InterventionRangeSchema reused)"
+    },
+    "orchestrator/RunInputSettingSchema.range.source_quote": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "One state only: an empty quote is refused (min 1), so absence is the single way to say no quote was recorded. Authorship never rides on it: `source` is required and carries the author, so an absent quote cannot make an Olumi range read as the user's (AIQ 5914222384).",
+      "ref": "src/analysis.ts - InterventionRangeSchema doc comment (0.66.0); first reached via RunInputSettingSchema.range since 0.68.0 (the census names a shared schema by its first path)"
+    },
+    "orchestrator/RunInputSettingSchema.unit": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputConstraintSchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "A display label only; absence means the request named none and the consumer uses its own name for the id. Never an input difference by itself.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputFactorSchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "A display label only; absence means the request named none and the consumer uses its own name for the id. Never an input difference by itself.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputGoalSchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "A display label only; absence means the request named none and the consumer uses its own name for the id. Never an input difference by itself.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputOptionNotSentSchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "A display label only; absence means the request named none and the consumer uses its own name for the id. Never an input difference by itself.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputOptionSchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "A display label only; absence means the request named none and the consumer uses its own name for the id. Never an input difference by itself.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputSettingSchema.label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "A display label only; absence means the request named none and the consumer uses its own name for the id. Never an input difference by itself.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputOptionSchema.is_baseline": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "z.literal(true): absence is the only 'false'. Present = the request marked this option as the baseline.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputSettingSchema.held": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "z.literal(true): absence is the only 'false'. Present = CEE held this factor at its current value for the status-quo option; absent = the option set it.",
+      "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
     "orchestrator/SessionCacheEntrySchema.handler_id": {
       "markers": [
         "nullable"
@@ -3522,14 +3834,6 @@
         "nullable"
       ],
       "verdict": "unresolved"
-    },
-    "root/InterventionRangeSchema.source_quote": {
-      "markers": [
-        "optional"
-      ],
-      "verdict": "same",
-      "note": "One state only: an empty quote is refused (min 1), so absence is the single way to say no quote was recorded. Authorship never rides on it: `source` is required and carries the author, so an absent quote cannot make an Olumi range read as the user's (AIQ 5914222384).",
-      "ref": "src/analysis.ts - InterventionRangeSchema doc comment (0.66.0)"
     },
     "root/ObservedStateSchema.baseline": {
       "markers": [

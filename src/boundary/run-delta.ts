@@ -65,6 +65,12 @@ export const RunDeltaAttributionCase = z.enum([
   'C2_unpaired',
   'C3_engine_drift',
   'C4_budget_drift',
+  // 0.68.0 (SC-24) — APPENDED. The pair exists and its inputs can be compared, but the §b table names no case for
+  // its echoes (e.g. `builds_equal: 'unknown'` with no other divergence). Before 0.68.0 CEE emitted NO delta for
+  // such a pair, so a true £59 → £60 input change showed nothing. It licenses NO causal reading and NO magnitude:
+  // the consumer treats it exactly like a refusal to attribute. Never constructible where C0 or C1's preconditions
+  // hold (refined below), so it cannot be used to downgrade a classifiable pair.
+  'C5_unattributed',
 ]);
 export type RunDeltaAttributionCaseLiteral = z.infer<typeof RunDeltaAttributionCase>;
 
@@ -169,6 +175,125 @@ export const RunDeltaFlipThresholdDeltaSchema = z.object({
 }).strict();
 export type RunDeltaFlipThresholdDelta = z.infer<typeof RunDeltaFlipThresholdDeltaSchema>;
 
+// ============================================================================
+// 0.68.0 — SC-24: WHAT THE USER CHANGED between the two Runs, in their own units.
+//
+// Design: SC-24 v2 (programme-docs #84 5913851822 / 5913873645 / 5914416431; lease DL #75 5914474485).
+// The pair's inputs are DIFFED BY CEE from the two Runs' `input_snapshot`s (RunAnalysisResultSchema, the exact
+// request each Run sent to PLoT) — never a UI graph diff, never parsed from display strings, never reconstructed
+// from today's graph for an old Run.
+//
+// ⭐ INDEPENDENT OF ATTRIBUTION. `input_changes` says what differed in the INPUTS; `attribution_case` says whether
+// the pair licenses a CAUSAL reading of the outcome movement. A C2 pair (different samples) still had £59 → £60 as
+// its input — the two claims never borrow from each other.
+//
+// ORDER THE CONSUMER RENDERS (ChatGPT 5914416431, result first): the outcome movement, then up to two input rows
+// (producer order) with the total, then the attribution limit.
+// ============================================================================
+
+/** One end of the pair: the Run's EXECUTION identity — never a display run number or result equality. */
+export const RunDeltaEndpointSchema = z.object({
+  run_id: z.string().min(1).max(200),
+  computed_at: z.string().datetime({ offset: true }).optional(),
+}).strict();
+export type RunDeltaEndpoint = z.infer<typeof RunDeltaEndpointSchema>;
+
+export const RunDeltaEndpointsSchema = z.object({
+  prior: RunDeltaEndpointSchema,
+  current: RunDeltaEndpointSchema,
+}).strict();
+export type RunDeltaEndpoints = z.infer<typeof RunDeltaEndpointsSchema>;
+
+/**
+ * How much of the pair's input CEE could compare.
+ * - `complete`: both Runs recorded an input snapshot of the same version; `input_changes` is the whole diff
+ *   (`[]` = the two Runs were sent the same inputs).
+ * - `partial`: both recorded one, but a section is missing on one side; `input_changes` covers the rest only.
+ * - `not_recorded`: at least one Run predates input snapshots; NO list travels (absence, never an empty diff).
+ */
+export const RunInputCoverage = z.enum(['complete', 'partial', 'not_recorded']);
+export type RunInputCoverageLiteral = z.infer<typeof RunInputCoverage>;
+
+/** What kind of input a row is about. */
+export const RunInputEntityKind = z.enum(['option_setting', 'option', 'factor_value', 'goal', 'constraint', 'link']);
+export type RunInputEntityKindLiteral = z.infer<typeof RunInputEntityKind>;
+
+/** Which property of that input differed. Closed, so a consumer selects its sentence BY IDENTITY. */
+export const RunInputField = z.enum([
+  'value', // an option's setting of a factor, or a factor's own value
+  'target', // the goal's target / a limit's threshold
+  'unit', // the goal's unit (AIQ 5912905493: a unit-only goal edit)
+  'operator', // the goal's / a limit's comparison
+  'direction', // the goal's direction
+  'strength', // a link's mean
+  'presence', // an option entered or left the Run's comparison
+]);
+export type RunInputFieldLiteral = z.infer<typeof RunInputField>;
+
+/**
+ * One end of one input, as the Run was SENT it: the user-unit value (`raw`, the authored figure) and its unit.
+ * No encoded/wire value, no delta — the consumer shows before → after and computes nothing (S3).
+ */
+export const RunInputValueSchema = z.object({
+  raw: z.union([z.number().finite(), z.string().min(1).max(200), z.boolean()]),
+  unit: z.string().min(1).max(64).optional(),
+}).strict();
+export type RunInputValue = z.infer<typeof RunInputValueSchema>;
+
+export const RunDeltaInputChangeObjectSchema = z.object({
+  entity_kind: RunInputEntityKind,
+  /** The input's stable id (factor / option / goal node / limit). Opaque for a link — its ends are in `link`. */
+  entity_id: z.string().min(1).max(200),
+  /** `option_setting` only: which option set the factor named by `entity_id`. */
+  option_id: z.string().min(1).max(200).optional(),
+  /** `link` only: the link's two ends. */
+  link: z.object({ from: z.string().min(1).max(200), to: z.string().min(1).max(200) }).strict().optional(),
+  field: RunInputField,
+  /** Each Run's own label for the input — a rename between Runs shows both, and is never itself a change. */
+  label_before: z.string().max(200).optional(),
+  label_after: z.string().max(200).optional(),
+  before: RunInputValueSchema.nullable(),
+  after: RunInputValueSchema.nullable(),
+  change: z.enum(['changed', 'added', 'removed']),
+}).strict();
+
+const sameValue = (a: RunInputValue, b: RunInputValue): boolean => a.raw === b.raw && a.unit === b.unit;
+
+export function refineRunDeltaInputChange(
+  row: z.infer<typeof RunDeltaInputChangeObjectSchema>,
+  ctx: z.RefinementCtx,
+  pathPrefix: readonly (string | number)[] = [],
+): void {
+  const issue = (path: string, message: string) =>
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [...pathPrefix, path], message });
+  if ((row.entity_kind === 'option_setting') !== (row.option_id !== undefined)) {
+    issue('option_id', 'option_id travels on an option_setting row and on no other.');
+  }
+  if ((row.entity_kind === 'link') !== (row.link !== undefined)) {
+    issue('link', 'link travels on a link row and on no other.');
+  }
+  if (row.change === 'added' && !(row.before === null && row.after !== null)) {
+    issue('change', 'added has no before and has an after.');
+  }
+  if (row.change === 'removed' && !(row.before !== null && row.after === null)) {
+    issue('change', 'removed has a before and no after.');
+  }
+  if (row.change === 'changed') {
+    if (row.before === null || row.after === null) {
+      issue('change', 'changed has both ends.');
+    } else if (sameValue(row.before, row.after)) {
+      // A label-only difference is not an input change (SC-24 v2 §2).
+      issue('change', 'changed needs a different value or unit — a label-only difference is not an input change.');
+    }
+  }
+}
+
+/** One input that differed between the two Runs. */
+export const RunDeltaInputChangeSchema = RunDeltaInputChangeObjectSchema.superRefine((row, ctx) =>
+  refineRunDeltaInputChange(row, ctx),
+);
+export type RunDeltaInputChange = z.infer<typeof RunDeltaInputChangeObjectSchema>;
+
 /**
  * The bare object — exported schema is the refined version below (the
  * EvidenceBlock/UiDirective pattern; the bare object stays internal).
@@ -193,6 +318,14 @@ const RunDeltaObjectSchema = z.object({
    * (refined below).
    */
   edit_list: z.array(z.string().min(1)).min(1).optional(),
+  // 0.68.0 (SC-24) — see the block above RunDeltaEndpointSchema. ABSENCE SEMANTICS (census: distinct): all three
+  // absent = a pre-0.68 producer; `input_coverage: 'not_recorded'` = an end has no input snapshot (it may also lack
+  // the `run_id` that `endpoints` needs, so endpoints may be absent with it).
+  /** The two Runs this delta compares, by execution identity (`RunAnalysisResult.run_id`). */
+  endpoints: RunDeltaEndpointsSchema.optional(),
+  input_coverage: RunInputCoverage.optional(),
+  /** The inputs that differed, in the producer's display order. Present iff coverage is complete or partial. */
+  input_changes: z.array(RunDeltaInputChangeObjectSchema).max(500).optional(),
 }).strict();
 export type RunDelta = z.infer<typeof RunDeltaObjectSchema>;
 
@@ -226,6 +359,57 @@ export function refineRunDelta(
           'C0_identical requires all four pair equalities (RUN-DELTA-DESIGN §b).',
       });
     }
+  }
+  if (data.attribution_case === 'C5_unattributed') {
+    const c0 = p.seed_equal && p.hash_equal && p.builds_equal === 'equal' && p.n_equal;
+    const c1 = p.seed_equal && !p.hash_equal && p.builds_equal === 'equal' && p.n_equal;
+    if (c0 || c1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [...pathPrefix, 'attribution_case'],
+        message: 'C5_unattributed is refused where C0 or C1 preconditions hold — a classifiable pair is never downgraded.',
+      });
+    }
+  }
+  const e = data.endpoints;
+  if (e !== undefined && e.prior.run_id === e.current.run_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'endpoints'],
+      message: 'A Run is never compared with itself: prior and current carry different execution ids.',
+    });
+  }
+  const listed = data.input_changes !== undefined;
+  const cov = data.input_coverage;
+  // A list describes a named pair. `not_recorded` may travel alone: an older Run carries no run_id to name.
+  if (listed && e === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'endpoints'],
+      message: 'Input changes describe a named pair — endpoints are required with them.',
+    });
+  }
+  if (listed !== (cov === 'complete' || cov === 'partial')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'input_changes'],
+      message: 'input_changes travels iff input_coverage is complete or partial (not_recorded carries no list).',
+    });
+  }
+  if (data.input_changes !== undefined) {
+    const seen = new Set<string>();
+    data.input_changes.forEach((row, i) => {
+      refineRunDeltaInputChange(row, ctx, [...pathPrefix, 'input_changes', i]);
+      const key = JSON.stringify([row.entity_kind, row.entity_id, row.option_id ?? null, row.field]);
+      if (seen.has(key)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [...pathPrefix, 'input_changes', i],
+          message: 'The same input is reported once.',
+        });
+      }
+      seen.add(key);
+    });
   }
   if (data.edit_list !== undefined && p.hash_equal) {
     ctx.addIssue({
