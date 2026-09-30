@@ -23,11 +23,12 @@ stayed unwritten or would have read as the user's. And CEE #2357's graph writers
 - **`NodeV3Schema.ref` + `GraphV3Schema.ref_high_water` (additive).** `ENTITY_REF_PATTERN = /^(OC|G|O|F|R|D|A)[1-9][0-9]{0,8}$/`,
   the prefix fixed by `kind`; the counter is a per-prefix record of safe integers (≤ 999,999,999). Identity only: CEE
   hashes `ref` into the graph IDENTITY hash and keeps both out of the analysis projection. **No analysis hash input
-  changes** (`graph-hash-contract.ts` untouched; projection stays v5). Absent means no ref issued; there is no backfill
-  (census `same`). Producer: CEE #2357 (in review).
+  changes** (projection stays v5); `graph-hash-contract.ts` only CLASSIFIES `ref_high_water` in
+  `GRAPH_HASH_EXCLUDED_GRAPHV3_FIELDS` (a counter, not content), as its completeness test requires. Absent means no ref
+  issued; there is no backfill (census `same`). Producer: CEE #2357 (in review).
 - **Not in this release:** typed intervention `kind` (MG's SC-24 forward contract) ships with its CEE resolution seam, so
   A is not held for C.
-- Release test `release-0.67.0.test.ts` (30 rows; mutant "undeclare the three carriers" turns 17 RED). Fixture registry
+- Release test `release-0.67.0.test.ts` (31 rows; mutant "undeclare the three carriers" turns 17 RED). Fixture registry
   205 → 208; census +3 `same` and +3 receipt-view `unresolved` rows; adoption rows `declared`.
 
 ## [0.66.0] — an option's stated RANGE for a value it sets, and editing it moves the analysis revision (TEMPORAL S1/S2)

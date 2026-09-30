@@ -832,15 +832,15 @@ export type UnitReading = z.infer<typeof UnitReadingSchema>;
  * reference ("O2") can never come to name a different entity. The prefix is fixed by `kind`
  * (goal G · option O · factor F · outcome OC · risk R · decision D · action A); the number is a safe positive integer
  * of at most 9 digits. Display identity only: CEE hashes it into the graph IDENTITY hash and keeps it OUT of the
- * analysis projection (`boundary/graph-hash-contract.ts` is unchanged), so writing refs never makes a Run stale.
+ * analysis projection (`boundary/graph-hash-contract.ts` hashes no new input), so writing refs never makes a Run stale.
  * Absence means no ref was issued (a graph from before refs; there is no backfill).
  */
 export const ENTITY_REF_PATTERN = /^(OC|G|O|F|R|D|A)[1-9][0-9]{0,8}$/;
 export const EntityRefSchema = z.string().regex(ENTITY_REF_PATTERN);
 /**
  * 0.67.0 additive (MG; CEE #2357). The highest ref number ever issued, per prefix, so a retired ref is never
- * reissued. A counter, not content: CEE keeps it out of both the identity and the analysis hash. Absence means no
- * ref has been issued on this graph.
+ * reissued. A counter, not content: CEE keeps it out of both the identity and the analysis hash, and the contract
+ * classifies it in `GRAPH_HASH_EXCLUDED_GRAPHV3_FIELDS`. Absence means no ref has been issued on this graph.
  */
 export const RefHighWaterSchema = z.record(z.string(), z.number().int().nonnegative().max(999_999_999));
 

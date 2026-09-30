@@ -10,8 +10,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CANONICAL_GRAPH_HASH_GRAPHV3_FIELDS,
   CANONICAL_GRAPH_HASH_NESTED_PROJECTION,
   CANONICAL_GRAPH_HASH_PROJECTION_VERSION,
+  GRAPH_HASH_EXCLUDED_GRAPHV3_FIELDS,
 } from '../../src/boundary/graph-hash-contract.js';
 import { EntityRefSchema, GraphV3Schema, NodeV3Schema, UnitReadingSchema } from '../../src/graph.js';
 
@@ -76,5 +78,10 @@ describe('0.67.0 changes NO analysis hash input', () => {
     expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBeGreaterThanOrEqual(5); // a later release may bump it; 0.67.0 does not
     const all = Object.values(CANONICAL_GRAPH_HASH_NESTED_PROJECTION).flatMap((v) => [...v.fields]);
     for (const key of ['ref', 'ref_high_water', 'unit_reading']) expect(all).not.toContain(key);
+  });
+
+  it('`ref_high_water` is CLASSIFIED as excluded from the graph hash (a counter, not content), never left unclassified', () => {
+    expect(GRAPH_HASH_EXCLUDED_GRAPHV3_FIELDS as readonly string[]).toEqual(['ref_high_water']);
+    expect(CANONICAL_GRAPH_HASH_GRAPHV3_FIELDS as readonly string[]).not.toContain('ref_high_water');
   });
 });
