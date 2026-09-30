@@ -44,7 +44,7 @@ export const OptionForAnalysisSchema = z.object({
   status: ProductReadiness,
   interventions: z.record(z.string(), z.number()),
   raw_interventions: z.record(z.string(), z.union([z.number(), z.string(), z.boolean()])).optional(),
-  /** 0.66.0 (TEMPORAL S1): per factor the option sets, the user's stated range. Absent = no range stated. */
+  /** 0.66.0 (TEMPORAL S1): per factor the option sets, the stated range, with its own author. Absent = no range stated. */
   intervention_ranges: z.record(z.string(), InterventionRangeSchema).optional(),
 }).passthrough();
 
