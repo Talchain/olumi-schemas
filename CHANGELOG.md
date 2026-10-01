@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.69.0] — F1 semantic model: goal period / horizon / stated figures, option status, count noun, full label (MG)
+
+**Why.** Paul's 1 Oct sprint test hit four gaps the graph could not hold:
+- his £100k quarterly baseline was dropped against a monthly goal "because the units differ" (the period lived inside
+  the unit string);
+- the UI showed 4 options while the engine analysed 3, and he could not remove "carry on as now";
+- a link's per-unit was re-parsed from free text ("Top 10…" read as a count, #2443, killed);
+- `description` held the elided full label, so the drafter could not write a description.
+
+F1 semantic model spec: programme-docs `output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md` (§1, §3, §5, §5b). Train slot:
+DL #85 5930039919. **Additive and optional only. No migrations** (DL 5930070811): every saved model from before 0.69.0
+still opens, and no key is fabricated.
+
+- **`NodeV3Schema.goal_period?`** (`GoalPeriod`): `none | day | week | month | quarter | year`.
+  - Absent = UNATTESTED (census `distinct`: `none` is an attested level with no period).
+- **`NodeV3Schema.goal_horizon?`** (`GoalHorizonSchema`): `{deadline: YYYY-MM-DD} | {months: 1..120}`, closed, exactly
+  one arm.
+- **`NodeV3Schema.goal_stated_as?`** (`GoalStatedAsSchema[]`, 1..20): `{value, unit, period, quote}`, closed.
+  - Every figure the user GAVE, kept verbatim when it is converted into the goal's period (spec G1). Never the target.
+- **`NodeV3Schema.option_status?`** (`OptionStatus`): `feasible | infeasible | removed`. Absent = `feasible`.
+  - The analysis reads `analysis_participation` (hashed). A writer that sets `infeasible`/`removed` also sets
+    `retained_excluded` in the same write (spec O1).
+- **`NodeV3Schema.count_noun?`** (`CountNounSchema`): the noun a unitless count counts. No digits, so a quantity is
+  never part of a unit (spec S2).
+- **`NodeV3Schema.full_label?`**: the full drafted name when admission shortened the label. Identity reads
+  `full_label ?? label` (spec N2).
+- **`SystemEventSchema` gains `option_status_edit`** (F1 T6): `{option_node_id, status, base_graph_hash}`, strict.
+  - The ONE op behind both the UI control and the Agent's `authorise_change`.
+  - The server writes `option_status` and derives `analysis_participation` in the same commit (a client copy is refused).
+  - Reader-first: CEE deploys the handler before the UI emits it.
+- **`goal_target_edit` gains optional `goal_period`, `goal_horizon`, `stated_as`** (F1 T5: `set_goal` IS this event).
+  - When present, they are written to the goal node in the SAME commit as the target, so a figure and its period
+    are never written apart (G1).
+  - Absent leaves the stored values unchanged; the event never clears them.
+- **Concurrency guards for hash-blind fields** (CODEX #78 5930825929, the `structural_rename` `expected_label` pattern):
+  - `option_status_edit` carries a REQUIRED `expected_status`, with an absent stored status read as `feasible`.
+    `infeasible` ↔ `removed` moves no analysis hash, so a stale request could otherwise undo another user's change.
+  - `goal_target_edit` carries `expected_goal_period` / `expected_goal_horizon` / `expected_stated_as` (null = none
+    recorded), each required iff its field is sent (`refineGoalTargetEdit`).
+  - CEE refuses on any mismatch.
+- **Run records name the user's exclusions** (F1 T6, spec O1):
+  - `OptionParticipationEntrySchema.state` gains `excluded_infeasible` and `excluded_removed`;
+  - `RunInputOptionNotSentSchema.reason` gains `infeasible` and `removed`.
+  - **UI-FIRST:** a UI pinned below 0.69.0 rejects these values, so DGAI vendors 0.69.0 before CEE emits them.
+- **No analysis hash input moves:** projection version stays 5, and none of the keys is in the nested projection
+  (asserted in `release-0.69.0.test.ts`, with `analysis_participation` as the positive control).
+- Adoption-manifest rows (6, `declared`) + absence-census rows (6 canonical + 6 receipt-carrier views).
+- **Unblocks the gate (not a semantic change):** four `declared` rows passed their 2026-09-30 removal date, so
+  `check:adoption` failed at `main` itself (`E_DEADLINE_PASSED`). Those rows are `framing_question`,
+  `decision_classification`, `framing_quality` and PLoT `m1_coaching…framing_quality`. Their date moves to 2026-10-31.
+  Their owners adopt or delete them by then (DL to assign).
+
 ## [0.68.0] — SC-24: "previous Run vs this Run", with what the user changed in their own units
 
 **Why.** "What's changed" compared two Runs' outcomes but could not say what the user CHANGED between them: a Run

@@ -72,6 +72,9 @@ import {
   UnitReadingSchema,
   EntityRefSchema,
   RefHighWaterSchema,
+  GoalHorizonSchema,
+  GoalStatedAsSchema,
+  CountNounSchema,
   StrengthSchema,
   EdgeV3Schema,
   GraphV3Schema,
@@ -412,6 +415,14 @@ export const maximalUnitReading = deepFreeze({
   source_quote: 'FIXTURE deals between £1-2 million',
 });
 
+export const maximalGoalStatedAs = deepFreeze({
+  // 0.69.0 (MG, F1 §1 G1) — closed object: known keys only, every key required.
+  value: 100000,
+  unit: 'GBP',
+  period: 'quarter',
+  quote: 'FIXTURE a baseline of £100k a quarter',
+});
+
 export const maximalNodeV3 = deepFreeze({
   id: ID_FACTOR,
   kind: 'factor',
@@ -433,6 +444,13 @@ export const maximalNodeV3 = deepFreeze({
   // 0.67.0 (MG) — a stable display reference, and the unit this quantity is read in.
   ref: 'F1',
   unit_reading: maximalUnitReading,
+  // 0.69.0 (MG, F1) — goal period / horizon / stated figures, option status, count noun, full drafted name.
+  goal_period: 'month',
+  goal_horizon: { months: 6 },
+  goal_stated_as: [maximalGoalStatedAs],
+  option_status: 'feasible',
+  count_noun: 'deals',
+  full_label: 'FIXTURE the full drafted name of this factor',
   [PROBE]: true,
 });
 
@@ -2820,6 +2838,23 @@ const eventGoalTargetEdit = deepFreeze({
   raw_value: 400000,
   unit: '£',
   base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+  // 0.69.0 (MG, F1 T5) — optional: the period, the horizon and what the user said, written with the target.
+  goal_period: 'quarter',
+  goal_horizon: { deadline: '2027-03-31' },
+  stated_as: [{ value: 400000, unit: '£', period: 'quarter', quote: 'FIXTURE at least £400k a quarter by March' }],
+  // CODEX #78 5930825929: each hash-blind field sent carries the value last read (null = none recorded).
+  expected_goal_period: 'month',
+  expected_goal_horizon: { months: 6 },
+  expected_stated_as: [{ value: 100000, unit: '£', period: 'quarter', quote: 'FIXTURE about £100k a quarter today' }],
+});
+// 0.69.0 (MG, F1 T6). Four fields, all REQUIRED, so the fixture is maximal by construction. `removed` on the
+// BASELINE option: the case Paul could not do (spec O2).
+const eventOptionStatusEdit = deepFreeze({
+  kind: 'option_status_edit',
+  option_node_id: ID_OPTION_A,
+  expected_status: 'feasible',
+  status: 'removed',
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
 });
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
@@ -3205,6 +3240,9 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'root/UnitReadingSchema', schema: UnitReadingSchema, fixture: maximalUnitReading },
   { family: 'root/EntityRefSchema', schema: EntityRefSchema, fixture: 'F1' },
   { family: 'root/RefHighWaterSchema', schema: RefHighWaterSchema, fixture: deepFreeze({ F: 1 }) },
+  { family: 'root/GoalHorizonSchema', schema: GoalHorizonSchema, fixture: deepFreeze({ deadline: '2027-03-31' }) },
+  { family: 'root/GoalStatedAsSchema', schema: GoalStatedAsSchema, fixture: maximalGoalStatedAs },
+  { family: 'root/CountNounSchema', schema: CountNounSchema, fixture: 'deals' },
   { family: 'root/StrengthSchema', schema: StrengthSchema, fixture: maximalStrength },
   { family: 'root/EdgeV3Schema', schema: EdgeV3Schema, fixture: maximalEdgeV3 },
   {
@@ -3810,6 +3848,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: eventGoalTargetEdit,
     notes:
       '0.59.0: sets ONE goal\'s success target, addressed by the canonical goal node id. The client sends intent only — constraint_type (at_least | at_most, required, no default), raw_value (the absolute LEVEL in the user\'s units, finite and >= 0 — zero is a real at_most level; the server refuses at_least 0), unit (non-blank) and the base_graph_hash stale gate. The cap, goal_threshold (raw / cap), the frame and provenance are SERVER-derived and refused on the wire by .strict(). at_most writes only the goal_constraints row and leaves the goal\'s threshold untouched, mirroring the add_constraint handler (ISL computes P(samples >= threshold), so a keep-below bound encoded as a threshold would invert the claim). No expected twin: goal_threshold, goal_threshold_raw, goal_threshold_cap and goal_constraints are all inside the analysis-affecting projection, so base_graph_hash already sees a concurrent change. Named constraint_type, not direction, to stay apart from the proposed goal_direction (the objective\'s sense).',
+  },
+  {
+    family: 'boundary/SystemEventSchema#option_status_edit',
+    schema: SystemEventSchema,
+    fixture: eventOptionStatusEdit,
+    notes:
+      '0.69.0 (MG, F1 T6): sets ONE option\'s lifecycle (feasible | infeasible | removed), addressed by the canonical option node id, with the base_graph_hash stale gate. The server writes NodeV3.option_status and DERIVES analysis_participation (retained_excluded for infeasible/removed, included for feasible) in the same commit; .strict() refuses a client-sent participation. The baseline may be marked (spec O2). Not structural_delete: the option and its wording stay in the model.',
   },
   {
     family: 'boundary/SystemEventTurnPayloadSchema',

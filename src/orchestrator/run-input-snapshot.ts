@@ -85,7 +85,8 @@ export type RunInputOption = z.infer<typeof RunInputOptionSchema>;
 export const RunInputOptionNotSentSchema = z.object({
   option_id: Id,
   label: Label.optional(),
-  reason: z.enum(['not_analysable', 'olumi_proposed']),
+  // 0.69.0 (MG, F1 T6): `infeasible` / `removed` — the user marked the option (NodeV3.option_status).
+  reason: z.enum(['not_analysable', 'olumi_proposed', 'infeasible', 'removed']),
 }).strict();
 
 /** A factor's own value, as sent. */

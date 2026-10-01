@@ -63,9 +63,9 @@
     }
   },
   "counts": {
-    "distinct": 125,
-    "same": 52,
-    "unresolved": 420
+    "distinct": 129,
+    "same": 60,
+    "unresolved": 426
   },
   "open_objects": {
     "_doc": [
@@ -2380,6 +2380,54 @@
       "note": "0.67.0 (MG; P0 SHARED DATA 5914707462, AIQ 5914471584). One state only: the object is closed and every member is required (unit, source, a non-empty source_quote), so it has no empty or default form; absence is the single way to say UNATTESTED - nobody has recorded which unit this quantity is in. It carries no value, so neither state can move a figure.",
       "ref": "src/graph.ts - UnitReadingSchema doc comment (0.67.0)"
     },
+    "boundary/NodeV3Schema.goal_period": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "0.69.0 (MG, F1 spec \u00a71). Absence is UNATTESTED: nobody recorded the period, which may still sit inside the unit string (\"GBP per month\"), so no consumer may infer one. `none` is a different, attested claim: the goal is a level with no period (a headcount, a balance). A consumer that read absence as `none` would drop a period the unit string still carries.",
+      "ref": "src/graph.ts - GoalPeriod doc comment + NodeV3Schema.goal_period (0.69.0, MG F1; spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md)"
+    },
+    "boundary/NodeV3Schema.goal_horizon": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 spec \u00a71). One state only: the horizon is a closed one-arm union (a date OR a month count, each required), so it has no empty form; absence is the single way to say no horizon was stated (the goal is undated). It is not sent to the analysis, so neither state moves a figure.",
+      "ref": "src/graph.ts - GoalHorizonSchema doc comment + NodeV3Schema.goal_horizon (0.69.0, MG F1; spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md)"
+    },
+    "boundary/NodeV3Schema.goal_stated_as": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 spec \u00a71 G1). One state only: an empty list is refused (min 1), so absence is the single way to say no stated figure was recorded. It is a record of what the user SAID, never the target (the target stays goal_threshold*), so neither state moves a figure.",
+      "ref": "src/graph.ts - GoalStatedAsSchema doc comment + NodeV3Schema.goal_stated_as (0.69.0, MG F1; spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md)"
+    },
+    "boundary/NodeV3Schema.option_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 spec \u00a73). The contract states it: absent = `feasible`, which is every option before 0.69.0, so absence and `feasible` select the same reading. Only `infeasible` and `removed` are different claims, and they are always explicit. The analysis reads analysis_participation (hashed), never this word, so neither state moves a figure.",
+      "ref": "src/graph.ts - OptionStatus doc comment + NodeV3Schema.option_status (0.69.0, MG F1; spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md)"
+    },
+    "boundary/NodeV3Schema.count_noun": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 spec \u00a75 S1/S2). One state only: the noun is non-empty and refuses digits and edge spaces, so absence is the single way to say no count noun was recorded (the node unit applies). It never carries a quantity.",
+      "ref": "src/graph.ts - CountNounSchema doc comment + NodeV3Schema.count_noun (0.69.0, MG F1; spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md)"
+    },
+    "boundary/NodeV3Schema.full_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 spec \u00a75b N1-N3). One state only: an empty full label is refused, so absence is the single way to say the label IS the full name (admission did not shorten it). Identity reads full_label ?? label, so both states name the same node.",
+      "ref": "src/graph.ts - NodeV3Schema.full_label doc comment + NodeV3Schema.full_label (0.69.0, MG F1; spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md)"
+    },
     "boundary/GraphV3Schema.ref_high_water": {
       "markers": [
         "optional"
@@ -2750,6 +2798,57 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.goal_period": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 T5). Absent leaves the goal node's stored goal_period UNCHANGED (the event never clears it); present writes it with the target in one commit. The node field carries its own absence verdict (NodeV3Schema.goal_period, distinct); on this event absence has one meaning, \"not part of this edit\".",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.goal_period (0.69.0, MG F1 T5)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.expected_goal_horizon": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "0.69.0 (MG; CODEX #78 5930825929). An optimistic-concurrency assertion, never a value. Absent is legal ONLY when its field (goal_horizon) is not sent, and is then the single way to say \"this event asserts nothing about it\" (refineGoalTargetEdit enforces the pairing at the payload root); null is a different, explicit claim: none recorded on the node.",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.expected_goal_horizon + refineGoalTargetEdit (0.69.0)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.expected_goal_period": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "0.69.0 (MG; CODEX #78 5930825929). An optimistic-concurrency assertion, never a value. Absent is legal ONLY when its field (goal_period) is not sent, and is then the single way to say \"this event asserts nothing about it\" (refineGoalTargetEdit enforces the pairing at the payload root); null is a different, explicit claim: none recorded on the node.",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.expected_goal_period + refineGoalTargetEdit (0.69.0)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.expected_stated_as": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "0.69.0 (MG; CODEX #78 5930825929). An optimistic-concurrency assertion, never a value. Absent is legal ONLY when its field (stated_as) is not sent, and is then the single way to say \"this event asserts nothing about it\" (refineGoalTargetEdit enforces the pairing at the payload root); null is a different, explicit claim: none recorded on the node.",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.expected_stated_as + refineGoalTargetEdit (0.69.0)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.goal_horizon": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 T5). Absent leaves the stored horizon unchanged; present writes it. The closed one-arm union has no empty form, so absence is the single way to say \"not part of this edit\".",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.goal_horizon (0.69.0, MG F1 T5)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.stated_as": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 T5). Absent leaves the stored figures unchanged; an empty list is refused (min 1), so absence is the single way to say \"no stated figure in this edit\".",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.stated_as (0.69.0, MG F1 T5)"
     },
     "boundary/SystemEventSchema|kind=direct_graph_edit.changed_edge_ids": {
       "markers": [
@@ -4093,6 +4192,48 @@
       ],
       "verdict": "unresolved",
       "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.unit_reading`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].goal_period": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.goal_period`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `distinct`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].goal_horizon": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.goal_horizon`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].goal_stated_as": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.goal_stated_as`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].option_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.option_status`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].count_noun": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.count_noun`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].full_label": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved",
+      "note": "RECEIPT-CARRIER VIEW of `boundary/NodeV3Schema.full_label`. The receipt graph is a receipt-only projection of GraphV3 (see the RECEIPT-SCOPED SIGMA block in src/boundary/model-versions.ts): the two sigma leaves are widened to the band the model-version writer persists verbatim, and every other field - including this one - is inherited from the canonical schema by `.extend()`, byte-identical. The projection is a distinct schema identity, so the walker derives a distinct row; the ABSENCE QUESTION is the same question. Its answer stands at the canonical row (verdict there: `same`) and is deliberately NOT restated here - a duplicated verdict is a hand-maintained mirror that would drift the moment the canonical row is answered."
     },
     "boundary/ModelVersionMutationReceiptV1Schema.graph.ref_high_water": {
       "markers": [

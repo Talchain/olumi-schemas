@@ -27,6 +27,12 @@ export {
   ENTITY_REF_PATTERN,
   EntityRefSchema,
   RefHighWaterSchema,
+  // 0.69.0 additive — MG (F1 semantic model): goal period / horizon / stated figures, option status, count noun.
+  GoalPeriod,
+  GoalHorizonSchema,
+  GoalStatedAsSchema,
+  OptionStatus,
+  CountNounSchema,
   // 0.40.0 additive — PR4 evidence loop: the declared observed_state.source
   // vocabulary (consumer-side; the wire field stays z.string()).
   OBSERVED_STATE_SOURCE_LITERALS,
@@ -54,6 +60,11 @@ export type {
   // 0.67.0 additive.
   UnitReadingSourceType,
   UnitReading,
+  // 0.69.0 additive.
+  GoalPeriodType,
+  GoalHorizon,
+  GoalStatedAs,
+  OptionStatusType,
 } from './graph.js';
 
 // 0.40.0 (PR4 evidence loop) — the shared {round_id, participant_id}

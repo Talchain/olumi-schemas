@@ -244,14 +244,20 @@ export type GoalCertaintyDecision = z.infer<typeof GoalCertaintyDecisionSchema>;
  * `unanalysable_user_option_ids` says WHY a keep happened (Runtime 5888591648): PRESENT (≥1) when the gate excluded the
  * user's own option(s) ("Olumi's stayed because your X couldn't be analysed"); ABSENT when the user simply named fewer
  * than two options (nothing was excluded, so nothing may be said to be unanalysable). Never present on an exclusion.
+ *
+ * 0.69.0: a user-owned option appears ONLY when the user marked it `infeasible` or `removed` (`excluded_infeasible` /
+ * `excluded_removed`), never otherwise.
  */
 export const OptionParticipationEntrySchema = z.object({
   option_id: z.string().min(1),
-  state: z.enum(['excluded_olumi_proposed', 'kept_olumi_provisional']),
+  // 0.69.0 (MG, F1 T6): `excluded_infeasible` / `excluded_removed` — an option the USER marked (NodeV3.option_status via
+  // `option_status_edit`) is out of this Run, and says so; the analysed set and the shown set are one set (spec O1).
+  // UI-FIRST: a UI pinned below 0.69.0 rejects these values, so DGAI vendors 0.69.0 before CEE emits them.
+  state: z.enum(['excluded_olumi_proposed', 'kept_olumi_provisional', 'excluded_infeasible', 'excluded_removed']),
   /** `kept_olumi_provisional` only, and only when the gate excluded the user's own option(s): which ones. */
   unanalysable_user_option_ids: z.array(z.string().min(1)).min(1).optional(),
 }).strict().superRefine((e, ctx) => {
-  if (e.state === 'excluded_olumi_proposed' && e.unanalysable_user_option_ids !== undefined) {
+  if (e.state !== 'kept_olumi_provisional' && e.unanalysable_user_option_ids !== undefined) {
     ctx.addIssue({ code: 'custom', path: ['unanalysable_user_option_ids'],
       message: 'only a provisional keep names unanalysable user options' });
   }
