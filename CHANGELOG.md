@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.72.0] — a link's authorship, recorded so its change can be explained pairwise (F1b 52f8cd; DL ruling on CEE #2482 r3)
+
+**Why.** A user's typed band edit (`adjust_edge_strength` set) and an Accept both rewrite link provenance. Under 0.71's
+per-Run residual that change could not be tied to the `sizing` row that states it, so the investor step read
+`input_coverage: 'partial'`; stripping provenance instead would hide a source change inside one sizing class (CODEX).
+
+### Added (additive, optional)
+- `RunInputLinkSchema.authorship_digest?` — sha256 (hex 64) of a canonical serialisation of exactly the link's
+  `provenance` (review metadata `reviewed_by_user` removed), `provenance_display`, `defaulted`, `exists_defaulted`,
+  `std_defaulted` (absent → null; keys sorted). A producer explains an authorship change only beside a `sizing` row to
+  `user` (the user's own write) or `placeholder` → `olumi_accepted` (the Accept); any other change is `partial`.
+
+### Tests
+- `tests/contracts/release-0.72.0.test.ts`: 9 rows. Mutant: drop the field → the parse rows RED. Census +1 (134).
+
+No consumer needs to vendor 0.72.0 (`RunDelta` unchanged; the snapshot is CEE-internal). Order: publish → CEE #2482.
+
 ## [0.71.0] — `input_coverage: 'complete'` means VERIFIED (F1b 52f8cd; DL ruling on CEE #2482)
 
 **Why.** CODEX overflow on CEE #2482 reproduced two changes the Run input snapshot does not record — a factor's σ and an

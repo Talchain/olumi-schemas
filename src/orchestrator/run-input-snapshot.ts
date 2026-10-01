@@ -127,6 +127,15 @@ export const RunInputLinkSchema = z.object({
   band: StrengthBand.optional(),
   /** Who sized the link (CEE `linkSizing`). A different literal between two Runs is a `sizing` row. */
   sizing: RunInputLinkSizing.optional(),
+  /**
+   * 0.72.0 (DL ruling #2482 r3): sha256 (hex 64) of the link's AUTHORSHIP as the request carried it — a canonical
+   * serialisation of exactly `provenance` (with review metadata `reviewed_by_user` removed), `provenance_display`,
+   * `defaulted`, `exists_defaulted` and `std_defaulted` (absent members as null; keys sorted). Recorded so a producer can
+   * tell, pairwise, whether an authorship change is the one a `sizing` row states (the user's own write → `user`;
+   * Olumi's placeholder accepted → `olumi_accepted`) or is unexplained (→ `input_coverage: 'partial'`). Never a row
+   * figure. Absent = an older Run that did not record it.
+   */
+  authorship_digest: z.string().regex(/^[0-9a-f]{64}$/).optional(),
 }).strict();
 
 function uniqueBy<T>(key: (row: T) => string, message: string) {
