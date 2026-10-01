@@ -288,7 +288,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.68.0 (+4): boundary/RunDeltaEndpointSchema, RunDeltaEndpointsSchema,
     //   RunInputValueSchema, RunDeltaInputChangeSchema — SC-24's pair endpoints and
     //   exact input changes, which cross the UI wire inside run_delta.
-    expect(MAXIMAL_FIXTURES.length).toBe(212);
+    // 0.69.0 (+3): root/GoalHorizonSchema (a closed one-arm union), root/GoalStatedAsSchema (closed, every field
+    //   REQUIRED) and root/CountNounSchema (a string) — MG, F1 semantic model fields.
+    expect(MAXIMAL_FIXTURES.length).toBe(215);
   });
 
   it('family keys are unique', () => {

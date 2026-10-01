@@ -40,7 +40,7 @@
       "consumer_test": null,
       "deployment_flag": null,
       "state": "declared",
-      "n_minus_1_removal_date": "2026-09-30",
+      "n_minus_1_removal_date": "2026-10-31",
       "notes": [
         "MEASURED 2026-07-26, cee@staging 1c078f09a: ZERO producer sites. Every CEE hit is",
         "  tests/contract/cee-egress-wire-surface-pin.test.ts:95,116, which asserts the field is",
@@ -62,7 +62,7 @@
       "consumer_test": null,
       "deployment_flag": null,
       "state": "declared",
-      "n_minus_1_removal_date": "2026-09-30",
+      "n_minus_1_removal_date": "2026-10-31",
       "notes": [
         "MEASURED 2026-07-26, cee@staging 1c078f09a: ZERO producer sites. Only CEE hit is the",
         "  optionality pin at tests/contract/cee-egress-wire-surface-pin.test.ts:87,117.",
@@ -82,7 +82,7 @@
       "consumer_test": null,
       "deployment_flag": null,
       "state": "declared",
-      "n_minus_1_removal_date": "2026-09-30",
+      "n_minus_1_removal_date": "2026-10-31",
       "notes": [
         "MEASURED 2026-07-26, cee@staging 1c078f09a: ZERO producer sites for the CONTRACT field.",
         "NAME COLLISION — two unrelated fields share this name and must not be conflated:",
@@ -107,7 +107,7 @@
       "consumer_test": null,
       "deployment_flag": null,
       "state": "declared",
-      "n_minus_1_removal_date": "2026-09-30",
+      "n_minus_1_removal_date": "2026-10-31",
       "notes": [
         "The colliding numeric twin of the row above. It IS produced and IS read, but it is",
         "governed by NO shared contract — it reaches the UI through an untyped passthrough blob.",
@@ -1309,6 +1309,90 @@
       "n_minus_1_removal_date": "2026-12-31",
       "notes": [
         "DECLARED 2026-09-30 with graph.nodes[].ref. Absence = no ref issued (census verdict `same`); the allocator also reads every node ref, so dropping the key never lowers a number."
+      ]
+    },
+    {
+      "field": "graph.nodes[].goal_period",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.goal_period + GoalPeriod (0.69.0) - none | day | week | month | quarter | year; the period a goal's figures are per",
+      "producer": "cee - construction (drafter fills it from the brief) + the set_goal op (F1 T5) + CEE's strict NodeV3 mirror (src/schemas/cee-v3.ts, F1 T1); NOT YET BUILT",
+      "consumer": "cee - goal testability (spec G3) and the Agent's goal words; ui - goal card; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-10-01 (F1, DL plan 5929994142; train slot DL #85 5930039919; no migrations DL 5930070811). F1 spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md (branch mg/semantic-model-spec) §1. Absence = UNATTESTED (census verdict `distinct`: `none` is an attested no-period level). Not an analysis hash input; set_goal converts goal_threshold* in the same write when the period changes (G1)."
+      ]
+    },
+    {
+      "field": "graph.nodes[].goal_horizon",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.goal_horizon + GoalHorizonSchema (0.69.0) - {deadline: YYYY-MM-DD} | {months: 1..120}, closed, one arm",
+      "producer": "cee - construction + set_goal (F1 T5) + the strict mirror (F1 T1); NOT YET BUILT",
+      "consumer": "cee - goal testability for a dated target (G3); ui - goal card; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-10-01 (F1, DL plan 5929994142; train slot DL #85 5930039919; no migrations DL 5930070811). F1 spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md (branch mg/semantic-model-spec) §1. Absence = no horizon stated (census verdict `same`). Not sent to PLoT; not an analysis hash input."
+      ]
+    },
+    {
+      "field": "graph.nodes[].goal_stated_as",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.goal_stated_as + GoalStatedAsSchema (0.69.0) - [{value, unit, period, quote}], 1..20, closed; what the user SAID, never the target",
+      "producer": "cee - set_goal (F1 T5) keeps every figure the user gave, verbatim, when it converts one into the goal's period (G1); NOT YET BUILT",
+      "consumer": "cee - the Agent's goal words (cite the figure as said); ui - goal card; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-10-01 (F1, DL plan 5929994142; train slot DL #85 5930039919; no migrations DL 5930070811). F1 spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md (branch mg/semantic-model-spec) §1 G1 (Paul 1 Oct: his £100k quarterly baseline was dropped because the units differed). Absence = none recorded (census verdict `same`; an empty list is refused)."
+      ]
+    },
+    {
+      "field": "graph.nodes[].option_status",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.option_status + OptionStatus (0.69.0) - feasible | infeasible | removed; the option's lifecycle as the user set it",
+      "producer": "cee - the set_option_status op (F1 T6), which also writes analysis_participation: retained_excluded for infeasible/removed in the same write; the strict mirror (F1 T1); NOT YET BUILT",
+      "consumer": "ui - options list shows every option with its status (spec O1); cee - Agent option words; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-10-01 (F1, DL plan 5929994142; train slot DL #85 5930039919; no migrations DL 5930070811). F1 spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md (branch mg/semantic-model-spec) §3 (Paul 1 Oct: 4 options shown, 3 analysed; the baseline could not be removed). Absence = feasible (census verdict `same`). The analysis reads analysis_participation (hashed), never this word."
+      ]
+    },
+    {
+      "field": "graph.nodes[].count_noun",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.count_noun + CountNounSchema (0.69.0) - the noun a unitless count counts; 1..40 chars, no digits, no edge spaces",
+      "producer": "cee - construction writes it on count outcomes (F1 T8) + the strict mirror (F1 T1); NOT YET BUILT",
+      "consumer": "cee - size_link selects a link's per-unit from it (spec S1); ui - link card per-unit; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-10-01 (F1, DL plan 5929994142; train slot DL #85 5930039919; no migrations DL 5930070811). F1 spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md (branch mg/semantic-model-spec) §5 S1/S2 (replaces #2443's free-text door, killed). Absence = no count noun; the node's unit applies (census verdict `same`)."
+      ]
+    },
+    {
+      "field": "graph.nodes[].full_label",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.full_label (0.69.0) - the node's full drafted name when admission shortened the label; 1..500 chars",
+      "producer": "cee - admission label elision (admit-model.ts) moves from description to full_label (F1 T14) + the strict mirror (F1 T1); NOT YET BUILT",
+      "consumer": "cee - identity, twin-matching and the Agent's full name read full_label ?? label (N2/N3); ui - hover; NOT YET BUILT",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED 2026-10-01 (F1, DL plan 5929994142; train slot DL #85 5930039919; no migrations DL 5930070811). F1 spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md (branch mg/semantic-model-spec) §5b N1-N3 (CANVAS 5929959391). Absence = the label is the full name (census verdict `same`). Not an analysis hash input."
       ]
     }
   ]

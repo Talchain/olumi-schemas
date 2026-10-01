@@ -72,6 +72,9 @@ import {
   UnitReadingSchema,
   EntityRefSchema,
   RefHighWaterSchema,
+  GoalHorizonSchema,
+  GoalStatedAsSchema,
+  CountNounSchema,
   StrengthSchema,
   EdgeV3Schema,
   GraphV3Schema,
@@ -412,6 +415,14 @@ export const maximalUnitReading = deepFreeze({
   source_quote: 'FIXTURE deals between £1-2 million',
 });
 
+export const maximalGoalStatedAs = deepFreeze({
+  // 0.69.0 (MG, F1 §1 G1) — closed object: known keys only, every key required.
+  value: 100000,
+  unit: 'GBP',
+  period: 'quarter',
+  quote: 'FIXTURE a baseline of £100k a quarter',
+});
+
 export const maximalNodeV3 = deepFreeze({
   id: ID_FACTOR,
   kind: 'factor',
@@ -433,6 +444,13 @@ export const maximalNodeV3 = deepFreeze({
   // 0.67.0 (MG) — a stable display reference, and the unit this quantity is read in.
   ref: 'F1',
   unit_reading: maximalUnitReading,
+  // 0.69.0 (MG, F1) — goal period / horizon / stated figures, option status, count noun, full drafted name.
+  goal_period: 'month',
+  goal_horizon: { months: 6 },
+  goal_stated_as: [maximalGoalStatedAs],
+  option_status: 'feasible',
+  count_noun: 'deals',
+  full_label: 'FIXTURE the full drafted name of this factor',
   [PROBE]: true,
 });
 
@@ -3205,6 +3223,9 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'root/UnitReadingSchema', schema: UnitReadingSchema, fixture: maximalUnitReading },
   { family: 'root/EntityRefSchema', schema: EntityRefSchema, fixture: 'F1' },
   { family: 'root/RefHighWaterSchema', schema: RefHighWaterSchema, fixture: deepFreeze({ F: 1 }) },
+  { family: 'root/GoalHorizonSchema', schema: GoalHorizonSchema, fixture: deepFreeze({ deadline: '2027-03-31' }) },
+  { family: 'root/GoalStatedAsSchema', schema: GoalStatedAsSchema, fixture: maximalGoalStatedAs },
+  { family: 'root/CountNounSchema', schema: CountNounSchema, fixture: 'deals' },
   { family: 'root/StrengthSchema', schema: StrengthSchema, fixture: maximalStrength },
   { family: 'root/EdgeV3Schema', schema: EdgeV3Schema, fixture: maximalEdgeV3 },
   {

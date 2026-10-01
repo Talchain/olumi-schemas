@@ -844,6 +844,56 @@ export const EntityRefSchema = z.string().regex(ENTITY_REF_PATTERN);
  */
 export const RefHighWaterSchema = z.record(z.string(), z.number().int().nonnegative().max(999_999_999));
 
+/**
+ * 0.69.0 additive (MG, F1 semantic model — programme-docs `output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md` §1).
+ * The period a goal's figures are stated per. `none` = a level with no period (a headcount, a balance).
+ * Absent = UNATTESTED: the period may still sit inside the unit string ("GBP per month"); no consumer may infer one.
+ * Not an analysis hash input: PLoT computes on `goal_threshold*`, and `set_goal` converts those (×3, ×12) in the same
+ * write whenever the period changes (spec G1), so a period change that moves a figure moves a hashed field.
+ */
+export const GoalPeriod = z.enum(['none', 'day', 'week', 'month', 'quarter', 'year']);
+export type GoalPeriodType = z.infer<typeof GoalPeriod>;
+
+/**
+ * 0.69.0 additive (MG, spec §1). When the goal must be met: a calendar date, OR a number of months from now. Closed,
+ * exactly one arm. Absent = no horizon stated (the goal is undated). Not an analysis hash input (PLoT is not sent it).
+ */
+export const GoalHorizonSchema = z.union([
+  z.object({ deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).strict(),
+  z.object({ months: z.number().int().min(1).max(120) }).strict(),
+]);
+export type GoalHorizon = z.infer<typeof GoalHorizonSchema>;
+
+/**
+ * 0.69.0 additive (MG, spec §1 G1). One figure the user GAVE for the goal, kept verbatim with its own unit and period,
+ * so a figure stated per quarter is converted explicitly into the goal's period and never dropped. A record of what was
+ * said, never the target itself: the target stays `goal_threshold*`.
+ */
+export const GoalStatedAsSchema = z.object({
+  value: z.number().finite(),
+  unit: z.string().min(1).max(40),
+  period: GoalPeriod,
+  quote: z.string().min(1).max(500),
+}).strict();
+export type GoalStatedAs = z.infer<typeof GoalStatedAsSchema>;
+
+/**
+ * 0.69.0 additive (MG, spec §3). An option's lifecycle as the USER set it. Absent = `feasible` (every option before
+ * 0.69.0). The analysis reads `analysis_participation` (hashed), not this word: a writer that sets `infeasible` or
+ * `removed` also sets `analysis_participation: 'retained_excluded'` in the same write, so the analysed set and the
+ * shown set are one set (spec O1). This field says WHY an option is out; it never moves a figure on its own.
+ */
+export const OptionStatus = z.enum(['feasible', 'infeasible', 'removed']);
+export type OptionStatusType = z.infer<typeof OptionStatus>;
+
+/**
+ * 0.69.0 additive (MG, spec §5 S1/S2). The noun a unitless count is a count OF ("deals", "conversations"), written at
+ * construction, so a link's per-unit is SELECTED from the source node ("£ per deal"), never re-parsed from free text.
+ * A quantity is never part of the noun (S2: "100 conversations" is not a unit), so digits are refused.
+ * Absent = no count noun recorded (the node's unit applies).
+ */
+export const CountNounSchema = z.string().min(1).max(40).regex(/^[^\d\s](?:[^\d]*[^\d\s])?$/);
+
 export const NodeV3Schema = z.object({
   id: z.string().min(1).max(100).regex(NODE_ID_PATTERN),
   kind: NodeKind,
@@ -870,6 +920,21 @@ export const NodeV3Schema = z.object({
   ref: EntityRefSchema.optional(),
   /** 0.67.0 additive (MG). Which unit this quantity is read in, and who read it — see `UnitReadingSchema`. */
   unit_reading: UnitReadingSchema.optional(),
+  /** 0.69.0 additive (MG, F1 spec §1). The period the goal's figures are per — see `GoalPeriod`. */
+  goal_period: GoalPeriod.optional(),
+  /** 0.69.0 additive (MG, F1 spec §1). When the goal must be met — see `GoalHorizonSchema`. */
+  goal_horizon: GoalHorizonSchema.optional(),
+  /** 0.69.0 additive (MG, F1 spec §1 G1). Every goal figure the user gave, verbatim — see `GoalStatedAsSchema`. */
+  goal_stated_as: z.array(GoalStatedAsSchema).min(1).max(20).optional(),
+  /** 0.69.0 additive (MG, F1 spec §3). The option's lifecycle as the user set it — see `OptionStatus`. */
+  option_status: OptionStatus.optional(),
+  /** 0.69.0 additive (MG, F1 spec §5). What a unitless count counts — see `CountNounSchema`. */
+  count_noun: CountNounSchema.optional(),
+  /**
+   * 0.69.0 additive (MG, F1 spec §5b N1–N3). The node's full drafted name when the label was shortened. Identity and
+   * twin-matching read `full_label ?? label`. Absent = the label IS the full name. Not an analysis hash input.
+   */
+  full_label: z.string().min(1).max(500).optional(),
 }).passthrough();
 
 export const StrengthSchema = z.object({
