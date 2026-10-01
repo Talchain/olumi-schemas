@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 126,
+    "distinct": 129,
     "same": 60,
     "unresolved": 426
   },
@@ -2806,6 +2806,33 @@
       "verdict": "same",
       "note": "0.69.0 (MG, F1 T5). Absent leaves the goal node's stored goal_period UNCHANGED (the event never clears it); present writes it with the target in one commit. The node field carries its own absence verdict (NodeV3Schema.goal_period, distinct); on this event absence has one meaning, \"not part of this edit\".",
       "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.goal_period (0.69.0, MG F1 T5)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.expected_goal_horizon": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "0.69.0 (MG; CODEX #78 5930825929). An optimistic-concurrency assertion, never a value. Absent is legal ONLY when its field (goal_horizon) is not sent, and is then the single way to say \"this event asserts nothing about it\" (refineGoalTargetEdit enforces the pairing at the payload root); null is a different, explicit claim: none recorded on the node.",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.expected_goal_horizon + refineGoalTargetEdit (0.69.0)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.expected_goal_period": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "0.69.0 (MG; CODEX #78 5930825929). An optimistic-concurrency assertion, never a value. Absent is legal ONLY when its field (goal_period) is not sent, and is then the single way to say \"this event asserts nothing about it\" (refineGoalTargetEdit enforces the pairing at the payload root); null is a different, explicit claim: none recorded on the node.",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.expected_goal_period + refineGoalTargetEdit (0.69.0)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.expected_stated_as": {
+      "markers": [
+        "optional",
+        "nullable"
+      ],
+      "verdict": "distinct",
+      "note": "0.69.0 (MG; CODEX #78 5930825929). An optimistic-concurrency assertion, never a value. Absent is legal ONLY when its field (stated_as) is not sent, and is then the single way to say \"this event asserts nothing about it\" (refineGoalTargetEdit enforces the pairing at the payload root); null is a different, explicit claim: none recorded on the node.",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.expected_stated_as + refineGoalTargetEdit (0.69.0)"
     },
     "boundary/SystemEventSchema|kind=goal_target_edit.goal_horizon": {
       "markers": [

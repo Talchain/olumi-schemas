@@ -2842,12 +2842,17 @@ const eventGoalTargetEdit = deepFreeze({
   goal_period: 'quarter',
   goal_horizon: { deadline: '2027-03-31' },
   stated_as: [{ value: 400000, unit: '£', period: 'quarter', quote: 'FIXTURE at least £400k a quarter by March' }],
+  // CODEX #78 5930825929: each hash-blind field sent carries the value last read (null = none recorded).
+  expected_goal_period: 'month',
+  expected_goal_horizon: { months: 6 },
+  expected_stated_as: [{ value: 100000, unit: '£', period: 'quarter', quote: 'FIXTURE about £100k a quarter today' }],
 });
 // 0.69.0 (MG, F1 T6). Four fields, all REQUIRED, so the fixture is maximal by construction. `removed` on the
 // BASELINE option: the case Paul could not do (spec O2).
 const eventOptionStatusEdit = deepFreeze({
   kind: 'option_status_edit',
   option_node_id: ID_OPTION_A,
+  expected_status: 'feasible',
   status: 'removed',
   base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
 });

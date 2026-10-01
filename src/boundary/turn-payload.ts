@@ -1090,6 +1090,39 @@ export function refineStructuralRename(
 }
 
 /**
+ * 0.69.0 cross-field rules (CODEX #78 5930825929) — root-level, like `refineStructuralRename`, because discriminatedUnion
+ * members must stay plain ZodObjects.
+ *   · `option_status_edit`: a request for the status it last read is a no-op (refused, like a rename to the same label).
+ *   · `goal_target_edit`: each hash-blind metadata field SENT carries its expected value; an expected value with no field
+ *     sent is refused too (it asserts nothing the event writes).
+ */
+export function refineOptionStatusEdit(
+  ev: { readonly status: string; readonly expected_status: string },
+  ctx: z.RefinementCtx,
+  pathPrefix: readonly (string | number)[] = [],
+): void {
+  if (ev.status === ev.expected_status) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [...pathPrefix, 'status'],
+      message: 'an option_status_edit to the status it already has is a no-op — supply a status that differs from expected_status' });
+  }
+}
+export function refineGoalTargetEdit(
+  ev: Record<string, unknown>,
+  ctx: z.RefinementCtx,
+  pathPrefix: readonly (string | number)[] = [],
+): void {
+  for (const [field, expected] of [['goal_period', 'expected_goal_period'], ['goal_horizon', 'expected_goal_horizon'], ['stated_as', 'expected_stated_as']] as const) {
+    const sent = ev[field] !== undefined;
+    const asserted = ev[expected] !== undefined;
+    if (sent !== asserted) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [...pathPrefix, sent ? expected : field],
+        message: sent ? `${field} is outside the analysis hash: send ${expected} (the value last read; null = none recorded)`
+          : `${expected} asserts a field this event does not write — send ${field} with it, or neither` });
+    }
+  }
+}
+
+/**
  * `option_intervention_edit` — the Model tab's per-cell option→factor effect
  * value, addressed by canonical node ids.
  *
@@ -1480,6 +1513,21 @@ const GoalTargetEditEvent = z.object({
   goal_horizon: GoalHorizonSchema.optional().describe(
     'When the target must be met: {deadline: YYYY-MM-DD} | {months: 1..120}. Written to NodeV3.goal_horizon.',
   ),
+  /**
+   * 0.69.0 (CODEX #78 5930825929): the three fields above are OUTSIDE the analysis hash, so a concurrent change to them
+   * alone moves no `base_graph_hash`. Each one SENT carries the value last read from the goal node (`null` = none
+   * recorded) — the `expected_label` pattern; CEE MUST refuse on mismatch. Required iff its field is sent
+   * (`refineGoalTargetEdit`, at the payload root).
+   */
+  expected_goal_period: GoalPeriod.nullable().optional().describe(
+    'The goal_period last read from the goal node (null = none recorded). Required iff goal_period is sent.',
+  ),
+  expected_goal_horizon: GoalHorizonSchema.nullable().optional().describe(
+    'The goal_horizon last read from the goal node (null = none recorded). Required iff goal_horizon is sent.',
+  ),
+  expected_stated_as: z.array(GoalStatedAsSchema).min(1).max(20).nullable().optional().describe(
+    'The goal_stated_as list last read from the goal node (null = none recorded). Required iff stated_as is sent.',
+  ),
   stated_as: z.array(GoalStatedAsSchema).min(1).max(20).optional().describe(
     'Every figure the user GAVE for this goal, verbatim, with its own unit and period: e.g. "£100k a quarter" kept when ' +
       '`raw_value` holds it converted to the goal\'s monthly period. Written to NodeV3.goal_stated_as. Never the target.',
@@ -1509,9 +1557,10 @@ const GoalTargetEditEvent = z.object({
  *     `option`. The baseline is an option like any other (spec O2).
  *
  * ── THE STALE GATE ────────────────────────────────────────────────────────
- * `analysis_participation` is a node projection field (graph-hash-contract.ts), so a concurrent status change moves
- * `base_graph_hash` and the server refuses rather than clobbering it. `option_status` itself is outside the projection
- * but is only ever written together with `analysis_participation`.
+ * `analysis_participation` is a node projection field (graph-hash-contract.ts), so a concurrent change INTO or OUT OF the
+ * comparison moves `base_graph_hash`. A change between `infeasible` and `removed` does not (both are `retained_excluded`;
+ * CODEX #78 5930825929 measured identical hashes), so the event also carries `expected_status`, refused on mismatch —
+ * `structural_rename`'s `expected_label` pattern. A request for the status the option already has is refused as a no-op.
  *
  * ── SEQUENCING ────────────────────────────────────────────────────────────
  * Reader-first, as for every member: publish → CEE re-vendors and deploys the handler → only then the UI emits it.
@@ -1521,6 +1570,12 @@ const OptionStatusEditEvent = z.object({
   option_node_id: CanonicalEdgeEndpointIdSchema.describe(
     'Exact canonical id of the OPTION whose status is set. ID-ADDRESSED, never a label. The server refuses, with no ' +
       'write, an id that names no node or a node whose kind is not `option`. The baseline may be marked too.',
+  ),
+  expected_status: OptionStatus.describe(
+    'The status last read from the canonical persisted option, an ABSENT stored status read as `feasible`. An ' +
+      'optimistic-concurrency assertion (the `structural_rename` `expected_label` pattern), never a requested value, and ' +
+      'NOT redundant with base_graph_hash: `infeasible` and `removed` both mean `retained_excluded`, so a concurrent ' +
+      'infeasible ↔ removed change moves no hash (CODEX #78 5930825929). REQUIRED. CEE MUST refuse on mismatch.',
   ),
   status: OptionStatus.describe(
     'The option\'s lifecycle as the user set it: `feasible` (in the comparison), `infeasible` (cannot be done, kept for ' +
@@ -1587,6 +1642,12 @@ export const OrchestratorTurnPayloadSchema = z
       }
       if (payload.event.kind === 'structural_rename') {
         refineStructuralRename(payload.event, ctx, ['event']);
+      }
+      if (payload.event.kind === 'option_status_edit') {
+        refineOptionStatusEdit(payload.event, ctx, ['event']);
+      }
+      if (payload.event.kind === 'goal_target_edit') {
+        refineGoalTargetEdit(payload.event as Record<string, unknown>, ctx, ['event']);
       }
       return;
     }

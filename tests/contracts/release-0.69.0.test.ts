@@ -15,7 +15,7 @@ import {
   CANONICAL_GRAPH_HASH_NESTED_PROJECTION,
   CANONICAL_GRAPH_HASH_PROJECTION_VERSION,
 } from '../../src/boundary/graph-hash-contract.js';
-import { SystemEventSchema } from '../../src/boundary/turn-payload.js';
+import { OrchestratorTurnPayloadSchema, SystemEventSchema } from '../../src/boundary/turn-payload.js';
 import { OptionParticipationEntrySchema } from '../../src/orchestrator/handler-results.js';
 import { RunInputOptionNotSentSchema } from '../../src/orchestrator/run-input-snapshot.js';
 import { SystemEventKind } from '../../src/boundary/enums.js';
@@ -152,10 +152,18 @@ describe('0.69.0 changes NO analysis hash input', () => {
 });
 
 describe('0.69.0 · option_status_edit — the ONE op behind the UI control and the Agent (spec §3, §7; F1 T6)', () => {
-  const EVENT = { kind: 'option_status_edit', option_node_id: 'opt_carry_on', status: 'removed', base_graph_hash: 'h'.repeat(64) };
+  const EVENT = { kind: 'option_status_edit', option_node_id: 'opt_carry_on', expected_status: 'feasible', status: 'removed', base_graph_hash: 'h'.repeat(64) };
 
   it.each(OptionStatus.options)('RED: status %s parses, id-addressed, with the stale gate', (status) => {
     expect(SystemEventSchema.parse({ ...EVENT, status })).toStrictEqual({ ...EVENT, status });
+  });
+  it('REFUSED (CODEX 5930825929): no expected_status — infeasible ↔ removed moves no hash, so the assertion is required', () => {
+    const { expected_status: _e, ...bare } = EVENT;
+    expect(SystemEventSchema.safeParse(bare).success).toBe(false);
+  });
+  it('REFUSED at the payload root: a status equal to expected_status is a no-op; CONTROL a real change passes', () => {
+    expect(OrchestratorTurnPayloadSchema.safeParse(turn({ ...EVENT, expected_status: 'removed', status: 'removed' })).success).toBe(false);
+    expect(OrchestratorTurnPayloadSchema.safeParse(turn({ ...EVENT, expected_status: 'infeasible', status: 'removed' })).success).toBe(true);
   });
 
   it('RED: the kind joins the system-event vocabulary (enum and union in step)', () => {
@@ -190,9 +198,19 @@ describe('0.69.0 · a Run says which options the USER took out, and why (spec O1
 
 describe('0.69.0 · set_goal = goal_target_edit with its period, horizon and stated figures (spec §1 G1; F1 T5)', () => {
   const EV = { kind: 'goal_target_edit', goal_node_id: 'goal_revenue', constraint_type: 'at_least', raw_value: 33333, unit: '£', base_graph_hash: 'h'.repeat(64) };
-  it('RED: the target travels with its period, horizon and the figure as the user said it', () => {
-    const full = { ...EV, goal_period: 'month', goal_horizon: { deadline: '2027-03-31' }, stated_as: [STATED] };
+  it('RED: the target travels with its period, horizon and the figure as the user said it, each with its expected value', () => {
+    const full = { ...EV, goal_period: 'month', goal_horizon: { deadline: '2027-03-31' }, stated_as: [STATED],
+      expected_goal_period: null, expected_goal_horizon: null, expected_stated_as: null };
     expect(SystemEventSchema.parse(full)).toStrictEqual(full);
+    expect(OrchestratorTurnPayloadSchema.safeParse(turn(full)).success).toBe(true);
+  });
+  it.each([
+    ['goal_period without expected_goal_period', { goal_period: 'month' }],
+    ['goal_horizon without expected_goal_horizon', { goal_horizon: { months: 6 } }],
+    ['stated_as without expected_stated_as', { stated_as: [STATED] }],
+    ['an expected value with no field sent', { expected_goal_period: 'month' }],
+  ])('REFUSED at the payload root (CODEX 5930825929, hash-blind metadata): %s', (_name, extra) => {
+    expect(OrchestratorTurnPayloadSchema.safeParse(turn({ ...EV, ...extra })).success).toBe(false);
   });
   it('CONTROL: a 0.68.0-shaped goal_target_edit (none of them) still parses unchanged', () => {
     expect(SystemEventSchema.parse(EV)).toStrictEqual(EV);
@@ -206,3 +224,7 @@ describe('0.69.0 · set_goal = goal_target_edit with its period, horizon and sta
     expect(SystemEventSchema.safeParse({ ...EV, ...extra }).success).toBe(false);
   });
 });
+
+function turn(event: unknown) {
+  return { kind: 'system_event', turn_id: '0938f068-2b83-4a77-9b47-def252ac03f0', scenario_id: '0938f068-2b83-4a77-9b47-def252ac03f1', stage: 'frame', event };
+}

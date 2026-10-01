@@ -41,6 +41,12 @@ still opens, and no key is fabricated.
   - When present, they are written to the goal node in the SAME commit as the target, so a figure and its period
     are never written apart (G1).
   - Absent leaves the stored values unchanged; the event never clears them.
+- **Concurrency guards for hash-blind fields** (CODEX #78 5930825929, the `structural_rename` `expected_label` pattern):
+  - `option_status_edit` carries a REQUIRED `expected_status`, with an absent stored status read as `feasible`.
+    `infeasible` ↔ `removed` moves no analysis hash, so a stale request could otherwise undo another user's change.
+  - `goal_target_edit` carries `expected_goal_period` / `expected_goal_horizon` / `expected_stated_as` (null = none
+    recorded), each required iff its field is sent (`refineGoalTargetEdit`).
+  - CEE refuses on any mismatch.
 - **Run records name the user's exclusions** (F1 T6, spec O1):
   - `OptionParticipationEntrySchema.state` gains `excluded_infeasible` and `excluded_removed`;
   - `RunInputOptionNotSentSchema.reason` gains `infeasible` and `removed`.
