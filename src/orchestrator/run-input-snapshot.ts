@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { InterventionRangeSchema } from '../analysis.js';
+import { StrengthBand } from '../causal-claims.js';
+import { RunInputLinkSizing } from '../boundary/run-delta.js';
 
 // ============================================================================
 // 0.68.0 — SC-24: THE INPUT A RUN WAS SENT, recorded on the Run fact.
@@ -118,6 +120,13 @@ export const RunInputLinkSchema = z.object({
   mean: z.number().finite(),
   std: z.number().finite().optional(),
   exists_probability: z.number().min(0).max(1).optional(),
+  // 0.70.0 (R3 DEFECT 3; DL 5937207590). A link's mean/std/exists_probability are the ENGINE's numbers and are never a
+  // row figure (AIQ 5918134795), so a strength edit could not be shown. These two record the link in the user's terms,
+  // read by CEE at Run time from the graph the Run was built from. Absent = an older Run, not recorded; never inferred.
+  /** The band the link's strength sat in (CEE's band cuts). A different band between two Runs is a `strength` row. */
+  band: StrengthBand.optional(),
+  /** Who sized the link (CEE `linkSizing`). A different literal between two Runs is a `sizing` row. */
+  sizing: RunInputLinkSizing.optional(),
 }).strict();
 
 function uniqueBy<T>(key: (row: T) => string, message: string) {

@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.70.0] — a link's edit in the user's terms, and why a delta has no win shares (F1b 52f8cd)
+
+**Why.** R3's served F5 run (programme-docs #85 5936673643, DEFECT 3) found `input_changes` showing NO link-strength
+edit. The pair was marked `partial` instead. A link's mean/std/exists_probability are the engine's numbers and are
+never a row figure (AIQ 5918134795, `run-input-changes.ts`). Accepting Olumi's estimate moves no number at all, so
+the Accept step was invisible. Separately, an empty `win_probabilities` was the only signal for "no comparison",
+whatever the cause (CANVAS 5936762171, RC 5936776917). Plan and order: DL 5937207590 + 5937225976. Schemas first,
+then DGAI vendors 0.70.0, then CEE emits; the `.strict()` RunDelta on 0.69 would refuse every new member.
+**Additive and optional only. No migrations.**
+
+- **`RunInputLinkSchema.band?`** (`StrengthBand`): the band the link's strength sat in at Run time (CEE's band cuts).
+  A different band between two Runs is stated as a `strength` row, with band literals as `raw`.
+  - Absent = an older Run, not recorded (census `distinct`). Never inferred from the engine mean.
+- **`RunInputLinkSchema.sizing?`** (`RunInputLinkSizing`): who sized the link: `user | placeholder | olumi_estimate |
+  olumi_accepted | unmarked` (CEE `linkSizing`).
+  - Absent = not recorded. That is distinct from `unmarked` (recorded: the graph carried no sizing).
+- **`RunInputField` gains `sizing`** (appended): a `sizing` row says who sized a link that is in both Runs.
+  - Refined: link rows only; `changed` only (a link entering or leaving is a `presence` row); both ends are
+    `RunInputLinkSizing` literals with no unit.
+  - RC's words: placeholder/estimate → `olumi_accepted` = "You accepted Olumi's estimate for how much {from} changes
+    {to}."; → `user` = "You gave your own estimate…" (RC 5937224190).
+  - A user strength edit can write a `strength` row AND a `sizing` row for one link. The consumer renders one sentence
+    (RC 5937295784).
+- **`RunDeltaSchema.win_probabilities_unavailable?`** (`RunDeltaWinProbabilitiesUnavailable`): `prior_withheld |
+  no_matched_option`.
+  - Refined: travels only beside an EMPTY `win_probabilities`.
+  - Absent = a pre-0.70 producer (census `distinct`); the consumer keeps its cause-neutral words.
+- `strength` rows are otherwise unchanged; a numeric `raw` still parses.
+- Fixtures: the maximal C1 delta gains a `sizing` row; a new `boundary/RunDeltaSchema#prior_withheld` fixture carries
+  the reason (registry 216 → 217).
+- Census: +3 rows, all `distinct` (129 → 132).
+- `tests/contracts/release-0.70.0.test.ts`: 35 rows. Mutants: drop the empty-list rule → 1 RED; drop the sizing-row
+  rule → 6 RED.
+
 ## [0.69.0] — F1 semantic model: goal period / horizon / stated figures, option status, count noun, full label (MG)
 
 **Why.** Paul's 1 Oct sprint test hit four gaps the graph could not hold:

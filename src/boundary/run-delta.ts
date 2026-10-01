@@ -225,10 +225,26 @@ export const RunInputField = z.enum([
   'unit', // the goal's unit (AIQ 5912905493: a unit-only goal edit)
   'operator', // the goal's / a limit's comparison
   'direction', // the goal's direction
-  'strength', // a link's mean
+  'strength', // a link's strength (0.70.0: CEE states it as the link's band, `raw` a `StrengthBand` literal)
   'presence', // an option entered or left the Run's comparison
+  // 0.70.0 (R3 DEFECT 3; DL 5937207590) — APPENDED. WHO SIZED a link: `raw` is a `RunInputLinkSizing` literal on both
+  // ends (refined). Accepting Olumi's estimate changes no number the engine is sent, so before 0.70.0 the pair showed
+  // nothing for it; this row says it in the user's terms ("You accepted Olumi's estimate for …").
+  'sizing',
 ]);
 export type RunInputFieldLiteral = z.infer<typeof RunInputField>;
+
+/**
+ * 0.70.0 — who sized a link, as the Run's own graph recorded it at Run time (CEE `linkSizing`). The ONE vocabulary for
+ * a `sizing` row's ends and for the snapshot's `links[].sizing`:
+ * - `user`: the user stated the strength;
+ * - `placeholder`: Olumi has not sized it (a default strength);
+ * - `olumi_estimate`: Olumi's estimate, not yet accepted;
+ * - `olumi_accepted`: Olumi's estimate, which the user accepted — origin stays Olumi's;
+ * - `unmarked`: the graph records no sizing.
+ */
+export const RunInputLinkSizing = z.enum(['user', 'placeholder', 'olumi_estimate', 'olumi_accepted', 'unmarked']);
+export type RunInputLinkSizingLiteral = z.infer<typeof RunInputLinkSizing>;
 
 /**
  * One end of one input, as the Run was SENT it: the user-unit value (`raw`, the authored figure) and its unit.
@@ -286,6 +302,17 @@ export function refineRunDeltaInputChange(
       issue('change', 'changed needs a different value or unit — a label-only difference is not an input change.');
     }
   }
+  // 0.70.0 — a `sizing` row says who sized a LINK that is in both Runs: a change between two sizing literals, no unit.
+  if (row.field === 'sizing') {
+    if (row.entity_kind !== 'link') issue('field', 'sizing travels on a link row only.');
+    if (row.change !== 'changed') issue('change', 'sizing is a changed row: a link entering or leaving is a presence row.');
+    for (const end of ['before', 'after'] as const) {
+      const v = row[end];
+      if (v !== null && (v.unit !== undefined || !RunInputLinkSizing.safeParse(v.raw).success)) {
+        issue(end, 'a sizing end is a RunInputLinkSizing literal, with no unit.');
+      }
+    }
+  }
 }
 
 /** One input that differed between the two Runs. */
@@ -293,6 +320,10 @@ export const RunDeltaInputChangeSchema = RunDeltaInputChangeObjectSchema.superRe
   refineRunDeltaInputChange(row, ctx),
 );
 export type RunDeltaInputChange = z.infer<typeof RunDeltaInputChangeObjectSchema>;
+
+/** 0.70.0 — why a delta's `win_probabilities` is empty (see `RunDeltaObjectSchema.win_probabilities_unavailable`). */
+export const RunDeltaWinProbabilitiesUnavailable = z.enum(['prior_withheld', 'no_matched_option']);
+export type RunDeltaWinProbabilitiesUnavailableLiteral = z.infer<typeof RunDeltaWinProbabilitiesUnavailable>;
 
 /**
  * The bare object — exported schema is the refined version below (the
@@ -326,6 +357,16 @@ const RunDeltaObjectSchema = z.object({
   input_coverage: RunInputCoverage.optional(),
   /** The inputs that differed, in the producer's display order. Present iff coverage is complete or partial. */
   input_changes: z.array(RunDeltaInputChangeObjectSchema).max(500).optional(),
+  /**
+   * 0.70.0 (CANVAS 5936762171, RC 5936776917; DL 5937207590) — WHY `win_probabilities` is empty, typed. Before 0.70.0
+   * an empty array was the only signal, and it meant "no comparable pair" for any cause.
+   * - `prior_withheld`: the earlier Run's win shares were withheld, so this is the first Run whose options can be
+   *   compared ("The options can be compared for the first time");
+   * - `no_matched_option`: both Runs have shares, but no option has a figure on both sides.
+   * ABSENCE SEMANTICS (census: distinct): absent = a pre-0.70 producer, or `win_probabilities` is non-empty. Present
+   * ⇒ `win_probabilities` is empty (refined), so a reason never travels beside figures it would contradict.
+   */
+  win_probabilities_unavailable: RunDeltaWinProbabilitiesUnavailable.optional(),
 }).strict();
 export type RunDelta = z.infer<typeof RunDeltaObjectSchema>;
 
@@ -409,6 +450,13 @@ export function refineRunDelta(
         });
       }
       seen.add(key);
+    });
+  }
+  if (data.win_probabilities_unavailable !== undefined && data.win_probabilities.length > 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [...pathPrefix, 'win_probabilities_unavailable'],
+      message: 'A reason for no win shares travels only when win_probabilities is empty (0.70.0).',
     });
   }
   if (data.edit_list !== undefined && p.hash_equal) {

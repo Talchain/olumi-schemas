@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 129,
+    "distinct": 132,
     "same": 60,
     "unresolved": 426
   },
@@ -2649,6 +2649,14 @@
       "note": "Absent = a pre-0.68 producer (no input comparison attempted). 'not_recorded' = attempted, but an end predates input snapshots. Different claims, so absence is never read as either value.",
       "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
     },
+    "boundary/OlumiResponseSchema.run_delta.win_probabilities_unavailable": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = a pre-0.70 producer, or win_probabilities is non-empty (a reason travels only beside an empty list, refined). No value can say 'no reason recorded', so absence is never read as either reason: a consumer keeps its cause-neutral words.",
+      "ref": "src/boundary/run-delta.ts - 0.70.0 RunDeltaObjectSchema.win_probabilities_unavailable + refineRunDelta (CANVAS 5936762171, RC 5936776917, DL 5937207590)"
+    },
     "boundary/RunDeltaEndpointSchema.computed_at": {
       "markers": [
         "optional"
@@ -3530,6 +3538,22 @@
       "verdict": "distinct",
       "note": "Absent = the Run was NOT SENT this member; the snapshot copies the request and never infers or defaults (AIQ 5914731075: a missing unit never becomes GBP). No value can say \"not sent\".",
       "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputLinkSchema.band": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = an older Run that did not record its links' bands; never inferred from the engine mean. A pair with a band on only one end cannot state a strength row, so the producer marks it input_coverage partial.",
+      "ref": "src/orchestrator/run-input-snapshot.ts - 0.70.0 RunInputLinkSchema band/sizing (R3 DEFECT 3 5936673643; AIQ 5918134795; DL 5937207590)"
+    },
+    "orchestrator/RunInputLinkSchema.sizing": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = an older Run that did not record who sized its links. Distinct from 'unmarked' (recorded: the graph carried no sizing). A pair with sizing on only one end states no sizing row (partial).",
+      "ref": "src/orchestrator/run-input-snapshot.ts - 0.70.0 RunInputLinkSchema band/sizing (R3 DEFECT 3 5936673643; AIQ 5918134795; DL 5937207590)"
     },
     "orchestrator/RunInputSettingSchema.raw": {
       "markers": [
