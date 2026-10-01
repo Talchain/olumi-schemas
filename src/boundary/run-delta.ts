@@ -206,8 +206,9 @@ export type RunDeltaEndpoints = z.infer<typeof RunDeltaEndpointsSchema>;
 
 /**
  * How much of the pair's input CEE could compare.
- * - `complete`: both Runs recorded an input snapshot of the same version; `input_changes` is the whole diff
- *   (`[]` = the two Runs were sent the same inputs).
+ * - `complete`: both Runs recorded an input snapshot of the same version AND (0.71.0) both carry an equal
+ *   `residual_digest`, so every analysis input the snapshot does not record was unchanged; `input_changes` is the whole
+ *   diff (`[]` = the two Runs were sent the same inputs). Never "nothing we looked at changed".
  * - `partial`: both recorded one, but a section is missing on one side; `input_changes` covers the rest only.
  * - `not_recorded`: at least one Run predates input snapshots; NO list travels (absence, never an empty diff).
  */

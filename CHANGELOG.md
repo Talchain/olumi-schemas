@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.71.0] — `input_coverage: 'complete'` means VERIFIED (F1b 52f8cd; DL ruling on CEE #2482)
+
+**Why.** CODEX overflow on CEE #2482 reproduced two changes the Run input snapshot does not record — a factor's σ and an
+encoded goal threshold — whose pairs still read `input_coverage: 'complete'` with no row. The DL ruled (#2482
+5939864517): `complete` means verified, never "nothing we looked at changed", and the class is closed once, not field by
+field.
+
+### Added (additive, optional)
+- `RunInputSnapshotSchema.residual_digest?` — sha256 (hex 64) of the analysis-affecting projection
+  (`CANONICAL_GRAPH_HASH_NESTED_PROJECTION`) of the request CEE sent PLoT, with every field the snapshot records removed
+  (and the seed and request id). Equal residuals mean every unrecorded analysis input was unchanged. Absent = an older
+  Run: its pairs are never `complete`.
+- `RunInputCoverage` doc: `complete` now also requires equal residuals on both ends (no enum change).
+
+### Tests
+- `tests/contracts/release-0.71.0.test.ts`: 10 rows (parse + verbatim, absent control, 7 refusals, strictness).
+  Mutant: drop the field → the parse row RED.
+- `release-0.70.0.test.ts`: the `win_probabilities_unavailable` literals pinned by hand (DL follow-up on #80).
+- Census +1 distinct (133).
+
+No consumer needs to vendor 0.71.0 to keep working: `RunDelta` is unchanged, and the snapshot is CEE-internal (stored
+on the Run fact). Order: publish → CEE #2482 vendors and emits.
+
 ## [0.70.0] — a link's edit in the user's terms, and why a delta has no win shares (F1b 52f8cd)
 
 **Why.** R3's served F5 run (programme-docs #85 5936673643, DEFECT 3) found `input_changes` showing NO link-strength

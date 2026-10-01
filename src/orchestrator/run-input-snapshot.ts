@@ -144,6 +144,15 @@ export const RunInputSnapshotSchema = z.object({
   snapshot_version: z.literal(1),
   /** sha256 (hex) of the request CEE sent PLoT, request id excluded — equal digests mean identical inputs. */
   sent_digest: z.string().regex(/^[0-9a-f]{64}$/),
+  /**
+   * 0.71.0 (DL ruling #2482 5939864517: `complete` means VERIFIED). sha256 (hex) of the RESIDUAL: the analysis-affecting
+   * projection (`CANONICAL_GRAPH_HASH_NESTED_PROJECTION`) of the request CEE sent PLoT, with every field this snapshot
+   * records removed — and the seed and request id. Equal residuals on two Runs mean every analysis input this snapshot
+   * does NOT record was unchanged, so a diff of the recorded fields is the whole difference. A producer states
+   * `input_coverage: 'complete'` only when both ends carry a residual and they are equal. Absent = an older Run that
+   * recorded none: its pairs are never `complete`.
+   */
+  residual_digest: z.string().regex(/^[0-9a-f]{64}$/).optional(),
   /** `null` = the Run was sent no goal. */
   goal: RunInputGoalSchema.nullable(),
   options: z.array(RunInputOptionSchema).max(50)

@@ -122,6 +122,11 @@ describe('0.70.0 · a `sizing` row says who sized a link, in the user\'s terms',
 });
 
 describe('0.70.0 · `win_probabilities_unavailable` — why a delta has no win shares', () => {
+  // DL follow-up on #80: the literals pinned by hand, so a renamed or added reason is RED here (`.options` alone is circular).
+  it('the reasons are exactly the two published literals', () => {
+    expect(RunDeltaWinProbabilitiesUnavailable.options).toStrictEqual(['prior_withheld', 'no_matched_option']);
+  });
+
   it.each(RunDeltaWinProbabilitiesUnavailable.options)('RED: %s parses beside an empty list', (reason) => {
     expect(RunDeltaSchema.safeParse(withheldDelta({ win_probabilities_unavailable: reason })).success).toBe(true);
   });
