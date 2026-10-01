@@ -2839,6 +2839,14 @@ const eventGoalTargetEdit = deepFreeze({
   unit: '£',
   base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
 });
+// 0.69.0 (MG, F1 T6). Four fields, all REQUIRED, so the fixture is maximal by construction. `removed` on the
+// BASELINE option: the case Paul could not do (spec O2).
+const eventOptionStatusEdit = deepFreeze({
+  kind: 'option_status_edit',
+  option_node_id: ID_OPTION_A,
+  status: 'removed',
+  base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+});
 export const maximalSelectionChangeEvent = deepFreeze({
   kind: 'selection_change',
   selected: [maximalSelectedElementRef],
@@ -3831,6 +3839,13 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: eventGoalTargetEdit,
     notes:
       '0.59.0: sets ONE goal\'s success target, addressed by the canonical goal node id. The client sends intent only — constraint_type (at_least | at_most, required, no default), raw_value (the absolute LEVEL in the user\'s units, finite and >= 0 — zero is a real at_most level; the server refuses at_least 0), unit (non-blank) and the base_graph_hash stale gate. The cap, goal_threshold (raw / cap), the frame and provenance are SERVER-derived and refused on the wire by .strict(). at_most writes only the goal_constraints row and leaves the goal\'s threshold untouched, mirroring the add_constraint handler (ISL computes P(samples >= threshold), so a keep-below bound encoded as a threshold would invert the claim). No expected twin: goal_threshold, goal_threshold_raw, goal_threshold_cap and goal_constraints are all inside the analysis-affecting projection, so base_graph_hash already sees a concurrent change. Named constraint_type, not direction, to stay apart from the proposed goal_direction (the objective\'s sense).',
+  },
+  {
+    family: 'boundary/SystemEventSchema#option_status_edit',
+    schema: SystemEventSchema,
+    fixture: eventOptionStatusEdit,
+    notes:
+      '0.69.0 (MG, F1 T6): sets ONE option\'s lifecycle (feasible | infeasible | removed), addressed by the canonical option node id, with the base_graph_hash stale gate. The server writes NodeV3.option_status and DERIVES analysis_participation (retained_excluded for infeasible/removed, included for feasible) in the same commit; .strict() refuses a client-sent participation. The baseline may be marked (spec O2). Not structural_delete: the option and its wording stay in the model.',
   },
   {
     family: 'boundary/SystemEventTurnPayloadSchema',

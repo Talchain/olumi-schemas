@@ -274,6 +274,10 @@ export type IntentLiteral = z.infer<typeof Intent>;
 // Mirrors the member added to the `SystemEventSchema` union in turn-payload.ts;
 // parity pinned by `tests/boundary/turn-payload-0.22.test.ts` as for every
 // earlier addition. Reader-first adoption is mandatory.
+// 0.69.0: `option_status_edit` added (MG, F1 T6) — ONE option's lifecycle (feasible | infeasible | removed), id-
+// addressed, with the non-optional `base_graph_hash` stale gate. The server writes NodeV3.option_status and derives
+// analysis_participation in the same commit, so the analysed set and the shown set are one set. Mirrors the member
+// added to the `SystemEventSchema` union in turn-payload.ts. Reader-first adoption is mandatory.
 export const SystemEventKind = z.enum([
   'patch_accepted',
   'patch_dismissed',
@@ -294,6 +298,7 @@ export const SystemEventKind = z.enum([
   'option_intervention_edit',
   'finding_dissent',
   'goal_target_edit',
+  'option_status_edit',
 ]);
 export type SystemEventKindLiteral = z.infer<typeof SystemEventKind>;
 

@@ -81,8 +81,9 @@ const PRE_0_55_KINDS = [
  * 0.54.0 reader rather than quietly becoming "the union minus one".
  *
  *   · 0.59.0 — goal_target_edit
+ *   · 0.69.0 — option_status_edit
  */
-const KINDS_ADDED_SINCE_0_55 = ['goal_target_edit'] as const;
+const KINDS_ADDED_SINCE_0_55 = ['goal_target_edit', 'option_status_edit'] as const;
 
 /** A system_event turn wrapper — the shape CEE actually validates on ingress. */
 function turn(event: unknown) {

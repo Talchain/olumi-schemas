@@ -1394,6 +1394,22 @@
       "notes": [
         "DECLARED 2026-10-01 (F1, DL plan 5929994142; train slot DL #85 5930039919; no migrations DL 5930070811). F1 spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md (branch mg/semantic-model-spec) §5b N1-N3 (CANVAS 5929959391). Absence = the label is the full name (census verdict `same`). Not an analysis hash input."
       ]
+    },
+    {
+      "field": "system_event.event[kind=option_status_edit]",
+      "declared_in": "schemas:src/boundary/turn-payload.ts::OptionStatusEditEvent (0.69.0) - strict, three REQUIRED fields: canonical option_node_id, status feasible | infeasible | removed (no default), and the non-optional base_graph_hash stale gate",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY (MG, F1 T6; spec output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md §3 + §7). This release adds no UI emission and no CEE dispatch arm; the CEE handler (writes NodeV3.option_status + derives analysis_participation in one commit, refuses a non-option id) and the UI control land in their own PRs, and the Agent's authorise_change routes to the same handler.",
+        "THE DEFECT IT CLOSES: Paul's 1 Oct sprint test showed 4 options while the engine analysed 3, and the baseline could not be taken out ('I can't remove it with the available tools'). structural_delete destroys the option and its wording; this verb keeps it and says why it is out.",
+        "SEQUENCING: reader-first. A consumer pinned below 0.69.0 rejects the whole turn (422), so CEE deploys the handler before the UI emits it."
+      ]
     }
   ]
 }

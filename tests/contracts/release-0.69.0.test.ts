@@ -15,6 +15,8 @@ import {
   CANONICAL_GRAPH_HASH_NESTED_PROJECTION,
   CANONICAL_GRAPH_HASH_PROJECTION_VERSION,
 } from '../../src/boundary/graph-hash-contract.js';
+import { SystemEventSchema } from '../../src/boundary/turn-payload.js';
+import { SystemEventKind } from '../../src/boundary/enums.js';
 import {
   CountNounSchema,
   GoalHorizonSchema,
@@ -144,5 +146,27 @@ describe('0.69.0 changes NO analysis hash input', () => {
       expect(all).not.toContain(key);
     }
     expect(CANONICAL_GRAPH_HASH_GRAPHV3_FIELDS as readonly string[]).toEqual(['nodes', 'edges']);
+  });
+});
+
+describe('0.69.0 · option_status_edit — the ONE op behind the UI control and the Agent (spec §3, §7; F1 T6)', () => {
+  const EVENT = { kind: 'option_status_edit', option_node_id: 'opt_carry_on', status: 'removed', base_graph_hash: 'h'.repeat(64) };
+
+  it.each(OptionStatus.options)('RED: status %s parses, id-addressed, with the stale gate', (status) => {
+    expect(SystemEventSchema.parse({ ...EVENT, status })).toStrictEqual({ ...EVENT, status });
+  });
+
+  it('RED: the kind joins the system-event vocabulary (enum and union in step)', () => {
+    expect(SystemEventKind.options).toContain('option_status_edit');
+  });
+
+  it.each([
+    ['a client-sent participation (the server derives it)', { ...EVENT, analysis_participation: 'retained_excluded' }],
+    ['a label instead of an id', { kind: 'option_status_edit', option_label: 'Carry on as now', status: 'removed', base_graph_hash: 'h'.repeat(64) }],
+    ['no stale gate', { kind: 'option_status_edit', option_node_id: 'opt_carry_on', status: 'removed' }],
+    ['a status outside the closed set', { ...EVENT, status: 'paused' }],
+    ['no status (no default)', { kind: 'option_status_edit', option_node_id: 'opt_carry_on', base_graph_hash: 'h'.repeat(64) }],
+  ])('REFUSED: %s', (_name, bad) => {
+    expect(SystemEventSchema.safeParse(bad).success).toBe(false);
   });
 });

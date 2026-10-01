@@ -374,6 +374,9 @@ const KINDS_ADDED_SINCE_0_41 = [
   // 0.59.0 — the goal success-target carrier. Declared here the moment it
   // joins the enum, which is this guard doing its job.
   'goal_target_edit',
+  // 0.69.0 — the option lifecycle carrier (MG, F1 T6). Declared here the moment
+  // it joins the enum, which is this guard doing its job.
+  'option_status_edit',
 ] as const;
 
 describe('0.42.0 compatibility — every 0.41.0 system-event kind is byte-compatible', () => {

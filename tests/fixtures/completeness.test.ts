@@ -290,7 +290,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   exact input changes, which cross the UI wire inside run_delta.
     // 0.69.0 (+3): root/GoalHorizonSchema (a closed one-arm union), root/GoalStatedAsSchema (closed, every field
     //   REQUIRED) and root/CountNounSchema (a string) — MG, F1 semantic model fields.
-    expect(MAXIMAL_FIXTURES.length).toBe(215);
+    // 0.69.0 (+1): boundary/SystemEventSchema#option_status_edit — one more branch variant (flat, every field
+    //   REQUIRED, maximal by construction).
+    expect(MAXIMAL_FIXTURES.length).toBe(216);
   });
 
   it('family keys are unique', () => {

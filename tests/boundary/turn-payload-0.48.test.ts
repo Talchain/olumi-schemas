@@ -70,6 +70,7 @@ function unionKinds(): string[] {
  *   · unversioned — option_intervention_edit
  *   · 0.55.0 — finding_dissent
  *   · 0.59.0 — goal_target_edit
+ *   · 0.69.0 — option_status_edit
  */
 const KINDS_ADDED_SINCE_0_48 = [
   'structural_add',
@@ -87,6 +88,8 @@ const KINDS_ADDED_SINCE_0_48 = [
   'finding_dissent',
   // 0.59.0 — the goal success-target carrier. DERIVED half, same reason.
   'goal_target_edit',
+  // 0.69.0 — the option lifecycle carrier (MG, F1 T6). DERIVED half, same reason.
+  'option_status_edit',
 ] as const;
 
 // ---------------------------------------------------------------------------

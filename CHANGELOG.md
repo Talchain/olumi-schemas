@@ -33,6 +33,10 @@ still opens, and no key is fabricated.
   never part of a unit (spec S2).
 - **`NodeV3Schema.full_label?`**: the full drafted name when admission shortened the label. Identity reads
   `full_label ?? label` (spec N2).
+- **`SystemEventSchema` gains `option_status_edit`** (F1 T6): `{option_node_id, status, base_graph_hash}`, strict.
+  - The ONE op behind both the UI control and the Agent's `authorise_change`.
+  - The server writes `option_status` and derives `analysis_participation` in the same commit (a client copy is refused).
+  - Reader-first: CEE deploys the handler before the UI emits it.
 - **No analysis hash input moves:** projection version stays 5, and none of the keys is in the nested projection
   (asserted in `release-0.69.0.test.ts`, with `analysis_participation` as the positive control).
 - Adoption-manifest rows (6, `declared`) + absence-census rows (6 canonical + 6 receipt-carrier views).

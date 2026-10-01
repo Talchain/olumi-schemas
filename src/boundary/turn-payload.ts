@@ -10,7 +10,7 @@ import {
   EdgeStrengthEditIntent,
   FactorValueEditIntent,
 } from './enums.js';
-import { EffectDirection, GraphV3Schema, NodeKind, NodeV3Schema } from '../graph.js';
+import { EffectDirection, GraphV3Schema, NodeKind, NodeV3Schema, OptionStatus } from '../graph.js';
 import { RoundParticipantRefSchema } from './collab.js';
 import { StrengthBand } from '../causal-claims.js';
 
@@ -1471,6 +1471,53 @@ const GoalTargetEditEvent = z.object({
   ),
 }).strict();
 
+/**
+ * `option_status_edit` (0.69.0, MG F1 T6) — the structured, id-addressed change of ONE option's lifecycle:
+ * feasible | infeasible | removed (spec `output/mg-0ebb952a/SEMANTIC-MODEL-SPEC.md` §3).
+ *
+ * ── WHAT IT CLOSES ────────────────────────────────────────────────────────
+ * Paul's 1 Oct sprint test: the UI showed 4 options while the engine analysed 3, and he could not take the baseline
+ * ("carry on as now") out: "I can't remove it with the available tools". `structural_delete` destroys the option and
+ * its wording; this verb keeps the option in the model, says WHY it is out, and takes it out of the analysis.
+ * It is the ONE op behind both the UI control and the Agent's `authorise_change` (spec §7: one op per semantic change).
+ *
+ * ── WHAT THE CLIENT SENDS, AND WHAT IT NEVER SENDS ────────────────────────
+ * Intent only: which option, which status, and the hash of the graph it was looking at. THE SERVER DERIVES
+ * `analysis_participation` (`infeasible`/`removed` → `retained_excluded`; `feasible` → `included`) and writes it in
+ * the SAME commit as `NodeV3.option_status`, so the analysed set and the shown set are one set (spec O1). `.strict()`
+ * refuses a client-sent participation, provenance or label.
+ *
+ * ── NAMES, SWEPT FOR COLLISION (trap 21) ──────────────────────────────────
+ *   · `status`, carried into the node field `option_status` — NOT the analysis option projection's `status`
+ *     (`ready` / …, an intervention-readiness word on the PLoT request), a different concept on a different object.
+ *   · `option_node_id`: the server MUST refuse, with no write, an id that names no node or a node whose kind is not
+ *     `option`. The baseline is an option like any other (spec O2).
+ *
+ * ── THE STALE GATE ────────────────────────────────────────────────────────
+ * `analysis_participation` is a node projection field (graph-hash-contract.ts), so a concurrent status change moves
+ * `base_graph_hash` and the server refuses rather than clobbering it. `option_status` itself is outside the projection
+ * but is only ever written together with `analysis_participation`.
+ *
+ * ── SEQUENCING ────────────────────────────────────────────────────────────
+ * Reader-first, as for every member: publish → CEE re-vendors and deploys the handler → only then the UI emits it.
+ */
+const OptionStatusEditEvent = z.object({
+  kind: z.literal('option_status_edit'),
+  option_node_id: CanonicalEdgeEndpointIdSchema.describe(
+    'Exact canonical id of the OPTION whose status is set. ID-ADDRESSED, never a label. The server refuses, with no ' +
+      'write, an id that names no node or a node whose kind is not `option`. The baseline may be marked too.',
+  ),
+  status: OptionStatus.describe(
+    'The option\'s lifecycle as the user set it: `feasible` (in the comparison), `infeasible` (cannot be done, kept for ' +
+      'the record) or `removed` (taken out). REQUIRED, no default. The server writes NodeV3.option_status and derives ' +
+      'analysis_participation from it in the same commit.',
+  ),
+  base_graph_hash: CanonicalBaseGraphHashSchema.describe(
+    'The canonical analysis-affecting graph hash the client last read (the stale gate). analysis_participation, which ' +
+      'this edit writes, is inside that projection. Absent, null and empty are all forbidden.',
+  ),
+}).strict();
+
 export const SystemEventSchema = z.discriminatedUnion('kind', [
   PatchAcceptedEvent,
   PatchDismissedEvent,
@@ -1491,6 +1538,7 @@ export const SystemEventSchema = z.discriminatedUnion('kind', [
   OptionInterventionEditEvent,
   FindingDissentEvent,
   GoalTargetEditEvent,
+  OptionStatusEditEvent,
 ]);
 export type SystemEvent = z.infer<typeof SystemEventSchema>;
 
