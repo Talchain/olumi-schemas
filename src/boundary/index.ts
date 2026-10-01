@@ -169,6 +169,9 @@ export {
   RunInputValueSchema,
   RunDeltaInputChangeSchema,
   refineRunDeltaInputChange,
+  // 0.70.0 (R3 DEFECT 3; CANVAS 5936762171)
+  RunInputLinkSizing,
+  RunDeltaWinProbabilitiesUnavailable,
 } from './run-delta.js';
 export type {
   RunDelta,
@@ -183,6 +186,8 @@ export type {
   RunDeltaEndpoint,
   RunDeltaEndpoints,
   RunInputCoverageLiteral,
+  RunInputLinkSizingLiteral,
+  RunDeltaWinProbabilitiesUnavailableLiteral,
   RunInputEntityKindLiteral,
   RunInputFieldLiteral,
   RunInputValue,

@@ -1712,6 +1712,17 @@ export const maximalRunDeltaInputChangeLink = deepFreeze({
   change: 'removed',
 });
 
+/** 0.70.0 — a `sizing` row: Olumi's estimate for a link, accepted by the user (RC 5937224190's Accept label). */
+export const maximalRunDeltaInputChangeSizing = deepFreeze({
+  entity_kind: 'link',
+  entity_id: 'fixture_factor_2->fixture_factor_3',
+  link: { from: 'fixture_factor_2', to: 'fixture_factor_3' },
+  field: 'sizing',
+  before: { raw: 'olumi_estimate' },
+  after: { raw: 'olumi_accepted' },
+  change: 'changed',
+});
+
 /**
  * A maximal C1 (attributable) delta — the ONLY case whose preconditions
  * admit every optional at once (`edit_list` requires `!hash_equal`; C1
@@ -1754,7 +1765,23 @@ export const maximalRunDelta = deepFreeze({
       after: { raw: true },
       change: 'added',
     },
+    // 0.70.0 — the user accepted Olumi's estimate for a link (R3 DEFECT 3): no engine number moved.
+    maximalRunDeltaInputChangeSizing,
   ],
+});
+
+/**
+ * 0.70.0 — the typed reason for EMPTY win shares (CANVAS 5936762171). It travels only beside an empty
+ * `win_probabilities` (refined), which the C1 maximal delta above cannot have, so it gets its own fixture: the first
+ * Run after one whose shares were withheld (a C2 pair: different samples).
+ */
+export const maximalRunDeltaPriorWithheld = deepFreeze({
+  attribution_case: 'C2_unpaired',
+  pair_provenance: { seed_equal: false, hash_equal: false, builds_equal: 'equal', n_equal: true },
+  leader: { changed: false, current_leading_option_id: 'fixture_option_b', noise_verdict: 'not_noise_qualified' },
+  win_probabilities: [],
+  flip_thresholds: [],
+  win_probabilities_unavailable: 'prior_withheld',
 });
 
 // ----------------------------------------------------------------------------
@@ -3384,6 +3411,8 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   },
   // --- 0.39.0 car 3 — run-over-run delta --------------------------------------------
   { family: 'boundary/RunDeltaSchema', schema: RunDeltaSchema, fixture: maximalRunDelta },
+  // --- 0.70.0 — the typed reason for empty win shares (needs an empty list, so not on the C1 delta) -----------------
+  { family: 'boundary/RunDeltaSchema#prior_withheld', schema: RunDeltaSchema, fixture: maximalRunDeltaPriorWithheld },
   // --- 0.68.0 — SC-24 endpoints + input changes ---------------------------------------
   { family: 'boundary/RunDeltaEndpointSchema', schema: RunDeltaEndpointSchema, fixture: maximalRunDeltaEndpoint },
   { family: 'boundary/RunDeltaEndpointsSchema', schema: RunDeltaEndpointsSchema, fixture: maximalRunDeltaEndpoints },

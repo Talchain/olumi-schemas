@@ -292,7 +292,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   REQUIRED) and root/CountNounSchema (a string) — MG, F1 semantic model fields.
     // 0.69.0 (+1): boundary/SystemEventSchema#option_status_edit — one more branch variant (flat, every field
     //   REQUIRED, maximal by construction).
-    expect(MAXIMAL_FIXTURES.length).toBe(216);
+    // 0.70.0 (+1): boundary/RunDeltaSchema#prior_withheld — the typed reason for empty win shares travels only beside
+    //   an empty `win_probabilities` (refined), which the C1 maximal delta cannot have.
+    expect(MAXIMAL_FIXTURES.length).toBe(217);
   });
 
   it('family keys are unique', () => {
