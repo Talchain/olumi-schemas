@@ -37,6 +37,10 @@ still opens, and no key is fabricated.
   - The ONE op behind both the UI control and the Agent's `authorise_change`.
   - The server writes `option_status` and derives `analysis_participation` in the same commit (a client copy is refused).
   - Reader-first: CEE deploys the handler before the UI emits it.
+- **`goal_target_edit` gains optional `goal_period`, `goal_horizon`, `stated_as`** (F1 T5: `set_goal` IS this event).
+  - When present, they are written to the goal node in the SAME commit as the target, so a figure and its period
+    are never written apart (G1).
+  - Absent leaves the stored values unchanged; the event never clears them.
 - **Run records name the user's exclusions** (F1 T6, spec O1):
   - `OptionParticipationEntrySchema.state` gains `excluded_infeasible` and `excluded_removed`;
   - `RunInputOptionNotSentSchema.reason` gains `infeasible` and `removed`.

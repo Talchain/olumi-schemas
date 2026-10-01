@@ -187,3 +187,22 @@ describe('0.69.0 · a Run says which options the USER took out, and why (spec O1
     expect(RunInputOptionNotSentSchema.safeParse({ option_id: 'o', reason: 'hidden' }).success).toBe(false);
   });
 });
+
+describe('0.69.0 · set_goal = goal_target_edit with its period, horizon and stated figures (spec §1 G1; F1 T5)', () => {
+  const EV = { kind: 'goal_target_edit', goal_node_id: 'goal_revenue', constraint_type: 'at_least', raw_value: 33333, unit: '£', base_graph_hash: 'h'.repeat(64) };
+  it('RED: the target travels with its period, horizon and the figure as the user said it', () => {
+    const full = { ...EV, goal_period: 'month', goal_horizon: { deadline: '2027-03-31' }, stated_as: [STATED] };
+    expect(SystemEventSchema.parse(full)).toStrictEqual(full);
+  });
+  it('CONTROL: a 0.68.0-shaped goal_target_edit (none of them) still parses unchanged', () => {
+    expect(SystemEventSchema.parse(EV)).toStrictEqual(EV);
+  });
+  it.each([
+    ['a period outside the closed set', { goal_period: 'fortnight' }],
+    ['a two-arm horizon', { goal_horizon: { deadline: '2027-03-31', months: 6 } }],
+    ['an empty stated list', { stated_as: [] }],
+    ['a stated figure with no quote', { stated_as: [{ ...STATED, quote: '' }] }],
+  ])('REFUSED: %s', (_name, extra) => {
+    expect(SystemEventSchema.safeParse({ ...EV, ...extra }).success).toBe(false);
+  });
+});

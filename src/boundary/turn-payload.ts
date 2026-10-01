@@ -10,7 +10,7 @@ import {
   EdgeStrengthEditIntent,
   FactorValueEditIntent,
 } from './enums.js';
-import { EffectDirection, GraphV3Schema, NodeKind, NodeV3Schema, OptionStatus } from '../graph.js';
+import { EffectDirection, GoalHorizonSchema, GoalPeriod, GoalStatedAsSchema, GraphV3Schema, NodeKind, NodeV3Schema, OptionStatus } from '../graph.js';
 import { RoundParticipantRefSchema } from './collab.js';
 import { StrengthBand } from '../causal-claims.js';
 
@@ -1468,6 +1468,21 @@ const GoalTargetEditEvent = z.object({
       'goal_threshold_cap, goal_constraints) is inside that projection, so a concurrent change to the target moves ' +
       'the hash and the server MUST refuse rather than clobber it. Absent, null and empty are ' +
       'all forbidden.',
+  ),
+  /**
+   * 0.69.0 additive (MG, F1 spec §1; `set_goal` = this event, T5). OPTIONAL — absent leaves the stored value unchanged,
+   * never clears it. When present the server writes it to the goal node (NodeV3.goal_period / goal_horizon /
+   * goal_stated_as) in the SAME commit as the target, so `raw_value` and its period can never be written apart (G1).
+   */
+  goal_period: GoalPeriod.optional().describe(
+    'The period `raw_value` is per (none | day | week | month | quarter | year). Written to NodeV3.goal_period.',
+  ),
+  goal_horizon: GoalHorizonSchema.optional().describe(
+    'When the target must be met: {deadline: YYYY-MM-DD} | {months: 1..120}. Written to NodeV3.goal_horizon.',
+  ),
+  stated_as: z.array(GoalStatedAsSchema).min(1).max(20).optional().describe(
+    'Every figure the user GAVE for this goal, verbatim, with its own unit and period: e.g. "£100k a quarter" kept when ' +
+      '`raw_value` holds it converted to the goal\'s monthly period. Written to NodeV3.goal_stated_as. Never the target.',
   ),
 }).strict();
 

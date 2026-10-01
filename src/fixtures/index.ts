@@ -2838,6 +2838,10 @@ const eventGoalTargetEdit = deepFreeze({
   raw_value: 400000,
   unit: '£',
   base_graph_hash: 'FIXTURE_base_graph_hash_7c4e9a1f',
+  // 0.69.0 (MG, F1 T5) — optional: the period, the horizon and what the user said, written with the target.
+  goal_period: 'quarter',
+  goal_horizon: { deadline: '2027-03-31' },
+  stated_as: [{ value: 400000, unit: '£', period: 'quarter', quote: 'FIXTURE at least £400k a quarter by March' }],
 });
 // 0.69.0 (MG, F1 T6). Four fields, all REQUIRED, so the fixture is maximal by construction. `removed` on the
 // BASELINE option: the case Paul could not do (spec O2).

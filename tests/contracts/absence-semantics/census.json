@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 126,
-    "same": 57,
+    "same": 60,
     "unresolved": 426
   },
   "open_objects": {
@@ -2798,6 +2798,30 @@
         "optional"
       ],
       "verdict": "unresolved"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.goal_period": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 T5). Absent leaves the goal node's stored goal_period UNCHANGED (the event never clears it); present writes it with the target in one commit. The node field carries its own absence verdict (NodeV3Schema.goal_period, distinct); on this event absence has one meaning, \"not part of this edit\".",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.goal_period (0.69.0, MG F1 T5)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.goal_horizon": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 T5). Absent leaves the stored horizon unchanged; present writes it. The closed one-arm union has no empty form, so absence is the single way to say \"not part of this edit\".",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.goal_horizon (0.69.0, MG F1 T5)"
+    },
+    "boundary/SystemEventSchema|kind=goal_target_edit.stated_as": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.69.0 (MG, F1 T5). Absent leaves the stored figures unchanged; an empty list is refused (min 1), so absence is the single way to say \"no stated figure in this edit\".",
+      "ref": "src/boundary/turn-payload.ts - GoalTargetEditEvent.stated_as (0.69.0, MG F1 T5)"
     },
     "boundary/SystemEventSchema|kind=direct_graph_edit.changed_edge_ids": {
       "markers": [
