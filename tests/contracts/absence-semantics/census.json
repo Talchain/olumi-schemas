@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 132,
+    "distinct": 133,
     "same": 60,
     "unresolved": 426
   },
@@ -3434,6 +3434,14 @@
       "verdict": "distinct",
       "note": "null = the Run was sent no goal (no goal_node_id). The snapshot itself exists, so this differs from an absent snapshot.",
       "ref": "src/orchestrator/run-input-snapshot.ts header + RunAnalysisResultSchema 0.68.0 comments (SC-24; AIQ 5914731075, P0 SHARED DATA 5914750268)"
+    },
+    "orchestrator/RunInputSnapshotSchema.residual_digest": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = an older Run that recorded no residual. Whether its unrecorded analysis inputs changed cannot be known, so a pair with an absent residual on either end is never input_coverage complete (partial at most). Never defaulted or derived from sent_digest.",
+      "ref": "src/orchestrator/run-input-snapshot.ts - 0.71.0 RunInputSnapshotSchema.residual_digest (DL ruling CEE #2482 5939864517)"
     },
     "orchestrator/RunInputConstraintSchema.frame": {
       "markers": [
