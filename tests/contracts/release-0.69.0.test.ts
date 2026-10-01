@@ -16,6 +16,8 @@ import {
   CANONICAL_GRAPH_HASH_PROJECTION_VERSION,
 } from '../../src/boundary/graph-hash-contract.js';
 import { SystemEventSchema } from '../../src/boundary/turn-payload.js';
+import { OptionParticipationEntrySchema } from '../../src/orchestrator/handler-results.js';
+import { RunInputOptionNotSentSchema } from '../../src/orchestrator/run-input-snapshot.js';
 import { SystemEventKind } from '../../src/boundary/enums.js';
 import {
   CountNounSchema,
@@ -168,5 +170,20 @@ describe('0.69.0 · option_status_edit — the ONE op behind the UI control and 
     ['no status (no default)', { kind: 'option_status_edit', option_node_id: 'opt_carry_on', base_graph_hash: 'h'.repeat(64) }],
   ])('REFUSED: %s', (_name, bad) => {
     expect(SystemEventSchema.safeParse(bad).success).toBe(false);
+  });
+});
+
+describe('0.69.0 · a Run says which options the USER took out, and why (spec O1; F1 T6)', () => {
+  it.each(['excluded_infeasible', 'excluded_removed'])('RED: participation state %s parses', (state) => {
+    expect(OptionParticipationEntrySchema.safeParse({ option_id: 'opt_carry_on', state }).success).toBe(true);
+  });
+  it('REFUSED: a user exclusion never names unanalysable options (that is a provisional keep only)', () => {
+    expect(OptionParticipationEntrySchema.safeParse({ option_id: 'o', state: 'excluded_removed', unanalysable_user_option_ids: ['x'] }).success).toBe(false);
+  });
+  it.each(['infeasible', 'removed'])('RED: a Run input records an option not sent because it is %s', (reason) => {
+    expect(RunInputOptionNotSentSchema.safeParse({ option_id: 'opt_carry_on', label: 'Carry on as now', reason }).success).toBe(true);
+  });
+  it('REFUSED: a reason outside the closed set', () => {
+    expect(RunInputOptionNotSentSchema.safeParse({ option_id: 'o', reason: 'hidden' }).success).toBe(false);
   });
 });

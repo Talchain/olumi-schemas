@@ -37,6 +37,10 @@ still opens, and no key is fabricated.
   - The ONE op behind both the UI control and the Agent's `authorise_change`.
   - The server writes `option_status` and derives `analysis_participation` in the same commit (a client copy is refused).
   - Reader-first: CEE deploys the handler before the UI emits it.
+- **Run records name the user's exclusions** (F1 T6, spec O1):
+  - `OptionParticipationEntrySchema.state` gains `excluded_infeasible` and `excluded_removed`;
+  - `RunInputOptionNotSentSchema.reason` gains `infeasible` and `removed`.
+  - **UI-FIRST:** a UI pinned below 0.69.0 rejects these values, so DGAI vendors 0.69.0 before CEE emits them.
 - **No analysis hash input moves:** projection version stays 5, and none of the keys is in the nested projection
   (asserted in `release-0.69.0.test.ts`, with `analysis_participation` as the positive control).
 - Adoption-manifest rows (6, `declared`) + absence-census rows (6 canonical + 6 receipt-carrier views).
