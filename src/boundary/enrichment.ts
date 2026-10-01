@@ -277,12 +277,35 @@ export type EnrichmentConfidenceProvenance =
   z.infer<typeof EnrichmentConfidenceProvenanceSchema>;
 
 /**
+ * 0.70.0 additive (PANEL L5(b), #85 5930973561) — the KNOWN producer vocabulary of
+ * `EnrichmentFactorSensitivityEntrySchema.zero_reason`, so a consumer's label map is
+ * checked against it (`Record<ZeroSensitivityReasonType, …>`) instead of casting a
+ * wire string (the 1 Oct Reasoning-tab `charAt` crash: PLoT's two codes had no UI words).
+ *   - ISL `ZeroSensitivityReason` (src/models/response_v2.py, staging 04836e20): the first 6.
+ *   - PLoT `factor-influence.ts` (staging 2f2427f7) adds `no_path_to_goal` (no causal
+ *     path) and `zero_net_influence` (connected, net effect zero — must NOT claim "no path").
+ * The wire field itself stays OPEN (`z.string()`): persisted facts must keep parsing, and
+ * a consumer leaves an unknown code unnamed rather than failing.
+ */
+export const ZeroSensitivityReason = z.enum([
+  'zero_outcome_diff',
+  'zero_delta',
+  'intervention_override',
+  'disconnected',
+  'baseline_normalised',
+  'point_mass',
+  'no_path_to_goal',
+  'zero_net_influence',
+]);
+export type ZeroSensitivityReasonType = z.infer<typeof ZeroSensitivityReason>;
+
+/**
  * Per-factor sensitivity entry. [F1][F2].
  *
  * `factor_id` is required (every evidenced emission). Numeric fields are
  * optional because ISL may not provide them — absent means "unavailable",
  * NOT zero ([F2] doc). `zero_reason` is present when sensitivity_score = 0;
- * known value 'intervention_override' (option-pinned lever), vocabulary open.
+ * its known values are `ZeroSensitivityReason` (0.70.0); the vocabulary stays open.
  * `confidence_source` is typed OPEN: the 2025-12 capture emits 'isl'/'graph'
  * [F1]; current staging emits 'plot_unified_from_isl_bootstrap' /
  * 'plot_unified_from_graph' [F2] — a closed enum would reject real

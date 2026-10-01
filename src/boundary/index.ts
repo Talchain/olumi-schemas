@@ -292,6 +292,8 @@ export {
   EnrichmentOptionComparisonEntrySchema,
   EnrichmentConfidenceProvenanceSchema,
   EnrichmentFactorSensitivityEntrySchema,
+  // 0.70.0 — the known zero_reason vocabulary (PANEL L5(b))
+  ZeroSensitivityReason,
   // 0.30.0 — the VOI family joins the CEE→UI keep-list (V7-C slice 1a)
   EnrichmentFactorEvppiEntrySchema,
   EnrichmentRobustnessEdgeSchema,
@@ -332,6 +334,7 @@ export type {
   EnrichmentOptionComparisonEntry,
   EnrichmentConfidenceProvenance,
   EnrichmentFactorSensitivityEntry,
+  ZeroSensitivityReasonType,
   EnrichmentFactorEvppiEntry,
   EnrichmentRobustnessEdge,
   EnrichmentNearTie,
