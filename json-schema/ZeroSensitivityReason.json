@@ -1,0 +1,20 @@
+{
+  "$ref": "#/definitions/ZeroSensitivityReason",
+  "definitions": {
+    "ZeroSensitivityReason": {
+      "type": "string",
+      "enum": [
+        "zero_outcome_diff",
+        "zero_delta",
+        "intervention_override",
+        "disconnected",
+        "baseline_normalised",
+        "point_mass",
+        "no_path_to_goal",
+        "zero_net_influence"
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "GENERATED from src/boundary/enrichment.ts by scripts/generate-json-schema.mjs — do not edit by hand; run `npm run generate:json-schema` to regenerate."
+}

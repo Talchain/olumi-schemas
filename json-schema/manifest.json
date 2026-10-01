@@ -145,6 +145,11 @@
       "export": "TransportedCritiqueSchema",
       "file": "TransportedCritiqueSchema.json",
       "definition": "#/definitions/TransportedCritiqueSchema"
+    },
+    {
+      "export": "ZeroSensitivityReason",
+      "file": "ZeroSensitivityReason.json",
+      "definition": "#/definitions/ZeroSensitivityReason"
     }
   ]
 }

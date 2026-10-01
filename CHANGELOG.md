@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.70.0] — `ZeroSensitivityReason`: the known `zero_reason` vocabulary (PANEL L5(b))
+
+**Why.** On 1 Oct the Reasoning tab crashed (`charAt` of undefined): PLoT's `no_path_to_goal` / `zero_net_influence`
+had no UI words, and the UI cast the wire string into its label map. DGAI #2390 stopped the crash. This closes the class
+at the contract (PANEL #85 5930973561; DL 5930981429: the next additive release after 0.69.0).
+
+- **`ZeroSensitivityReason`** (`@talchain/schemas/boundary`), with `ZeroSensitivityReasonType`. These are the 8 codes the producers
+  emit, verified in their source:
+  - ISL `ZeroSensitivityReason` (`src/models/response_v2.py`, staging `04836e20`): `zero_outcome_diff`, `zero_delta`,
+    `intervention_override`, `disconnected`, `baseline_normalised`, `point_mass`.
+  - PLoT `src/lib/factor-influence.ts` (staging `2f2427f7`): `no_path_to_goal` (no causal path) and `zero_net_influence`
+    (connected, net effect zero; it must never be worded as "no path").
+- **The wire field is unchanged:** `EnrichmentFactorSensitivityEntrySchema.zero_reason` stays `string | null`, optional and OPEN,
+  so persisted facts keep parsing. A consumer types its label map as `Record<ZeroSensitivityReasonType, …>` and leaves any
+  other code unnamed.
+- No new field, no census change, no adoption-manifest row (a vocabulary, not a wire field).
+
 ## [0.69.0] — F1 semantic model: goal period / horizon / stated figures, option status, count noun, full label (MG)
 
 **Why.** Paul's 1 Oct sprint test hit four gaps the graph could not hold:
