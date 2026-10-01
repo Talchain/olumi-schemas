@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 133,
+    "distinct": 134,
     "same": 60,
     "unresolved": 426
   },
@@ -3554,6 +3554,14 @@
       "verdict": "distinct",
       "note": "Absent = an older Run that did not record its links' bands; never inferred from the engine mean. A pair with a band on only one end cannot state a strength row, so the producer marks it input_coverage partial.",
       "ref": "src/orchestrator/run-input-snapshot.ts - 0.70.0 RunInputLinkSchema band/sizing (R3 DEFECT 3 5936673643; AIQ 5918134795; DL 5937207590)"
+    },
+    "orchestrator/RunInputLinkSchema.authorship_digest": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = an older Run that did not record the link's authorship. A producer cannot then explain an authorship change pairwise, so the link's authorship stays in the residual (a change reads input_coverage partial). Never inferred.",
+      "ref": "src/orchestrator/run-input-snapshot.ts - 0.72.0 RunInputLinkSchema.authorship_digest (DL ruling CEE #2482 r3)"
     },
     "orchestrator/RunInputLinkSchema.sizing": {
       "markers": [
