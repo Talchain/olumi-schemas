@@ -3560,7 +3560,7 @@
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absent = an older Run that did not record the factor's authorship. A producer cannot then explain an authorship change pairwise, so the factor's source/provenance/display stay in the residual (a user's value edit reads input_coverage partial). Never inferred.",
+      "note": "Absent = an older Run that did not record the factor's authorship. A producer cannot then explain an authorship change pairwise, so the factor's authorship members stay in the residual (a user's value edit reads input_coverage partial). Never inferred.",
       "ref": "src/orchestrator/run-input-snapshot.ts - 0.73.0 RunInputFactorSchema.authorship_digest (F1b lease #85 5945475375)"
     },
     "orchestrator/RunInputLinkSchema.authorship_digest": {

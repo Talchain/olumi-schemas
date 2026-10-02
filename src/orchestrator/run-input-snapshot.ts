@@ -102,11 +102,12 @@ export const RunInputFactorSchema = z.object({
   source: z.string().min(1).max(64).optional(),
   /**
    * 0.73.0 (F1b 52f8cd; DL lease #85 5945475375): sha256 (hex 64) of the factor's AUTHORSHIP as the request carried it —
-   * a canonical serialisation of exactly `observed_state.source`, the node's `provenance` and the node's `display_value`
-   * (absent members as null; keys sorted): the members a user's value edit moves besides the figure itself. Recorded so a
-   * producer can explain an authorship change pairwise: only beside this factor's own value row (the user's edit), never
-   * alone (a source change at the same figure stays `input_coverage: 'partial'`). Never a row figure. Absent = an older
-   * Run that did not record it.
+   * a canonical serialisation of the producer's member set (CEE `FACTOR_AUTHORSHIP_MEMBERS`, measured on the real value
+   * writer → Run wire): `observed_state.{source, extractionType, elicited_from}`, the node's `provenance`, `display_value`
+   * and `extractionType`, and `observed_state.std` only when it is the stated-level carry's exact spread (a function of who
+   * stated the figure); absent members as null, keys sorted. Review metadata is never a member. Recorded so a producer can
+   * explain an authorship change pairwise: only beside this factor's own value row, never alone (a source change at the
+   * same figure stays `input_coverage: 'partial'`). Never a row figure. Absent = an older Run that did not record it.
    */
   authorship_digest: z.string().regex(/^[0-9a-f]{64}$/).optional(),
 }).strict();
