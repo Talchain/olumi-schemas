@@ -501,7 +501,7 @@ const ModelVersionDiffCoverageSchema = z.object({
   known_uninterpreted_paths: DeterministicStringListSchema,
 }).strict();
 
-const ModelVersionDiffV1ObjectSchema = z.object({
+export const ModelVersionDiffV1ObjectSchema = z.object({
   schema: z.literal('model_version_diff.v1'),
   request_id: NonEmptyStringSchema.nullable().describe(
     'Route request correlation id. Required on the wire: null means correlation was not available; omission is invalid.',
@@ -523,8 +523,10 @@ const ModelVersionDiffV1ObjectSchema = z.object({
  * identity/path fields. `coverage` makes known blind spots first-class rather
  * than silently presenting a partial diff as exhaustive.
  */
-export const ModelVersionDiffV1Schema = ModelVersionDiffV1ObjectSchema.superRefine(
-  (data, ctx) => {
+export function refineModelVersionDiff(
+  data: Omit<z.infer<typeof ModelVersionDiffV1ObjectSchema>, 'schema'>,
+  ctx: z.RefinementCtx,
+): void {
     if (data.relation === 'identical' && data.from_full_hash !== data.to_full_hash) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -618,6 +620,7 @@ export const ModelVersionDiffV1Schema = ModelVersionDiffV1ObjectSchema.superRefi
           'known_uninterpreted_paths must equal the sorted unique paths classified under other_model_fields',
       });
     }
-  },
-);
+}
+
+export const ModelVersionDiffV1Schema = ModelVersionDiffV1ObjectSchema.superRefine(refineModelVersionDiff);
 export type ModelVersionDiffV1 = z.infer<typeof ModelVersionDiffV1Schema>;

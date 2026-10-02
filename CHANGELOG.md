@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.74.0] — recorded results for two stored versions (CODEX BUILDER; DL #85 5947565590)
+
+Additive, opt-in `ModelVersionDiffV2Schema` (`model_version_diff.v2`): the existing model diff plus
+`result_comparison`. Paired results carry the SAME `RunDeltaSchema` and confirmed scenario/hash/time/Run
+identities; endpoints and input-equality provenance must match. A shared Run is referenced once, with no
+delta. Missing/unconfirmed/incompatible results carry only a typed reason. No raw result envelopes or
+client-side comparison authority are added. The existing v1 schema and its refinements are unchanged.
+
+The adoption field is DECLARED: publication alone does not provide a CEE producer or a CANVAS consumer.
+Order: DL schema publication → separate HIGH CEE opt-in producer → CANVAS UI. Existing v1 consumers
+remain compatible; old requests keep v1. Semantic version 0.x consumers still adopt this minor line
+explicitly through their normal vendored, SHA-pinned reader.
+
+Coverage: published/source round trips for all three arms; endpoint/scenario/hash binding, shared-run
+uniqueness, inherited RunDelta attribution and v1 model-diff rules; maximal fixtures and negative rows.
+
+
 ## [0.73.0] — a factor's authorship, recorded so a user's value edit is credited (F1b 52f8cd; DL lease #85 5945475375)
 
 **Why.** Served witness 5945463610 (CEE 3363e963): a user's value edit (15% → 20%) read `input_coverage: 'partial'`.

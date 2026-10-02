@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 135,
-    "same": 60,
+    "same": 61,
     "unresolved": 426
   },
   "open_objects": {
@@ -4396,6 +4396,14 @@
       ],
       "verdict": "unresolved",
       "note": "0.62.0: the `confirm_pairing` variant's `at`. CEE #2258 writes the pairing record with no timestamp, so absent = the approval time was not recorded. Whether that differs from any value is not yet established. (The `confirm` variant's `at` is REQUIRED; PR Review #70 CHANGES_REQUIRED at 37329b24.)"
+    },
+    "boundary/ModelVersionDiffV2Schema.request_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when route request correlation was unavailable.",
+      "ref": "src/boundary/model-versions.ts :: ModelVersionDiffV1ObjectSchema.request_id"
     }
   }
 }

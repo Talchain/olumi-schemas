@@ -1410,6 +1410,23 @@
         "THE DEFECT IT CLOSES: Paul's 1 Oct sprint test showed 4 options while the engine analysed 3, and the baseline could not be taken out ('I can't remove it with the available tools'). structural_delete destroys the option and its wording; this verb keeps it and says why it is out.",
         "SEQUENCING: reader-first. A consumer pinned below 0.69.0 rejects the whole turn (422), so CEE deploys the handler before the UI emits it."
       ]
+    },
+    {
+      "field": "model_version_diff.v2.result_comparison",
+      "declared_in": "schemas:src/boundary/version-result-diff.ts::ModelVersionDiffV2Schema (0.74.0)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-10-31",
+      "notes": [
+        "DL #85 5947565590; CANVAS 5947598637. New opt-in v2 only; existing strict v1 remains default and byte-compatible.",
+        "SOURCE INVENTORY: CEE versions route at d928fbf1 emits model_version_diff.v1, no result field. UI modelVersions.ts at 3af6d33f reads v1 only. No producer/consumer witness exists for v2 yet.",
+        "Paired results reuse the existing RunDelta owner, with bound saved Run identities. Same Run travels once in shared_run; unavailable is strict and figure-free.",
+        "Publish schema first, then CEE producer, then CANVAS UI. Producer/consumer adoption requires their real emission/use tests; these schema parse rows are transport evidence only."
+      ]
     }
   ]
 }
