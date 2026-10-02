@@ -611,3 +611,11 @@ export {
 
 export { NODE_ID_PATTERN } from '../graph.js';
 export { STRENGTH_DEFAULT_SIGNATURE } from '../warnings.js';
+
+// 0.75.0 — "What would change this?": the recommendation's tipping point per link (EXPERIMENT; ISL #220).
+export {
+  DecisionFlipLinkStatus,
+  DecisionFlipLinkV1Schema,
+  DecisionFlipBlockV1Schema,
+} from './decision-flip.js';
+export type { DecisionFlipLinkV1, DecisionFlipBlockV1 } from './decision-flip.js';

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.75.0] — "What would change this?": the recommendation's tipping point per link (SCIENCE ROBUSTNESS step 2; SCIENCE/DSK, #85 lease 5948579361)
+
+**Why.** D1's served `edge_e_values.flip_mean` is the flip in ONE world (every other link at its mean): on D1 it
+overstated how far each plan-path link can weaken before the recommendation changes by 1.8–2.6× (ISL 842254da + PLoT
+4526e432). ISL #220 (EXPERIMENT) computes the recommendation's own tipping point per link from K replicate seeds and
+quotes it only when they agree. This is the typed contract for that block: PLoT forwards it verbatim and CEE, the
+validating boundary, strict-parses it (DL ruling; condition 5).
+
+### Added (additive; new exports only)
+- `DecisionFlipBlockV1Schema` / `DecisionFlipLinkV1Schema` / `DecisionFlipLinkStatus` (root and `./boundary`).
+  `.strict()`; inapplicable members are `null`. A `superRefine` makes the honesty rule structural: a `quoted` link
+  carries a threshold and a new leader and no reason; `absent` / `no_change` never carry a number; `absent` names its
+  reason.
+- Absence census +5 rows (`same`: required keys, null = not applicable). Adoption manifest +1 row (`produced_dark`;
+  producer ISL #220; removal or enforcement by 2026-11-30).
+- `tests/contracts/release-0.75.0.test.ts`: ISL's real D1 block parses unchanged (RED on 0.74.0); mutants (no
+  refinement / no `.strict()`) → RED.
+
 ## [0.74.0] — recorded results for two stored versions (CODEX BUILDER; DL #85 5947565590)
 
 Additive, opt-in `ModelVersionDiffV2Schema` (`model_version_diff.v2`): the existing model diff plus

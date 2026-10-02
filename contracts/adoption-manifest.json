@@ -1427,6 +1427,24 @@
         "Paired results reuse the existing RunDelta owner, with bound saved Run identities. Same Run travels once in shared_run; unavailable is strict and figure-free.",
         "Publish schema first, then CEE producer, then CANVAS UI. Producer/consumer adoption requires their real emission/use tests; these schema parse rows are transport evidence only."
       ]
+    },
+    {
+      "field": "decision_flip block (DecisionFlipBlockV1)",
+      "declared_in": "schemas:src/boundary/decision-flip.ts::DecisionFlipBlockV1Schema (0.75.0)",
+      "producer": "isl — POST /api/v1/robustness/decision-flip/v2 (ISL #220, EXPERIMENT branch science/decision-flip-20261002; not merged)",
+      "consumer": null,
+      "producer_test": "isl:tests/integration/test_decision_flip_route.py::test_d1_returns_a_typed_block",
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "produced_dark",
+      "n_minus_1_removal_date": "2026-11-30",
+      "notes": [
+        "SCIENCE ROBUSTNESS step 2 (SCIENCE/DSK, programme-docs #85 lease 5948579361; DL GO with conditions).",
+        "Planned chain (DL ruling): ISL producer -> PLoT /v2/run decision_flip mode forwards the block VERBATIM (structural guard",
+        "  only) -> CEE strict-parses with this schema (parse failure -> RC honest_limit) -> run.link_tipping_points ->",
+        "  RC-WHAT-CHANGES reply. Serving waits for Paul's science reviewer.",
+        "Dark until the PLoT and CEE legs land; remove or enforce by the date above."
+      ]
     }
   ]
 }
