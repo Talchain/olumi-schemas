@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.75.0] — "What would change this?": the recommendation's tipping point per link (SCIENCE ROBUSTNESS step 2; SCIENCE/DSK, #85 lease 5948579361)
+
+**Why.** D1's served `edge_e_values.flip_mean` is the flip in ONE world (every other link at its mean): on D1 it
+overstated how far each plan-path link can weaken before the recommendation changes by 1.8–2.6× (ISL 842254da + PLoT
+4526e432). ISL #220 (EXPERIMENT) computes the recommendation's own tipping point per link from K replicate seeds and
+quotes it only when they agree. This is the typed contract for that block: PLoT forwards it verbatim and CEE, the
+validating boundary, strict-parses it (DL ruling; condition 5).
+
+### Added (additive; new exports only)
+- `DecisionFlipBlockV1Schema` / `DecisionFlipLinkV1Schema` / `DecisionFlipLinkStatus` (root and `./boundary`).
+  `.strict()`; inapplicable members are `null`.
+- **The licence is structural** (DL CRs on #85 @6670076f and @598c4cc2): a block that breaks any rule fails the
+  parse, so a parsed `threshold` can be quoted without re-checking. Every issue message starts with its rule id.
+  R1 quoted ⇔ threshold + new leader, no reason; absent names its reason · R2 the median rule (odd K: the middle
+  value; even K: the mean of the two middle values = `numpy.median`) over replicates that ALL found a change ·
+  R3 the licence on the spread RECOMPUTED from the replicates (quoted and `affine_check_failed` within BOTH bounds;
+  `replicates_spread` breaks one); a reported range must equal it (relative tolerance) · R4 every replicate tipping
+  point strictly between 0 and `current_mean` (same sign) · R5 one entry per replicate, `null` only when none ran,
+  all-null for `no_change` · R6 a quoted link needs a non-null leader and a different `to_option_id`; a NULL leader allows only pre-search absences · R7
+  `bound_abs` ≤ 0.01 and `bound_rel` ≤ 0.15 (`DECISION_FLIP_MAX_BOUND_ABS/REL`) · R8 each `(from_id, to_id)` at most
+  once · R9 an absence `reason` is a typed code with its evidence shape: pre-search (`DECISION_FLIP_PRE_SEARCH_REASONS`
+  + `nonlinear_downstream:<clamp|identity>:<node>`) carries no replicates and no range; post-search
+  (`DECISION_FLIP_POST_SEARCH_REASONS`) carries its own (disagree: some found, no range; disagree_on_option: all
+  found, no range; spread / affine_check_failed: all found, with the range) · R10 every strength, threshold and replicate |x| ≤ 1e6
+  (`DECISION_FLIP_MAX_MAGNITUDE`) and an overflow-safe median (DL round 2).
+- Absence census +6 rows (`same`: required keys, null = not applicable). Adoption manifest +1 row (`produced_dark`;
+  producer ISL #220; removal or enforcement by 2026-11-30).
+- `tests/contracts/release-0.75.0.test.ts`: two REAL ISL wire blocks (D1, and D1 with a downstream clamp) are the valid
+  controls; every rejection is bound to its rule id, path and link identity, with a valid control beside it (incl.
+  absolute-only and relative-only R3 cases, and the Codex tiny-threshold and overflow cases). Per-rule mutants
+  19/20 killed; the survivor (a plain (a+b)/2 median) is equivalent under R10's bound, which is what stops overflow.
+
 ## [0.74.0] — recorded results for two stored versions (CODEX BUILDER; DL #85 5947565590)
 
 Additive, opt-in `ModelVersionDiffV2Schema` (`model_version_diff.v2`): the existing model diff plus

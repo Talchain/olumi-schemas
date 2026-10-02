@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 135,
-    "same": 61,
+    "same": 67,
     "unresolved": 426
   },
   "open_objects": {
@@ -4404,6 +4404,48 @@
       "verdict": "same",
       "note": "The key is required, so omission is rejected. The field description defines null as the sole spelling when route request correlation was unavailable.",
       "ref": "src/boundary/model-versions.ts :: ModelVersionDiffV1ObjectSchema.request_id"
+    },
+    "boundary/DecisionFlipBlockV1Schema.leader_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. null = the ranking was not supported (no recommendation to explain); every link is then absent with a reason."
+    },
+    "boundary/DecisionFlipLinkV1Schema.reason": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. null exactly when status is quoted or no_change; the superRefine requires a reason for absent."
+    },
+    "boundary/DecisionFlipLinkV1Schema.replicate_range": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. null = not every replicate found a change, or none ran (an absence decided before any search), so there is no range to measure."
+    },
+    "boundary/DecisionFlipLinkV1Schema.replicate_thresholds": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. null = no replicate ran (an absence decided before any search: ranking_not_supported, leader_unstable, link_at_zero, nonlinear_downstream); otherwise exactly `replicates` entries (rule R5)."
+    },
+    "boundary/DecisionFlipLinkV1Schema.threshold": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. Non-null ONLY when status is quoted (superRefine); a consumer never renders it otherwise."
+    },
+    "boundary/DecisionFlipLinkV1Schema.to_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. Non-null ONLY when status is quoted (superRefine)."
     }
   }
 }

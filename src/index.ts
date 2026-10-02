@@ -303,3 +303,15 @@ export type {
   AnalysisFactSubjectKind,
   MetricStatus,
 } from './contracts/analysis-fact.js';
+// 0.75.0 — "What would change this?": the recommendation's tipping point per link (EXPERIMENT; ISL #220).
+export {
+  DecisionFlipLinkStatus,
+  DecisionFlipLinkV1Schema,
+  DecisionFlipBlockV1Schema,
+  DECISION_FLIP_MAX_BOUND_ABS,
+  DECISION_FLIP_MAX_BOUND_REL,
+  DECISION_FLIP_PRE_SEARCH_REASONS,
+  DECISION_FLIP_POST_SEARCH_REASONS,
+  DECISION_FLIP_MAX_MAGNITUDE,
+} from './boundary/decision-flip.js';
+export type { DecisionFlipLinkV1, DecisionFlipBlockV1 } from './boundary/decision-flip.js';
