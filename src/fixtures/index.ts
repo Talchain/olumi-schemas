@@ -163,6 +163,9 @@ import {
   ModelVersionsListV2Schema,
   ModelVersionDiffV1Schema,
   ModelVersionDiffV2Schema,
+  // 0.75.0 — the recommendation's tipping point per link (ISL #220)
+  DecisionFlipBlockV1Schema,
+  DecisionFlipLinkV1Schema,
   // 0.39.0 car 4 — collab elicitation + disagreement (ROADMAP 2.686 U-S0)
   AuthoredBySchema,
   // 0.40.0 — PR4 evidence loop (shared attribution ref)
@@ -2234,6 +2237,12 @@ export const maximalModelVersionDiffV2Unavailable = deepFreeze({
   result_comparison: { status: 'unavailable', reason: 'missing_run' },
 });
 
+// 0.75.0 — REAL ISL wire output (worker `run_decision_flip_v2`, ISL #220; D1, K=4, seed 42), not authored. The first
+// carries a quoted link and a `replicates_spread` absence; the second (epsilon_std 0.05 on the signing node) carries two
+// absences decided before any search, with `replicate_thresholds: null`.
+export const maximalDecisionFlipBlockV1 = deepFreeze({"method":"affine_crn_replicates_v1","leader_option_id":"ai_reporting_module_sprint","replicates":4,"bound_abs":0.01,"bound_rel":0.15,"grid_step":0.0025,"links":[{"from_id":"sprint_capacity_for_ai_reporting","to_id":"ai_reporting_module_availability","status":"quoted","reason":null,"current_mean":0.25,"threshold":0.0625,"replicate_thresholds":[0.06125,0.06375,0.06125,0.06625],"replicate_range":0.0050000000000000044,"to_option_id":"integration_bug_fix_sprint"},{"from_id":"ai_reporting_module_availability","to_id":"enterprise_prospect_signing_likelihood","status":"absent","reason":"replicates_spread","current_mean":0.6,"threshold":null,"replicate_thresholds":[0.14125000000000001,0.15125,0.15624999999999997,0.15874999999999997],"replicate_range":0.01749999999999996,"to_option_id":null},{"from_id":"enterprise_prospect_signing_likelihood","to_id":"quarterly_revenue","status":"quoted","reason":null,"current_mean":0.5,"threshold":0.08875000000000002,"replicate_thresholds":[0.08625000000000002,0.09125000000000003,0.08875000000000002,0.08875000000000002],"replicate_range":0.0050000000000000044,"to_option_id":"integration_bug_fix_sprint"}]} as const);
+export const maximalDecisionFlipBlockV1GuardAbsent = deepFreeze({"method":"affine_crn_replicates_v1","leader_option_id":"ai_reporting_module_sprint","replicates":4,"bound_abs":0.01,"bound_rel":0.15,"grid_step":0.0025,"links":[{"from_id":"sprint_capacity_for_ai_reporting","to_id":"ai_reporting_module_availability","status":"absent","reason":"nonlinear_downstream:clamp:enterprise_prospect_signing_likelihood","current_mean":0.25,"threshold":null,"replicate_thresholds":null,"replicate_range":null,"to_option_id":null},{"from_id":"ai_reporting_module_availability","to_id":"enterprise_prospect_signing_likelihood","status":"absent","reason":"nonlinear_downstream:clamp:enterprise_prospect_signing_likelihood","current_mean":0.6,"threshold":null,"replicate_thresholds":null,"replicate_range":null,"to_option_id":null},{"from_id":"enterprise_prospect_signing_likelihood","to_id":"quarterly_revenue","status":"quoted","reason":null,"current_mean":0.5,"threshold":0.09624999999999999,"replicate_thresholds":[0.09375,0.09874999999999998,0.10124999999999998,0.09125000000000003],"replicate_range":0.009999999999999953,"to_option_id":"integration_bug_fix_sprint"}]} as const);
+
 // ----------------------------------------------------------------------------
 // Collaborative elicitation + disagreement (0.39.0 car 4 — ROADMAP 2.686
 // U-S0 / 2.968 build-list item 1)
@@ -3579,6 +3588,12 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalModelVersionDiffV2SharedRun, notes: 'Identical inputs reference one recorded Run once, with no fabricated delta.' },
   { family: 'boundary/ModelVersionDiffV2Schema#unavailable', schema: ModelVersionDiffV2Schema,
     fixture: maximalModelVersionDiffV2Unavailable, notes: 'Unavailable carries a typed reason and no Run, figure or delta.' },
+  { family: 'boundary/DecisionFlipBlockV1Schema', schema: DecisionFlipBlockV1Schema,
+    fixture: maximalDecisionFlipBlockV1, notes: 'Real ISL D1 block: a quoted link (every number) and a replicates_spread absence (a reason).' },
+  { family: 'boundary/DecisionFlipBlockV1Schema#guard_absent', schema: DecisionFlipBlockV1Schema,
+    fixture: maximalDecisionFlipBlockV1GuardAbsent, notes: 'Real ISL block with a downstream clamp: absences decided before any search carry replicate_thresholds null.' },
+  { family: 'boundary/DecisionFlipLinkV1Schema', schema: DecisionFlipLinkV1Schema,
+    fixture: maximalDecisionFlipBlockV1.links[0], notes: 'The real quoted link: threshold, replicates, range and the option past it.' },
   // --- 0.39.0 car 4 — collab elicitation + disagreement -----------------------------
   {
     family: 'boundary/AuthoredBySchema',

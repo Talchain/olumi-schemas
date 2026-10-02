@@ -17,13 +17,20 @@ validating boundary, strict-parses it (DL ruling; condition 5).
 
 ### Added (additive; new exports only)
 - `DecisionFlipBlockV1Schema` / `DecisionFlipLinkV1Schema` / `DecisionFlipLinkStatus` (root and `./boundary`).
-  `.strict()`; inapplicable members are `null`. A `superRefine` makes the honesty rule structural: a `quoted` link
-  carries a threshold and a new leader and no reason; `absent` / `no_change` never carry a number; `absent` names its
-  reason.
-- Absence census +5 rows (`same`: required keys, null = not applicable). Adoption manifest +1 row (`produced_dark`;
+  `.strict()`; inapplicable members are `null`.
+- **The licence is structural** (DL CR on #85 @6670076f): a block that breaks any rule fails the parse, so a parsed
+  `threshold` can be quoted without re-checking. R1 quoted ⇔ threshold + new leader, no reason; absent names its
+  reason · R2 the median rule (odd K: the middle value; even K: the mean of the two middle values = `numpy.median`)
+  over replicates that ALL found a change · R3 range = max − min, ≤ `bound_abs` AND ≤ `bound_rel`·|threshold| ·
+  R4 every tipping point strictly between 0 and `current_mean` (same sign) · R5 `replicate_thresholds` has one entry
+  per replicate, is `null` only when none ran, and is all-null for `no_change` · R6 a quoted link needs a non-null
+  leader and a different `to_option_id` · R7 `bound_abs` ≤ `DECISION_FLIP_MAX_BOUND_ABS` (0.01) and `bound_rel` ≤
+  `DECISION_FLIP_MAX_BOUND_REL` (0.15), the accepted licence (both constants exported).
+- Absence census +6 rows (`same`: required keys, null = not applicable). Adoption manifest +1 row (`produced_dark`;
   producer ISL #220; removal or enforcement by 2026-11-30).
-- `tests/contracts/release-0.75.0.test.ts`: ISL's real D1 block parses unchanged (RED on 0.74.0); mutants (no
-  refinement / no `.strict()`) → RED.
+- `tests/contracts/release-0.75.0.test.ts`: two REAL ISL wire blocks (D1, and D1 with a downstream clamp) are the valid
+  controls; one RED row per rule R1–R7 plus a valid control. R2–R7 + the real-block row are RED on 6670076f; per-rule
+  mutants 8/8 killed, each reddening only its own row.
 
 ## [0.74.0] — recorded results for two stored versions (CODEX BUILDER; DL #85 5947565590)
 

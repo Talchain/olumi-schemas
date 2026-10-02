@@ -295,7 +295,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.70.0 (+1): boundary/RunDeltaSchema#prior_withheld — the typed reason for empty win shares travels only beside
     //   an empty `win_probabilities` (refined), which the C1 maximal delta cannot have.
     // 0.74.0 (+3): boundary/ModelVersionDiffV2Schema paired, shared and unavailable arms.
-    expect(MAXIMAL_FIXTURES.length).toBe(220);
+    // 0.75.0 (+3): boundary/DecisionFlipBlockV1Schema (+ #guard_absent) and DecisionFlipLinkV1Schema — real ISL wire
+    //   blocks from ISL #220.
+    expect(MAXIMAL_FIXTURES.length).toBe(223);
   });
 
   it('family keys are unique', () => {

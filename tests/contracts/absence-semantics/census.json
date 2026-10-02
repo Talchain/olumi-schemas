@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 135,
-    "same": 66,
+    "same": 67,
     "unresolved": 426
   },
   "open_objects": {
@@ -4424,7 +4424,14 @@
         "nullable"
       ],
       "verdict": "same",
-      "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. null = not every replicate found a change, so there is no range to measure."
+      "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. null = not every replicate found a change, or none ran (an absence decided before any search), so there is no range to measure."
+    },
+    "boundary/DecisionFlipLinkV1Schema.replicate_thresholds": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. null = no replicate ran (an absence decided before any search: ranking_not_supported, leader_unstable, link_at_zero, nonlinear_downstream); otherwise exactly `replicates` entries (rule R5)."
     },
     "boundary/DecisionFlipLinkV1Schema.threshold": {
       "markers": [

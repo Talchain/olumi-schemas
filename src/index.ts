@@ -308,5 +308,7 @@ export {
   DecisionFlipLinkStatus,
   DecisionFlipLinkV1Schema,
   DecisionFlipBlockV1Schema,
+  DECISION_FLIP_MAX_BOUND_ABS,
+  DECISION_FLIP_MAX_BOUND_REL,
 } from './boundary/decision-flip.js';
 export type { DecisionFlipLinkV1, DecisionFlipBlockV1 } from './boundary/decision-flip.js';
