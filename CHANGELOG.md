@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.73.0] — a factor's authorship, recorded so a user's value edit is credited (F1b 52f8cd; DL lease #85 5945475375)
+
+**Why.** Served witness 5945463610 (CEE 3363e963): a user's value edit (15% → 20%) moved the factor's
+`observed_state.source` (brief_extraction → user_override), the node's `provenance` (from_brief → user_set) and its
+`display_value`. All three ride the PLoT request, so the 0.71 residual differed and the pair read `input_coverage:
+'partial'`: the rerun said "Olumi can't confirm nothing else differed" instead of crediting the edit.
+
+### Added (additive, optional)
+- `RunInputFactorSchema.authorship_digest?` — sha256 (hex 64) of a canonical serialisation of exactly the factor's
+  `observed_state.source`, the node's `provenance` and the node's `display_value` (absent → null; keys sorted). A producer
+  explains an authorship change only beside the same factor's value row; any other change is `partial`.
+
+### Tests
+- `tests/contracts/release-0.73.0.test.ts`. Mutant: drop the field → the parse rows RED. Census +1 (135).
+
+No consumer needs to vendor 0.73.0 (`RunDelta` unchanged; the snapshot is CEE-internal). Order: publish → CEE.
+
 ## [0.72.0] — a link's authorship, recorded so its change can be explained pairwise (F1b 52f8cd; DL ruling on CEE #2482 r3)
 
 **Why.** A user's typed band edit (`adjust_edge_strength` set) and an Accept both rewrite link provenance. Under 0.71's
