@@ -212,6 +212,9 @@ export type {
   ModelVersionDiffV1,
 } from './model-versions.js';
 
+export { ModelVersionDiffV2Schema } from './version-result-diff.js';
+export type { ModelVersionDiffV2, ModelVersionResultComparison } from './version-result-diff.js';
+
 // Composed analysis-state verdict (0.46.0 — analysis-state authority
 // migration, step 2). Carried on `OlumiResponseSchema.analysis_state`; see
 // ./analysis-state.ts for the doctrine, the per-field licence, and the three

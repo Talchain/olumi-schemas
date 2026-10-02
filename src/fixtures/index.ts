@@ -162,6 +162,7 @@ import {
   ModelVersionRestoreV2Schema,
   ModelVersionsListV2Schema,
   ModelVersionDiffV1Schema,
+  ModelVersionDiffV2Schema,
   // 0.39.0 car 4 — collab elicitation + disagreement (ROADMAP 2.686 U-S0)
   AuthoredBySchema,
   // 0.40.0 — PR4 evidence loop (shared attribution ref)
@@ -2187,6 +2188,52 @@ export const maximalModelVersionDiffV1 = deepFreeze({
   },
 });
 
+// 0.74.0 — recorded version results, never a second UI comparison owner.
+export const maximalModelVersionDiffV2 = deepFreeze({
+  ...maximalModelVersionDiffV1,
+  schema: 'model_version_diff.v2',
+  result_comparison: {
+    status: 'available', kind: 'paired_runs',
+    prior_run: {
+      scenario_id: MODEL_VERSION_SCENARIO_ID,
+      ...maximalRunDelta.endpoints.prior,
+      graph_hash_at_run: 'a'.repeat(16),
+    },
+    current_run: {
+      scenario_id: MODEL_VERSION_SCENARIO_ID,
+      ...maximalRunDelta.endpoints.current,
+      graph_hash_at_run: 'b'.repeat(16),
+    },
+    run_delta: maximalRunDelta,
+  },
+});
+
+export const maximalModelVersionDiffV2SharedRun = deepFreeze({
+  ...maximalModelVersionDiffV1,
+  schema: 'model_version_diff.v2',
+  relation: 'identical',
+  to_full_hash: maximalModelVersionDiffV1.from_full_hash,
+  analysis_equivalent: true,
+  categories: {
+    structure: [], relationships: [], values_uncertainty: [], evidence_provenance: [],
+    goals_constraints_options: [], assumptions_claims: [], presentation: [], other_model_fields: [],
+  },
+  coverage: {
+    known_undetectable: maximalModelVersionDiffV1.coverage.known_undetectable,
+    known_uninterpreted_paths: [],
+  },
+  result_comparison: {
+    status: 'available', kind: 'shared_run',
+    recorded_run: maximalModelVersionDiffV2.result_comparison.prior_run,
+  },
+});
+
+export const maximalModelVersionDiffV2Unavailable = deepFreeze({
+  ...maximalModelVersionDiffV1,
+  schema: 'model_version_diff.v2',
+  result_comparison: { status: 'unavailable', reason: 'missing_run' },
+});
+
 // ----------------------------------------------------------------------------
 // Collaborative elicitation + disagreement (0.39.0 car 4 — ROADMAP 2.686
 // U-S0 / 2.968 build-list item 1)
@@ -3526,6 +3573,12 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     notes:
       'Every deterministic category and both coverage disclosures are populated.',
   },
+  { family: 'boundary/ModelVersionDiffV2Schema', schema: ModelVersionDiffV2Schema,
+    fixture: maximalModelVersionDiffV2, notes: 'Selected pair carries the existing maximal RunDelta, with bound endpoints.' },
+  { family: 'boundary/ModelVersionDiffV2Schema#shared_run', schema: ModelVersionDiffV2Schema,
+    fixture: maximalModelVersionDiffV2SharedRun, notes: 'Identical inputs reference one recorded Run once, with no fabricated delta.' },
+  { family: 'boundary/ModelVersionDiffV2Schema#unavailable', schema: ModelVersionDiffV2Schema,
+    fixture: maximalModelVersionDiffV2Unavailable, notes: 'Unavailable carries a typed reason and no Run, figure or delta.' },
   // --- 0.39.0 car 4 — collab elicitation + disagreement -----------------------------
   {
     family: 'boundary/AuthoredBySchema',
