@@ -312,5 +312,6 @@ export {
   DECISION_FLIP_MAX_BOUND_REL,
   DECISION_FLIP_PRE_SEARCH_REASONS,
   DECISION_FLIP_POST_SEARCH_REASONS,
+  DECISION_FLIP_MAX_MAGNITUDE,
 } from './boundary/decision-flip.js';
 export type { DecisionFlipLinkV1, DecisionFlipBlockV1 } from './boundary/decision-flip.js';

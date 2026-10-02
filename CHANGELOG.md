@@ -25,17 +25,19 @@ validating boundary, strict-parses it (DL ruling; condition 5).
   R3 the licence on the spread RECOMPUTED from the replicates (quoted and `affine_check_failed` within BOTH bounds;
   `replicates_spread` breaks one); a reported range must equal it (relative tolerance) · R4 every replicate tipping
   point strictly between 0 and `current_mean` (same sign) · R5 one entry per replicate, `null` only when none ran,
-  all-null for `no_change` · R6 a quoted link needs a non-null leader and a different `to_option_id` · R7
+  all-null for `no_change` · R6 a quoted link needs a non-null leader and a different `to_option_id`; a NULL leader allows only pre-search absences · R7
   `bound_abs` ≤ 0.01 and `bound_rel` ≤ 0.15 (`DECISION_FLIP_MAX_BOUND_ABS/REL`) · R8 each `(from_id, to_id)` at most
   once · R9 an absence `reason` is a typed code with its evidence shape: pre-search (`DECISION_FLIP_PRE_SEARCH_REASONS`
   + `nonlinear_downstream:<clamp|identity>:<node>`) carries no replicates and no range; post-search
   (`DECISION_FLIP_POST_SEARCH_REASONS`) carries its own (disagree: some found, no range; disagree_on_option: all
-  found, no range; spread / affine_check_failed: all found, with the range).
+  found, no range; spread / affine_check_failed: all found, with the range) · R10 every strength, threshold and replicate |x| ≤ 1e6
+  (`DECISION_FLIP_MAX_MAGNITUDE`) and an overflow-safe median (DL round 2).
 - Absence census +6 rows (`same`: required keys, null = not applicable). Adoption manifest +1 row (`produced_dark`;
   producer ISL #220; removal or enforcement by 2026-11-30).
 - `tests/contracts/release-0.75.0.test.ts`: two REAL ISL wire blocks (D1, and D1 with a downstream clamp) are the valid
   controls; every rejection is bound to its rule id, path and link identity, with a valid control beside it (incl.
-  absolute-only and relative-only R3 cases, and the Codex tiny-threshold case). Per-rule mutants 17/17 killed.
+  absolute-only and relative-only R3 cases, and the Codex tiny-threshold and overflow cases). Per-rule mutants
+  19/20 killed; the survivor (a plain (a+b)/2 median) is equivalent under R10's bound, which is what stops overflow.
 
 ## [0.74.0] — recorded results for two stored versions (CODEX BUILDER; DL #85 5947565590)
 

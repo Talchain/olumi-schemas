@@ -22,7 +22,9 @@ import { z } from 'zod';
 //      the search only weakens a link towards zero.
 //   R5 replicate_thresholds is null ONLY when no replicate ran; otherwise it has exactly `replicates` entries.
 //      no_change => every entry null.
-//   R6 any quoted link => leader_option_id non-null, and every to_option_id differs from it.
+//   R6 any quoted link => leader_option_id non-null, and every to_option_id differs from it. A NULL leader (no ranking
+//      supported) allows only pre-search absences: no_change and post-search absences claim a stability the
+//      analyser never ranked.
 //   R7 bound_abs <= 0.01 and bound_rel <= 0.15: the licence the DL accepted (#85, 2 Oct). Loosening it is a contract
 //      change, never a producer setting.
 //   R8 each (from_id, to_id) appears at most once in a block.
@@ -31,6 +33,8 @@ import { z } from 'zod';
 //      replicates, no range. POST-SEARCH: replicates_disagree => some replicates found a change and some did not, no
 //      range; replicates_disagree_on_option => all found one, no range; replicates_spread and affine_check_failed =>
 //      all found one, with the range (R3 decides which).
+//   R10 every strength, threshold and replicate value is a sane magnitude (|x| <= 1e6; link strengths are O(1)), and
+//      the median is computed overflow-safely (a/2 + b/2), so no Infinity can satisfy R2.
 //
 // NULL, NOT ABSENT. ISL serialises every member; an inapplicable one is `null`. `.strict()`: an ISL field this
 // contract does not know fails the parse instead of being dropped (the schema-version-skew hazard).
@@ -43,6 +47,10 @@ export const DECISION_FLIP_MAX_BOUND_ABS = 0.01;
 export const DECISION_FLIP_MAX_BOUND_REL = 0.15;
 /** R2/R3 float tolerance, RELATIVE: ISL computes the median and range in IEEE doubles that survive JSON exactly. */
 const EQ_TOL = 1e-12;
+/** R10: link strengths are O(1); this bound only stops pathological magnitudes (overflow) reaching R2/R3. */
+export const DECISION_FLIP_MAX_MAGNITUDE = 1e6;
+const Magnitude = z.number().finite().gte(-DECISION_FLIP_MAX_MAGNITUDE, { message: 'R10: |value| is at most 1e6' })
+  .lte(DECISION_FLIP_MAX_MAGNITUDE, { message: 'R10: |value| is at most 1e6' });
 
 export const DecisionFlipLinkStatus = z.enum(['quoted', 'absent', 'no_change']);
 
@@ -62,7 +70,7 @@ const isPreSearch = (reason: string) =>
 
 function median(sorted: number[]): number {
   const m = sorted.length >> 1;
-  return sorted.length % 2 === 1 ? sorted[m] : (sorted[m - 1] + sorted[m]) / 2;
+  return sorted.length % 2 === 1 ? sorted[m] : sorted[m - 1] / 2 + sorted[m] / 2; // R10: overflow-safe
 }
 
 const near = (a: number, b: number) => Math.abs(a - b) <= EQ_TOL * Math.max(Math.abs(a), Math.abs(b));
@@ -86,14 +94,14 @@ export const DecisionFlipLinkV1Schema = z
     status: DecisionFlipLinkStatus,
     /** A typed machine code for an absence (R9); null otherwise. */
     reason: AbsenceReason.nullable(),
-    current_mean: z.number().finite(),
+    current_mean: Magnitude,
     /** The median replicate tipping point (R2). Non-null ONLY when `status` is `quoted`. */
-    threshold: z.number().finite().nullable(),
+    threshold: Magnitude.nullable(),
     /** One entry per replicate: its tipping point, or null when that replicate found no change. Null when no replicate
      *  ran (R5). */
-    replicate_thresholds: z.array(z.number().finite().nullable()).min(2).max(8).nullable(),
+    replicate_thresholds: z.array(Magnitude.nullable()).min(2).max(8).nullable(),
     /** max - min of the replicates (R3); present only when every replicate found a change and the range was judged. */
-    replicate_range: z.number().finite().nonnegative().nullable(),
+    replicate_range: z.number().finite().nonnegative().lte(2 * DECISION_FLIP_MAX_MAGNITUDE, { message: 'R10: a range is at most 2e6' }).nullable(),
     /** The option that would lead past the threshold. Non-null ONLY when `status` is `quoted`. */
     to_option_id: Id.nullable(),
   })
@@ -184,6 +192,8 @@ export const DecisionFlipBlockV1Schema = z
       }
       if (link.status === 'quoted' && (block.leader_option_id === null || link.to_option_id === block.leader_option_id)) {
         fail(i, 'R6: a quoted link names a leader and a different option past its tipping point');
+      } else if (block.leader_option_id === null && !(link.status === 'absent' && link.reason !== null && isPreSearch(link.reason))) {
+        fail(i, 'R6: with no leader, a link can only be a pre-search absence');
       }
     });
   });

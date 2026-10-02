@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DECISION_FLIP_MAX_BOUND_ABS,
   DECISION_FLIP_MAX_BOUND_REL,
+  DECISION_FLIP_MAX_MAGNITUDE,
   DECISION_FLIP_POST_SEARCH_REASONS,
   DECISION_FLIP_PRE_SEARCH_REASONS,
   DecisionFlipBlockV1Schema,
@@ -45,8 +46,9 @@ const issuesOf = (b: unknown): string[] => {
 const L0 = 'sprint_capacity_for_ai_reporting->ai_reporting_module_availability'; // quoted, [0.06125,0.06375,0.06125,0.06625]
 const L1 = 'ai_reporting_module_availability->enterprise_prospect_signing_likelihood'; // absent replicates_spread, 0.0175
 const rejects = (b: unknown, rule: string, i: number | string, l?: string) => {
-  const want = typeof i === 'number' ? `${rule}@links.${i}#${l}` : `${rule}@${i}`;
-  expect(issuesOf(b), want).toContain(want);
+  const got = issuesOf(b);
+  if (typeof i === 'number') expect(got, `${rule}@links.${i}#${l}`).toContain(`${rule}@links.${i}#${l}`);
+  else expect(got.some((g) => g === `${rule}@${i}` || g.startsWith(`${rule}@${i}#`)), `${rule}@${i} in ${JSON.stringify(got)}`).toBe(true);
 };
 const accepts = (b: unknown) => expect(issuesOf(b)).toEqual([]);
 const QUOTED = 0;
@@ -120,6 +122,13 @@ describe('0.75.0 · the decision-flip block', () => {
     const noRanking = { status: 'absent', reason: 'ranking_not_supported', threshold: null, to_option_id: null,
       replicate_thresholds: null, replicate_range: null };
     accepts({ ...clone(ISL_D1_BLOCK), leader_option_id: null, links: ISL_D1_BLOCK.links.map((l) => ({ ...l, ...noRanking })) });
+    // DL round 2: with no leader nothing may claim stability — no_change and post-search absences need a ranking.
+    const none = { status: 'no_change', reason: null, replicate_range: null, replicate_thresholds: [null, null, null, null] };
+    const unranked = (over: Rec) => ({ ...clone(ISL_D1_BLOCK), leader_option_id: null,
+      links: [{ ...ISL_D1_BLOCK.links[0], ...noRanking }, { ...ISL_D1_BLOCK.links[SPREAD], ...over }] });
+    rejects(unranked(none), 'R6', 1, L1);
+    rejects(unranked({}), 'R6', 1, L1); // the real replicates_spread absence
+    accepts(unranked(noRanking)); // control
   });
 
   it('R7: the licence the DL accepted cannot loosen (bound_abs <= 0.01, bound_rel <= 0.15)', () => {
@@ -156,6 +165,16 @@ describe('0.75.0 · the decision-flip block', () => {
     rejects(block(SPREAD, { replicate_range: null }), 'R9', SPREAD, L1); // replicates_spread without its range
     expect(DECISION_FLIP_PRE_SEARCH_REASONS).toEqual(['ranking_not_supported', 'leader_unstable', 'link_at_zero']);
     expect(DECISION_FLIP_POST_SEARCH_REASONS).toEqual(['replicates_disagree', 'replicates_disagree_on_option', 'replicates_spread', 'affine_check_failed']);
+  });
+
+  it('R10: magnitudes are bounded (|x| <= 1e6) and the median cannot overflow (DL round 2, Codex case)', () => {
+    const huge = { current_mean: 1.5e308, replicate_thresholds: [1e308, 1e308, 1e308, 1e308], threshold: 1e308, replicate_range: 0 };
+    rejects(block(QUOTED, huge), 'R10', 'links.0.current_mean');
+    rejects(block(QUOTED, { current_mean: 1_000_001 }), 'R10', 'links.0.current_mean');
+    accepts(block(QUOTED, { current_mean: 1e6 })); // control: at the bound
+    const big = [250000, 250000.0025, 250000.0025, 250000.005]; // large but bounded, licensed, even-K median
+    accepts(block(QUOTED, { current_mean: 1e6, replicate_thresholds: big, threshold: 250000.0025, replicate_range: big[3] - big[0] }));
+    expect(DECISION_FLIP_MAX_MAGNITUDE).toBe(1e6);
   });
 
   it('an ISL field this contract does not know fails the parse (no silent drop)', () => {
