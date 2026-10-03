@@ -40,7 +40,8 @@ import { RunDeltaNoiseVerdict, RunDeltaPairProvenanceSchema, RunInputLinkSizing 
 //      and different values; a kept certainty is the same exact 0 or 1 on both; a target crossing has the two values on
 //      strictly opposite sides of `target`, a same-side hold on the same strict side.
 //   C6 `invariant_by_construction` <=> basis `unaffected_by_construction`: the removed link cannot reach the quantity,
-//      so its survival is NOT evidence of robustness; such a claim is `holds` and never `signal`.
+//      so its survival is NOT evidence of robustness; such a claim is `holds`, a quantity's difference is never
+//      `signal`, and an unaffected leader is the same entitled leader on both sides (its tag measures the lead).
 //   C7 probabilities lie in [0, 1]; `target` only on outcome_level; `constraint_id` exactly on constraint_probability.
 //
 // ABSENCE. A leader id that is null means "no ENTITLED leader claim on that side" (licence withheld), never "no leader
@@ -166,8 +167,14 @@ function refineVerdict(
   if (claim.invariant_by_construction !== (basis === 'unaffected_by_construction')) {
     fail('C6: invariant_by_construction <=> basis unaffected_by_construction');
   }
-  if (claim.invariant_by_construction && (verdict !== 'holds' || noise === 'signal')) {
-    fail('C6: an unaffected-by-construction claim holds and is never signal');
+  if (claim.invariant_by_construction) {
+    if (verdict !== 'holds') fail('C6: an unaffected-by-construction claim holds');
+    // A quantity's noise tag measures its DIFFERENCE, which cannot be signal if the link cannot reach it. A leader's
+    // tag measures how clear the lead is, so an unaffected leader may lead clearly — but it is the same leader.
+    if (leaderIds === null && noise === 'signal') fail('C6: an unaffected quantity never differs beyond noise');
+    if (leaderIds !== null && (leaderIds.baseline === null || leaderIds.baseline !== leaderIds.alternative)) {
+      fail('C6: an unaffected leader is the same entitled leader on both sides');
+    }
   }
   const both = values !== null && values.baseline !== null && values.alternative !== null;
   if (verdict === 'changes') {

@@ -37,8 +37,9 @@ unchanged.
   - C3: `delta_only` shows the values without a verdict word.
   - C4: NOT_COMPARABLE names why.
   - C5: the boundary evidence is re-checked from the values themselves.
-  - C6: `invariant_by_construction` ⇔ basis `unaffected_by_construction`. It holds, is never signal, and is never
-    robustness evidence.
+  - C6: `invariant_by_construction` ⇔ basis `unaffected_by_construction`. It holds and is never robustness evidence.
+    An unaffected quantity's difference is never signal. An unaffected leader is the same entitled leader on both
+    sides; its tag measures the lead, so it may be signal.
   - C7: probabilities lie in [0, 1], `target` appears only on outcome levels, and `constraint_id` appears exactly on
     constraint claims.
 - **Retention:** `retention: 'not_retained'` (the PTL bounded exception) plus `recompute_key`, a sha256 over the baseline

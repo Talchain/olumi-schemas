@@ -129,10 +129,14 @@ describe('0.76.0 · the structural challenge result', () => {
     rejects(result({ alternative: 86000 }, OUTCOME_SQ), 'C5'); // crossed, yet claimed same side
   });
 
-  it('C6: invariant_by_construction <=> unaffected basis; it holds and is never signal', () => {
+  it('C6: invariant_by_construction <=> unaffected basis; it holds; a quantity is never signal; a leader stays the same', () => {
     rejects(result({ invariant_by_construction: false }, CHURN), 'C6');
     rejects(result({ noise_verdict: 'signal' }, CHURN), 'C6');
+    rejects(result({ verdict: 'delta_only', basis: 'unaffected_by_construction' }, CHURN), 'C6');
     rejects(result({ invariant_by_construction: true }, GOAL_SQ), 'C6');
+    const unaffectedLeader = { basis: 'unaffected_by_construction', invariant_by_construction: true };
+    accepts(result(unaffectedLeader, LEADER)); // a clear lead (signal) on an unaffected leader is legitimate
+    rejects(result({ ...unaffectedLeader, alternative_option_id: 'status_quo' }, LEADER), 'C6');
   });
 
   it('C7: probabilities in [0, 1]; target only on outcome levels; constraint_id exactly on constraints', () => {
