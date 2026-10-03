@@ -52,7 +52,7 @@ unchanged.
     £85k claim changes (0.5291 → 1), the outcome crosses the target, and the churn constraint is unaffected by
     construction.
   - The ineligible control is `target_becomes_root`.
-  - Every rejection is bound to its rule id. Per-rule mutants: 16/16 killed.
+  - Every rejection is bound to its rule id. Per-rule mutants: 18/18 killed.
 
 ## [0.75.0] — "What would change this?": the recommendation's tipping point per link (SCIENCE ROBUSTNESS step 2; SCIENCE/DSK, #85 lease 5948579361)
 
