@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.76.0] — "Test without this link": a claim-by-claim structural challenge of the selected Run (SCI-DEEP v1; PTL ruling programme-docs #87/5972622586)
+
+**Why.** SCI-DEEP asks whether each conclusion of the selected Run survives one defensible alternative representation.
+Paired common-random-number "zero this edge" is unsound on the current engine. Removing a link changes the draw
+structure, and zeroing is not removing: a parentless target is re-read at its observed level. Executable counterexamples
+are in programme-docs `output/sci-deep-20261003/`. The ruled method is therefore a full **unpaired** recompute through
+the ordinary Run path, compared claim by claim. This is its typed contract. CEE is the producer, and PLoT and ISL are
+unchanged.
+
+### Added (additive; new exports only)
+- `StructuralChallengeResultV1Schema`, its claim schemas, its baseline/alternative schemas and their vocabularies
+  (root and `./boundary`). `.strict()`; inapplicable members are `null`.
+- `method: 'full_recompute_unpaired_v1'`, `perturbation_class: 'topology'` and `attribution_case: 'C2_unpaired'` are
+  literals. The pair provenance and noise tags reuse `RunDelta`'s (`RunDeltaPairProvenanceSchema`,
+  `RunDeltaNoiseVerdict`, `RunInputLinkSizing`); there is no second noise vocabulary.
+- **The licence is structural.** A result that breaks any rule fails the parse, and every issue starts with its rule id:
+  - S1: completed ⇔ no reason, claims and a pair provenance. Every other status has no claims and one of its own
+    typed reasons (`STRUCTURAL_CHALLENGE_REASONS`).
+  - S2: a completed result lists every frame-dependent diagnostic as not compared
+    (`STRUCTURAL_CHALLENGE_FRAME_DEPENDENT`).
+  - S3: the graph hashes differ.
+  - S4: one claim per (kind, option, constraint), and one leader claim.
+  - S5: the removed link joins two different nodes.
+  - C1: CHANGES is earned only by a signal-qualified crossing of the claim's own boundary: leader changed, certainty
+    boundary crossed, target crossed, or constraint side changed (PTL materiality ruling §6).
+  - C2: HOLDS needs a noise-qualified comparison that keeps that boundary. A held leader needs a signal-qualified
+    lead.
+  - C3: `delta_only` shows the values without a verdict word.
+  - C4: NOT_COMPARABLE names why.
+  - C5: the boundary evidence is re-checked from the values themselves.
+  - C6: `invariant_by_construction` ⇔ basis `unaffected_by_construction`. It holds, is never signal, and is never
+    robustness evidence.
+  - C7: probabilities lie in [0, 1], `target` appears only on outcome levels, and `constraint_id` appears exactly on
+    constraint claims.
+- **Retention:** `retention: 'not_retained'` (the PTL bounded exception) plus `recompute_key`, a sha256 over the baseline
+  `sent_digest`, the alternative, `seed_used` and `n_samples`.
+- Absence census +8 rows (`same`: required keys, null = not applicable or withheld). Adoption manifest +1 row
+  (`declared`; the CEE producer is next).
+- `tests/contracts/release-0.76.0.test.ts`:
+  - The valid controls are the registered maximal fixtures, whose numbers are REAL current-engine output (ISL
+    `f759de5`, served budgets): bank-2 model B with `monthly_churn → paying_subscribers` removed. The leader holds, the
+    £85k claim changes (0.5291 → 1), the outcome crosses the target, and the churn constraint is unaffected by
+    construction.
+  - The ineligible control is `target_becomes_root`.
+  - Every rejection is bound to its rule id. Per-rule mutants: 16/16 killed.
+
 ## [0.75.0] — "What would change this?": the recommendation's tipping point per link (SCIENCE ROBUSTNESS step 2; SCIENCE/DSK, #85 lease 5948579361)
 
 **Why.** D1's served `edge_e_values.flip_mean` is the flip in ONE world (every other link at its mean): on D1 it

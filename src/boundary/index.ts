@@ -624,3 +624,29 @@ export {
   DECISION_FLIP_MAX_MAGNITUDE,
 } from './decision-flip.js';
 export type { DecisionFlipLinkV1, DecisionFlipBlockV1 } from './decision-flip.js';
+
+// 0.76.0 — "Test without this link": a claim-by-claim structural challenge of the selected Run (EXPERIMENT; SCI-DEEP v1).
+export {
+  StructuralChallengeStatus,
+  StructuralChallengeReason,
+  StructuralChallengeNotCompared,
+  StructuralChallengeVerdict,
+  StructuralChallengeBasis,
+  STRUCTURAL_CHALLENGE_REASONS,
+  STRUCTURAL_CHALLENGE_FRAME_DEPENDENT,
+  STRUCTURAL_CHALLENGE_NOT_COMPARABLE_BASES,
+  StructuralChallengeLeaderClaimV1Schema,
+  StructuralChallengeQuantityClaimV1Schema,
+  StructuralChallengeClaimV1Schema,
+  StructuralChallengeBaselineV1Schema,
+  StructuralChallengeAlternativeV1Schema,
+  StructuralChallengeResultV1Schema,
+} from './structural-challenge.js';
+export type {
+  StructuralChallengeLeaderClaimV1,
+  StructuralChallengeQuantityClaimV1,
+  StructuralChallengeClaimV1,
+  StructuralChallengeBaselineV1,
+  StructuralChallengeAlternativeV1,
+  StructuralChallengeResultV1,
+} from './structural-challenge.js';

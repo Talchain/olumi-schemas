@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 135,
-    "same": 67,
+    "same": 75,
     "unresolved": 426
   },
   "open_objects": {
@@ -4446,6 +4446,62 @@
       ],
       "verdict": "same",
       "note": "0.75.0 decision-flip block (ISL #220). A REQUIRED key whose value may be null: ISL serialises every member and an inapplicable one is null (schema comment 'NULL, NOT ABSENT'), so there is no absent state to tell apart. Non-null ONLY when status is quoted (superRefine)."
+    },
+    "boundary/StructuralChallengeLeaderClaimV1Schema.alternative_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null = no ENTITLED leader claim under the alternative (licence withheld), never 'no leader existed'; a consumer must not name one."
+    },
+    "boundary/StructuralChallengeLeaderClaimV1Schema.baseline_option_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null = no ENTITLED leader claim under the baseline Run (licence withheld), never 'no leader existed'; a consumer must not name one."
+    },
+    "boundary/StructuralChallengeQuantityClaimV1Schema.alternative": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null = the quantity is withheld or missing under the alternative (C4 not_comparable), never 0."
+    },
+    "boundary/StructuralChallengeQuantityClaimV1Schema.baseline": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null = the quantity is withheld or missing under the baseline Run (C4 not_comparable), never 0."
+    },
+    "boundary/StructuralChallengeQuantityClaimV1Schema.constraint_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null exactly when kind is not constraint_probability (C7)."
+    },
+    "boundary/StructuralChallengeQuantityClaimV1Schema.target": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null exactly when kind is not outcome_level, or no declared target exists (then no target boundary can be claimed, C5)."
+    },
+    "boundary/StructuralChallengeResultV1Schema.pair_provenance": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null = no candidate recompute ran (any status but completed, S1)."
+    },
+    "boundary/StructuralChallengeResultV1Schema.reason": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null exactly when status is completed (S1); every other status names one of its own typed reasons."
     }
   }
 }
