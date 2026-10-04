@@ -39,6 +39,7 @@ import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import * as enrichment from '../dist/boundary/enrichment.js';
+import * as structuralChallenge from '../dist/boundary/structural-challenge.js';
 
 /** Module the schemas are derived from — recorded in every manifest entry. */
 export const SOURCE_MODULE = 'src/boundary/enrichment.ts';
@@ -63,6 +64,14 @@ export function listComputeSeamSchemaExports() {
     .sort();
 }
 
+/** 0.76.0: additive published family; keep all existing enrichment document bytes unchanged. */
+export function listStructuralChallengeSchemaExports() {
+  return Object.entries(structuralChallenge)
+    .filter(([, value]) => value instanceof z.ZodType)
+    .map(([name]) => name)
+    .sort();
+}
+
 /**
  * Generate the full artifact set as a Map of filename -> exact file bytes
  * (UTF-8 string, 2-space indent, trailing newline). Pure: no I/O.
@@ -78,6 +87,19 @@ export function generateJsonSchemaDocuments() {
       $refStrategy: 'none',
     });
     doc.$comment = GENERATED_COMMENT;
+    files.set(`${name}.json`, `${JSON.stringify(doc, null, 2)}\n`);
+  }
+
+  const structuralNames = listStructuralChallengeSchemaExports();
+  for (const name of structuralNames) {
+    const doc = zodToJsonSchema(structuralChallenge[name], {
+      name,
+      target: 'jsonSchema7',
+      $refStrategy: 'none',
+    });
+    doc.$comment = 'GENERATED from src/boundary/structural-challenge.ts by scripts/generate-json-schema.mjs ' +
+      '— do not edit by hand; run `npm run generate:json-schema` to regenerate. ' +
+      'Zod superRefine evidence/verdict licences are not represented; validate with the Zod contract for those guarantees.';
     files.set(`${name}.json`, `${JSON.stringify(doc, null, 2)}\n`);
   }
 
@@ -104,6 +126,13 @@ export function generateJsonSchemaDocuments() {
       file: `${name}.json`,
       definition: `#/definitions/${name}`,
     })),
+    structural_challenge: {
+      source: 'src/boundary/structural-challenge.ts',
+      limits: 'Structural types only. Evidence/verdict, side presence, and pair-provenance refinements require Zod validation.',
+      schemas: structuralNames.map((name) => ({
+        export: name, file: `${name}.json`, definition: `#/definitions/${name}`,
+      })),
+    },
   };
   files.set(MANIFEST_FILE, `${JSON.stringify(manifest, null, 2)}\n`);
 

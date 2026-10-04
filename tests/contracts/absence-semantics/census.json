@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 135,
-    "same": 75,
+    "same": 76,
     "unresolved": 426
   },
   "open_objects": {
@@ -4494,7 +4494,7 @@
         "nullable"
       ],
       "verdict": "same",
-      "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null = no candidate recompute ran (any status but completed, S1)."
+      "note": "0.76.0 structural challenge. A REQUIRED key, always serialised. null for every non-completed status (S1), including failed/stale runs even when a candidate ran; populated only for completed, with equal seed/sample budget and proven-equal builds (S3)."
     },
     "boundary/StructuralChallengeResultV1Schema.reason": {
       "markers": [
@@ -4502,6 +4502,13 @@
       ],
       "verdict": "same",
       "note": "0.76.0 structural challenge (SCI-DEEP v1). A REQUIRED key whose value may be null: every member is serialised and an inapplicable one is null (schema comment 'ABSENCE'), so there is no absent state to tell apart. null exactly when status is completed (S1); every other status names one of its own typed reasons."
+    },
+    "boundary/StructuralChallengeQuantityClaimV1Schema.constraint_boundary": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.76.0 structural challenge. A REQUIRED key, always serialised. null = no declared probability boundary, or not a constraint claim (C7); constraint_side_changed/same require a populated threshold/comparator (C5)."
     }
   }
 }

@@ -23,28 +23,40 @@ unchanged.
   literals. The pair provenance and noise tags reuse `RunDelta`'s (`RunDeltaPairProvenanceSchema`,
   `RunDeltaNoiseVerdict`, `RunInputLinkSizing`); there is no second noise vocabulary.
 - **The licence is structural.** A result that breaks any rule fails the parse, and every issue starts with its rule id:
-  - S1: completed ⇔ no reason, claims and a pair provenance. Every other status has no claims and one of its own
-    typed reasons (`STRUCTURAL_CHALLENGE_REASONS`).
+  - S1: completed ⇔ no reason, claims and a pair provenance. Every other status has no claims, null pair provenance,
+    and one of its own typed reasons (`STRUCTURAL_CHALLENGE_REASONS`), including failed/stale candidates that ran.
   - S2: a completed result lists every frame-dependent diagnostic as not compared
     (`STRUCTURAL_CHALLENGE_FRAME_DEPENDENT`).
-  - S3: the graph hashes differ.
+  - S3: the graph hashes differ; completed verdicts require `seed_equal: true`, `n_equal: true`, and
+    `builds_equal: 'equal'`. Unequal or unknown engine builds cannot license a completed structural verdict.
   - S4: one claim per (kind, option, constraint), and one leader claim.
   - S5: the removed link joins two different nodes.
   - C1: CHANGES is earned only by a signal-qualified crossing of the claim's own boundary: leader changed, certainty
     boundary crossed, target crossed, or constraint side changed (PTL materiality ruling §6).
   - C2: HOLDS needs a noise-qualified comparison that keeps that boundary. A held leader needs a signal-qualified
     lead.
-  - C3: `delta_only` shows the values without a verdict word.
-  - C4: NOT_COMPARABLE names why.
-  - C5: the boundary evidence is re-checked from the values themselves.
+  - C3: `delta_only` shows two present sides without a verdict word; either or both null sides are refused.
+  - C4: NOT_COMPARABLE names why; `missing_on_one_side` / `withheld_on_one_side` require at least one null side.
+  - C5: the boundary evidence is re-checked from the values themselves. Constraint claims carry a nullable
+    `constraint_boundary: { probability_threshold, operator }`: the same producer-declared probability boundary
+    (not the raw-unit constraint limit) derives each side, including equality under `>=`, `<=`, `>` and `<`.
+    `constraint_side_changed` requires different sides; `constraint_side_same` equal sides. Without a declared
+    boundary, neither basis is licensed; use `delta_only` or independently proven `unaffected_by_construction`.
   - C6: `invariant_by_construction` ⇔ basis `unaffected_by_construction`. It holds and is never robustness evidence.
     An unaffected quantity's difference is never signal. An unaffected leader is the same entitled leader on both
-    sides; its tag measures the lead, so it may be signal.
+    sides; its tag measures the lead and MUST be signal, as for every other leader HOLDS basis.
   - C7: probabilities lie in [0, 1], `target` appears only on outcome levels, and `constraint_id` appears exactly on
-    constraint claims.
+    constraint claims. `constraint_boundary` is null on every other quantity kind.
 - **Retention:** `retention: 'not_retained'` (the PTL bounded exception) plus `recompute_key`, a sha256 over the baseline
-  `sent_digest`, the alternative, `seed_used` and `n_samples`.
-- Absence census +8 rows (`same`: required keys, null = not applicable or withheld). Adoption manifest +1 row
+  `sent_digest`, the alternative, `seed_used` and `n_samples`. Canonical encoding is UTF-8 `JSON.stringify` of
+  `[sent_digest, {from_id, op, origin, sizing, to_id}, seed_used, n_samples]`, with those alternative members in that
+  order, no whitespace or trailing newline, preserving the seed's string/number type. The golden completed-fixture
+  digest is `7ef9ac27f55d3c44c3226801fa4c39916232d43342607d8f0fc1edcd4e78c65e`.
+- `baseline.sent_digest` reuses `RunInputSnapshotSchema.shape.sent_digest`, including its lowercase SHA-256 validator.
+- Published JSON Schema: all 11 structural-challenge Zod exports are discovered and generated additively; existing
+  enrichment documents are unchanged. The manifest/documents state that semantic refinements require Zod validation.
+  Generated contract constants are refreshed from the published artifacts.
+- Absence census +9 rows (`same`: required keys, null = not applicable or withheld). Adoption manifest +1 row
   (`declared`; the CEE producer is next).
 - `tests/contracts/release-0.76.0.test.ts`:
   - The valid controls are the registered maximal fixtures, whose numbers are REAL current-engine output (ISL
@@ -53,6 +65,18 @@ unchanged.
     construction.
   - The ineligible control is `target_becomes_root`.
   - Every rejection is bound to its rule id. Per-rule mutants: 18/18 killed.
+- `tests/contracts/structural-challenge-evidence-0.76.0.test.ts`: negative matrices are keyed by kind, option and
+  constraint IDs, never fixture positions; non-completed cases are keyed by status/reason. Every negative row has a
+  parsing positive control and checks the intended rule. Claim matrices exercise standalone, union and result paths.
+  - Constraint boundaries: **38** negative rows; changed/same/missing-evidence mutants expose **20/16/2** rows.
+  - Leader entitlement: **4** negative rows (both HOLDS bases × both non-signal states); signal mutant exposes **4**.
+  - Completed provenance: **66** negative rows (six claim identities × 11 inadmissible combinations); seed/budget/build
+    mutants expose **6/6/12** rows.
+  - Missing/withheld sides: **68** negative rows (60 absent deltas + 8 falsely absent comparisons); the two mutants
+    expose **60/8** rows.
+  - Non-completed provenance: **15** negative rows, covering all five statuses and all 15 reasons; mutant exposes **15**.
+  - `node scripts/check-structural-challenge-mutants.mjs`: **10/10** targeted mutants killed, with source restoration
+    byte-verified. SHA validator negatives and canonical recompute-key golden controls are included.
 
 ## [0.75.0] — "What would change this?": the recommendation's tipping point per link (SCIENCE ROBUSTNESS step 2; SCIENCE/DSK, #85 lease 5948579361)
 

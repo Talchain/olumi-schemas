@@ -60,9 +60,11 @@ import {
   generateJsonSchemaDocuments,
   diffAgainstDirectory,
   listComputeSeamSchemaExports,
+  listStructuralChallengeSchemaExports,
   MANIFEST_FILE,
 } from '../scripts/json-schema-lib.mjs';
 import * as enrichmentDist from '../dist/boundary/enrichment.js';
+import * as structuralChallengeDist from '../dist/boundary/structural-challenge.js';
 import { getMaximalFixture } from '../dist/fixtures/index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -111,7 +113,7 @@ describe('json-schema artifacts — derivation completeness', () => {
     expect(names).not.toContain('parseAnalysisEnrichment');
     // One document per schema + the manifest.
     const files = generateJsonSchemaDocuments();
-    expect(files.size).toBe(names.length + 1);
+    expect(files.size).toBe(names.length + listStructuralChallengeSchemaExports().length + 1);
     expect(files.has(MANIFEST_FILE)).toBe(true);
   });
 
@@ -121,6 +123,34 @@ describe('json-schema artifacts — derivation completeness', () => {
     ) as { schemas: Array<{ export: string; file: string }> };
     const listed = manifest.schemas.map((s) => s.export);
     expect(listed).toStrictEqual(listComputeSeamSchemaExports());
+  });
+});
+
+describe('json-schema artifacts — additive structural challenge family', () => {
+  it('discovers all new Zod exports, validates their maximal fixtures and publishes the typed boundary', () => {
+    const names = listStructuralChallengeSchemaExports();
+    expect(names).toHaveLength(11);
+    const manifest = JSON.parse(readFileSync(join(artifactDir, MANIFEST_FILE), 'utf8')) as {
+      structural_challenge: { schemas: Array<{ export: string }>; limits: string };
+    };
+    expect(manifest.structural_challenge.schemas.map((s) => s.export)).toEqual(names);
+    expect(manifest.structural_challenge.limits).toContain('require Zod validation');
+    let exercised = 0;
+    for (const name of names) {
+      const entry = getMaximalFixture(`boundary/${name}`);
+      if (!entry) continue;
+      expect(entry.schema).toBe((structuralChallengeDist as Record<string, unknown>)[name]);
+      const validate = compileDocument(name);
+      expect(validate(entry.fixture), `${name}: ${JSON.stringify(validate.errors)}`).toBe(true);
+      exercised++;
+    }
+    expect(exercised).toBe(6);
+    const valid = getMaximalFixture('boundary/StructuralChallengeQuantityClaimV1Schema')!.fixture as Record<string, unknown>;
+    const validate = compileDocument('StructuralChallengeQuantityClaimV1Schema');
+    expect(validate({ ...valid, constraint_boundary: { probability_threshold: 1.1, operator: '>=' } })).toBe(false);
+    expect(validate({ ...valid, constraint_boundary: { probability_threshold: 0.5, operator: '=' } })).toBe(false);
+    const { constraint_boundary: _omitted, ...missing } = valid;
+    expect(validate(missing)).toBe(false);
   });
 });
 

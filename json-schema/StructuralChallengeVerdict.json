@@ -1,0 +1,16 @@
+{
+  "$ref": "#/definitions/StructuralChallengeVerdict",
+  "definitions": {
+    "StructuralChallengeVerdict": {
+      "type": "string",
+      "enum": [
+        "holds",
+        "changes",
+        "delta_only",
+        "not_comparable"
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "GENERATED from src/boundary/structural-challenge.ts by scripts/generate-json-schema.mjs — do not edit by hand; run `npm run generate:json-schema` to regenerate. Zod superRefine evidence/verdict licences are not represented; validate with the Zod contract for those guarantees."
+}

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { RunDeltaNoiseVerdict, RunDeltaPairProvenanceSchema, RunInputLinkSizing } from './run-delta.js';
+import { RunInputSnapshotSchema } from '../orchestrator/run-input-snapshot.js';
 
 // ============================================================================
 // 0.76.0 — "TEST WITHOUT THIS LINK": a claim-by-claim structural challenge of the selected Run (SCI-DEEP v1; PTL ruling
@@ -20,25 +21,30 @@ import { RunDeltaNoiseVerdict, RunDeltaPairProvenanceSchema, RunInputLinkSizing 
 // verdict without re-deriving it. Every issue message starts with its rule id
 // (tests/contracts/release-0.76.0.test.ts binds a RED row to each):
 //   S1 status `completed` <=> reason null, at least one claim and a pair provenance; any other status carries no claims
-//      and a typed reason from that status's own set.
+//      and a typed reason from that status's own set, with pair_provenance null.
 //   S2 a completed result lists, in `not_compared`, every frame-dependent diagnostic: structural influence, e-values,
 //      driver rank, robustness labels and fragile edges move with the numerical frame even when headlines do not
 //      (bank 2, F1), so they are never compared across structures.
 //   S3 a completed result's graph hashes differ (`pair_provenance.hash_equal` false): an equal hash means the edit
-//      never reached the recompute.
+//      never reached the recompute. Seed and sample budget are equal, and engine builds are proven equal; otherwise
+//      no completed verdict is licensed.
 //   S4 claims are unique per (kind, option_id, constraint_id); at most one leader claim.
 //   S5 the removed link is a real link: from_id != to_id.
 //   C1 CHANGES is earned only by a signal-qualified difference that crosses a licensed boundary of THAT claim:
 //      leader -> `leader_changed`; goal_probability -> `certainty_boundary_crossed`; outcome_level -> `target_crossed`;
 //      constraint_probability -> `constraint_side_changed` (PTL materiality ruling §6).
-//   C2 HOLDS is earned only by a noise-qualified comparison that keeps that boundary: `leader_same` (signal),
-//      `certainty_kept`, `same_side_of_target`, `constraint_side_same`, or `unaffected_by_construction`.
+//   C2 HOLDS is earned only by a noise-qualified comparison that keeps that boundary: `leader_same`, `certainty_kept`,
+//      `same_side_of_target`, `constraint_side_same`, or `unaffected_by_construction`. EVERY leader hold needs signal.
 //   C3 `delta_only` shows the values without a verdict word: `within_noise`, `no_licensed_boundary` or
-//      `not_noise_qualified`, matching the noise tag where one is named.
-//   C4 NOT_COMPARABLE names why (frame, unit, identity status, ranking status, a side withheld or missing).
+//      `not_noise_qualified`, matching the noise tag where one is named; both sides must be present.
+//   C4 NOT_COMPARABLE names why (frame, unit, identity status, ranking status, a side withheld or missing). Missing or
+//      withheld requires at least one null side; two populated sides cannot claim absence.
 //   C5 boundary evidence is checked from the values themselves: a certainty crossing has an exact 0 or 1 on one side
 //      and different values; a kept certainty is the same exact 0 or 1 on both; a target crossing has the two values on
-//      strictly opposite sides of `target`, a same-side hold on the same strict side.
+//      strictly opposite sides of `target`, a same-side hold on the same strict side. Constraint sides are derived
+//      from each probability and the SAME producer-declared probability threshold/comparator (not a raw-unit target):
+//      constraint_side_changed requires differing sides, constraint_side_same equal sides. No declared boundary ->
+//      neither boundary basis is licensed; use delta_only (or unaffected_by_construction when independently proven).
 //   C6 `invariant_by_construction` <=> basis `unaffected_by_construction`: the removed link cannot reach the quantity,
 //      so its survival is NOT evidence of robustness; such a claim is `holds`, a quantity's difference is never
 //      `signal`, and an unaffected leader is the same entitled leader on both sides (its tag measures the lead).
@@ -49,7 +55,9 @@ import { RunDeltaNoiseVerdict, RunDeltaPairProvenanceSchema, RunInputLinkSizing 
 //
 // RETENTION. v1 is NOT_RETAINED by ruling: the result is not persisted and is never presented as saved. It is
 // deterministically recomputable from `recompute_key` (sha256 over the baseline `sent_digest`, the alternative,
-// `seed_used` and `n_samples`) while the same Run and graph stay current.
+// `seed_used` and `n_samples`) while the same Run and graph stay current. Canonical encoding: UTF-8 JSON.stringify of
+// [sent_digest, {from_id, op, origin, sizing, to_id}, seed_used, n_samples], object members in that order, no whitespace
+// or trailing newline; seed's string/number type is preserved. This encoding is only for this new recompute key.
 // ============================================================================
 
 const Id = z.string().min(1).max(200);
@@ -149,6 +157,21 @@ const HOLDS_BASES: Record<Kind, readonly Basis[]> = {
 const DELTA_ONLY_BASES: readonly Basis[] = ['within_noise', 'no_licensed_boundary', 'not_noise_qualified'];
 
 const isCertain = (p: number) => p === 0 || p === 1;
+const ConstraintBoundary = z.object({
+  /** Producer-declared boundary for the probability of satisfying this constraint, never the raw constraint limit. */
+  probability_threshold: z.number().finite().min(0).max(1),
+  operator: z.enum(['>=', '<=', '>', '<']),
+}).strict();
+type ConstraintBoundaryEvidence = z.infer<typeof ConstraintBoundary>;
+const constraintSide = (p: number, boundary: ConstraintBoundaryEvidence): boolean => {
+  const t = boundary.probability_threshold;
+  switch (boundary.operator) {
+    case '>=': return p >= t;
+    case '<=': return p <= t;
+    case '>': return p > t;
+    case '<': return p < t;
+  }
+};
 
 /** C1–C6, shared by both claim shapes. `values` is null for the leader claim. */
 function refineVerdict(
@@ -159,7 +182,10 @@ function refineVerdict(
     noise_verdict: z.infer<typeof RunDeltaNoiseVerdict>;
     invariant_by_construction: boolean;
   },
-  values: { baseline: number | null; alternative: number | null; target: number | null } | null,
+  values: {
+    baseline: number | null; alternative: number | null; target: number | null;
+    constraint_boundary: ConstraintBoundaryEvidence | null;
+  } | null,
   leaderIds: { baseline: string | null; alternative: string | null } | null,
   fail: (message: string) => void,
 ) {
@@ -177,6 +203,7 @@ function refineVerdict(
     }
   }
   const both = values !== null && values.baseline !== null && values.alternative !== null;
+  const bothSides = leaderIds === null ? both : leaderIds.baseline !== null && leaderIds.alternative !== null;
   if (verdict === 'changes') {
     if (basis !== CHANGES_BASIS[kind]) fail(`C1: ${kind} changes only by ${CHANGES_BASIS[kind]}`);
     if (noise !== 'signal') fail('C1: changes needs a signal-qualified difference');
@@ -189,9 +216,10 @@ function refineVerdict(
     }
   } else if (verdict === 'holds') {
     if (!HOLDS_BASES[kind].includes(basis)) fail(`C2: ${kind} holds only by ${HOLDS_BASES[kind].join(' | ')}`);
-    if (noise === 'not_noise_qualified') fail('C2: holds needs a noise-qualified comparison');
+    if (leaderIds !== null) {
+      if (noise !== 'signal') fail('C2: every leader hold needs a signal-qualified lead');
+    } else if (noise === 'not_noise_qualified') fail('C2: holds needs a noise-qualified comparison');
     if (basis === 'leader_same') {
-      if (noise !== 'signal') fail('C2: leader_same needs a signal-qualified lead');
       if (leaderIds === null || leaderIds.baseline === null || leaderIds.baseline !== leaderIds.alternative) {
         fail('C2: leader_same names the same entitled leader on both sides');
       }
@@ -199,15 +227,31 @@ function refineVerdict(
       fail('C2: holds compares two values');
     }
   } else if (verdict === 'delta_only') {
+    if (!bothSides) fail('C3: delta_only compares two present sides');
     if (!DELTA_ONLY_BASES.includes(basis)) fail(`C3: delta_only by ${DELTA_ONLY_BASES.join(' | ')}`);
     if (basis === 'within_noise' && noise !== 'within_noise') fail('C3: within_noise matches the noise tag');
     if (basis === 'not_noise_qualified' && noise !== 'not_noise_qualified') fail('C3: not_noise_qualified matches the noise tag');
-  } else if (!(STRUCTURAL_CHALLENGE_NOT_COMPARABLE_BASES as readonly string[]).includes(basis)) {
-    fail('C4: not_comparable names why');
+  } else {
+    if (!(STRUCTURAL_CHALLENGE_NOT_COMPARABLE_BASES as readonly string[]).includes(basis)) {
+      fail('C4: not_comparable names why');
+    }
+    if ((basis === 'missing_on_one_side' || basis === 'withheld_on_one_side') && bothSides) {
+      fail('C4: a missing or withheld claim has at least one null side');
+    }
   }
   if (values === null || !both) return;
   const b = values.baseline as number;
   const a = values.alternative as number;
+  if (basis === 'constraint_side_changed' || basis === 'constraint_side_same') {
+    const boundary = values.constraint_boundary;
+    if (boundary === null) {
+      fail('C5: a constraint boundary names its probability threshold and comparator');
+    } else {
+      const same = constraintSide(b, boundary) === constraintSide(a, boundary);
+      if (basis === 'constraint_side_changed' && same) fail('C5: a constraint crossing has different sides');
+      if (basis === 'constraint_side_same' && !same) fail('C5: a constraint hold has equal sides');
+    }
+  }
   if (basis === 'certainty_boundary_crossed' && !((isCertain(b) || isCertain(a)) && a !== b)) {
     fail('C5: a certainty crossing has an exact 0 or 1 on one side and different values');
   }
@@ -263,6 +307,8 @@ export const StructuralChallengeQuantityClaimV1Schema = z
     alternative: Finite.nullable(),
     /** C7: only on outcome_level — the goal's declared target in the outcome's own unit. */
     target: Finite.nullable(),
+    /** C7: only on constraint_probability; null when no probability boundary was declared (then no side verdict). */
+    constraint_boundary: ConstraintBoundary.nullable(),
     noise_verdict: RunDeltaNoiseVerdict,
     verdict: StructuralChallengeVerdict,
     basis: StructuralChallengeBasis,
@@ -276,10 +322,13 @@ export const StructuralChallengeQuantityClaimV1Schema = z
       fail('C7: a probability lies in [0, 1]');
     }
     if (c.kind !== 'outcome_level' && c.target !== null) fail('C7: target only on outcome_level');
+    if (c.kind !== 'constraint_probability' && c.constraint_boundary !== null) {
+      fail('C7: constraint_boundary only on constraint_probability');
+    }
     if ((c.kind === 'constraint_probability') !== (c.constraint_id !== null)) {
       fail('C7: constraint_id exactly on constraint_probability');
     }
-    refineVerdict(c, { baseline: c.baseline, alternative: c.alternative, target: c.target }, null, fail);
+    refineVerdict(c, c, null, fail);
   });
 
 export const StructuralChallengeClaimV1Schema = z.union([
@@ -296,7 +345,7 @@ export const StructuralChallengeBaselineV1Schema = z
     seed_used: z.union([z.number().int(), z.string().min(1).max(64)]),
     n_samples: z.number().int().min(1).max(100000),
     /** The Run's recorded `input_snapshot.sent_digest`; the rebuilt payload matched it. */
-    sent_digest: Id,
+    sent_digest: RunInputSnapshotSchema.shape.sent_digest,
   })
   .strict();
 
@@ -328,13 +377,13 @@ export const StructuralChallengeResultV1Schema = z
     alternative: StructuralChallengeAlternativeV1Schema,
     /** Always unpaired: a topology edit changes the draw structure. */
     attribution_case: z.literal('C2_unpaired'),
-    /** S1/S3: derived from the two producer echoes; null when no candidate ran. */
+    /** S1/S3: derived from the two producer echoes; null for every non-completed status. */
     pair_provenance: RunDeltaPairProvenanceSchema.nullable(),
     claims: z.array(StructuralChallengeClaimV1Schema).max(64),
     /** S2: what was deliberately NOT compared across the two structures. */
     not_compared: z.array(StructuralChallengeNotCompared).max(16),
     retention: z.literal('not_retained'),
-    /** sha256 hex over (sent_digest, alternative, seed_used, n_samples). */
+    /** sha256 hex of the canonical UTF-8 JSON tuple specified in RETENTION above. */
     recompute_key: z.string().regex(/^[0-9a-f]{64}$/),
   })
   .strict()
@@ -345,12 +394,20 @@ export const StructuralChallengeResultV1Schema = z
       if (r.reason !== null) fail('S1: a completed challenge has no reason', ['reason']);
       if (r.claims.length === 0) fail('S1: a completed challenge carries its claims', ['claims']);
       if (r.pair_provenance === null) fail('S1: a completed challenge carries its pair provenance', ['pair_provenance']);
-      else if (r.pair_provenance.hash_equal) fail('S3: the edit changes the graph hash', ['pair_provenance', 'hash_equal']);
+      else {
+        if (r.pair_provenance.hash_equal) fail('S3: the edit changes the graph hash', ['pair_provenance', 'hash_equal']);
+        if (!r.pair_provenance.seed_equal) fail('S3: a completed challenge pins the seed', ['pair_provenance', 'seed_equal']);
+        if (!r.pair_provenance.n_equal) fail('S3: a completed challenge pins the sample budget', ['pair_provenance', 'n_equal']);
+        if (r.pair_provenance.builds_equal !== 'equal') {
+          fail('S3: a completed challenge proves equal engine builds', ['pair_provenance', 'builds_equal']);
+        }
+      }
       const listed = new Set<string>(r.not_compared);
       if (!STRUCTURAL_CHALLENGE_FRAME_DEPENDENT.every((q) => listed.has(q))) {
         fail('S2: a completed challenge declares every frame-dependent diagnostic not compared', ['not_compared']);
       }
     } else {
+      if (r.pair_provenance !== null) fail(`S1: a ${r.status} challenge has null pair provenance`, ['pair_provenance']);
       if (r.claims.length > 0) fail(`S1: a ${r.status} challenge carries no claims`, ['claims']);
       const own = STRUCTURAL_CHALLENGE_REASONS[r.status] as readonly string[];
       if (r.reason === null || !own.includes(r.reason)) {
