@@ -1,0 +1,51 @@
+{
+  "$ref": "#/definitions/StructuralChallengeAlternativeV1Schema",
+  "definitions": {
+    "StructuralChallengeAlternativeV1Schema": {
+      "type": "object",
+      "properties": {
+        "op": {
+          "type": "string",
+          "const": "remove_link"
+        },
+        "from_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "to_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "origin": {
+          "type": "string",
+          "enum": [
+            "user_selected",
+            "olumi_suggested"
+          ]
+        },
+        "sizing": {
+          "type": "string",
+          "enum": [
+            "user",
+            "placeholder",
+            "olumi_estimate",
+            "olumi_accepted",
+            "unmarked"
+          ]
+        }
+      },
+      "required": [
+        "op",
+        "from_id",
+        "to_id",
+        "origin",
+        "sizing"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "GENERATED from src/boundary/structural-challenge.ts by scripts/generate-json-schema.mjs — do not edit by hand; run `npm run generate:json-schema` to regenerate. Zod superRefine evidence/verdict licences are not represented; validate with the Zod contract for those guarantees."
+}

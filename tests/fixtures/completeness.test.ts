@@ -297,7 +297,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.74.0 (+3): boundary/ModelVersionDiffV2Schema paired, shared and unavailable arms.
     // 0.75.0 (+3): boundary/DecisionFlipBlockV1Schema (+ #guard_absent) and DecisionFlipLinkV1Schema — real ISL wire
     //   blocks from ISL #220.
-    expect(MAXIMAL_FIXTURES.length).toBe(223);
+    // 0.76.0 (+8): boundary/StructuralChallengeResultV1Schema (+ #unsupported), ClaimV1, LeaderClaimV1,
+    //   QuantityClaimV1 (+ #target), BaselineV1, AlternativeV1 (SCI-DEEP v1 structural challenge).
+    expect(MAXIMAL_FIXTURES.length).toBe(231);
   });
 
   it('family keys are unique', () => {

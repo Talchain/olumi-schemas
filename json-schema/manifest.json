@@ -146,5 +146,66 @@
       "file": "TransportedCritiqueSchema.json",
       "definition": "#/definitions/TransportedCritiqueSchema"
     }
-  ]
+  ],
+  "structural_challenge": {
+    "source": "src/boundary/structural-challenge.ts",
+    "limits": "Structural types only. Evidence/verdict, side presence, and pair-provenance refinements require Zod validation.",
+    "schemas": [
+      {
+        "export": "StructuralChallengeAlternativeV1Schema",
+        "file": "StructuralChallengeAlternativeV1Schema.json",
+        "definition": "#/definitions/StructuralChallengeAlternativeV1Schema"
+      },
+      {
+        "export": "StructuralChallengeBaselineV1Schema",
+        "file": "StructuralChallengeBaselineV1Schema.json",
+        "definition": "#/definitions/StructuralChallengeBaselineV1Schema"
+      },
+      {
+        "export": "StructuralChallengeBasis",
+        "file": "StructuralChallengeBasis.json",
+        "definition": "#/definitions/StructuralChallengeBasis"
+      },
+      {
+        "export": "StructuralChallengeClaimV1Schema",
+        "file": "StructuralChallengeClaimV1Schema.json",
+        "definition": "#/definitions/StructuralChallengeClaimV1Schema"
+      },
+      {
+        "export": "StructuralChallengeLeaderClaimV1Schema",
+        "file": "StructuralChallengeLeaderClaimV1Schema.json",
+        "definition": "#/definitions/StructuralChallengeLeaderClaimV1Schema"
+      },
+      {
+        "export": "StructuralChallengeNotCompared",
+        "file": "StructuralChallengeNotCompared.json",
+        "definition": "#/definitions/StructuralChallengeNotCompared"
+      },
+      {
+        "export": "StructuralChallengeQuantityClaimV1Schema",
+        "file": "StructuralChallengeQuantityClaimV1Schema.json",
+        "definition": "#/definitions/StructuralChallengeQuantityClaimV1Schema"
+      },
+      {
+        "export": "StructuralChallengeReason",
+        "file": "StructuralChallengeReason.json",
+        "definition": "#/definitions/StructuralChallengeReason"
+      },
+      {
+        "export": "StructuralChallengeResultV1Schema",
+        "file": "StructuralChallengeResultV1Schema.json",
+        "definition": "#/definitions/StructuralChallengeResultV1Schema"
+      },
+      {
+        "export": "StructuralChallengeStatus",
+        "file": "StructuralChallengeStatus.json",
+        "definition": "#/definitions/StructuralChallengeStatus"
+      },
+      {
+        "export": "StructuralChallengeVerdict",
+        "file": "StructuralChallengeVerdict.json",
+        "definition": "#/definitions/StructuralChallengeVerdict"
+      }
+    ]
+  }
 }

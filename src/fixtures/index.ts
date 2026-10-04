@@ -166,6 +166,13 @@ import {
   // 0.75.0 — the recommendation's tipping point per link (ISL #220)
   DecisionFlipBlockV1Schema,
   DecisionFlipLinkV1Schema,
+  // 0.76.0 — "test without this link": claim-by-claim structural challenge (SCI-DEEP v1)
+  StructuralChallengeResultV1Schema,
+  StructuralChallengeClaimV1Schema,
+  StructuralChallengeLeaderClaimV1Schema,
+  StructuralChallengeQuantityClaimV1Schema,
+  StructuralChallengeBaselineV1Schema,
+  StructuralChallengeAlternativeV1Schema,
   // 0.39.0 car 4 — collab elicitation + disagreement (ROADMAP 2.686 U-S0)
   AuthoredBySchema,
   // 0.40.0 — PR4 evidence loop (shared attribution ref)
@@ -2243,6 +2250,15 @@ export const maximalModelVersionDiffV2Unavailable = deepFreeze({
 export const maximalDecisionFlipBlockV1 = deepFreeze({"method":"affine_crn_replicates_v1","leader_option_id":"ai_reporting_module_sprint","replicates":4,"bound_abs":0.01,"bound_rel":0.15,"grid_step":0.0025,"links":[{"from_id":"sprint_capacity_for_ai_reporting","to_id":"ai_reporting_module_availability","status":"quoted","reason":null,"current_mean":0.25,"threshold":0.0625,"replicate_thresholds":[0.06125,0.06375,0.06125,0.06625],"replicate_range":0.0050000000000000044,"to_option_id":"integration_bug_fix_sprint"},{"from_id":"ai_reporting_module_availability","to_id":"enterprise_prospect_signing_likelihood","status":"absent","reason":"replicates_spread","current_mean":0.6,"threshold":null,"replicate_thresholds":[0.14125000000000001,0.15125,0.15624999999999997,0.15874999999999997],"replicate_range":0.01749999999999996,"to_option_id":null},{"from_id":"enterprise_prospect_signing_likelihood","to_id":"quarterly_revenue","status":"quoted","reason":null,"current_mean":0.5,"threshold":0.08875000000000002,"replicate_thresholds":[0.08625000000000002,0.09125000000000003,0.08875000000000002,0.08875000000000002],"replicate_range":0.0050000000000000044,"to_option_id":"integration_bug_fix_sprint"}]} as const);
 export const maximalDecisionFlipBlockV1GuardAbsent = deepFreeze({"method":"affine_crn_replicates_v1","leader_option_id":"ai_reporting_module_sprint","replicates":4,"bound_abs":0.01,"bound_rel":0.15,"grid_step":0.0025,"links":[{"from_id":"sprint_capacity_for_ai_reporting","to_id":"ai_reporting_module_availability","status":"absent","reason":"nonlinear_downstream:clamp:enterprise_prospect_signing_likelihood","current_mean":0.25,"threshold":null,"replicate_thresholds":null,"replicate_range":null,"to_option_id":null},{"from_id":"ai_reporting_module_availability","to_id":"enterprise_prospect_signing_likelihood","status":"absent","reason":"nonlinear_downstream:clamp:enterprise_prospect_signing_likelihood","current_mean":0.6,"threshold":null,"replicate_thresholds":null,"replicate_range":null,"to_option_id":null},{"from_id":"enterprise_prospect_signing_likelihood","to_id":"quarterly_revenue","status":"quoted","reason":null,"current_mean":0.5,"threshold":0.09624999999999999,"replicate_thresholds":[0.09375,0.09874999999999998,0.10124999999999998,0.09125000000000003],"replicate_range":0.009999999999999953,"to_option_id":"integration_bug_fix_sprint"}]} as const);
 
+// 0.76.0 — numbers are REAL current-engine output (ISL f759de5, served budgets; programme-docs
+// output/sci-deep-20261003/results/p4_link_removal_live.json): bank-2 model B (12-month reading) with
+// monthly_churn -> paying_subscribers removed. The leader holds while the £85k conclusion changes (0.5291 -> 1);
+// the churn constraint is upstream of the removed link, so it is unaffected by construction. Outcome levels are PLoT's
+// raw £ (ISL frame x 106,250). sent_digest is CEE's `sentDigest` over bank-2's B PLoT payload. The unsupported
+// fixture is the ineligible control: removing pro_plan_price -> monthly_churn would leave churn parentless (a root).
+export const maximalStructuralChallengeResultV1 = deepFreeze({"method":"full_recompute_unpaired_v1","perturbation_class":"topology","status":"completed","reason":null,"baseline":{"scenario_id":"ssr2-mrr-pricing","run_id":"ssr2-B-cur-s1254899477","graph_hash_at_run":"a2596e82a669253a","seed_used":"1254899477","n_samples":10000,"sent_digest":"90d572771786ae04e8fe0885fd6bceaed633ad03dd41d7005c928969d6b45da2"},"alternative":{"op":"remove_link","from_id":"monthly_churn","to_id":"paying_subscribers","origin":"olumi_suggested","sizing":"olumi_estimate"},"attribution_case":"C2_unpaired","pair_provenance":{"seed_equal":true,"hash_equal":false,"builds_equal":"equal","n_equal":true},"claims":[{"kind":"leader","baseline_option_id":"raise_pro_price_to_59","alternative_option_id":"raise_pro_price_to_59","noise_verdict":"signal","verdict":"holds","basis":"leader_same","invariant_by_construction":false},{"kind":"goal_probability","option_id":"raise_pro_price_to_59","constraint_id":null,"baseline":0.5291,"alternative":1,"target":null,"noise_verdict":"signal","verdict":"changes","basis":"certainty_boundary_crossed","invariant_by_construction":false,"constraint_boundary":null},{"kind":"goal_probability","option_id":"status_quo","constraint_id":null,"baseline":0,"alternative":0,"target":null,"noise_verdict":"within_noise","verdict":"holds","basis":"certainty_kept","invariant_by_construction":false,"constraint_boundary":null},{"kind":"outcome_level","option_id":"raise_pro_price_to_59","constraint_id":null,"baseline":83433.85622376016,"alternative":90306.12244897954,"target":85000,"noise_verdict":"signal","verdict":"changes","basis":"target_crossed","invariant_by_construction":false,"constraint_boundary":null},{"kind":"outcome_level","option_id":"status_quo","constraint_id":null,"baseline":74999.99999999999,"alternative":74999.99999999999,"target":85000,"noise_verdict":"within_noise","verdict":"holds","basis":"same_side_of_target","invariant_by_construction":false,"constraint_boundary":null},{"kind":"constraint_probability","option_id":"raise_pro_price_to_59","constraint_id":"agent-lane:monthly_churn:<=","baseline":0.8746,"alternative":0.8744,"target":null,"noise_verdict":"within_noise","verdict":"holds","basis":"unaffected_by_construction","invariant_by_construction":true,"constraint_boundary":null}],"not_compared":["structural_influence","e_values","driver_rank","robustness_label","fragile_edges","factor_sensitivity","path_decomposition","flip_thresholds","evpi"],"retention":"not_retained","recompute_key":"7ef9ac27f55d3c44c3226801fa4c39916232d43342607d8f0fc1edcd4e78c65e"} as const);
+export const maximalStructuralChallengeResultV1Unsupported = deepFreeze({"method":"full_recompute_unpaired_v1","perturbation_class":"topology","status":"unsupported","reason":"target_becomes_root","baseline":{"scenario_id":"ssr2-mrr-pricing","run_id":"ssr2-A-cur-s1254899477","graph_hash_at_run":"f136e81e033ca4cd","seed_used":1254899477,"n_samples":10000,"sent_digest":"6fbbc34f5155faedd1b56f2503df631d5268cbb162931362f234ff30f8a3842d"},"alternative":{"op":"remove_link","from_id":"pro_plan_price","to_id":"monthly_churn","origin":"user_selected","sizing":"olumi_estimate"},"attribution_case":"C2_unpaired","pair_provenance":null,"claims":[],"not_compared":[],"retention":"not_retained","recompute_key":"2f26048ed2d08154eb1f51c8f34f32c8d99b584a43cc77578e4c94f2264d4bce"} as const);
+
 // ----------------------------------------------------------------------------
 // Collaborative elicitation + disagreement (0.39.0 car 4 — ROADMAP 2.686
 // U-S0 / 2.968 build-list item 1)
@@ -3594,6 +3610,26 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     fixture: maximalDecisionFlipBlockV1GuardAbsent, notes: 'Real ISL block with a downstream clamp: absences decided before any search carry replicate_thresholds null.' },
   { family: 'boundary/DecisionFlipLinkV1Schema', schema: DecisionFlipLinkV1Schema,
     fixture: maximalDecisionFlipBlockV1.links[0], notes: 'The real quoted link: threshold, replicates, range and the option past it.' },
+  { family: 'boundary/StructuralChallengeResultV1Schema', schema: StructuralChallengeResultV1Schema,
+    fixture: maximalStructuralChallengeResultV1, notes: 'Real current-engine recompute: leader holds, £85k changes (certainty crossed), target crossed, an invariant constraint.' },
+  { family: 'boundary/StructuralChallengeResultV1Schema#unsupported', schema: StructuralChallengeResultV1Schema,
+    fixture: maximalStructuralChallengeResultV1Unsupported, notes: 'Ineligible link (target would become a root): typed reason, no claims, no pair provenance.' },
+  { family: 'boundary/StructuralChallengeClaimV1Schema', schema: StructuralChallengeClaimV1Schema,
+    fixture: maximalStructuralChallengeResultV1.claims[1], notes: 'A quantity claim through the union: the certainty crossing.' },
+  { family: 'boundary/StructuralChallengeLeaderClaimV1Schema', schema: StructuralChallengeLeaderClaimV1Schema,
+    fixture: maximalStructuralChallengeResultV1.claims[0], notes: 'The leader holds with a signal-qualified lead.' },
+  { family: 'boundary/StructuralChallengeQuantityClaimV1Schema', schema: StructuralChallengeQuantityClaimV1Schema,
+    fixture: deepFreeze({
+      ...maximalStructuralChallengeResultV1.claims.find((c) => c.kind === 'constraint_probability')!,
+      constraint_boundary: { probability_threshold: 0.9, operator: '>=' },
+      basis: 'constraint_side_same', invariant_by_construction: false,
+    } as const), notes: 'Real constraint probabilities with an illustrative declared 0.9 probability boundary; both below it. Boundary control only, not a claim that the engine declared 0.9.' },
+  { family: 'boundary/StructuralChallengeQuantityClaimV1Schema#target', schema: StructuralChallengeQuantityClaimV1Schema,
+    fixture: maximalStructuralChallengeResultV1.claims[3], notes: 'Outcome level crossing the declared £85k target (target populated).' },
+  { family: 'boundary/StructuralChallengeBaselineV1Schema', schema: StructuralChallengeBaselineV1Schema,
+    fixture: maximalStructuralChallengeResultV1.baseline, notes: 'The selected Run the challenge is bound to.' },
+  { family: 'boundary/StructuralChallengeAlternativeV1Schema', schema: StructuralChallengeAlternativeV1Schema,
+    fixture: maximalStructuralChallengeResultV1.alternative, notes: 'One removed link, Olumi-suggested, Olumi-estimated.' },
   // --- 0.39.0 car 4 — collab elicitation + disagreement -----------------------------
   {
     family: 'boundary/AuthoredBySchema',

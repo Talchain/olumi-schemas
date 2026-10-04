@@ -1445,6 +1445,25 @@
         "  RC-WHAT-CHANGES reply. Serving waits for Paul's science reviewer.",
         "Dark until the PLoT and CEE legs land; remove or enforce by the date above."
       ]
+    },
+    {
+      "field": "structural_challenge result (StructuralChallengeResultV1)",
+      "declared_in": "schemas:src/boundary/structural-challenge.ts::StructuralChallengeResultV1Schema (0.76.0)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "SCI-DEEP v1 'Test without this link' (PTL ruling programme-docs #87/5972622586).",
+        "Planned chain: CEE structural-challenge dispatch (explicit press only) -> run_analysis probe rebuilds the selected",
+        "  Run's exact payload (sent_digest match) -> one link removed in memory, seed pinned -> existing plotClient.run",
+        "  (PLoT /v2/run -> ISL) -> pure comparator (RunDelta noise doctrine) -> licence -> deterministic reply; UI card via",
+        "  the existing Challenge surface. No ISL or PLoT change. NOT_RETAINED in v1 (recompute_key).",
+        "Declared only: no producer or consumer exists yet; move to produced_dark with the CEE producer test."
+      ]
     }
   ]
 }
