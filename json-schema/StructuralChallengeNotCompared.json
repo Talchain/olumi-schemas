@@ -1,0 +1,21 @@
+{
+  "$ref": "#/definitions/StructuralChallengeNotCompared",
+  "definitions": {
+    "StructuralChallengeNotCompared": {
+      "type": "string",
+      "enum": [
+        "structural_influence",
+        "e_values",
+        "driver_rank",
+        "robustness_label",
+        "fragile_edges",
+        "factor_sensitivity",
+        "path_decomposition",
+        "flip_thresholds",
+        "evpi"
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "GENERATED from src/boundary/structural-challenge.ts by scripts/generate-json-schema.mjs — do not edit by hand; run `npm run generate:json-schema` to regenerate. Zod superRefine evidence/verdict licences are not represented; validate with the Zod contract for those guarantees."
+}

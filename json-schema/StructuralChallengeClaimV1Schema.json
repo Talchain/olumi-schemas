@@ -1,0 +1,245 @@
+{
+  "$ref": "#/definitions/StructuralChallengeClaimV1Schema",
+  "definitions": {
+    "StructuralChallengeClaimV1Schema": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "leader"
+            },
+            "baseline_option_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "alternative_option_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "noise_verdict": {
+              "type": "string",
+              "enum": [
+                "signal",
+                "within_noise",
+                "not_noise_qualified"
+              ]
+            },
+            "verdict": {
+              "type": "string",
+              "enum": [
+                "holds",
+                "changes",
+                "delta_only",
+                "not_comparable"
+              ]
+            },
+            "basis": {
+              "type": "string",
+              "enum": [
+                "leader_changed",
+                "certainty_boundary_crossed",
+                "target_crossed",
+                "constraint_side_changed",
+                "leader_same",
+                "certainty_kept",
+                "same_side_of_target",
+                "constraint_side_same",
+                "unaffected_by_construction",
+                "within_noise",
+                "no_licensed_boundary",
+                "not_noise_qualified",
+                "frame_changed",
+                "unit_changed",
+                "identity_status_changed",
+                "ranking_status_changed",
+                "withheld_on_one_side",
+                "missing_on_one_side"
+              ]
+            },
+            "invariant_by_construction": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "baseline_option_id",
+            "alternative_option_id",
+            "noise_verdict",
+            "verdict",
+            "basis",
+            "invariant_by_construction"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "goal_probability",
+                "outcome_level",
+                "constraint_probability"
+              ]
+            },
+            "option_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "constraint_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "baseline": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "alternative": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "constraint_boundary": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "probability_threshold": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        ">=",
+                        "<=",
+                        ">",
+                        "<"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "probability_threshold",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "noise_verdict": {
+              "type": "string",
+              "enum": [
+                "signal",
+                "within_noise",
+                "not_noise_qualified"
+              ]
+            },
+            "verdict": {
+              "type": "string",
+              "enum": [
+                "holds",
+                "changes",
+                "delta_only",
+                "not_comparable"
+              ]
+            },
+            "basis": {
+              "type": "string",
+              "enum": [
+                "leader_changed",
+                "certainty_boundary_crossed",
+                "target_crossed",
+                "constraint_side_changed",
+                "leader_same",
+                "certainty_kept",
+                "same_side_of_target",
+                "constraint_side_same",
+                "unaffected_by_construction",
+                "within_noise",
+                "no_licensed_boundary",
+                "not_noise_qualified",
+                "frame_changed",
+                "unit_changed",
+                "identity_status_changed",
+                "ranking_status_changed",
+                "withheld_on_one_side",
+                "missing_on_one_side"
+              ]
+            },
+            "invariant_by_construction": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "option_id",
+            "constraint_id",
+            "baseline",
+            "alternative",
+            "target",
+            "constraint_boundary",
+            "noise_verdict",
+            "verdict",
+            "basis",
+            "invariant_by_construction"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "GENERATED from src/boundary/structural-challenge.ts by scripts/generate-json-schema.mjs — do not edit by hand; run `npm run generate:json-schema` to regenerate. Zod superRefine evidence/verdict licences are not represented; validate with the Zod contract for those guarantees."
+}

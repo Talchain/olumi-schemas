@@ -1,0 +1,475 @@
+{
+  "$ref": "#/definitions/StructuralChallengeResultV1Schema",
+  "definitions": {
+    "StructuralChallengeResultV1Schema": {
+      "type": "object",
+      "properties": {
+        "method": {
+          "type": "string",
+          "const": "full_recompute_unpaired_v1"
+        },
+        "perturbation_class": {
+          "type": "string",
+          "const": "topology"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "unsupported",
+            "failed",
+            "timed_out",
+            "stale",
+            "withheld"
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": [
+                "link_not_found",
+                "option_wiring_link",
+                "bidirected_link",
+                "identity_participant_link",
+                "target_becomes_root",
+                "anchored_identity_target",
+                "candidate_rejected",
+                "probe_unavailable",
+                "baseline_payload_mismatch",
+                "candidate_run_failed",
+                "candidate_unparseable",
+                "candidate_run_timeout",
+                "run_not_current",
+                "model_changed_during_challenge",
+                "exploratory_work_not_permitted"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "baseline": {
+          "type": "object",
+          "properties": {
+            "scenario_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "run_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "graph_hash_at_run": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "seed_used": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 64
+                }
+              ]
+            },
+            "n_samples": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            },
+            "sent_digest": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "scenario_id",
+            "run_id",
+            "graph_hash_at_run",
+            "seed_used",
+            "n_samples",
+            "sent_digest"
+          ],
+          "additionalProperties": false
+        },
+        "alternative": {
+          "type": "object",
+          "properties": {
+            "op": {
+              "type": "string",
+              "const": "remove_link"
+            },
+            "from_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "to_id": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "origin": {
+              "type": "string",
+              "enum": [
+                "user_selected",
+                "olumi_suggested"
+              ]
+            },
+            "sizing": {
+              "type": "string",
+              "enum": [
+                "user",
+                "placeholder",
+                "olumi_estimate",
+                "olumi_accepted",
+                "unmarked"
+              ]
+            }
+          },
+          "required": [
+            "op",
+            "from_id",
+            "to_id",
+            "origin",
+            "sizing"
+          ],
+          "additionalProperties": false
+        },
+        "attribution_case": {
+          "type": "string",
+          "const": "C2_unpaired"
+        },
+        "pair_provenance": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "seed_equal": {
+                  "type": "boolean"
+                },
+                "hash_equal": {
+                  "type": "boolean"
+                },
+                "builds_equal": {
+                  "type": "string",
+                  "enum": [
+                    "equal",
+                    "unequal",
+                    "unknown"
+                  ]
+                },
+                "n_equal": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "seed_equal",
+                "hash_equal",
+                "builds_equal",
+                "n_equal"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "leader"
+                  },
+                  "baseline_option_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "alternative_option_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "noise_verdict": {
+                    "type": "string",
+                    "enum": [
+                      "signal",
+                      "within_noise",
+                      "not_noise_qualified"
+                    ]
+                  },
+                  "verdict": {
+                    "type": "string",
+                    "enum": [
+                      "holds",
+                      "changes",
+                      "delta_only",
+                      "not_comparable"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "leader_changed",
+                      "certainty_boundary_crossed",
+                      "target_crossed",
+                      "constraint_side_changed",
+                      "leader_same",
+                      "certainty_kept",
+                      "same_side_of_target",
+                      "constraint_side_same",
+                      "unaffected_by_construction",
+                      "within_noise",
+                      "no_licensed_boundary",
+                      "not_noise_qualified",
+                      "frame_changed",
+                      "unit_changed",
+                      "identity_status_changed",
+                      "ranking_status_changed",
+                      "withheld_on_one_side",
+                      "missing_on_one_side"
+                    ]
+                  },
+                  "invariant_by_construction": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "baseline_option_id",
+                  "alternative_option_id",
+                  "noise_verdict",
+                  "verdict",
+                  "basis",
+                  "invariant_by_construction"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "goal_probability",
+                      "outcome_level",
+                      "constraint_probability"
+                    ]
+                  },
+                  "option_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "constraint_id": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "baseline": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "alternative": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "target": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "constraint_boundary": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "probability_threshold": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "operator": {
+                            "type": "string",
+                            "enum": [
+                              ">=",
+                              "<=",
+                              ">",
+                              "<"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "probability_threshold",
+                          "operator"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "noise_verdict": {
+                    "type": "string",
+                    "enum": [
+                      "signal",
+                      "within_noise",
+                      "not_noise_qualified"
+                    ]
+                  },
+                  "verdict": {
+                    "type": "string",
+                    "enum": [
+                      "holds",
+                      "changes",
+                      "delta_only",
+                      "not_comparable"
+                    ]
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "leader_changed",
+                      "certainty_boundary_crossed",
+                      "target_crossed",
+                      "constraint_side_changed",
+                      "leader_same",
+                      "certainty_kept",
+                      "same_side_of_target",
+                      "constraint_side_same",
+                      "unaffected_by_construction",
+                      "within_noise",
+                      "no_licensed_boundary",
+                      "not_noise_qualified",
+                      "frame_changed",
+                      "unit_changed",
+                      "identity_status_changed",
+                      "ranking_status_changed",
+                      "withheld_on_one_side",
+                      "missing_on_one_side"
+                    ]
+                  },
+                  "invariant_by_construction": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "option_id",
+                  "constraint_id",
+                  "baseline",
+                  "alternative",
+                  "target",
+                  "constraint_boundary",
+                  "noise_verdict",
+                  "verdict",
+                  "basis",
+                  "invariant_by_construction"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "maxItems": 64
+        },
+        "not_compared": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "structural_influence",
+              "e_values",
+              "driver_rank",
+              "robustness_label",
+              "fragile_edges",
+              "factor_sensitivity",
+              "path_decomposition",
+              "flip_thresholds",
+              "evpi"
+            ]
+          },
+          "maxItems": 16
+        },
+        "retention": {
+          "type": "string",
+          "const": "not_retained"
+        },
+        "recompute_key": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "method",
+        "perturbation_class",
+        "status",
+        "reason",
+        "baseline",
+        "alternative",
+        "attribution_case",
+        "pair_provenance",
+        "claims",
+        "not_compared",
+        "retention",
+        "recompute_key"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "GENERATED from src/boundary/structural-challenge.ts by scripts/generate-json-schema.mjs — do not edit by hand; run `npm run generate:json-schema` to regenerate. Zod superRefine evidence/verdict licences are not represented; validate with the Zod contract for those guarantees."
+}
