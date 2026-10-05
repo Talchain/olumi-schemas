@@ -1,0 +1,59 @@
+# CONSUMER PIN DRIFT — does every service parse the contract it is being sent?
+#
+# It FAILS when a consumer pins a version older than the newest release that has been
+# out for more than 48 h. Drift inside that window is the normal state just after a
+# release, so it is reported and passes. Could-not-measure (no tags, nothing readable)
+# exits 2 and fails too.
+#
+# ⚠ Never pipe the check (`| tee`). Under the default `bash -e` there is no pipefail,
+# so the pipe's exit code is tee's and the check could never fail; that was #64's defect.
+# The test `tests/ci/consumer-pin-drift.test.ts` guards this file against it.
+name: Consumer Pin Drift
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 7 * * *'   # daily, so skew past the window turns red without a schemas PR
+  workflow_dispatch:
+    inputs:
+      strict:
+        description: 'Window 0: fail when any consumer is behind the newest release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  pin-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the release tags are the reference; a shallow clone has none (exit 2)
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check consumer pin drift
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STRICT_FLAG: ${{ inputs.strict && '--strict' || '' }}
+        run: |
+          set +e
+          node scripts/check-consumer-pins.mjs $STRICT_FLAG > drift.txt 2>&1
+          rc=$?
+          set -e
+          cat drift.txt
+          {
+            echo "## Consumer pin drift (exit $rc)"
+            echo
+            echo '```'
+            cat drift.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
