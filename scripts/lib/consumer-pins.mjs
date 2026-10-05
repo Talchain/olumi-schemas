@@ -31,9 +31,25 @@ export function versionFromPin(pin) {
   if (typeof pin !== 'string' || pin.length === 0) return null;
   const tarball = pin.match(/talchain-schemas-(\d+\.\d+\.\d+)\.tgz$/);
   if (tarball) return tarball[1];
-  const bare = pin.match(/^\^?~?(\d+\.\d+\.\d+)$/);
+  const bare = pin.match(/^[\^~]?(\d+\.\d+\.\d+)$/);
   if (bare) return bare[1];
   return null;
+}
+
+/**
+ * The consumer's pin from its package.json. Both `dependencies` and `devDependencies` are read: if both declare the
+ * package with DIFFERENT pins, the pin is ambiguous and the consumer is UNREADABLE (never "the dev one wins").
+ * -> { pin } | { error }
+ */
+export function pinFromPackageJson(pkg, name) {
+  const dep = pkg?.dependencies?.[name];
+  const dev = pkg?.devDependencies?.[name];
+  if (dep !== undefined && dev !== undefined && dep !== dev) {
+    return { error: `conflicting pins: dependencies ${JSON.stringify(dep)} vs devDependencies ${JSON.stringify(dev)}` };
+  }
+  const pin = dep ?? dev;
+  if (pin === undefined) return { error: `${name} is not a dependency` };
+  return { pin };
 }
 
 /** Numeric semver compare (0.10.0 > 0.9.0). -1, 0 or 1. */
@@ -65,6 +81,8 @@ export function releasesFromTagLines(text) {
 
 /** The newest release that has been out for at least `maxLagHours`; null when none has. */
 export function requiredVersion(releases, nowMs, maxLagHours) {
+  // Window 0 (--strict) means "the newest release", whatever its date (a future-dated tag included).
+  if (maxLagHours === 0) return releases.length > 0 ? releases[0].version : null;
   const cutoff = nowMs - maxLagHours * 3_600_000;
   for (const r of releases) {
     if (r.atMs <= cutoff) return r.version;

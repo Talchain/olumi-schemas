@@ -29,6 +29,7 @@ import {
   CONSUMERS,
   DEFAULT_MAX_LAG_HOURS,
   versionFromPin,
+  pinFromPackageJson,
   releasesFromTagLines,
   assess,
 } from './lib/consumer-pins.mjs';
@@ -62,11 +63,9 @@ function pinFor(consumer) {
   } catch {
     return { ...consumer, status: 'UNREADABLE', detail: 'package.json did not parse' };
   }
-  const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
-  const pin = deps[PKG];
-  if (pin === undefined) {
-    return { ...consumer, status: 'UNREADABLE', detail: `${PKG} is not a dependency` };
-  }
+  const found = pinFromPackageJson(pkg, PKG);
+  if (found.error) return { ...consumer, status: 'UNREADABLE', detail: found.error };
+  const { pin } = found;
   const version = versionFromPin(pin);
   if (version === null) {
     return { ...consumer, status: 'UNREADABLE', pin, detail: 'no version derivable from the pin' };
@@ -74,6 +73,10 @@ function pinFor(consumer) {
   return { ...consumer, status: 'READ', pin, version };
 }
 
+// Release time = the tag's creatordate: tagger time for an annotated tag, committer time for a lightweight one.
+// This repo's tags are lightweight and are created by publish.yml on the merge commit it has just published, so the
+// committer time is the publication time to within the job's run. A hand-made tag on an OLD commit would start its
+// window early; the remedy is an annotated tag, whose tagger time is then used.
 function readReleases() {
   try {
     const out = execFileSync(
