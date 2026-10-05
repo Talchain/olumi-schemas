@@ -1,60 +1,56 @@
 #!/usr/bin/env node
 /**
- * CONSUMER PIN DRIFT — the check nothing in this estate performs.
+ * CONSUMER PIN DRIFT — does every service parse the contract it is being sent?
  *
- * ⚠ THE GAP THIS CLOSES, MEASURED 2026-09-21. Every consumer pins a HAND-VENDORED
- * tarball (`file:./vendor/talchain-schemas-0.55.0.tgz`) while this repo publishes
- * a new version. Nothing compares the two. `check-schemas-resolution.mjs` in each
- * consumer is INTRA-REPO — it asserts the package a repo BINDS matches its own
- * PIN, which is a different question and cannot see this one.
+ * ⚠ THE GAP THIS CLOSES. Every consumer pins a HAND-VENDORED tarball
+ * (`file:./vendor/talchain-schemas-X.Y.Z.tgz`) while this repo publishes new versions.
+ * Each consumer's own `check-schemas-resolution.mjs` is INTRA-REPO (does the package a
+ * repo binds match that repo's pin?) and cannot see this question. On 5 Oct 2026 the
+ * estate sat at CEE 0.76.0 · UI 0.74.0 · PLoT 0.61.0 and nothing went red.
  *
- * The consequence is not corruption, it is PARALYSIS: a field added here is
- * undeliverable until three separate manual vendoring commits land, and nothing
- * says so. `analysis_participation_withheld` (0.56.0) is in that state today.
+ * ⚠ WHY THE FIRST VERSION OF THIS CHECK (#64) COULD NEVER FAIL. It warned by default,
+ * `--strict` was reachable only by manual dispatch, and the workflow piped it through
+ * `tee` under Actions' default `bash -e` (no pipefail), so even a strict failure exited 0.
+ * It now FAILS by default after a lag window (see `scripts/lib/consumer-pins.mjs`), and
+ * the workflow invokes it without a pipe.
  *
- * ⭐ WHY IT WARNS RATHER THAN FAILS BY DEFAULT. Drift is the NORMAL state for a
- * short window after a release — consumers cannot re-vendor before the version
- * exists. A check that fails on the expected state gets disabled within a week.
- * `--strict` makes it fail, for a release workflow that has decided the window
- * has closed.
- *
- * ⛔ IT REPORTS, IT DOES NOT INFER AGREEMENT. A consumer it cannot read is
- * UNREADABLE, never "current" — the same rule the wire stamp's absence semantics
- * follow. An unreadable consumer is counted as drift when `--strict` is set.
+ * Usage: node scripts/check-consumer-pins.mjs [--strict] [--report-only] [--max-lag-hours N]
+ *   default        fail when a consumer is behind the newest release older than 48 h
+ *   --strict       window 0: fail when any consumer is behind the newest release
+ *   --report-only  print the table, exit 0 (still exits 2 when it measured nothing)
+ * Exit: 0 ok · 1 skew (or an unreadable/untagged consumer) · 2 could not measure.
  */
 
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  CONSUMERS,
+  DEFAULT_MAX_LAG_HOURS,
+  versionFromPin,
+  releasesFromTagLines,
+  assess,
+} from './lib/consumer-pins.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const STRICT = process.argv.includes('--strict');
-
-/** The consumers of this contract. A repo absent here is INVISIBLE to the check. */
-const CONSUMERS = [
-  { name: 'CEE', repo: 'Talchain/olumi-assistants-service', ref: 'staging' },
-  { name: 'UI', repo: 'Talchain/DecisionGuideAI', ref: 'staging' },
-  { name: 'PLoT', repo: 'Talchain/plot-lite-service', ref: 'staging' },
-];
-
 const PKG = '@talchain/schemas';
-
-/** Vendored tarball or bare semver -> version. Returns null when underivable. */
-function versionFromPin(pin) {
-  if (typeof pin !== 'string' || pin.length === 0) return null;
-  const tarball = pin.match(/talchain-schemas-(\d+\.\d+\.\d+)\.tgz$/);
-  if (tarball) return tarball[1];
-  const bare = pin.match(/^\^?~?(\d+\.\d+\.\d+)$/);
-  if (bare) return bare[1];
-  return null;
+const argv = process.argv.slice(2);
+const STRICT = argv.includes('--strict');
+const REPORT_ONLY = argv.includes('--report-only');
+const lagIdx = argv.indexOf('--max-lag-hours');
+const lagArg = lagIdx >= 0 ? Number(argv[lagIdx + 1]) : DEFAULT_MAX_LAG_HOURS;
+if (!Number.isFinite(lagArg) || lagArg < 0) {
+  console.error(`--max-lag-hours must be a non-negative number, got ${argv[lagIdx + 1]}`);
+  process.exit(2);
 }
+const MAX_LAG_HOURS = STRICT ? 0 : lagArg;
 
-async function pinFor(consumer) {
+function pinFor(consumer) {
   const url = `repos/${consumer.repo}/contents/package.json?ref=${consumer.ref}`;
-  const proc = await import('node:child_process');
   let raw;
   try {
-    raw = proc.execFileSync('gh', ['api', url, '--jq', '.content'], {
+    raw = execFileSync('gh', ['api', url, '--jq', '.content'], {
       encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
     });
   } catch {
@@ -78,40 +74,46 @@ async function pinFor(consumer) {
   return { ...consumer, status: 'READ', pin, version };
 }
 
-const ours = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).version;
-const rows = await Promise.all(CONSUMERS.map(pinFor));
-
-console.log(`contract: ${PKG}@${ours}\n`);
-let drifted = 0;
-let unreadable = 0;
-for (const r of rows) {
-  if (r.status === 'UNREADABLE') {
-    unreadable += 1;
-    console.log(`  ?  ${r.name.padEnd(5)} UNREADABLE — ${r.detail}`);
-    continue;
+function readReleases() {
+  try {
+    const out = execFileSync(
+      'git',
+      ['for-each-ref', '--format=%(refname:strip=2)%09%(creatordate:iso-strict)', 'refs/tags/v*'],
+      { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    );
+    return releasesFromTagLines(out);
+  } catch {
+    return [];
   }
-  const current = r.version === ours;
-  if (!current) drifted += 1;
-  console.log(
-    `  ${current ? 'OK' : '!!'} ${r.name.padEnd(5)} ${r.version}${current ? '' : `  (behind ${ours})`}  ${r.pin}`,
-  );
 }
 
-// A per-item probe returning the same answer for every item is suspect. If NOTHING
-// was readable the check learned nothing, and saying "no drift" would be a lie.
-if (unreadable === rows.length) {
-  console.error('\nREFUSING: every consumer was UNREADABLE — this check measured nothing.');
-  process.exit(2);
-}
+const ours = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).version;
+const releases = readReleases();
+const rows = CONSUMERS.map(pinFor);
+const result = assess(rows, releases, { nowMs: Date.now(), maxLagHours: MAX_LAG_HOURS, reportOnly: REPORT_ONLY });
 
+console.log(`contract: ${PKG}@${ours} (package.json) · newest release tag: ${result.newest ?? 'NONE READ'}`);
 console.log(
-  `\n${drifted} of ${rows.length} consumer(s) behind${unreadable > 0 ? `, ${unreadable} unreadable` : ''}.`,
+  `lag window: ${MAX_LAG_HOURS} h · every consumer must be at or above: ${result.required ?? '(no release older than the window)'}\n`,
 );
-if (drifted > 0 || unreadable > 0) {
-  console.log(
-    'A consumer behind this version CANNOT RECEIVE anything added since its pin. New optional\n' +
-      'top-level keys are inert there (demoted to the `__additive__` sidecar), not fatal — but the\n' +
-      'field does not arrive, and without the wire stamp nothing at runtime says so.',
+const MARK = { CURRENT: 'OK', WITHIN_WINDOW: '~ ', BEHIND: '!!', UNTAGGED: '!!', UNREADABLE: '? ' };
+for (const v of result.verdicts) {
+  const what = v.verdict === 'UNREADABLE' ? v.detail : `${v.version}  ${v.pin}`;
+  console.log(`  ${MARK[v.verdict]} ${v.name.padEnd(5)} ${v.verdict.padEnd(13)} ${what}`);
+}
+const distinct = [...new Set(result.verdicts.filter((v) => v.version).map((v) => v.version))];
+console.log(`\ndistinct consumer pins: ${distinct.length} (${distinct.join(', ') || 'none read'})`);
+
+if (result.measuredNothing) {
+  console.error(
+    releases.length === 0
+      ? '\nREFUSING: no release tag was readable (shallow checkout?) — this check measured nothing.'
+      : '\nREFUSING: every consumer was UNREADABLE — this check measured nothing.',
+  );
+} else if (result.exitCode === 1) {
+  console.error(
+    '\nSKEW: a consumer is behind the contract past the lag window (or unreadable/untagged). Re-vendor it\n' +
+      "per that repo's vendor/README.md. A producer on a newer pin can emit what this consumer cannot parse.",
   );
 }
-if (STRICT && (drifted > 0 || unreadable > 0)) process.exit(1);
+process.exit(result.exitCode);
