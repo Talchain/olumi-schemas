@@ -61,6 +61,7 @@ describe('0.45.0 response-only model-building notices', () => {
       'alternative_consolidated',
       'conflict_resolved_conservatively',
       'target_not_modelled_as_threshold',
+      'stated_relationship_not_used',
       'other',
     ]);
   });

@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.77.0] — `stated_relationship_not_used`: a relationship the user stated that the model could not use (DL ruling 5 Oct; MC #2576; Integrator SPINE X8)
+
+**Why.** `model_building_notices` could only count a user-stated relationship the records compile could not use under
+`relationship_not_used`. Every consumer reads that kind as Olumi-authored (DGAI: "Connections Olumi proposed but
+couldn't place in the model", attribution `olumi_authored`), so the user's own words were credited to Olumi, a false
+attribution. MC's interim in #2576 drops those rows from the count, so nothing is misattributed and nothing is said.
+This member lets them be said, attributed to the user.
+
+### Added (additive enum member, READER-FIRST)
+- `ModelBuildingNoticeKindSchema` gains `stated_relationship_not_used`, inserted before the catch-all `other`.
+  `relationship_not_used` now means Olumi-authored only. `ModelBuildingNoticesSchema.groups` max = 7 (the option count).
+- Adoption manifest +1 row (`declared`). The maximal `ModelBuildingNotices` fixture exercises the new kind (count 7,
+  total 28).
+
+### Compatibility: the order is mandatory
+The enum is closed and `OlumiResponseSchema` is `.strict()`. A consumer on 0.76.0 or older therefore refuses a notice
+block that carries the new kind, and the UI quarantines the WHOLE block (`responseParser.ts`
+`QUARANTINABLE_ADDITIVE_KEYS`). So:
+1. **DGAI** re-vendors 0.77.0 **in the same PR** as `KIND_DESCRIPTIONS` ("Relationships you described that the model
+   couldn't use as written"), `KIND_ATTRIBUTION` (`user_stated`) and `KIND_OUTCOME` (`absent`). Those tables are
+   `Record<Kind, …>`, so a pin bump alone fails typecheck.
+2. **PLoT** re-vendors 0.77.0 (runtime no-op). The consumer pin-drift check fails 48 h after this release otherwise.
+3. **CEE** re-vendors and emits the kind **only once DGAI 0.77.0 is served**.
+- Separate gap (not this package): the default `/agent/v1/turn` route attaches no `model_building_notices` today. Only
+  route-v2's draft dispatch does.
+
+### Tests
+- `tests/contracts/release-0.77.0.test.ts`: 6 rows (membership/position, its own group, uniqueness + twin, total +
+  twin, the maximal fixture covers every kind, envelope carriage). The pinned vocabularies in
+  `model-building-notices-0.45.test.ts` and `exports.test.ts` gain the member.
+
 ## [0.76.0] — "Test without this link": a claim-by-claim structural challenge of the selected Run (SCI-DEEP v1; PTL ruling programme-docs #87/5972622586)
 
 **Why.** SCI-DEEP asks whether each conclusion of the selected Run survives one defensible alternative representation.

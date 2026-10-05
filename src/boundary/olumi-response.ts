@@ -137,6 +137,15 @@ export const ModelBuildingNoticeKindSchema = z.enum([
   'alternative_consolidated',
   'conflict_resolved_conservatively',
   'target_not_modelled_as_threshold',
+  /**
+   * 0.77.0 (DL ruling 5 Oct; MC #2576; Integrator SPINE X8). A relationship THE USER STATED that the model could not
+   * use as written. Before this member such a row could only be counted under `relationship_not_used`, which every
+   * consumer reads as Olumi-authored ("Connections Olumi proposed…"), so the user's own words were attributed to Olumi.
+   * `relationship_not_used` stays Olumi-authored only. READER-FIRST: the enum is closed and `OlumiResponseSchema` is
+   * strict, so a consumer on <= 0.76.0 refuses the whole notice block (the UI quarantines it). No producer may emit
+   * this member until every consumer of `model_building_notices` serves >= 0.77.0.
+   */
+  'stated_relationship_not_used',
   'other',
 ]);
 export type ModelBuildingNoticeKind = z.infer<typeof ModelBuildingNoticeKindSchema>;

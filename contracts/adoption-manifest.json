@@ -1464,6 +1464,24 @@
         "  the existing Challenge surface. No ISL or PLoT change. NOT_RETAINED in v1 (recompute_key).",
         "Declared only: no producer or consumer exists yet; move to produced_dark with the CEE producer test."
       ]
+    },
+    {
+      "field": "model_building_notices.groups[].kind 'stated_relationship_not_used'",
+      "declared_in": "schemas:src/boundary/olumi-response.ts::ModelBuildingNoticeKindSchema (0.77.0)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "A relationship the USER stated that the model could not use as written. Before 0.77.0 it could only be counted under",
+        "  relationship_not_used, which consumers attribute to Olumi (a false attribution). DL ruling 5 Oct; Integrator SPINE X8.",
+        "Reader-first chain: DGAI re-vendors 0.77.0 with KIND_DESCRIPTIONS / KIND_ATTRIBUTION('user_stated') / KIND_OUTCOME('absent')",
+        "  in the same PR (Record<Kind,...> tables) -> PLoT re-vendors (no-op) -> CEE re-vendors and emits only once DGAI 0.77.0",
+        "  is SERVED. The default agent route must also attach model_building_notices (0 refs in agent-v1-turn.ts at a4977d9d)."
+      ]
     }
   ]
 }

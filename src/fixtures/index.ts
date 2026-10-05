@@ -2444,7 +2444,7 @@ export const maximalDecisionClassification = deepFreeze({
 // 0.45.0 — synthetic aggregate-only construction notices. Every closed kind
 // is exercised, the counts are exact, and no detail-bearing field exists.
 export const maximalModelBuildingNotices = deepFreeze({
-  total_count: 21,
+  total_count: 28,
   groups: [
     { kind: 'detail_not_connected', count: 1 },
     { kind: 'relationship_not_used', count: 2 },
@@ -2452,6 +2452,8 @@ export const maximalModelBuildingNotices = deepFreeze({
     { kind: 'conflict_resolved_conservatively', count: 4 },
     { kind: 'target_not_modelled_as_threshold', count: 5 },
     { kind: 'other', count: 6 },
+    // 0.77.0 — appended to the fixture (not the enum position) so every earlier count is unchanged.
+    { kind: 'stated_relationship_not_used', count: 7 },
   ],
   details_redacted: true,
 });
