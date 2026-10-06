@@ -1144,6 +1144,46 @@
       ]
     },
     {
+      "field": "enrichment.dominant_factor (CEE->UI transport)",
+      "declared_in": "schemas:src/boundary/enrichment.ts::AnalysisEnrichmentSchema.dominant_factor + CEE_UI_ENRICHMENT_KEEP_LIST 'dominant_factor' (0.80.0)",
+      "producer": "plot \u2014 src/routes/v2/run.ts emits it on every /v2/run where src/trust/factor-dominance.ts detectDominantFactor finds rank 1 of the canonical order dominant; cee \u2014 compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP carries it from the CEE 0.80.0 re-vendor",
+      "consumer": "ui \u2014 src/v5/mapV5AnalysisToReport.ts writes report.dominant_factor; src/components/results/useResultsSectionData.ts reads it (the Reasoning tab's '<factor> dominates the model' insight and the post-run 'Dominant factor:' nudge)",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY AT THIS RELEASE (science census 6 Oct 2026, \u00a72d C3). PLoT has emitted the key since B1; what is new",
+        "  is the type and the keep-list entry. producer_test stays null until the CEE re-vendor PR lands with a test that",
+        "  fails if the key stops reaching the analysis_result block; consumer_test until the DGAI reader PR merges.",
+        "LOCK-STEP: CEE's P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP must gain the same key in the same train; its element-for-element",
+        "  drift bolt against this list is RED in the window between them.",
+        "ABSENCE IS NOT 'RANK 1 DOMINATES': absent means PLoT's dominance rule did not hold (or nothing was measured). A",
+        "  consumer must never substitute factor_sensitivity[0] for a missing key.",
+        "CLAIM-SAFETY: names a factor, never an option \u2014 pass_through on a withheld turn, like the 0.30.0 VOI family."
+      ]
+    },
+    {
+      "field": "enrichment.flip_thresholds_status + flip_thresholds_status_reason (CEE->UI transport)",
+      "declared_in": "schemas:src/boundary/enrichment.ts::AnalysisEnrichmentSchema.flip_thresholds_status / .flip_thresholds_status_reason + CEE_UI_ENRICHMENT_KEEP_LIST (0.80.0)",
+      "producer": "plot \u2014 src/routes/v2/run.ts classifies the post-denormalised flip_thresholds[] on every /v2/run; cee \u2014 compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP carries both from the CEE 0.80.0 re-vendor",
+      "consumer": "ui \u2014 src/v5/mapV5AnalysisToReport.ts writes both onto the report; useResultsSectionData reads them (flipThresholdStatusNote under the tornado, and the Reasoning tab's tipping-point gate glanceCondition)",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY AT THIS RELEASE (science census 6 Oct 2026, \u00a72d C5). Typed as bare strings: the producer vocabulary",
+        "  ('computed' | 'all_no_effect' | 'partial_no_effect' | 'unresolved' | 'unavailable') is narrowed by each consumer,",
+        "  so a sixth producer word is absent at the reader rather than a refused envelope.",
+        "THE PAIR TRAVELS TOGETHER: the reason's PRESENCE is what turns the 'partial' note into '\u2026 and others could not be",
+        "  resolved'. Transporting the status without it would state a cleaner result than the producer found.",
+        "LOCK-STEP: as for dominant_factor \u2014 CEE's drift bolt is RED between this release and the CEE keep-list edit."
+      ]
+    },
+    {
       "field": "constraint_verdict.per_limit",
       "declared_in": "schemas:src/orchestrator/handler-results.ts::ConstraintVerdictSchema (0.60.0)",
       "producer": "cee \u2014 run_analysis handler, beside constraint_verdict_state, from PLoT's per-limit scoring (B5, MG); populated only after A3 round 2 (threshold frame) so no 'scored' is ever published for a relabelled or raw threshold; NOT YET BUILT",

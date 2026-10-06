@@ -212,8 +212,14 @@ describe('CEE→UI: keep-list membership pins', () => {
     expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('run_provenance');
   });
 
-  it('keep-list is exactly the CEE compose.ts P0B list (19 keys)', () => {
-    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(19);
+  it('dominant_factor and the tipping-point status pair are keep-listed (0.80.0, science census C3/C5)', () => {
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('dominant_factor');
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('flip_thresholds_status');
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toContain('flip_thresholds_status_reason');
+  });
+
+  it('keep-list is exactly the CEE compose.ts P0B list (22 keys)', () => {
+    expect(CEE_UI_ENRICHMENT_KEEP_LIST).toHaveLength(22);
   });
 });
 

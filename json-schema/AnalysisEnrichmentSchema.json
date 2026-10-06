@@ -1333,6 +1333,29 @@
             }
           ]
         },
+        "dominant_factor": {
+          "type": "object",
+          "properties": {
+            "factor_id": {
+              "type": "string"
+            },
+            "factor_label": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "factor_id",
+            "factor_label"
+          ],
+          "additionalProperties": true,
+          "description": "Absent = PLoT did not find one factor dominant (or could not measure it). Never substitute rank 1 of factor_sensitivity[] for a missing key."
+        },
+        "flip_thresholds_status": {
+          "type": "string"
+        },
+        "flip_thresholds_status_reason": {
+          "type": "string"
+        },
         "run_provenance": {
           "type": "object",
           "properties": {

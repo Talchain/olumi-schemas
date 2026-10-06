@@ -63,9 +63,9 @@
     }
   },
   "counts": {
-    "distinct": 139,
+    "distinct": 140,
     "same": 76,
-    "unresolved": 426
+    "unresolved": 428
   },
   "open_objects": {
     "_doc": [
@@ -80,6 +80,7 @@
       "boundary/AnalysisEnrichmentSchema",
       "boundary/AnalysisEnrichmentSchema.correlation_model",
       "boundary/AnalysisEnrichmentSchema.decision_brief",
+      "boundary/AnalysisEnrichmentSchema.dominant_factor",
       "boundary/BoundaryErrorSchema.details",
       "boundary/CounterfactualResponseSchema",
       "boundary/CounterfactualResponseSchema._metadata",
@@ -298,6 +299,14 @@
       ],
       "verdict": "unresolved"
     },
+    "boundary/AnalysisEnrichmentSchema.dominant_factor": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Field .describe(): \"Absent = PLoT did not find one factor dominant (or could not measure it). Never substitute rank 1 of factor_sensitivity[] for a missing key.\" Three states share the absent byte (dominance rule not met, nothing measured, and a CEE below 0.80.0 that strips the key), so absence is never 'rank 1 dominates'. There is no default to stand in for it; the object is a presence claim only.",
+      "ref": "src/boundary/enrichment.ts \u2014 AnalysisEnrichmentSchema.dominant_factor .describe() (DOMINANT_FACTOR_ABSENCE_RULE, 0.80.0)"
+    },
     "boundary/AnalysisEnrichmentSchema.drivers_status": {
       "markers": [
         "optional"
@@ -326,6 +335,18 @@
       "verdict": "unresolved"
     },
     "boundary/AnalysisEnrichmentSchema.flip_thresholds": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.flip_thresholds_status": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "unresolved"
+    },
+    "boundary/AnalysisEnrichmentSchema.flip_thresholds_status_reason": {
       "markers": [
         "optional"
       ],
