@@ -23,12 +23,16 @@ had no figure. The edge already carries that size (`provenance.natural_effect`);
 
 ### Tests
 - `tests/contracts/release-0.78.0.test.ts`. Fixtures: `maximalRunInputValue` is now an effect end (maximal = every
-  optional); the `value` row's `before` is inlined; `maximalRunDelta` gains one `effect` row. Census +2 (137).
+  optional); the `value` row's `before` is inlined; `maximalRunDelta` gains one `effect` row. Census +2 (137). Adoption manifest +2 `declared` rows, recording the order below.
 - `release-0.70.0.test.ts`: the 0.70 closed-set row now pins its own 0.70 prefix (0.78 pins the whole set).
 
 **Order (reader first):** publish → DGAI vendors 0.78.0 (a strict 0.77 parser refuses an `effect` row, and DGAI's
 responseParser quarantines the whole delta) → PLoT re-vendors (no-op) → CEE records `natural_effect` and emits
 `effect` rows.
+
+**⛔ Persisted-fact order (buddy r1 + trace):** CEE strictly re-parses every stored `run_analysis` fact, and staging and
+prod share one database. A CEE on 0.77 that reads a fact carrying `natural_effect` refuses that scenario's analysis read
+(`analysis_fact_corrupt`). So no CEE writes it until every CEE that reads those rows, prod included, serves 0.78.0.
 
 ## [0.77.0] — `stated_relationship_not_used`: a relationship the user stated that the model could not use (DL ruling 5 Oct; MC #2576; Integrator SPINE X8)
 
