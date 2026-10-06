@@ -83,7 +83,8 @@ describe('0.70.0 · snapshot links record the band and who sized them', () => {
 
 describe('0.70.0 · a `sizing` row says who sized a link, in the user\'s terms', () => {
   it('RED: `sizing` is the appended RunInputField value (the closed set grows by one, at the end)', () => {
-    expect(RunInputField.options).toEqual(['value', 'target', 'unit', 'operator', 'direction', 'strength', 'presence', 'sizing']);
+    // 0.78.0 appends 'effect' after it; release-0.78.0.test.ts pins the whole closed set.
+    expect(RunInputField.options.slice(0, 8)).toEqual(['value', 'target', 'unit', 'operator', 'direction', 'strength', 'presence', 'sizing']);
     expect(RunInputLinkSizing.options).toEqual(['user', 'placeholder', 'olumi_estimate', 'olumi_accepted', 'unmarked']);
   });
 

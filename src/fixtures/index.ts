@@ -155,6 +155,9 @@ import {
   RunDeltaEndpointSchema,
   RunDeltaEndpointsSchema,
   RunInputValueSchema,
+  DeliveredPhase3BlockSchema,
+  RunDeliveredOptionSchema,
+  RunDeliveredRecordSchema,
   RunDeltaInputChangeSchema,
   // Persisted model-version history and semantic diff.
   ModelVersionSummaryV2Schema,
@@ -1698,7 +1701,8 @@ export const maximalRunDeltaEndpoints = deepFreeze({
   current: { run_id: 'fixture_run_b', computed_at: '2026-09-30T14:09:00.000Z' },
 });
 
-export const maximalRunInputValue = deepFreeze({ raw: 59, unit: 'GBP' });
+/** 0.78.0: maximal = every optional populated, so the family fixture is an `effect` end (the only end that carries `per`). */
+export const maximalRunInputValue = deepFreeze({ raw: 350, unit: 'GBP per month', per: { amount: 1, unit: 'customer lost' } });
 
 /** £59 → £60 on one option. */
 export const maximalRunDeltaInputChange = deepFreeze({
@@ -1708,7 +1712,7 @@ export const maximalRunDeltaInputChange = deepFreeze({
   field: 'value',
   label_before: 'Pro price',
   label_after: 'Pro price',
-  before: maximalRunInputValue,
+  before: { raw: 59, unit: 'GBP' },
   after: { raw: 60, unit: 'GBP' },
   change: 'changed',
 });
@@ -1732,6 +1736,34 @@ export const maximalRunDeltaInputChangeSizing = deepFreeze({
   before: { raw: 'olumi_estimate' },
   after: { raw: 'olumi_accepted' },
   change: 'changed',
+});
+
+/** 0.78.0 — an `effect` row: the user's stated size for a link, £300 → £350 a month per customer lost (#87 6008093205). */
+export const maximalRunDeltaInputChangeEffect = deepFreeze({
+  entity_kind: 'link',
+  entity_id: 'fixture_factor_3->fixture_factor_4',
+  link: { from: 'fixture_factor_3', to: 'fixture_factor_4' },
+  field: 'effect',
+  before: { raw: 300, unit: 'GBP per month', per: { amount: 1, unit: 'customer lost' } },
+  after: maximalRunInputValue,
+  change: 'changed',
+});
+
+/** 0.78.0 — SD-1 Slice R: one option as the Run's turn delivered it in `analysis_ready.options[]`. */
+export const maximalRunDeliveredOption = deepFreeze({
+  option_id: 'fixture_option_a',
+  label: 'Raise prices 10%',
+  status: 'ready',
+  interventions: { fixture_factor_1: 0.1 },
+});
+
+/** 0.78.0 — SD-1 Slice R: the Run's own delivered record, every Phase 3 member present once. */
+export const maximalRunDeliveredRecord = deepFreeze({
+  record_version: 1,
+  run_id: 'fixture_run_b',
+  graph_hash: 'fixture_graph_hash_b',
+  phase3_blocks: [maximalReviewCardBlock, maximalCoachingBlock, maximalEvidenceBlock, maximalExerciseBlock],
+  analysis_ready_options: [maximalRunDeliveredOption],
 });
 
 /**
@@ -1778,6 +1810,8 @@ export const maximalRunDelta = deepFreeze({
     },
     // 0.70.0 — the user accepted Olumi's estimate for a link (R3 DEFECT 3): no engine number moved.
     maximalRunDeltaInputChangeSizing,
+    // 0.78.0 — a link's size moved inside its band: the user's own figure, per the same source change.
+    maximalRunDeltaInputChangeEffect,
   ],
 });
 
@@ -3491,6 +3525,10 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'boundary/RunDeltaEndpointSchema', schema: RunDeltaEndpointSchema, fixture: maximalRunDeltaEndpoint },
   { family: 'boundary/RunDeltaEndpointsSchema', schema: RunDeltaEndpointsSchema, fixture: maximalRunDeltaEndpoints },
   { family: 'boundary/RunInputValueSchema', schema: RunInputValueSchema, fixture: maximalRunInputValue },
+  // --- 0.78.0 — SD-1 Slice R: the Run's own delivered record ------------------------------------------------------
+  { family: 'boundary/DeliveredPhase3BlockSchema', schema: DeliveredPhase3BlockSchema, fixture: maximalReviewCardBlock },
+  { family: 'boundary/RunDeliveredOptionSchema', schema: RunDeliveredOptionSchema, fixture: maximalRunDeliveredOption },
+  { family: 'boundary/RunDeliveredRecordSchema', schema: RunDeliveredRecordSchema, fixture: maximalRunDeliveredRecord },
   { family: 'boundary/RunDeltaInputChangeSchema', schema: RunDeltaInputChangeSchema, fixture: maximalRunDeltaInputChange },
   {
     family: 'boundary/RunDeltaPairProvenanceSchema',

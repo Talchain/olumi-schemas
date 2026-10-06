@@ -1322,6 +1322,18 @@ export const BlockSchema = z
   });
 export type Block = z.infer<typeof BlockSchema>;
 
+/**
+ * 0.78.0 (SD-1 Slice R; DL ruling #87, 6 Oct) — ONE Phase 3 block as a Run's turn DELIVERED it (`review_card`,
+ * `coaching`, `evidence`, `exercise`): the same members and the same §1.3 evidence rule as `BlockSchema`, nothing else.
+ * The element of `RunDeliveredRecordSchema.phase3_blocks` (./run-delivered-record.ts).
+ */
+export const DeliveredPhase3BlockSchema = z
+  .discriminatedUnion('type', [ReviewCardBlockSchema, CoachingBlockSchema, EvidenceBlockObjectSchema, ExerciseBlockSchema])
+  .superRefine((data, ctx) => {
+    if (data.type === 'evidence') applyEvidenceConsistencyRule(data, ctx);
+  });
+export type DeliveredPhase3Block = z.infer<typeof DeliveredPhase3BlockSchema>;
+
 // Chip — UI action affordance. Not rendered in A0 scaffold; schema pinned now.
 export const ChipSchema = z.object({
   id: z.string().min(1),

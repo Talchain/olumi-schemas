@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.78.0] — a link's size in the user's terms, so "what changed" can say the user's own figure (SD-1 cut 6, #87 6008093205)
+
+**Why.** Served S7 (CEE #2629) can only say "You changed how much X changes Y; it is still strong". The Run's input
+snapshot records a link's engine mean, band and sizing, never the size the user stated, so a size moved inside one band
+had no figure. The edge already carries that size (`provenance.natural_effect`); no new carrier.
+
+### Added (additive, optional)
+- `RunInputLinkSchema.natural_effect?` — `{ amount, amount_unit, per_source_change (≠ 0), per_source_change_unit }`,
+  strict, copied from the edge's `provenance.natural_effect`. Recorded only while it is current for the link (its
+  `strength_mean` equals the mean sent) and only for a point size (a range end's text is free text; not recorded).
+- `RunInputField` += `'effect'` (appended). Refined: a link row, `changed` only, both ends a number with its unit and
+  `per`, the same `per` on both ends.
+- `RunInputValueSchema.per?` — `{ amount (≠ 0), unit }`, strict. Refined: on an `effect` end only.
+
+### Added — SD-1 Slice R: the Run's own delivered record (DL ruling #87, 6 Oct)
+- `RunAnalysisResultSchema.delivered_record?` = `RunDeliveredRecordSchema` (new, boundary): `{ record_version: 1, run_id,
+  graph_hash, phase3_blocks: DeliveredPhase3Block[] (≤ 16), analysis_ready_options?: RunDeliveredOption[] (≤ 16, unique) }`,
+  strict, ≤ 64,000 UTF-8 bytes. The EXACT post-projection blocks the user saw on the Run's turn, bound to the fact's own
+  `run_id` + `graph_hash_at_run`; served on the scenario read only while the Run is `complete_current`; never re-worded.
+  Witness: J1 record 4b (run 37402501132) lost the review cards and the coverage disclosure on reload.
+- `DeliveredPhase3BlockSchema` (blocks.ts): `review_card` | `coaching` | `evidence` | `exercise`, the same members and
+  evidence rule as `BlockSchema`.
+
+### Tests
+- `tests/contracts/release-0.78.0.test.ts`. Fixtures: `maximalRunInputValue` is now an effect end (maximal = every
+  optional); the `value` row's `before` is inlined; `maximalRunDelta` gains one `effect` row. Census +4 (139). Fixtures +3 families (234). Adoption manifest +3 `declared` rows, recording the order below.
+- `release-0.70.0.test.ts`: the 0.70 closed-set row now pins its own 0.70 prefix (0.78 pins the whole set).
+
+**⭐ RELEASE SEQUENCE (DL doctrine, 6 Oct, for every persisted-fact field):** 0.78 ships first as a **READER** in CEE +
+DGAI and reaches **prod (cut 6)**. CEE **WRITES** `natural_effect` and `delivered_record` only once **prod CEE serves 0.78
+(cut 7)**. DGAI vendors before CEE emits any `effect` row or serves a delivered record.
+
+**Order (reader first):** publish → DGAI vendors 0.78.0 (a strict 0.77 parser refuses an `effect` row, and DGAI's
+responseParser quarantines the whole delta) → PLoT re-vendors (no-op) → CEE records `natural_effect` and emits
+`effect` rows.
+
+**⛔ Persisted-fact order (buddy r1 + trace):** CEE strictly re-parses every stored `run_analysis` fact, and staging and
+prod share one database. A CEE on 0.77 that reads a fact carrying `natural_effect` refuses that scenario's analysis read
+(`analysis_fact_corrupt`). So no CEE writes it until every CEE that reads those rows, prod included, serves 0.78.0.
+
 ## [0.77.0] — `stated_relationship_not_used`: a relationship the user stated that the model could not use (DL ruling 5 Oct; MC #2576; Integrator SPINE X8)
 
 **Why.** `model_building_notices` could only count a user-stated relationship the records compile could not use under

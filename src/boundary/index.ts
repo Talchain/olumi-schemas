@@ -650,3 +650,16 @@ export type {
   StructuralChallengeAlternativeV1,
   StructuralChallengeResultV1,
 } from './structural-challenge.js';
+
+// 0.78.0 — SD-1 Slice R: the Run's own DELIVERED record (Phase 3 blocks + analysis_ready options), see
+// ./run-delivered-record.ts for the DL conditions every producer and reader is bound by.
+export { DeliveredPhase3BlockSchema } from './blocks.js';
+export type { DeliveredPhase3Block } from './blocks.js';
+export {
+  RUN_DELIVERED_RECORD_MAX_BLOCKS,
+  RUN_DELIVERED_RECORD_MAX_OPTIONS,
+  RUN_DELIVERED_RECORD_MAX_BYTES,
+  RunDeliveredOptionSchema,
+  RunDeliveredRecordSchema,
+} from './run-delivered-record.js';
+export type { RunDeliveredOption, RunDeliveredRecord } from './run-delivered-record.js';
