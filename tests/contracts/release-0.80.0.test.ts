@@ -26,7 +26,7 @@ const PLOT_ENVELOPE: Record<string, unknown> = {
   dominant_factor: { factor_id: 'fac_customer_demand', factor_label: 'Customer demand' },
   flip_thresholds: [],
   flip_thresholds_status: 'partial_no_effect',
-  flip_thresholds_status_reason: 'one factor could not be resolved',
+  flip_thresholds_status_reason: 'timeout',
   driver_order: { basis: 'graph', ranked_factor_ids: ['fac_customer_demand'] },
 };
 
@@ -48,7 +48,7 @@ describe('0.80.0 · the three keys are on the CEE→UI keep-list', () => {
     const shipped = project(PLOT_ENVELOPE);
     expect(shipped.dominant_factor).toEqual({ factor_id: 'fac_customer_demand', factor_label: 'Customer demand' });
     expect(shipped.flip_thresholds_status).toBe('partial_no_effect');
-    expect(shipped.flip_thresholds_status_reason).toBe('one factor could not be resolved');
+    expect(shipped.flip_thresholds_status_reason).toBe('timeout');
   });
 
   it('CONTROL: driver_order stays OFF the list — it has no mounted reader, and this release does not claim it', () => {

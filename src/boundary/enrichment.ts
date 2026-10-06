@@ -1129,9 +1129,15 @@ export type EnrichmentRunProvenance = z.infer<typeof EnrichmentRunProvenanceSche
  * 0.80.0 — PLoT's `dominant_factor` (B1; `src/trust/factor-dominance.ts`
  * `detectDominantFactor`). It is rank 1 of PLoT's canonical driver order,
  * emitted ONLY when that factor's `influence_score` clears PLoT's floor and is
- * more than twice the strongest rival's. Under an unevaluated goal identity PLoT
- * strips the walk-derived scores first, so the key is absent there by
- * construction. A factor claim about the MODEL: it names no option.
+ * more than twice the strongest rival's. A factor claim about the MODEL: it
+ * names no option.
+ *
+ * ⚠ IT IS RANKED BY STRUCTURAL INFLUENCE, NOT BY SENSITIVITY. Under an
+ * unevaluated goal identity PLoT strips the walk-derived scores but keeps the
+ * structural `influence_score`, so the key CAN still be emitted there; and on
+ * any run it can name a factor a consumer's own sensitivity-ranked Driver 1
+ * does not. A consumer must gate it on its own driver authority before calling
+ * the factor dominant (DGAI: the card's clear Driver 1).
  *
  * Deliberately NOT exported (it is reachable as
  * `AnalysisEnrichmentSchema.shape.dominant_factor`): the shape is PLoT's, two
@@ -1264,10 +1270,11 @@ export const AnalysisEnrichmentSchema = z.object({
    */
   flip_thresholds_status: z.string().optional(),
   /**
-   * 0.80.0 — PLoT's sentence explaining an `'unresolved'` status, or that some
-   * `flip_thresholds[]` rows could not be resolved beside resolved ones. Its
-   * PRESENCE is the signal the UI reads ("and others could not be resolved");
-   * its text is internal and never rendered.
+   * 0.80.0 — the first-seen unresolved `flip_reason` TOKEN (e.g. `'timeout'`,
+   * `'error'`, `'insufficient_precision'`; engine-v3 `flip_thresholds_status_reason`),
+   * emitted when the status is `'unresolved'` or when unresolved rows sit beside
+   * resolved ones. Its PRESENCE is the signal the UI reads ("and others could
+   * not be resolved"); the token itself is never rendered.
    */
   flip_thresholds_status_reason: z.string().optional(),
 

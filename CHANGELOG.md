@@ -18,7 +18,9 @@ tornado's status note ("No single tested factor changed …") and the Reasoning 
 - `CEE_UI_ENRICHMENT_KEEP_LIST` gains `'dominant_factor'`, `'flip_thresholds_status'`, `'flip_thresholds_status_reason'`
   (19 → 22 keys). Withheld-turn ruling for CEE: `pass_through` for all three. None names an option.
 - `AnalysisEnrichmentSchema.dominant_factor`: `{ factor_id, factor_label }`, passthrough, optional. Absent means PLoT's
-  dominance rule did not hold; a consumer must never substitute rank 1 of `factor_sensitivity[]`.
+  dominance rule did not hold; a consumer must never substitute rank 1 of `factor_sensitivity[]`. It ranks by
+  STRUCTURAL influence (and survives a goal-identity withhold), so a consumer must gate it on its own driver
+  authority before calling a factor dominant.
 - `AnalysisEnrichmentSchema.flip_thresholds_status` / `.flip_thresholds_status_reason`: bare optional strings. The
   producer vocabulary is closed today, but each consumer narrows it, so a new producer word is absent at the reader
   rather than a refused envelope.
