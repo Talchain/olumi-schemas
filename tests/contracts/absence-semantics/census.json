@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 137,
+    "distinct": 139,
     "same": 76,
     "unresolved": 426
   },
@@ -3570,6 +3570,22 @@
       "verdict": "distinct",
       "note": "Absent = an older Run that did not record the link's authorship. A producer cannot then explain an authorship change pairwise, so the link's authorship stays in the residual (a change reads input_coverage partial). Never inferred.",
       "ref": "src/orchestrator/run-input-snapshot.ts - 0.72.0 RunInputLinkSchema.authorship_digest (DL ruling CEE #2482 r3)"
+    },
+    "orchestrator/RunAnalysisResultSchema.delivered_record": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = an older Run, or one whose turn delivered nothing to record. A reader then shows no delivered Phase 3 blocks or coverage options for that Run; it never re-composes them from today's state.",
+      "ref": "src/orchestrator/handler-results.ts - 0.78.0 RunAnalysisResultSchema.delivered_record (SD-1 Slice R; DL ruling #87, 6 Oct)"
+    },
+    "boundary/RunDeliveredRecordSchema.analysis_ready_options": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = the Run's turn delivered no analysis_ready options; distinct from [] (delivered, empty). A reader shows no coverage disclosure from it.",
+      "ref": "src/boundary/run-delivered-record.ts - 0.78.0 RunDeliveredRecordSchema (SD-1 Slice R)"
     },
     "orchestrator/RunInputLinkSchema.natural_effect": {
       "markers": [

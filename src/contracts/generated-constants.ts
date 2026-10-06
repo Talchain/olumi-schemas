@@ -7,7 +7,7 @@
 export const SCHEMA_SHA = '2a373879b5d3507a052500ae15a4b7dbdb6c853f40f28b81c5ff363e0d89ead0';
 
 /** sha256 of contracts/adoption-manifest.json. */
-export const CONTRACT_MANIFEST_SHA = '8a63782ce99e76834b68eb2c2f63fe56196a25eed183094d6445f6694ae41901';
+export const CONTRACT_MANIFEST_SHA = 'a83c2430b3e32a8f8439d8f256d53aff18a3c2fe220aedddb31d8d478098fc30';
 
 /** The exact @talchain/schemas version these constants were generated from. */
 export const SCHEMA_PACKAGE_VERSION = '0.78.0';

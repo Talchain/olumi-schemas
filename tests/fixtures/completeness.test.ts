@@ -299,7 +299,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   blocks from ISL #220.
     // 0.76.0 (+8): boundary/StructuralChallengeResultV1Schema (+ #unsupported), ClaimV1, LeaderClaimV1,
     //   QuantityClaimV1 (+ #target), BaselineV1, AlternativeV1 (SCI-DEEP v1 structural challenge).
-    expect(MAXIMAL_FIXTURES.length).toBe(231);
+    // 0.78.0 (+3): boundary/DeliveredPhase3BlockSchema (a delivered Phase 3 block; one member is maximal),
+    //   RunDeliveredOptionSchema, RunDeliveredRecordSchema (SD-1 Slice R: the Run's own delivered record).
+    expect(MAXIMAL_FIXTURES.length).toBe(234);
   });
 
   it('family keys are unique', () => {

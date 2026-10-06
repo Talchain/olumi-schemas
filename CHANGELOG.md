@@ -21,10 +21,23 @@ had no figure. The edge already carries that size (`provenance.natural_effect`);
   `per`, the same `per` on both ends.
 - `RunInputValueSchema.per?` — `{ amount (≠ 0), unit }`, strict. Refined: on an `effect` end only.
 
+### Added — SD-1 Slice R: the Run's own delivered record (DL ruling #87, 6 Oct)
+- `RunAnalysisResultSchema.delivered_record?` = `RunDeliveredRecordSchema` (new, boundary): `{ record_version: 1, run_id,
+  graph_hash, phase3_blocks: DeliveredPhase3Block[] (≤ 16), analysis_ready_options?: RunDeliveredOption[] (≤ 16, unique) }`,
+  strict, ≤ 64,000 UTF-8 bytes. The EXACT post-projection blocks the user saw on the Run's turn, bound to the fact's own
+  `run_id` + `graph_hash_at_run`; served on the scenario read only while the Run is `complete_current`; never re-worded.
+  Witness: J1 record 4b (run 37402501132) lost the review cards and the coverage disclosure on reload.
+- `DeliveredPhase3BlockSchema` (blocks.ts): `review_card` | `coaching` | `evidence` | `exercise`, the same members and
+  evidence rule as `BlockSchema`.
+
 ### Tests
 - `tests/contracts/release-0.78.0.test.ts`. Fixtures: `maximalRunInputValue` is now an effect end (maximal = every
-  optional); the `value` row's `before` is inlined; `maximalRunDelta` gains one `effect` row. Census +2 (137). Adoption manifest +2 `declared` rows, recording the order below.
+  optional); the `value` row's `before` is inlined; `maximalRunDelta` gains one `effect` row. Census +4 (139). Fixtures +3 families (234). Adoption manifest +3 `declared` rows, recording the order below.
 - `release-0.70.0.test.ts`: the 0.70 closed-set row now pins its own 0.70 prefix (0.78 pins the whole set).
+
+**⭐ RELEASE SEQUENCE (DL doctrine, 6 Oct, for every persisted-fact field):** 0.78 ships first as a **READER** in CEE +
+DGAI and reaches **prod (cut 6)**. CEE **WRITES** `natural_effect` and `delivered_record` only once **prod CEE serves 0.78
+(cut 7)**. DGAI vendors before CEE emits any `effect` row or serves a delivered record.
 
 **Order (reader first):** publish → DGAI vendors 0.78.0 (a strict 0.77 parser refuses an `effect` row, and DGAI's
 responseParser quarantines the whole delta) → PLoT re-vendors (no-op) → CEE records `natural_effect` and emits

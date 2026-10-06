@@ -155,6 +155,9 @@ import {
   RunDeltaEndpointSchema,
   RunDeltaEndpointsSchema,
   RunInputValueSchema,
+  DeliveredPhase3BlockSchema,
+  RunDeliveredOptionSchema,
+  RunDeliveredRecordSchema,
   RunDeltaInputChangeSchema,
   // Persisted model-version history and semantic diff.
   ModelVersionSummaryV2Schema,
@@ -1744,6 +1747,23 @@ export const maximalRunDeltaInputChangeEffect = deepFreeze({
   before: { raw: 300, unit: 'GBP per month', per: { amount: 1, unit: 'customer lost' } },
   after: maximalRunInputValue,
   change: 'changed',
+});
+
+/** 0.78.0 — SD-1 Slice R: one option as the Run's turn delivered it in `analysis_ready.options[]`. */
+export const maximalRunDeliveredOption = deepFreeze({
+  option_id: 'fixture_option_a',
+  label: 'Raise prices 10%',
+  status: 'ready',
+  interventions: { fixture_factor_1: 0.1 },
+});
+
+/** 0.78.0 — SD-1 Slice R: the Run's own delivered record, every Phase 3 member present once. */
+export const maximalRunDeliveredRecord = deepFreeze({
+  record_version: 1,
+  run_id: 'fixture_run_b',
+  graph_hash: 'fixture_graph_hash_b',
+  phase3_blocks: [maximalReviewCardBlock, maximalCoachingBlock, maximalEvidenceBlock, maximalExerciseBlock],
+  analysis_ready_options: [maximalRunDeliveredOption],
 });
 
 /**
@@ -3505,6 +3525,10 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'boundary/RunDeltaEndpointSchema', schema: RunDeltaEndpointSchema, fixture: maximalRunDeltaEndpoint },
   { family: 'boundary/RunDeltaEndpointsSchema', schema: RunDeltaEndpointsSchema, fixture: maximalRunDeltaEndpoints },
   { family: 'boundary/RunInputValueSchema', schema: RunInputValueSchema, fixture: maximalRunInputValue },
+  // --- 0.78.0 — SD-1 Slice R: the Run's own delivered record ------------------------------------------------------
+  { family: 'boundary/DeliveredPhase3BlockSchema', schema: DeliveredPhase3BlockSchema, fixture: maximalReviewCardBlock },
+  { family: 'boundary/RunDeliveredOptionSchema', schema: RunDeliveredOptionSchema, fixture: maximalRunDeliveredOption },
+  { family: 'boundary/RunDeliveredRecordSchema', schema: RunDeliveredRecordSchema, fixture: maximalRunDeliveredRecord },
   { family: 'boundary/RunDeltaInputChangeSchema', schema: RunDeltaInputChangeSchema, fixture: maximalRunDeltaInputChange },
   {
     family: 'boundary/RunDeltaPairProvenanceSchema',

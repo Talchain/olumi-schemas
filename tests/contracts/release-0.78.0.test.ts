@@ -10,8 +10,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { RunDeltaInputChangeSchema, RunDeltaSchema, RunInputField, RunInputValueSchema } from '../../src/boundary/run-delta.js';
+import { BlockSchema } from '../../src/boundary/blocks.js';
 import { RunInputLinkSchema, RunInputSnapshotSchema } from '../../src/orchestrator/run-input-snapshot.js';
-import { maximalRunDelta } from '../../src/fixtures/index.js';
+import { maximalReviewCardBlock, maximalRunDelta, maximalRunDeliveredRecord, maximalTextBlock } from '../../src/fixtures/index.js';
+import { RunAnalysisResultSchema } from '../../src/orchestrator/handler-results.js';
+import {
+  RUN_DELIVERED_RECORD_MAX_BLOCKS,
+  RUN_DELIVERED_RECORD_MAX_BYTES,
+  RunDeliveredRecordSchema,
+} from '../../src/boundary/run-delivered-record.js';
 
 type Rec = Record<string, unknown>;
 const size = (extra: Rec = {}) => ({ amount: 350, amount_unit: 'GBP per month', per_source_change: 1, per_source_change_unit: 'customer lost', ...extra });
@@ -115,5 +122,49 @@ describe('0.78.0 · an `effect` row says a link\'s size moved, per the same sour
     const rows = (maximalRunDelta as { input_changes: Rec[] }).input_changes;
     expect(rows.filter((r) => r.field === 'effect')).toHaveLength(1);
     expect(RunDeltaSchema.safeParse(maximalRunDelta).success).toBe(true);
+  });
+});
+
+// ── SD-1 Slice R (DL ruling #87, 6 Oct): the Run's own DELIVERED record ─────────────────────────────────────────────
+// Witnessed J1 record 4b (run 37402501132): after a reload, the "Olumi model review" cards and the coverage disclosure
+// were gone — composed for the Run's turn and stored nowhere. RED on 0.77: the strict Run fact refuses `delivered_record`.
+describe('0.78.0 · the Run fact carries what its turn delivered', () => {
+  const record = (extra: Rec = {}) => ({ ...(maximalRunDeliveredRecord as unknown as Rec), ...extra });
+  const runFact = (extra: Rec = {}) => ({ scenario_id: '11111111-1111-4111-8111-111111111111', leading_option_id: null, summary: 's', run_id: 'fixture_run_b', ...extra });
+
+  it('RED: a delivered record parses verbatim, alone and on the Run fact', () => {
+    expect(RunDeliveredRecordSchema.parse(record())).toStrictEqual(record());
+    expect(RunAnalysisResultSchema.parse(runFact({ delivered_record: record() }))).toStrictEqual(runFact({ delivered_record: record() }));
+  });
+
+  it('CONTROL: an older Run fact without one still parses — absent is "nothing recorded", never re-composed', () => {
+    expect(RunAnalysisResultSchema.parse(runFact()) as Rec).not.toHaveProperty('delivered_record');
+  });
+
+  it('an empty delivery is a record, distinct from absence', () => {
+    expect(RunDeliveredRecordSchema.safeParse(record({ phase3_blocks: [], analysis_ready_options: [] })).success).toBe(true);
+  });
+
+  const option = (id: string, interventions: Record<string, number> = { f: 1 }) => ({ option_id: id, label: id, status: 'ready', interventions });
+  it.each([
+    ['a VALID block that is not Phase 3 (the maximal text block)', { phase3_blocks: [maximalTextBlock] }],
+    [`more than ${RUN_DELIVERED_RECORD_MAX_BLOCKS} blocks`, { phase3_blocks: Array.from({ length: RUN_DELIVERED_RECORD_MAX_BLOCKS + 1 }, () => maximalReviewCardBlock) }],
+    ['more than the option cap', { analysis_ready_options: Array.from({ length: 17 }, (_, i) => option(`o${i}`)) }],
+    ['the same option twice', { analysis_ready_options: [option('o1'), option('o1')] }],
+    ['an option setting a non-finite number', { analysis_ready_options: [option('o1', { f: Number.NaN })] }],
+    ['a record over the byte cap', { analysis_ready_options: [option('o1', Object.fromEntries(Array.from({ length: 4000 }, (_, i) => [`factor_${i}_with_a_long_id`, i])))] }],
+    ['another record version', { record_version: 2 }],
+    ['an unbound record (no run_id)', { run_id: undefined }],
+    ['an extra key', { recomposed: true }],
+  ])('refuses %s', (_name, extra) => {
+    expect(RunDeliveredRecordSchema.safeParse(record(extra as Rec)).success).toBe(false);
+  });
+
+  it('CONTROL: that text block is valid on the wire — the record refuses it for its type alone', () => {
+    expect(BlockSchema.safeParse(maximalTextBlock).success).toBe(true);
+  });
+
+  it('the byte cap is the published constant', () => {
+    expect(RUN_DELIVERED_RECORD_MAX_BYTES).toBe(64_000);
   });
 });

@@ -9,6 +9,7 @@ import { MAX_STATED_REASON } from '../boundary/turn-payload.js';
 // 0.56.0 — the participation guard's withheld counts. Imported from the wire
 // member so the persisted fact and the published response carry ONE shape.
 import { AnalysisParticipationWithheldSchema } from '../boundary/olumi-response.js';
+import { RunDeliveredRecordSchema } from '../boundary/run-delivered-record.js';
 // 0.68.0 — SC-24: the input the Run was sent.
 import { RunInputSnapshotSchema } from './run-input-snapshot.js';
 
@@ -379,6 +380,12 @@ export const RunAnalysisResultSchema = z.object({
   // PLoT request it dispatched. `input_snapshot.goal` is the ONE Run-attested goal unit (AIQ 5912905493, P0 SHARED
   // DATA 5914750268). ABSENT = an older Run: inputs not recorded — never reconstructed from today's graph.
   input_snapshot: RunInputSnapshotSchema.optional(),
+  // 0.78.0 — SD-1 Slice R (DL ruling #87, 6 Oct). What this Run's turn DELIVERED — the post-projection Phase 3 blocks
+  // and the `analysis_ready` options — bound to this fact's own `run_id` and `graph_hash_at_run`, so a reload or a
+  // second device shows the Run's own words (served only while the Run is `complete_current`; never re-worded on read).
+  // ABSENT = an older Run, or one whose turn delivered nothing to record. ⛔ ORDER: CEE strictly re-parses stored facts
+  // and staging and prod share one DB, so no CEE writes this until every CEE that reads these rows serves 0.78.
+  delivered_record: RunDeliveredRecordSchema.optional(),
 }).strict();
 export type RunAnalysisResult = z.infer<typeof RunAnalysisResultSchema>;
 
