@@ -1309,6 +1309,10 @@ export const maximalAnalysisEnrichment = deepFreeze({
   },
   // 0.58.0 — the provisional-run marker (CEE-authored, keep-listed).
   run_provenance: maximalEnrichmentRunProvenance,
+  // 0.80.0 — PLoT's dominant factor and its tipping-point status (keep-listed).
+  dominant_factor: { factor_id: ID_FACTOR, factor_label: LABEL_FACTOR, [PROBE]: true },
+  flip_thresholds_status: 'partial_no_effect',
+  flip_thresholds_status_reason: 'timeout',
   // deprecated-inbound-only legacy array — see envelope disposition notes.
   results: [{ FIXTURE_legacy_key: 'FIXTURE_legacy_value' }],
   [PROBE]: true,
