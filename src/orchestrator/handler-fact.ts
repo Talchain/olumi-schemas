@@ -14,6 +14,7 @@ import {
   EdgeAdjudicationResultSchema,
   PriorRangeEditResultSchema,
   FindingDissentResultSchema,
+  RunDeliveryResultSchema,
 } from './handler-results.js';
 
 // HandlerFact — typed evidence of what a handler did on a turn, persisted in
@@ -179,6 +180,16 @@ export const FindingDissentHandlerFactSchema = z.object({
 }).strict();
 export type FindingDissentHandlerFact = z.infer<typeof FindingDissentHandlerFactSchema>;
 
+// 0.79.0 — SD-1 Slice R on the agent lane (DL #87, option A): what a Run's turn delivered, recorded on the turn row whose
+// egress is final (the agent's ANSWER row). Not an action receipt: no handler or system event produces it, so its
+// `fact_type` names the fact itself. APPENDED to the union. See `RunDeliveryResultSchema` for the reader-first order.
+export const RunDeliveryHandlerFactSchema = z.object({
+  fact_type: z.literal('run_delivery'),
+  ...BaseHandlerFactFields,
+  result: RunDeliveryResultSchema,
+}).strict();
+export type RunDeliveryHandlerFact = z.infer<typeof RunDeliveryHandlerFactSchema>;
+
 export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   RunAnalysisHandlerFactSchema,
   ExplainResultHandlerFactSchema,
@@ -194,5 +205,6 @@ export const HandlerFactSchema = z.discriminatedUnion('fact_type', [
   EdgeAdjudicationHandlerFactSchema,
   PriorRangeEditHandlerFactSchema,
   FindingDissentHandlerFactSchema,
+  RunDeliveryHandlerFactSchema,
 ]);
 export type HandlerFact = z.infer<typeof HandlerFactSchema>;

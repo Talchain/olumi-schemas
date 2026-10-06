@@ -103,6 +103,10 @@ describe('@talchain/schemas/orchestrator (A1 + 0.5.0 surface)', () => {
         // CLOSED HandlerFactSchema union)
         'FindingDissentResultSchema',
         'FindingDissentHandlerFactSchema',
+        // 0.79.0 — the Run's delivery record on the agent lane (SD-1; appended
+        // last to the CLOSED HandlerFactSchema union)
+        'RunDeliveryResultSchema',
+        'RunDeliveryHandlerFactSchema',
         // 0.25.0 — T1 claim safety (additive)
         'ConstraintVerdictSchema',
         'ConstraintVerdictStateSchema',

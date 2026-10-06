@@ -124,6 +124,8 @@ export {
   PriorRangeEditResultSchema,
   // 0.55.0 — the persisted dissent (a human's stated reason)
   FindingDissentResultSchema,
+  // 0.79.0 — what a Run's turn delivered, recorded where delivery is final (SD-1, agent lane)
+  RunDeliveryResultSchema,
   EditGraphEditKindSchema,
   EditGraphImpactSchema,
   EditGraphAffectedEntitySchema,
@@ -148,6 +150,7 @@ export type {
   EdgeAdjudicationResult,
   PriorRangeEditResult,
   FindingDissentResult,
+  RunDeliveryResult,
   EditGraphEditKind,
   EditGraphImpact,
   EditGraphAffectedEntity,
@@ -204,6 +207,8 @@ export {
   PriorRangeEditHandlerFactSchema,
   // 0.55.0 — the fourth judgement receipt
   FindingDissentHandlerFactSchema,
+  // 0.79.0 — the Run's delivery record (SD-1, agent lane)
+  RunDeliveryHandlerFactSchema,
   HandlerFactSchema,
 } from './handler-fact.js';
 export type {
@@ -221,6 +226,7 @@ export type {
   EdgeAdjudicationHandlerFact,
   PriorRangeEditHandlerFact,
   FindingDissentHandlerFact,
+  RunDeliveryHandlerFact,
   HandlerFact,
 } from './handler-fact.js';
 

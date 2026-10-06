@@ -823,3 +823,24 @@ export const FindingDissentResultSchema = z.object({
   provenance: z.literal('user_set'),
 }).strict();
 export type FindingDissentResult = z.infer<typeof FindingDissentResultSchema>;
+
+// 0.79.0 — SD-1 Slice R on the AGENT lane (DL ruling #87, 6 Oct, option A). The body of the `run_delivery` fact: what a
+// Run's turn DELIVERED, recorded where the delivery is final. On the agent lane (served on staging and prod) the Run's
+// fact is committed inside an internal dispatch, BEFORE the lane composes the blocks the user sees from its post-commit
+// readback, so the Run's own fact (`RunAnalysisResultSchema.delivered_record`, 0.78) cannot hold them. The agent's ANSWER
+// row records this fact after its final egress instead. One record per delivery; a reader takes the NEWEST whose
+// `run_id` is the selected Run's, and serves it only under that read's own gates.
+// ⛔ ORDER: CEE strictly re-parses every stored fact, and staging and prod share one DB. A CEE on 0.78 reading a row that
+// carries this fact refuses the scenario's analysis read. So no CEE writes it until every CEE that reads these rows
+// (prod included) serves 0.79 (writer label `writer-after-prod-0.79`).
+export const RunDeliveryResultSchema = z.object({
+  /** The Run this delivery belongs to: the same `run_id` as that Run's `run_analysis` fact. */
+  run_id: z.string().min(1),
+  /** What the user was shown for that Run (bytes as delivered; never re-worded). */
+  record: RunDeliveredRecordSchema,
+}).strict().superRefine((v, ctx) => {
+  if (v.record.run_id !== v.run_id) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['record', 'run_id'], message: 'a run_delivery record must be the delivery of the Run it names' });
+  }
+});
+export type RunDeliveryResult = z.infer<typeof RunDeliveryResultSchema>;

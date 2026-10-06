@@ -4396,6 +4396,10 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   // fixture — it is the half that crosses a service boundary.
   'orchestrator/FindingDissentResultSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/FindingDissentHandlerFactSchema': ORCHESTRATOR_INTERNAL,
+  // 0.79.0 — the Run's delivery record (SD-1, agent lane): CEE-internal fact persistence. Its body's wire half,
+  // boundary/RunDeliveredRecordSchema, carries a maximal fixture (0.78.0).
+  'orchestrator/RunDeliveryResultSchema': ORCHESTRATOR_INTERNAL,
+  'orchestrator/RunDeliveryHandlerFactSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/HandlerFactSchema': ORCHESTRATOR_INTERNAL,
   // 0.35.0 — coach structural-edit tool (ROADMAP 2.474). Same class as every
   // other /orchestrator shape: CEE-internal, never a cross-service wire
