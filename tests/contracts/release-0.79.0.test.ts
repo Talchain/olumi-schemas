@@ -67,6 +67,8 @@ describe('0.79.0 · a delivery belongs to exactly the Run it names', () => {
     ['a record with an unknown key', { run_id: record().run_id, record: { ...record(), blocks: [] } }],
     ['a record of another version', { run_id: record().run_id, record: { ...record(), record_version: 2 } }],
   ])('refuses %s', (_name, result) => {
+    // Precondition (buddy r1): the well-formed delivery parses through the union, so the refusal below is the row's own.
+    expect(HandlerFactSchema.safeParse(fact()).success).toBe(true);
     expect(RunDeliveryHandlerFactSchema.safeParse(fact(result as Rec)).success).toBe(false);
     expect(HandlerFactSchema.safeParse(fact(result as Rec)).success).toBe(false);
   });
@@ -76,6 +78,9 @@ describe('0.79.0 · a delivery belongs to exactly the Run it names', () => {
     ['another fact version', { fact_version: 2 }],
     ['no noop flag', { noop: undefined }],
   ])('refuses %s', (_name, extra) => {
+    // Precondition (buddy r1): without union membership these rows would pass on the unknown discriminator alone.
+    expect(HandlerFactSchema.safeParse(fact()).success).toBe(true);
+    expect(RunDeliveryHandlerFactSchema.safeParse(fact(undefined, extra as Rec)).success).toBe(false);
     expect(HandlerFactSchema.safeParse(fact(undefined, extra as Rec)).success).toBe(false);
   });
 });

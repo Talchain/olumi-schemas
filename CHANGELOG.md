@@ -30,6 +30,10 @@ is written before the delivery exists, and cannot carry it. The agent's answer r
 staging and prod share one database. A CEE on 0.78 that reads a turn row carrying `run_delivery` refuses that read. So:
 publish → CEE READER (re-pin 0.79 + serve; staging, then prod) → only then the agent-lane WRITER (label
 `writer-after-prod-0.79`). The 0.78 `run_analysis.delivered_record` field stays (no served lane writes it).
+"Every reader" means every service instance on the shared database, not only staging and prod CEE.
+
+**⛔ Rollback:** once the first `run_delivery` row is written, no reader on the shared database may roll back below 0.79.
+Roll back the writer, never the reader.
 
 ## [0.78.0] — a link's size in the user's terms, so "what changed" can say the user's own figure (SD-1 cut 6, #87 6008093205)
 

@@ -1556,7 +1556,10 @@
         "  selected Run's, under the read's own gates (complete_current, leader gate), else omit.",
         "⛔ ORDER: CEE strictly re-parses every stored fact (HandlerFactSchema discriminated union) and staging and prod share",
         "  one database; a 0.78 CEE refuses a row carrying this fact_type. So: publish -> CEE READER (re-pin 0.79 + serve) ->",
-        "  prod CEE serves 0.79 -> only then the agent-lane WRITER (label writer-after-prod-0.79)."
+        "  prod CEE serves 0.79 -> only then the agent-lane WRITER (label writer-after-prod-0.79). 'Every reader' = every",
+        "  service instance on the shared database, not only staging and prod CEE.",
+        "⛔ ROLLBACK: after the first run_delivery row is written, no reader on the shared database may roll back below 0.79;",
+        "  roll back the writer, never the reader."
       ]
     }
   ]
