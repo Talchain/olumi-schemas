@@ -33,7 +33,8 @@ export const RUN_DELIVERED_RECORD_MAX_BYTES = 64_000;
  */
 export const RunDeliveredOptionSchema = z.object({
   option_id: z.string().min(1).max(200),
-  label: z.string().max(200),
+  /** Unbounded on its own: CEE's option labels are, so the whole record's byte cap governs (buddy r2 P2). */
+  label: z.string(),
   status: z.string().min(1).max(64),
   /** Factor id → the number the option sets it to, as delivered. */
   interventions: z.record(z.string().min(1).max(200), z.number().finite()),

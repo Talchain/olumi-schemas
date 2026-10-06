@@ -164,6 +164,11 @@ describe('0.78.0 · the Run fact carries what its turn delivered', () => {
     expect(BlockSchema.safeParse(maximalTextBlock).success).toBe(true);
   });
 
+  it('a long option label CEE can deliver is stored verbatim — only the whole-record byte cap bounds it (buddy r2)', () => {
+    const long = record({ phase3_blocks: [], analysis_ready_options: [option('o1')].map((o) => ({ ...o, label: 'A'.repeat(201) })) });
+    expect(RunDeliveredRecordSchema.parse(long)).toStrictEqual(long);
+  });
+
   it('the byte cap is the published constant', () => {
     expect(RUN_DELIVERED_RECORD_MAX_BYTES).toBe(64_000);
   });
