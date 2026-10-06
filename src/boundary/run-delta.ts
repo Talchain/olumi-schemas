@@ -232,6 +232,11 @@ export const RunInputField = z.enum([
   // ends (refined). Accepting Olumi's estimate changes no number the engine is sent, so before 0.70.0 the pair showed
   // nothing for it; this row says it in the user's terms ("You accepted Olumi's estimate for …").
   'sizing',
+  // 0.78.0 (SD-1 cut 6, #87 6008093205) — APPENDED. A link's SIZE in the user's terms: `raw` is the snapshot's
+  // `links[].natural_effect.amount` with `unit` its `amount_unit`, and `per` the source change it is per (refined: the
+  // same `per` on both ends). A size moved inside one band showed no figure before 0.78.0 ("…; it is still strong");
+  // this row says it ("from £300 to £350 a month per customer lost").
+  'effect',
 ]);
 export type RunInputFieldLiteral = z.infer<typeof RunInputField>;
 
@@ -254,6 +259,14 @@ export type RunInputLinkSizingLiteral = z.infer<typeof RunInputLinkSizing>;
 export const RunInputValueSchema = z.object({
   raw: z.union([z.number().finite(), z.string().min(1).max(200), z.boolean()]),
   unit: z.string().min(1).max(64).optional(),
+  /**
+   * 0.78.0 — an `effect` end only (refined): the change of the link's SOURCE that `raw` is per, as the snapshot's
+   * `natural_effect.{per_source_change, per_source_change_unit}`. Absent on every other row.
+   */
+  per: z.object({
+    amount: z.number().finite().refine((n) => n !== 0, 'a size is per a non-zero change of the source'),
+    unit: z.string().min(1).max(64),
+  }).strict().optional(),
 }).strict();
 export type RunInputValue = z.infer<typeof RunInputValueSchema>;
 
@@ -274,7 +287,10 @@ export const RunDeltaInputChangeObjectSchema = z.object({
   change: z.enum(['changed', 'added', 'removed']),
 }).strict();
 
-const sameValue = (a: RunInputValue, b: RunInputValue): boolean => a.raw === b.raw && a.unit === b.unit;
+const samePer = (a: RunInputValue['per'], b: RunInputValue['per']): boolean =>
+  a === undefined ? b === undefined : b !== undefined && a.amount === b.amount && a.unit === b.unit;
+const sameValue = (a: RunInputValue, b: RunInputValue): boolean =>
+  a.raw === b.raw && a.unit === b.unit && samePer(a.per, b.per);
 
 export function refineRunDeltaInputChange(
   row: z.infer<typeof RunDeltaInputChangeObjectSchema>,
@@ -312,6 +328,26 @@ export function refineRunDeltaInputChange(
       if (v !== null && (v.unit !== undefined || !RunInputLinkSizing.safeParse(v.raw).success)) {
         issue(end, 'a sizing end is a RunInputLinkSizing literal, with no unit.');
       }
+    }
+  }
+  // 0.78.0 — an `effect` row says a LINK's size moved, in the user's terms: both ends a number with its unit, per the
+  // SAME source change (so "from £300 to £350 per customer lost" is true of both ends). A size appearing or vanishing is
+  // never an effect row: the producer says nothing it cannot pair.
+  if (row.field === 'effect') {
+    if (row.entity_kind !== 'link') issue('field', 'effect travels on a link row only.');
+    if (row.change !== 'changed') issue('change', 'effect is a changed row: a size on one end only is not a pair.');
+    for (const end of ['before', 'after'] as const) {
+      const v = row[end];
+      if (v !== null && (typeof v.raw !== 'number' || v.unit === undefined || v.per === undefined)) {
+        issue(end, 'an effect end is a number with its unit and the source change it is per.');
+      }
+    }
+    if (row.before !== null && row.after !== null && !samePer(row.before.per, row.after.per)) {
+      issue('after', 'both effect ends are per the same source change.');
+    }
+  } else {
+    for (const end of ['before', 'after'] as const) {
+      if (row[end]?.per !== undefined) issue(end, 'per travels on an effect end only.');
     }
   }
 }

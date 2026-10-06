@@ -146,6 +146,21 @@ export const RunInputLinkSchema = z.object({
    * figure. Absent = an older Run that did not record it.
    */
   authorship_digest: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+  /**
+   * 0.78.0 (SD-1 cut 6, #87 6008093205): the link's size in the user's terms — `amount` of the target (in `amount_unit`)
+   * per `per_source_change` of the source (in `per_source_change_unit`) — copied from the edge's own
+   * `provenance.natural_effect` on the graph the Run was built from. No new carrier: the edge already holds it.
+   * Recorded ONLY while that natural effect is current for the link (its `strength_mean` equals the `mean` sent), and
+   * only for a point size: a size read from one end of a range the user wrote is not recorded (its range text is free
+   * text, which this snapshot never holds). A different `amount` between two Runs is an `effect` row. Never inferred
+   * from `mean`; absent = an older Run, or the link had no current point size.
+   */
+  natural_effect: z.object({
+    amount: z.number().finite(),
+    amount_unit: Unit,
+    per_source_change: z.number().finite().refine((n) => n !== 0, 'a size is per a non-zero change of the source'),
+    per_source_change_unit: Unit,
+  }).strict().optional(),
 }).strict();
 
 function uniqueBy<T>(key: (row: T) => string, message: string) {

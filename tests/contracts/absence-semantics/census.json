@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 135,
+    "distinct": 137,
     "same": 76,
     "unresolved": 426
   },
@@ -3570,6 +3570,22 @@
       "verdict": "distinct",
       "note": "Absent = an older Run that did not record the link's authorship. A producer cannot then explain an authorship change pairwise, so the link's authorship stays in the residual (a change reads input_coverage partial). Never inferred.",
       "ref": "src/orchestrator/run-input-snapshot.ts - 0.72.0 RunInputLinkSchema.authorship_digest (DL ruling CEE #2482 r3)"
+    },
+    "orchestrator/RunInputLinkSchema.natural_effect": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = an older Run, or the link had no CURRENT point size (no natural effect on the edge, its strength_mean no longer equal to the mean sent, or a size read from one end of a range). Never inferred from the engine mean. A pair with a size on only one end states no effect row.",
+      "ref": "src/orchestrator/run-input-snapshot.ts - 0.78.0 RunInputLinkSchema.natural_effect (SD-1 cut 6, #87 6008093205)"
+    },
+    "boundary/RunInputValueSchema.per": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent on every end except an effect end (refined). Present = the source change the size is per; both effect ends carry the same per.",
+      "ref": "src/boundary/run-delta.ts - 0.78.0 RunInputField effect + RunInputValueSchema.per (SD-1 cut 6, #87 6008093205)"
     },
     "orchestrator/RunInputLinkSchema.sizing": {
       "markers": [

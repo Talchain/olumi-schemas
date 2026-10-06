@@ -1698,7 +1698,8 @@ export const maximalRunDeltaEndpoints = deepFreeze({
   current: { run_id: 'fixture_run_b', computed_at: '2026-09-30T14:09:00.000Z' },
 });
 
-export const maximalRunInputValue = deepFreeze({ raw: 59, unit: 'GBP' });
+/** 0.78.0: maximal = every optional populated, so the family fixture is an `effect` end (the only end that carries `per`). */
+export const maximalRunInputValue = deepFreeze({ raw: 350, unit: 'GBP per month', per: { amount: 1, unit: 'customer lost' } });
 
 /** £59 → £60 on one option. */
 export const maximalRunDeltaInputChange = deepFreeze({
@@ -1708,7 +1709,7 @@ export const maximalRunDeltaInputChange = deepFreeze({
   field: 'value',
   label_before: 'Pro price',
   label_after: 'Pro price',
-  before: maximalRunInputValue,
+  before: { raw: 59, unit: 'GBP' },
   after: { raw: 60, unit: 'GBP' },
   change: 'changed',
 });
@@ -1731,6 +1732,17 @@ export const maximalRunDeltaInputChangeSizing = deepFreeze({
   field: 'sizing',
   before: { raw: 'olumi_estimate' },
   after: { raw: 'olumi_accepted' },
+  change: 'changed',
+});
+
+/** 0.78.0 — an `effect` row: the user's stated size for a link, £300 → £350 a month per customer lost (#87 6008093205). */
+export const maximalRunDeltaInputChangeEffect = deepFreeze({
+  entity_kind: 'link',
+  entity_id: 'fixture_factor_3->fixture_factor_4',
+  link: { from: 'fixture_factor_3', to: 'fixture_factor_4' },
+  field: 'effect',
+  before: { raw: 300, unit: 'GBP per month', per: { amount: 1, unit: 'customer lost' } },
+  after: maximalRunInputValue,
   change: 'changed',
 });
 
@@ -1778,6 +1790,8 @@ export const maximalRunDelta = deepFreeze({
     },
     // 0.70.0 — the user accepted Olumi's estimate for a link (R3 DEFECT 3): no engine number moved.
     maximalRunDeltaInputChangeSizing,
+    // 0.78.0 — a link's size moved inside its band: the user's own figure, per the same source change.
+    maximalRunDeltaInputChangeEffect,
   ],
 });
 

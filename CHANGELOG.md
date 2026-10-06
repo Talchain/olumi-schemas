@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.78.0] — a link's size in the user's terms, so "what changed" can say the user's own figure (SD-1 cut 6, #87 6008093205)
+
+**Why.** Served S7 (CEE #2629) can only say "You changed how much X changes Y; it is still strong". The Run's input
+snapshot records a link's engine mean, band and sizing, never the size the user stated, so a size moved inside one band
+had no figure. The edge already carries that size (`provenance.natural_effect`); no new carrier.
+
+### Added (additive, optional)
+- `RunInputLinkSchema.natural_effect?` — `{ amount, amount_unit, per_source_change (≠ 0), per_source_change_unit }`,
+  strict, copied from the edge's `provenance.natural_effect`. Recorded only while it is current for the link (its
+  `strength_mean` equals the mean sent) and only for a point size (a range end's text is free text; not recorded).
+- `RunInputField` += `'effect'` (appended). Refined: a link row, `changed` only, both ends a number with its unit and
+  `per`, the same `per` on both ends.
+- `RunInputValueSchema.per?` — `{ amount (≠ 0), unit }`, strict. Refined: on an `effect` end only.
+
+### Tests
+- `tests/contracts/release-0.78.0.test.ts`. Fixtures: `maximalRunInputValue` is now an effect end (maximal = every
+  optional); the `value` row's `before` is inlined; `maximalRunDelta` gains one `effect` row. Census +2 (137).
+- `release-0.70.0.test.ts`: the 0.70 closed-set row now pins its own 0.70 prefix (0.78 pins the whole set).
+
+**Order (reader first):** publish → DGAI vendors 0.78.0 (a strict 0.77 parser refuses an `effect` row, and DGAI's
+responseParser quarantines the whole delta) → PLoT re-vendors (no-op) → CEE records `natural_effect` and emits
+`effect` rows.
+
 ## [0.77.0] — `stated_relationship_not_used`: a relationship the user stated that the model could not use (DL ruling 5 Oct; MC #2576; Integrator SPINE X8)
 
 **Why.** `model_building_notices` could only count a user-stated relationship the records compile could not use under
