@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.79.0] — `run_delivery`: the Run's delivered record, on the AGENT lane (SD-1 Slice R; DL ruling #87, 6 Oct, option A)
+
+**Why.** 0.78 put the delivered record on the Run's own fact (`RunAnalysisResultSchema.delivered_record`). The served
+Run is the agent lane (`AGENT_LANE_ENABLED=true` on cee-staging and cee-production): it commits the `run_analysis` fact
+inside an internal dispatch, then composes the blocks the user sees from its post-commit readback. So the Run's fact
+is written before the delivery exists, and cannot carry it. The agent's answer row writes `handler_facts: []` today.
+
+### Added (append-only union member, READER-FIRST)
+- `RunDeliveryResultSchema` = `{ run_id, record: RunDeliveredRecordSchema }`, strict. Refined: `record.run_id` must
+  equal `run_id` (a delivery belongs to exactly the Run it names).
+- `RunDeliveryHandlerFactSchema` = `{ fact_type: 'run_delivery', fact_version: 1, noop, result }`, strict, APPENDED
+  last to `HandlerFactSchema`. Readers take the NEWEST `run_delivery` whose `run_id` is the selected Run's, and serve it
+  only under that read's own gates; otherwise they omit it.
+- Both are `ORCHESTRATOR_INTERNAL` (CEE fact persistence). The record's wire half, `boundary/RunDeliveredRecordSchema`,
+  already carries a maximal fixture (0.78.0).
+
+### Tests
+- `tests/contracts/release-0.79.0.test.ts`. Adoption manifest +1 `declared` row recording the order below.
+
+**⛔ Persisted-fact order:** CEE strictly re-parses every stored fact against the closed `HandlerFactSchema` union, and
+staging and prod share one database. A CEE on 0.78 that reads a turn row carrying `run_delivery` refuses that read. So:
+publish → CEE READER (re-pin 0.79 + serve; staging, then prod) → only then the agent-lane WRITER (label
+`writer-after-prod-0.79`). The 0.78 `run_analysis.delivered_record` field stays (no served lane writes it).
+
 ## [0.78.0] — a link's size in the user's terms, so "what changed" can say the user's own figure (SD-1 cut 6, #87 6008093205)
 
 **Why.** Served S7 (CEE #2629) can only say "You changed how much X changes Y; it is still strong". The Run's input

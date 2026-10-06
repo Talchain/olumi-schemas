@@ -1537,6 +1537,27 @@
         "⛔ ORDER (DL doctrine for every persisted-fact field): 0.78 ships first as a READER in CEE + DGAI and reaches prod",
         "  (cut 6); CEE WRITES it only once prod CEE serves 0.78 (cut 7). A 0.77 CEE refuses a fact carrying it."
       ]
+    },
+    {
+      "field": "handler_facts[] fact_type 'run_delivery' {run_id, record: RunDeliveredRecord}",
+      "declared_in": "schemas:src/orchestrator/handler-fact.ts::RunDeliveryHandlerFactSchema; src/orchestrator/handler-results.ts::RunDeliveryResultSchema (0.79.0)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "SD-1 Slice R on the AGENT lane (DL ruling #87, 6 Oct, option A). The served Run (AGENT_LANE_ENABLED=true on staging",
+        "  and prod) commits its run_analysis fact inside an internal dispatch and composes the user-visible blocks AFTER that",
+        "  commit, from its readback, so run_analysis.delivered_record (0.78) cannot hold them. The agent's ANSWER row records",
+        "  this append-only fact after its final egress instead. Readers take the NEWEST run_delivery whose run_id is the",
+        "  selected Run's, under the read's own gates (complete_current, leader gate), else omit.",
+        "⛔ ORDER: CEE strictly re-parses every stored fact (HandlerFactSchema discriminated union) and staging and prod share",
+        "  one database; a 0.78 CEE refuses a row carrying this fact_type. So: publish -> CEE READER (re-pin 0.79 + serve) ->",
+        "  prod CEE serves 0.79 -> only then the agent-lane WRITER (label writer-after-prod-0.79)."
+      ]
     }
   ]
 }
