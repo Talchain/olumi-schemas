@@ -80,6 +80,7 @@ describe('0.78.0 · an `effect` row says a link\'s size moved, per the same sour
     ['as an added row (a size on one end only is not a pair)', { change: 'added', before: null }],
     ['as a removed row', { change: 'removed', after: null }],
     ['with an end that has no per', { after: { raw: 350, unit: 'GBP per month' } }],
+    ['with no per on either end', { before: { raw: 300, unit: 'GBP per month' }, after: { raw: 350, unit: 'GBP per month' } }],
     ['with an end that has no unit', { after: { raw: 350, per } }],
     ['with a band as the figure', { before: { raw: 'strong', unit: 'GBP per month', per } }],
     ['per a different source change on each end', { after: { raw: 350, unit: 'GBP per month', per: { amount: 10, unit: 'customer lost' } } }],
