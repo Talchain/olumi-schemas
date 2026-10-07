@@ -301,7 +301,8 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   QuantityClaimV1 (+ #target), BaselineV1, AlternativeV1 (SCI-DEEP v1 structural challenge).
     // 0.78.0 (+3): boundary/DeliveredPhase3BlockSchema (a delivered Phase 3 block; one member is maximal),
     //   RunDeliveredOptionSchema, RunDeliveredRecordSchema (SD-1 Slice R: the Run's own delivered record).
-    expect(MAXIMAL_FIXTURES.length).toBe(234);
+    // 0.81.0 (+2): boundary/RunDeltaGoalChanceSideSchema and RunDeltaGoalChanceDeltaSchema.
+    expect(MAXIMAL_FIXTURES.length).toBe(236);
   });
 
   it('family keys are unique', () => {

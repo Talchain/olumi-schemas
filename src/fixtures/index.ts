@@ -151,6 +151,8 @@ import {
   RunDeltaPairProvenanceSchema,
   RunDeltaLeaderDeltaSchema,
   RunDeltaWinProbabilityDeltaSchema,
+  RunDeltaGoalChanceSideSchema,
+  RunDeltaGoalChanceDeltaSchema,
   RunDeltaFlipThresholdDeltaSchema,
   RunDeltaEndpointSchema,
   RunDeltaEndpointsSchema,
@@ -1687,6 +1689,15 @@ export const maximalRunDeltaWinProbabilityDelta = deepFreeze({
   noise_verdict: 'signal',
 });
 
+/** 0.81.0 — the Run's displayed goal chance, with its own rounding licence. */
+export const maximalRunDeltaGoalChanceSide = deepFreeze({ kind: 'point', pct: 47, rounding: 'whole' });
+
+export const maximalRunDeltaGoalChanceDelta = deepFreeze({
+  option_id: 'fixture_option_a',
+  prior: maximalRunDeltaGoalChanceSide,
+  current: { kind: 'range', low_pct: 10, high_pct: 20, low_rounding: 'nearest_5', high_rounding: 'whole' },
+});
+
 export const maximalRunDeltaFlipThresholdDelta = deepFreeze({
   factor_id: ID_FACTOR,
   prior_median: 0.42,
@@ -1790,6 +1801,11 @@ export const maximalRunDelta = deepFreeze({
     },
   ],
   flip_thresholds: [maximalRunDeltaFlipThresholdDelta],
+  // 0.81.0 — all four side kinds, in the same model option order as win_probabilities.
+  goal_chances: [
+    maximalRunDeltaGoalChanceDelta,
+    { option_id: 'fixture_option_b', prior: { kind: 'withheld' }, current: { kind: 'not_recorded' } },
+  ],
   edit_list: ['nodes.fixture_factor_1.observed_state.value'],
   endpoints: maximalRunDeltaEndpoints,
   input_coverage: 'complete',
@@ -3523,6 +3539,9 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   },
   // --- 0.39.0 car 3 — run-over-run delta --------------------------------------------
   { family: 'boundary/RunDeltaSchema', schema: RunDeltaSchema, fixture: maximalRunDelta },
+  // 0.81.0 — all four side kinds are exercised inside maximalRunDelta above.
+  { family: 'boundary/RunDeltaGoalChanceSideSchema', schema: RunDeltaGoalChanceSideSchema, fixture: maximalRunDeltaGoalChanceSide },
+  { family: 'boundary/RunDeltaGoalChanceDeltaSchema', schema: RunDeltaGoalChanceDeltaSchema, fixture: maximalRunDeltaGoalChanceDelta },
   // --- 0.70.0 — the typed reason for empty win shares (needs an empty list, so not on the C1 delta) -----------------
   { family: 'boundary/RunDeltaSchema#prior_withheld', schema: RunDeltaSchema, fixture: maximalRunDeltaPriorWithheld },
   // --- 0.68.0 — SC-24 endpoints + input changes ---------------------------------------

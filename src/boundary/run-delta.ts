@@ -49,9 +49,9 @@ import { z } from 'zod';
 //     un-checkable against the preconditions);
 //   - NO per-edit attribution (the honest unit is the edit SET — per-edit
 //     needs ablation runs, out of scope);
-//   - NO goal-probability / outcome-stat / sensitivity rows yet (S2's first
-//     tier is leader + win probabilities + flip band + structure; later
-//     tiers land additively).
+//   - NO outcome-stat / sensitivity rows yet. 0.81.0 adds goal-chance
+//     figures, each side under its OWN Run's licence, with no direction or
+//     noise verdict and never a leader claim.
 // ============================================================================
 
 /**
@@ -131,6 +131,53 @@ export const RunDeltaWinProbabilityDeltaSchema = z.object({
   noise_verdict: RunDeltaNoiseVerdict,
 }).strict();
 export type RunDeltaWinProbabilityDelta = z.infer<typeof RunDeltaWinProbabilityDeltaSchema>;
+
+/**
+ * 0.81.0 — CEE's `GoalChanceDisplayRounding`: `whole` while the 95% Wilson
+ * half-width is <= 2.5 percentage points, otherwise `nearest_5`. Carried
+ * from the Run's display licence, never recomputed by the consumer.
+ */
+export const RunDeltaGoalChanceRounding = z.enum(['whole', 'nearest_5']);
+export type RunDeltaGoalChanceRoundingLiteral = z.infer<typeof RunDeltaGoalChanceRounding>;
+
+/**
+ * One Run's OWN chance-of-meeting-the-goal licence (DL #87 6035414740).
+ * Each side is exactly what THAT Run's Analysis showed; it never borrows
+ * the other side's licence or the leader's licence.
+ * - `point`: GOAL_CHANCE_LICENSED.pct_by_option[option], the DISPLAYED whole
+ *   percent, with display_rounding_by_option[option] (`whole` when absent).
+ * - `range`: GOAL_CHANCE_RANGE.range_by_option[option], with each end's
+ *   displayed percent and rounding. Ordered ends are refined on RunDelta.
+ * - `withheld`: the Run licensed goal chances but withheld THIS option's.
+ * - `not_recorded`: no goal-chance licence on the Run (before CEE #2625);
+ *   an older Run is never re-licensed after the fact.
+ */
+export const RunDeltaGoalChanceSideSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('point'),
+    pct: z.number().int().min(0).max(100),
+    rounding: RunDeltaGoalChanceRounding,
+  }).strict(),
+  z.object({
+    kind: z.literal('range'),
+    low_pct: z.number().int().min(0).max(100),
+    high_pct: z.number().int().min(0).max(100),
+    low_rounding: RunDeltaGoalChanceRounding,
+    high_rounding: RunDeltaGoalChanceRounding,
+  }).strict(),
+  z.object({ kind: z.literal('withheld') }).strict(),
+  z.object({ kind: z.literal('not_recorded') }).strict(),
+]);
+export type RunDeltaGoalChanceSide = z.infer<typeof RunDeltaGoalChanceSideSchema>;
+
+/** 0.81.0 — one option's two licensed goal-chance sides: figures only, no direction or noise verdict. */
+export const RunDeltaGoalChanceDeltaSchema = z.object({
+  /** Option id — identity-bound, never a label. */
+  option_id: z.string().min(1),
+  prior: RunDeltaGoalChanceSideSchema,
+  current: RunDeltaGoalChanceSideSchema,
+}).strict();
+export type RunDeltaGoalChanceDelta = z.infer<typeof RunDeltaGoalChanceDeltaSchema>;
 
 /**
  * The leader movement line. Ids are OPTIONAL because either side's leader
@@ -372,6 +419,16 @@ const RunDeltaObjectSchema = z.object({
   leader: RunDeltaLeaderDeltaSchema,
   /** May be empty (no options with a computable pair). */
   win_probabilities: z.array(RunDeltaWinProbabilityDeltaSchema),
+  /**
+   * 0.81.0 — each option's chance of meeting the goal as each Run showed it.
+   * ABSENCE SEMANTICS (census: distinct): absent = a pre-0.81 producer; a
+   * consumer says nothing about goal chance. Present = one entry per option
+   * compared in BOTH Runs (the same matching as `win_probabilities`), in the
+   * model's option order, possibly empty. Never ordered by chance (ranking),
+   * never a leader. No noise verdict travels: a consumer must not word a
+   * direction from two sides.
+   */
+  goal_chances: z.array(RunDeltaGoalChanceDeltaSchema).max(100).optional(),
   /** May be empty (no flip rows on either side). */
   flip_thresholds: z.array(RunDeltaFlipThresholdDeltaSchema),
   /**
@@ -418,6 +475,29 @@ export function refineRunDelta(
   pathPrefix: readonly (string | number)[] = [],
 ): void {
   const p = data.pair_provenance;
+  if (data.goal_chances !== undefined) {
+    const seen = new Set<string>();
+    data.goal_chances.forEach((row, i) => {
+      if (seen.has(row.option_id)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [...pathPrefix, 'goal_chances', i, 'option_id'],
+          message: 'The same option is reported once in goal_chances.',
+        });
+      }
+      seen.add(row.option_id);
+      for (const end of ['prior', 'current'] as const) {
+        const side = row[end];
+        if (side.kind === 'range' && side.low_pct > side.high_pct) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [...pathPrefix, 'goal_chances', i, end, 'low_pct'],
+            message: 'A goal-chance range requires low_pct <= high_pct.',
+          });
+        }
+      }
+    });
+  }
   if (data.attribution_case === 'C1_attributable') {
     if (!(p.seed_equal && !p.hash_equal && p.builds_equal === 'equal' && p.n_equal)) {
       ctx.addIssue({

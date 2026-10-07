@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 140,
+    "distinct": 141,
     "same": 76,
     "unresolved": 428
   },
@@ -2605,6 +2605,14 @@
       "verdict": "distinct",
       "note": "Absent = a pre-0.68 producer that did not name the pair. A present value always names two different execution ids, so no value can say 'pair not named'. Required whenever input_coverage or input_changes travel (refined).",
       "ref": "src/boundary/run-delta.ts - 0.68.0 SC-24 block + refineRunDelta / refineRunDeltaInputChange (programme-docs #84 5914416431, DL #75 5914474485)"
+    },
+    "boundary/OlumiResponseSchema.run_delta.goal_chances": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = a pre-0.81 producer; a consumer says nothing about goal chance. Present = one entry per option compared in BOTH Runs, in model option order, possibly empty. [] cannot express an older producer. Each side retains its own Run licence; no direction or noise verdict is licensed.",
+      "ref": "src/boundary/run-delta.ts - RunDeltaObjectSchema.goal_chances ABSENCE SEMANTICS (0.81.0, DL #87 6035414740)"
     },
     "boundary/OlumiResponseSchema.run_delta.input_changes": {
       "markers": [

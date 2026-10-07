@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.81.0] — each Run's own chance of meeting the goal, on Compare (DL #87 6035414740)
+
+**Why.** Compare needs to show each option's earlier and latest displayed goal chance ("about 47% → about 15%").
+CEE builds `run_delta` from two stored Runs; each side carries exactly what THAT Run's Analysis showed, under its
+OWN goal-chance licence. Goal chances never borrow leader entitlement or re-license an older Run.
+
+### Added (additive and optional; figures only)
+- `RunDeltaSchema.goal_chances?`: up to 100 identity-bound `{ option_id, prior, current }` entries, one per option
+  compared in BOTH Runs (the same matching as `win_probabilities`), in the model's option order. Never ordered by
+  chance, never a leader claim. No direction or `noise_verdict` travels; a consumer must not word a direction from
+  the two sides.
+- `RunDeltaGoalChanceSideSchema`: four strict kinds. `point` carries the Run's displayed integer `pct` (0..100)
+  and `rounding`; `range` carries integer `low_pct` / `high_pct` (0..100) and `low_rounding` / `high_rounding`;
+  `withheld` means that Run licensed goal chances but withheld this option's; `not_recorded` means the Run has no
+  goal-chance licence (before CEE #2625), never re-licensed after the fact.
+- `RunDeltaGoalChanceRounding`: `whole | nearest_5`, CEE's display steps (`whole` while the 95% Wilson half-width
+  is ≤ 2.5 percentage points, otherwise `nearest_5`). The point licence's absent rounding is carried as `whole` by
+  CEE. Consumers do not recompute figures or rounding.
+- Refined: unique option ids within `goal_chances`, and `low_pct <= high_pct` on either range side.
+- **Absence semantics (census: distinct):** absent = a pre-0.81 producer, so a consumer says nothing about goal
+  chance. Present = the compared options, possibly `[]`; empty never stands for an older producer.
+- Fixtures exercise all four kinds; registered families 234 → 236. Adoption manifest adds one `declared` row;
+  producer/consumer adoption remains unverified. `tests/contracts/release-0.81.0.test.ts` pins the published kinds
+  and rounding literals, accepted controls, strict rejection and refinements.
+
+**Consumer order:** publish → DGAI pins 0.81.0 → CEE pins and emits. DGAI parses `run_delta` strictly; an old pin
+refuses the new member and drops the WHOLE block. DGAI must pin before CEE emits `goal_chances`.
+
 ## [0.80.0] — the dominant factor and the tipping-point status reach the browser (science census 6 Oct, §2d C3/C5, §4 rank 4)
 
 **Why.** PLoT computes `dominant_factor`, `flip_thresholds_status` and `flip_thresholds_status_reason` on every /v2/run.
