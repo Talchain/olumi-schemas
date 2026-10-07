@@ -894,6 +894,48 @@ export type OptionStatusType = z.infer<typeof OptionStatus>;
  */
 export const CountNounSchema = z.string().min(1).max(40).regex(/^[^\d\s](?:[^\d]*[^\d\s])?$/);
 
+/**
+ * 0.82.0 additive — event_risk.v1 (Science 393023, science-richness-P0-20261007.md ruling (a) + §4 PILOT;
+ * rulings Q1–Q9). On a `kind: "risk"` node ONLY: the risk is an EVENT that may happen within a horizon.
+ * Three uncertainties, never merged: OCCURRENCE (this block), mechanism EXISTENCE (each link's
+ * `exists_probability`) and EFFECT SIZE (each risk→child link's strength, read as the severity CONDITIONAL
+ * on occurrence).
+ *
+ * - `occurrence`: P(it happens at least once within the horizon) as a stated range, with whose range it is.
+ * - `horizon.months`: the window that range is stated over (never rescaled to a goal's deadline in v1).
+ * - `mitigations[]`: preventers. Each is a ROOT factor an option sets (0 = not in place, 1 = in place),
+ *   linked to this risk and to nothing else. While it is in place, occurrence is scaled by
+ *   (1 − occurrence_reduction). Several multiply. The link's own strength is ignored by contract.
+ *
+ * ISL (`NodeV2.event_risk`) owns the semantics: one occurrence draw per risk per Monte Carlo draw, shared
+ * across options. It refuses with a typed 422 what v1 cannot evaluate (driver parents, a non-root
+ * preventer, …). STRICT at every level: an unknown key is refused, never dropped, because a dropped event
+ * is an inert risk presented as modelled.
+ * ABSENCE: absent ⇒ the node is today's risk node (linear), byte-identically. No value means "absent".
+ */
+export const EventRiskOccurrenceV1Schema = z.object({
+  p_low: z.number().min(0).max(1),
+  p_high: z.number().min(0).max(1),
+  meaning: z.literal('at_least_once_within_horizon').optional(),
+  basis: z.enum(['user', 'olumi', 'reference']),
+}).strict().refine((o) => o.p_low <= o.p_high, { message: 'p_low must not exceed p_high', path: ['p_low'] });
+
+export const EventRiskMitigationV1Schema = z.object({
+  factor_id: z.string().min(1).max(100).regex(NODE_ID_PATTERN),
+  occurrence_reduction: z.number().min(0).max(1),
+}).strict();
+
+export const EventRiskV1Schema = z.object({
+  version: z.literal(1),
+  occurrence: EventRiskOccurrenceV1Schema,
+  horizon: z.object({ months: z.number().positive().max(600) }).strict(),
+  mitigations: z.array(EventRiskMitigationV1Schema).min(1).max(8).optional(),
+}).strict().refine(
+  (b) => new Set((b.mitigations ?? []).map((m) => m.factor_id)).size === (b.mitigations ?? []).length,
+  { message: 'event_risk.mitigations must name each factor at most once', path: ['mitigations'] },
+);
+export type EventRiskV1 = z.infer<typeof EventRiskV1Schema>;
+
 export const NodeV3Schema = z.object({
   id: z.string().min(1).max(100).regex(NODE_ID_PATTERN),
   kind: NodeKind,
@@ -935,6 +977,8 @@ export const NodeV3Schema = z.object({
    * twin-matching read `full_label ?? label`. Absent = the label IS the full name. Not an analysis hash input.
    */
   full_label: z.string().min(1).max(500).optional(),
+  /** 0.82.0 additive (Science 393023 pilot §4). On a risk node only: the risk is an EVENT — see `EventRiskV1Schema`. */
+  event_risk: EventRiskV1Schema.optional(),
 }).passthrough();
 
 export const StrengthSchema = z.object({

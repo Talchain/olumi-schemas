@@ -140,7 +140,8 @@ describe('0.69.0 · NO migration: every saved model from before 0.69.0 still ope
 
 describe('0.69.0 changes NO analysis hash input', () => {
   it('the analysis projection holds none of the new keys, and 0.69.0 does not bump its version', () => {
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(5);
+    // 0.82.0 event_risk raises the version to 6; 0.69.0 itself added no hash inputs.
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBeGreaterThanOrEqual(5);
     const nested = CANONICAL_GRAPH_HASH_NESTED_PROJECTION as unknown as Record<string, Record<string, unknown>>;
     const all = Object.values(nested).flatMap((v) => Object.values(v).flatMap((f) => (Array.isArray(f) ? f : [])));
     expect(all).toContain('analysis_participation'); // positive control: the field an option's exclusion moves IS hashed

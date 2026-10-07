@@ -37,6 +37,10 @@ export {
   // vocabulary (consumer-side; the wire field stays z.string()).
   OBSERVED_STATE_SOURCE_LITERALS,
   KnownObservedStateSource,
+  // 0.82.0 additive — event_risk.v1 (Science 393023 pilot §4): a risk that may happen within a horizon.
+  EventRiskV1Schema,
+  EventRiskOccurrenceV1Schema,
+  EventRiskMitigationV1Schema,
 } from './graph.js';
 export type {
   NodeV3,
@@ -65,6 +69,8 @@ export type {
   GoalHorizon,
   GoalStatedAs,
   OptionStatusType,
+  // 0.82.0 additive.
+  EventRiskV1,
 } from './graph.js';
 
 // 0.40.0 (PR4 evidence loop) — the shared {round_id, participant_id}

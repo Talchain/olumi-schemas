@@ -69,6 +69,9 @@ import {
   PriorSchema,
   StateSpaceSchema,
   NodeV3Schema,
+  EventRiskOccurrenceV1Schema,
+  EventRiskMitigationV1Schema,
+  EventRiskV1Schema,
   UnitReadingSchema,
   EntityRefSchema,
   RefHighWaterSchema,
@@ -439,6 +442,19 @@ export const maximalGoalStatedAs = deepFreeze({
   quote: 'FIXTURE a baseline of £100k a quarter',
 });
 
+/** 0.82.0 — synthetic supplier event, every optional member populated. */
+export const maximalEventRiskV1 = deepFreeze({
+  version: 1,
+  occurrence: {
+    p_low: 0.05,
+    p_high: 0.15,
+    meaning: 'at_least_once_within_horizon',
+    basis: 'reference',
+  },
+  horizon: { months: 12 },
+  mitigations: [{ factor_id: 'dual_sourcing', occurrence_reduction: 0.7 }],
+});
+
 export const maximalNodeV3 = deepFreeze({
   id: ID_FACTOR,
   kind: 'factor',
@@ -467,6 +483,15 @@ export const maximalNodeV3 = deepFreeze({
   option_status: 'feasible',
   count_noun: 'deals',
   full_label: 'FIXTURE the full drafted name of this factor',
+  [PROBE]: true,
+});
+
+// 0.82.0 — exercise event_risk on a risk node, including inside graph receipts.
+export const maximalEventRiskNodeV3 = deepFreeze({
+  id: 'fixture_supplier_fails',
+  kind: 'risk',
+  label: 'FIXTURE key supplier fails',
+  event_risk: maximalEventRiskV1,
   [PROBE]: true,
 });
 
@@ -509,6 +534,7 @@ const edgeV3DefaultApplied = deepFreeze({
 export const maximalGraphV3 = deepFreeze({
   nodes: [
     maximalNodeV3,
+    maximalEventRiskNodeV3,
     {
       id: ID_GOAL,
       kind: 'goal',
@@ -1450,7 +1476,7 @@ export const maximalDraftGraphBlock = deepFreeze({
   type: 'draft_graph',
   nodes: maximalGraphV3.nodes,
   edges: maximalGraphV3.edges,
-  node_count: 4,
+  node_count: maximalGraphV3.nodes.length, // 0.82.0 includes the event-risk node.
   edge_count: 2,
   options: [maximalOptionForAnalysis],
   goal_node_id: ID_GOAL,
@@ -1465,7 +1491,7 @@ export const maximalCanonicalCommittedGraphBlock = maximalDraftGraphBlock;
 export const maximalCanonicalCommittedGraphReceipt = deepFreeze({
   nodes: maximalGraphV3.nodes,
   edges: maximalGraphV3.edges,
-  node_count: 4,
+  node_count: maximalGraphV3.nodes.length, // 0.82.0 includes the event-risk node.
   edge_count: 2,
   options: [maximalOptionForAnalysis],
   goal_node_id: ID_GOAL,
@@ -2737,7 +2763,7 @@ export const maximalOlumiResponse = deepFreeze({
   draft_graph: {
     nodes: maximalGraphV3.nodes,
     edges: maximalGraphV3.edges,
-    node_count: 4,
+    node_count: maximalGraphV3.nodes.length, // 0.82.0 includes the event-risk node.
     edge_count: 2,
     options: [maximalOptionForAnalysis],
     goal_node_id: ID_GOAL,
@@ -3392,6 +3418,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'root/PriorSchema', schema: PriorSchema, fixture: maximalPrior },
   { family: 'root/StateSpaceSchema', schema: StateSpaceSchema, fixture: maximalStateSpace },
   { family: 'root/NodeV3Schema', schema: NodeV3Schema, fixture: maximalNodeV3 },
+  // 0.82.0 — one block supplies the three exported shapes and the opt-in node variant.
+  { family: 'root/EventRiskOccurrenceV1Schema', schema: EventRiskOccurrenceV1Schema, fixture: maximalEventRiskV1.occurrence },
+  { family: 'root/EventRiskMitigationV1Schema', schema: EventRiskMitigationV1Schema, fixture: maximalEventRiskV1.mitigations[0] },
+  { family: 'root/EventRiskV1Schema', schema: EventRiskV1Schema, fixture: maximalEventRiskV1 },
+  { family: 'root/NodeV3Schema#event_risk', schema: NodeV3Schema, fixture: maximalEventRiskNodeV3 },
   { family: 'root/UnitReadingSchema', schema: UnitReadingSchema, fixture: maximalUnitReading },
   { family: 'root/EntityRefSchema', schema: EntityRefSchema, fixture: 'F1' },
   { family: 'root/RefHighWaterSchema', schema: RefHighWaterSchema, fixture: deepFreeze({ F: 1 }) },

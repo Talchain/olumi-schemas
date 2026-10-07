@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.82.0] — a risk is an EVENT that may happen within a horizon (event_risk.v1, Science 393023 pilot §4)
+
+**Why.** Today a `risk` node is evaluated as a linear quantity: a parentless, valueless risk is inert (0), so "the
+key supplier may fail within 12 months" never lowers anyone's chance of meeting the goal. Science ruling (a): a risk
+is an EVENT. Its occurrence is a third uncertainty, never merged with a link's existence or its effect size.
+
+### Added (additive and optional; opt-in per node)
+- `NodeV3Schema.event_risk?` = `EventRiskV1Schema`, on a `kind: "risk"` node only. STRICT at every level:
+  - `version: 1`;
+  - `occurrence { p_low, p_high (0..1, p_low ≤ p_high), meaning?: "at_least_once_within_horizon", basis: user | olumi | reference }`;
+  - `horizon { months (0 < m ≤ 600) }`;
+  - `mitigations?: [{ factor_id, occurrence_reduction (0..1) }]` (1–8, distinct).
+  - Each mitigation names a ROOT factor an option sets (the preventer), linked to this risk and to nothing else.
+    While it is in place, occurrence is scaled by (1 − occurrence_reduction).
+- The engine (ISL `NodeV2.event_risk`, Talchain/Inference-Service-Layer#228) draws occurrence once per risk per
+  Monte Carlo draw, shared across options. It refuses with a typed 422 what v1 cannot evaluate. PLoT
+  (Talchain/plot-lite-service#442) forwards it verbatim and fails closed without ISL's `event_risks_applied` echo.
+- **Graph hash:** `CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields` gains `event_risk` (projection version 5 → 6).
+  An edit to a risk's stated range moves the revision. **No mass stale:** absent fields are not projected.
+- **Absence semantics (census: same):** absent = today's risk node (linear), byte-identically. No present value
+  stands for absence.
+
+- **Maximal fixtures:** 236 → 240 registry entries: the three exported event-risk schemas and the opt-in risk node;
+  the supplier example carries a 0.05–0.15 reference range, 12-month horizon and `dual_sourcing` reduction of 0.7.
+- **Adoption:** one `declared` manifest row; CEE #2752, ISL #228 and PLoT #442 adoption remains unverified.
+
+**Consumer order:** publish → CEE pins (its own `NodeV3` already declares the field, CEE PR) → the graph hash moves
+only for graphs carrying `event_risk`. DGAI renders the card (slice 4).
+
 ## [0.81.0] — each Run's own chance of meeting the goal, on Compare (DL #87 6035414740)
 
 **Why.** Compare needs to show each option's earlier and latest displayed goal chance ("about 47% → about 15%").
