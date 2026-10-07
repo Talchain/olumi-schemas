@@ -20,8 +20,9 @@ import {
 describe('0.64.0 · which options are compared enters the analysis revision', () => {
   const fields: readonly string[] = CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields;
 
-  it('RED: node proposed_by is a hash input, appended LAST', () => {
-    expect(fields[fields.length - 1]).toBe('proposed_by');
+  it('RED: node proposed_by retains its appended 0.64.0 position', () => {
+    // 0.82.0 appends event_risk; proposed_by retains its original index.
+    expect(fields[16]).toBe('proposed_by');
   });
 
   it('RED: the projection version moves 3 → 4 (the module\'s own bump rule)', () => {
@@ -30,7 +31,8 @@ describe('0.64.0 · which options are compared enters the analysis revision', ()
   });
 
   it('APPEND-ONLY: every pre-0.64.0 node field keeps its exact order as the prefix', () => {
-    expect(fields.slice(0, -1)).toEqual([
+    // 0.82.0 appends event_risk after proposed_by; pin the original prefix.
+    expect(fields.slice(0, 16)).toEqual([
       'id', 'kind', 'category', 'factor_type', 'is_baseline', 'goal_threshold', 'goal_threshold_raw', 'goal_threshold_cap',
       'intercept', 'encoding_map', 'goal_threshold_frame', 'goal_direction', 'quantity_frame',
       'scale_frame', 'nonlinear_identity', 'analysis_participation',

@@ -32,6 +32,22 @@
   },
   "fields": [
     {
+      "field": "event_risk",
+      "declared_in": "schemas:src/graph.ts::NodeV3Schema.event_risk + EventRiskV1Schema / EventRiskOccurrenceV1Schema / EventRiskMitigationV1Schema (0.82.0)",
+      "producer": "cee \u2014 Talchain/olumi-assistants-service#2752 declares event_risk on risk nodes",
+      "consumer": "isl \u2014 Talchain/Inference-Service-Layer#228 evaluates event occurrence and mitigations",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY: release-0.82.0.test.ts proves contract transport, not producer emission or consumer use. Adoption remains unverified; producer and consumer tests stay null until verified in their own repos.",
+        "FORWARDER: PLoT Talchain/plot-lite-service#442 forwards event_risk to ISL; forwarding and the event_risks_applied echo are unverified here.",
+        "ABSENCE: src/graph.ts EventRiskV1Schema ABSENCE comment: absent = today's risk node (linear), byte-identically. No present value stands for absence."
+      ]
+    },
+    {
       "field": "run_delta.goal_chances",
       "declared_in": "schemas:src/boundary/run-delta.ts::RunDeltaSchema.goal_chances + RunDeltaGoalChanceSideSchema / RunDeltaGoalChanceDeltaSchema (0.81.0)",
       "producer": "cee \u2014 src/boundary/run-delta.ts builds the pair from two stored Runs, carrying each Run's own GOAL_CHANCE_LICENSED or GOAL_CHANCE_RANGE licence (DL #87 6035414740)",

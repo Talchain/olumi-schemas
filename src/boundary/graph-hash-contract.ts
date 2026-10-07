@@ -154,8 +154,14 @@ export type CanonicalGraphHashKeepKey =
  * otherwise the old chance reads as CURRENT. Hashed as stored, on the intervention it qualifies. ⚠ NO MASS STALE: the
  * field is absent on every intervention without a stated range, and absent fields are not projected, so only a graph
  * carrying a range moves, once.
+ *
+ * 6 (0.82.0, event_risk.v1 — Science 393023 pilot §4): node `event_risk` joins `node.fields`. A risk's stated
+ * occurrence range, horizon and mitigations decide every option's goal chance and downside, so editing "5–15%" to
+ * "10–30%" must move the revision; otherwise the old chance reads as CURRENT. Hashed as stored. ⚠ NO MASS STALE:
+ * the field is absent on every node that does not carry it, and absent fields are not projected, so only a graph
+ * carrying an event risk moves, once.
  */
-export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 5 as const;
+export const CANONICAL_GRAPH_HASH_PROJECTION_VERSION = 6 as const;
 
 /**
  * The exact nested fields retained by the canonical analysis graph hash.
@@ -209,6 +215,8 @@ export const CANONICAL_GRAPH_HASH_NESTED_PROJECTION = {
       'analysis_participation',
       // 0.64.0 — appended (projection version 4); see the version comment above.
       'proposed_by',
+      // 0.82.0 — appended (projection version 6); see the version comment above.
+      'event_risk',
     ],
     // 0.62.0 — `source`, `unit`, `raw_value` and `std` appended (projection version 3); see the version comment above.
     observed_state_fields: ['value', 'baseline', 'cap', 'source', 'unit', 'raw_value', 'std'],

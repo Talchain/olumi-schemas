@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 141,
-    "same": 76,
+    "same": 80,
     "unresolved": 428
   },
   "open_objects": {
@@ -182,6 +182,36 @@
     "entries": {}
   },
   "fields": {
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].event_risk": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.82.0: src/graph.ts EventRiskV1Schema ABSENCE comment: absent = today's risk node (linear), byte-identically; no present value stands for absence.",
+      "ref": "src/graph.ts - EventRiskV1Schema ABSENCE comment"
+    },
+    "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].event_risk.mitigations": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.82.0: src/graph.ts EventRiskV1Schema preventers contract: mitigations absent = no preventer; no mitigation is applied."
+    },
+    "boundary/NodeV3Schema.event_risk": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.82.0: src/graph.ts EventRiskV1Schema ABSENCE comment: absent = today's risk node (linear), byte-identically; no present value stands for absence.",
+      "ref": "src/graph.ts - EventRiskV1Schema ABSENCE comment"
+    },
+    "root/EventRiskOccurrenceV1Schema.meaning": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.82.0: src/graph.ts EventRiskOccurrenceV1Schema has only at_least_once_within_horizon; meaning absent = that only meaning."
+    },
     "boundary/ActionSchema.action_type": {
       "markers": [
         "optional"

@@ -75,7 +75,8 @@ describe('0.66.0 · S2 — editing a stated range moves the analysis revision', 
   });
 
   it('RED: the projection version moves 4 → 5 (the module\'s own bump rule)', () => {
-    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBe(5);
+    // 0.82.0 event_risk raises the version to 6; the 0.66.0 floor remains 5.
+    expect(CANONICAL_GRAPH_HASH_PROJECTION_VERSION).toBeGreaterThanOrEqual(5);
   });
 
   it('APPEND-ONLY: every pre-0.66.0 intervention field keeps its exact order as the prefix', () => {
@@ -84,7 +85,8 @@ describe('0.66.0 · S2 — editing a stated range moves the analysis revision', 
 
   it('CONTROL: the other vocabularies are unchanged by this release', () => {
     expect(Object.keys(CANONICAL_GRAPH_HASH_NESTED_PROJECTION)).toEqual(['node', 'edge', 'option', 'intervention']);
-    expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields[CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields.length - 1])
+    // 0.82.0 appends event_risk; the original proposed_by position is unchanged.
+    expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.node.fields[16])
       .toBe('proposed_by');
     expect(CANONICAL_GRAPH_HASH_NESTED_PROJECTION.option.fields).toEqual(['id', 'status', 'is_baseline']);
   });
