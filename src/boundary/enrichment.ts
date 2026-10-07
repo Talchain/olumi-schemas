@@ -1125,6 +1125,40 @@ export type EnrichmentRunProvenance = z.infer<typeof EnrichmentRunProvenanceSche
  *     missing": typing it into the V2 envelope would invent a field no V2
  *     producer emits.
  */
+/**
+ * 0.80.0 — PLoT's `dominant_factor` (B1; `src/trust/factor-dominance.ts`
+ * `detectDominantFactor`). It is rank 1 of PLoT's canonical driver order,
+ * emitted ONLY when that factor's `influence_score` clears PLoT's floor and is
+ * more than twice the strongest rival's. A factor claim about the MODEL: it
+ * names no option.
+ *
+ * ⚠ IT IS RANKED BY STRUCTURAL INFLUENCE, NOT BY SENSITIVITY. Under an
+ * unevaluated goal identity PLoT strips the walk-derived scores but keeps the
+ * structural `influence_score`, so the key CAN still be emitted there; and on
+ * any run it can name a factor a consumer's own sensitivity-ranked Driver 1
+ * does not. A consumer must gate it on its own driver authority before calling
+ * the factor dominant (DGAI: the card's clear Driver 1).
+ *
+ * Deliberately NOT exported (it is reachable as
+ * `AnalysisEnrichmentSchema.shape.dominant_factor`): the shape is PLoT's, two
+ * members wide, and a new named export would be a second public surface for a
+ * row this envelope only carries.
+ */
+const EnrichmentDominantFactorSchema = z.object({
+  factor_id: z.string(),
+  factor_label: z.string(),
+}).passthrough();
+
+/**
+ * Absence of `dominant_factor` means "no single factor dominates in this run,
+ * or the run could not say" — never "the first driver dominates". A consumer
+ * must not substitute rank 1 of `factor_sensitivity[]` for a missing key: the
+ * producer withheld the claim because the dominance rule did not hold.
+ */
+const DOMINANT_FACTOR_ABSENCE_RULE =
+  'Absent = PLoT did not find one factor dominant (or could not measure it). ' +
+  'Never substitute rank 1 of factor_sensitivity[] for a missing key.';
+
 export const AnalysisEnrichmentSchema = z.object({
   // --- status spine -------------------------------------------------------
   analysis_status: EnrichmentAnalysisStatus.optional(),
@@ -1220,6 +1254,29 @@ export const AnalysisEnrichmentSchema = z.object({
    * and had never fired because this one key was missing from the list.
    */
   decision_brief: z.object({}).passthrough().nullable().optional(),
+
+  // --- driver dominance + tipping-point status (0.80.0) --------------------
+  /** 0.80.0 — see {@link EnrichmentDominantFactorSchema}. */
+  dominant_factor: EnrichmentDominantFactorSchema.optional().describe(DOMINANT_FACTOR_ABSENCE_RULE),
+  /**
+   * 0.80.0 — PLoT's classification of the post-denormalised `flip_thresholds[]`
+   * (`engine-v3.ts` `flip_thresholds_status`). Producer vocabulary today:
+   * `'computed' | 'all_no_effect' | 'partial_no_effect' | 'unresolved' |
+   * 'unavailable'`. Typed as a BARE string on purpose, like
+   * `EnrichmentOptionComparisonEntrySchema.status`: this envelope's additive
+   * guarantee is that the only new rejections are malformed known keys, so a
+   * sixth producer word must not fail a whole envelope. Consumers NARROW to the
+   * vocabulary they know and treat anything else as absent.
+   */
+  flip_thresholds_status: z.string().optional(),
+  /**
+   * 0.80.0 — the first-seen unresolved `flip_reason` TOKEN (e.g. `'timeout'`,
+   * `'error'`, `'insufficient_precision'`; engine-v3 `flip_thresholds_status_reason`),
+   * emitted when the status is `'unresolved'` or when unresolved rows sit beside
+   * resolved ones. Its PRESENCE is the signal the UI reads ("and others could
+   * not be resolved"); the token itself is never rendered.
+   */
+  flip_thresholds_status_reason: z.string().optional(),
 
   // --- provenance (0.58.0) --------------------------------------------------
   /** See {@link EnrichmentRunProvenanceSchema} and RUN_PROVENANCE_ABSENCE_RULE. */
@@ -1340,6 +1397,24 @@ export const CEE_UI_ENRICHMENT_KEEP_LIST = [
   // block's `enrichment` is `z.record(z.unknown())`, so an older consumer
   // carries the key without knowing it. See EnrichmentRunProvenanceSchema.
   'run_provenance',
+  // 0.80.0 (science census 6 Oct 2026, §2d C3/C5): PLoT's dominant factor and
+  // its tipping-point status, both computed on every /v2/run and dropped here,
+  // one hop before the browser — the same death the VOI family, `critiques` and
+  // `conditional_winners` each had. The UI readers shipped long ago and are
+  // waiting: DGAI `useResultsSectionData` reads `report.dominant_factor` (the
+  // Reasoning tab's "<factor> dominates the model" insight and the post-run
+  // nudge) and `report.flip_thresholds_status` / `_reason` (the tornado's
+  // status note and the Reasoning tipping-point gate).
+  //
+  // Claim-safety: none of the three names an option, so all three are
+  // `pass_through` on a withheld turn, like the VOI family. The status note's
+  // own copy already says "the comparison" rather than "the leading option"
+  // when the leader is withheld (DGAI `flipThresholdStatusNote`).
+  // Safe at every consumer pin: the block's `enrichment` is
+  // `z.record(z.unknown())`, so an older consumer carries the keys unread.
+  'dominant_factor',
+  'flip_thresholds_status',
+  'flip_thresholds_status_reason',
 ] as const;
 export type CeeUiEnrichmentKeepKey = (typeof CEE_UI_ENRICHMENT_KEEP_LIST)[number];
 

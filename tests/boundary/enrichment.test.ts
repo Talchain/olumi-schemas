@@ -364,7 +364,7 @@ describe('F6 (schemas #16) — constraint margins + scale/decision-grade provena
 });
 
 describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
-  it('matches the CEE compose.ts P0B keep-list exactly (19 keys)', () => {
+  it('matches the CEE compose.ts P0B keep-list exactly (22 keys)', () => {
     // Mirrored from olumi-assistants-service
     // src/orchestrator-v5/compose.ts P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP.
     // The CEE-side contract test asserts the same list against its own
@@ -385,6 +385,10 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
     // 0.58.0 adds `run_provenance` (the provisional-run marker); the paired
     // CEE change is the 0.58.0 re-vendor, which adds it to
     // P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP and rules it `pass_through`.
+    // 0.80.0 adds `dominant_factor`, `flip_thresholds_status` and
+    // `flip_thresholds_status_reason` (science census C3/C5); the paired CEE
+    // change is the 0.80.0 re-vendor, which adds all three to
+    // P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP and rules each `pass_through`.
     expect([...CEE_UI_ENRICHMENT_KEEP_LIST].sort()).toEqual([
       'conditional_probabilities',
       'conditional_winners',
@@ -394,10 +398,13 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
       'decision_brief',
       'decision_evpi',
       'decision_review',
+      'dominant_factor',
       'edge_e_values',
       'factor_evppi',
       'factor_sensitivity',
       'flip_thresholds',
+      'flip_thresholds_status',
+      'flip_thresholds_status_reason',
       'inference_warnings',
       'option_comparison',
       'option_comparison_status',
@@ -448,6 +455,8 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
   const ADDED_0_44_0 = ['conditional_winners'] as const;
   // 0.58.0 — run_provenance (the provisional-run marker).
   const ADDED_0_58_0 = ['run_provenance'] as const;
+  // 0.80.0 — PLoT's dominant factor and its tipping-point status (science census C3/C5).
+  const ADDED_0_80_0 = ['dominant_factor', 'flip_thresholds_status', 'flip_thresholds_status_reason'] as const;
 
   /**
    * The ledger, one row per release. 0.44.0 turns the per-release assertion
@@ -469,6 +478,7 @@ describe('CEE_UI_ENRICHMENT_KEEP_LIST — drift pin', () => {
     { release: '0.31.0', added: ADDED_0_31_0 },
     { release: '0.44.0', added: ADDED_0_44_0 },
     { release: '0.58.0', added: ADDED_0_58_0 },
+    { release: '0.80.0', added: ADDED_0_80_0 },
   ] as const;
 
   it('every release is PURELY ADDITIVE (no key ever changed or lost)', () => {

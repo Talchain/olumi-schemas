@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.80.0] — the dominant factor and the tipping-point status reach the browser (science census 6 Oct, §2d C3/C5, §4 rank 4)
+
+**Why.** PLoT computes `dominant_factor`, `flip_thresholds_status` and `flip_thresholds_status_reason` on every /v2/run.
+This list, and CEE's drift-bolted copy of it, dropped all three one hop before the browser. The DGAI readers already
+exist on the served route (`useResultsSectionData`): the Reasoning tab's "<factor> dominates the model" insight, the
+tornado's status note ("No single tested factor changed …") and the Reasoning tipping-point gate. None could fire.
+
+### Added (additive; transport only)
+- `CEE_UI_ENRICHMENT_KEEP_LIST` gains `'dominant_factor'`, `'flip_thresholds_status'`, `'flip_thresholds_status_reason'`
+  (19 → 22 keys). Withheld-turn ruling for CEE: `pass_through` for all three. None names an option.
+- `AnalysisEnrichmentSchema.dominant_factor`: `{ factor_id, factor_label }`, passthrough, optional. Absent means PLoT's
+  dominance rule did not hold; a consumer must never substitute rank 1 of `factor_sensitivity[]`. It ranks by
+  STRUCTURAL influence (and survives a goal-identity withhold), so a consumer must gate it on its own driver
+  authority before calling a factor dominant.
+- `AnalysisEnrichmentSchema.flip_thresholds_status` / `.flip_thresholds_status_reason`: bare optional strings. The
+  producer vocabulary is closed today, but each consumer narrows it, so a new producer word is absent at the reader
+  rather than a refused envelope.
+
+### Not in this release
+- `driver_order`, `factor_stability`, `edge_sensitivity`: no mounted reader on the V5 path. `constraint_results` is
+  already typed; it has no reader, and its probability is the FIRST option's, so it cannot label per-option cards.
+
+### Tests
+- `tests/contracts/release-0.80.0.test.ts`; contract pack `cee-to-ui` keep-list length 19 → 22. Adoption manifest +2
+  `declared` rows.
+
+**Order:** publish → CEE re-vendor 0.80.0 + the same three keys on `P0B_SAFE_TRANSPORT_ENRICHMENT_KEEP` with
+`pass_through` rulings (its drift bolt is RED between the two) → served. The DGAI reader is independent of the pin
+(the block's `enrichment` is `z.record(z.unknown())`) and may land first.
+
 ## [0.79.0] — `run_delivery`: the Run's delivered record, on the AGENT lane (SD-1 Slice R; DL ruling #87, 6 Oct, option A)
 
 **Why.** 0.78 put the delivered record on the Run's own fact (`RunAnalysisResultSchema.delivered_record`). The served
