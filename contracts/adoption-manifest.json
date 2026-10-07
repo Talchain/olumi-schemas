@@ -32,6 +32,24 @@
   },
   "fields": [
     {
+      "field": "run_delta.goal_chances",
+      "declared_in": "schemas:src/boundary/run-delta.ts::RunDeltaSchema.goal_chances + RunDeltaGoalChanceSideSchema / RunDeltaGoalChanceDeltaSchema (0.81.0)",
+      "producer": "cee \u2014 src/boundary/run-delta.ts builds the pair from two stored Runs, carrying each Run's own GOAL_CHANCE_LICENSED or GOAL_CHANCE_RANGE licence (DL #87 6035414740)",
+      "consumer": "ui (DGAI) \u2014 Compare tab shows each option's earlier and latest goal-chance figures in model option order",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "DECLARED ONLY: release-0.81.0.test.ts proves contract transport, not producer emission or consumer use. Producer and consumer tests stay null until verified in their own repos.",
+        "ORDER: DGAI pins 0.81.0 before CEE emits goal_chances; DGAI parses run_delta strictly and an old pin drops the whole block.",
+        "ABSENCE: absent = pre-0.81 producer; consumer says nothing about goal chance. Present = one entry per option compared in BOTH Runs, same matching as win_probabilities, in model option order, possibly empty.",
+        "EACH SIDE IS THAT RUN'S OWN LICENCE: point = displayed pct and rounding (whole when absent); range = recorded range and each end's rounding; withheld = licensed but this option withheld; not_recorded = no licence (before CEE #2625), never re-licensed.",
+        "FIGURES ONLY: no direction or noise verdict, never a leader; goal chances keep their own licence. Never sort by chance or word a direction from the two sides."
+      ]
+    },
+    {
       "field": "framing_question",
       "declared_in": "schemas:src/boundary/olumi-response.ts::OlumiResponseSchema (0.19.0)",
       "producer": null,
