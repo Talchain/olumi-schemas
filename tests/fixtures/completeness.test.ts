@@ -303,8 +303,9 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     //   RunDeliveredOptionSchema, RunDeliveredRecordSchema (SD-1 Slice R: the Run's own delivered record).
     // 0.81.0 (+2): boundary/RunDeltaGoalChanceSideSchema and RunDeltaGoalChanceDeltaSchema.
     // 0.82.0 (+4): root/EventRiskOccurrenceV1Schema, EventRiskMitigationV1Schema, EventRiskV1Schema
-    //   and root/NodeV3Schema#event_risk (the opt-in risk node). Registry: 240 entries.
-    expect(MAXIMAL_FIXTURES.length).toBe(240);
+    //   and root/NodeV3Schema#event_risk (the opt-in risk node).
+    // 0.83.0 (+3, P48): boundary/ChangedSinceRunV1Schema (+ #no_run) and ChangedSinceRunLinkSchema. Registry: 243 entries.
+    expect(MAXIMAL_FIXTURES.length).toBe(243);
   });
 
   it('family keys are unique', () => {
