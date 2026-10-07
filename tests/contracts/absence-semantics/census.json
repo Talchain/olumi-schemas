@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 141,
-    "same": 80,
+    "same": 84,
     "unresolved": 428
   },
   "open_objects": {
@@ -182,6 +182,14 @@
     "entries": {}
   },
   "fields": {
+    "boundary/ChangedSinceRunV1Schema.since_run_id": {
+      "markers": [
+        "nullable"
+      ],
+      "verdict": "same",
+      "note": "0.83.0: src/boundary/changed-since-run.ts since_run_id comment: null = no Run recorded yet (every applied change is since); the key is required, so absence never occurs.",
+      "ref": "src/boundary/changed-since-run.ts - since_run_id comment"
+    },
     "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].event_risk": {
       "markers": [
         "optional"
@@ -204,6 +212,30 @@
       "verdict": "same",
       "note": "0.82.0: src/graph.ts EventRiskV1Schema ABSENCE comment: absent = today's risk node (linear), byte-identically; no present value stands for absence.",
       "ref": "src/graph.ts - EventRiskV1Schema ABSENCE comment"
+    },
+    "orchestrator/EditGraphAffectedEntitySchema.from": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.83.0: src/orchestrator/handler-results.ts from/to comment: only on kind 'edge', both together (superRefine); absent = the link is not named (counted). No present value stands for absence.",
+      "ref": "src/orchestrator/handler-results.ts - EditGraphAffectedEntitySchema from/to comment"
+    },
+    "orchestrator/EditGraphAffectedEntitySchema.id": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.83.0: src/orchestrator/handler-results.ts id comment: absent = an older receipt or an emitter not yet carrying it; the consumer counts it and never matches by label. No present value stands for absence.",
+      "ref": "src/orchestrator/handler-results.ts - EditGraphAffectedEntitySchema id comment"
+    },
+    "orchestrator/EditGraphAffectedEntitySchema.to": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.83.0: as .from (both together, kind 'edge' only).",
+      "ref": "src/orchestrator/handler-results.ts - EditGraphAffectedEntitySchema from/to comment"
     },
     "root/EventRiskOccurrenceV1Schema.meaning": {
       "markers": [

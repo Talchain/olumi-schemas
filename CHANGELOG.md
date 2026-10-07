@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### For 0.83.0 (bundled with P04 by the DL) — what changed since the last Run, by id (P48, audit #27)
+
+**Why.** "What changed in the model since the last Run" existed only as the LLM's `recent_changes`, which drops every
+id by contract. The canvas could not show where the model moved, and a reload lost even the 2 s pulse. Most
+AI-applied changes record an `edit_graph` receipt whose `affected_entities` named labels only, so no consumer could
+locate them without matching by label.
+
+**Added (additive, optional; no consumer behaviour changes until it adopts):**
+- `orchestrator/EditGraphAffectedEntitySchema`: `id` (a node's graph id) and `from`/`to` (a link's ends, `kind:'edge'`
+  only, both together). A `superRefine` refuses an id on a link, one end alone, and ends on a node. Absent = an older
+  receipt: counted, never matched by label.
+- `boundary/ChangedSinceRunV1Schema` (+ `ChangedSinceRunLinkSchema`): `{ version: 1, since_run_id | null, node_ids,
+  links[{from,to}], unattributed_changes, complete }`, `.strict()`. Served by CEE on the scenario graph read's
+  conversation opt-in (CEE #2772). Absence of the block = not answered, never "nothing changed".
+
+**Census:** 4 rows, all `same`, each citing its schema comment. **Fixtures:** maximal + no-Run variants, plus the link.
+
 ## [0.82.0] — a risk is an EVENT that may happen within a horizon (event_risk.v1, Science 393023 pilot §4)
 
 **Why.** Today a `risk` node is evaluated as a linear quantity: a parentless, valueless risk is inert (0), so "the

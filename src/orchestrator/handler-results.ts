@@ -594,7 +594,23 @@ export type EditGraphImpact = z.infer<typeof EditGraphImpactSchema>;
 export const EditGraphAffectedEntitySchema = z.object({
   kind: z.union([NodeKind, z.literal('edge')]),
   label: z.string().min(1),
-}).strict();
+  /**
+   * 0.83.0 (P48) — the touched NODE's graph id, so "what changed since the last Run" can name the element instead of
+   * counting it. Absent = an older receipt (or an emitter not yet carrying it): the consumer counts it, and never
+   * matches by `label`. Never set on `kind: 'edge'` (a CEE link has no id of its own; see `from`/`to`).
+   */
+  id: z.string().min(1).max(200).optional(),
+  /** 0.83.0 (P48) — a touched LINK's two ends. Only on `kind: 'edge'`, and only both together. */
+  from: z.string().min(1).max(200).optional(),
+  to: z.string().min(1).max(200).optional(),
+}).strict().superRefine((e, ctx) => {
+  if (e.kind === 'edge') {
+    if (e.id !== undefined) ctx.addIssue({ code: 'custom', path: ['id'], message: 'a link has no id; name it by from/to' });
+    if ((e.from === undefined) !== (e.to === undefined)) ctx.addIssue({ code: 'custom', path: ['from'], message: 'a link names both ends or neither' });
+  } else if (e.from !== undefined || e.to !== undefined) {
+    ctx.addIssue({ code: 'custom', path: ['from'], message: 'from/to are only for kind "edge"' });
+  }
+});
 export type EditGraphAffectedEntity = z.infer<typeof EditGraphAffectedEntitySchema>;
 
 export const EditGraphResultSchema = z.object({
