@@ -64,7 +64,7 @@
   },
   "counts": {
     "distinct": 141,
-    "same": 84,
+    "same": 85,
     "unresolved": 428
   },
   "open_objects": {
@@ -189,6 +189,14 @@
       "verdict": "same",
       "note": "0.83.0: src/boundary/changed-since-run.ts since_run_id comment: null = no Run recorded yet (every applied change is since); the key is required, so absence never occurs.",
       "ref": "src/boundary/changed-since-run.ts - since_run_id comment"
+    },
+    "boundary/ChangedSinceRunV1Schema.since_run_computed_at": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "same",
+      "note": "0.83.0: src/boundary/changed-since-run.ts since_run_computed_at comment: absent = the Run's stamp is unknown and a consumer must not bind by it; no present value stands for absence.",
+      "ref": "src/boundary/changed-since-run.ts - since_run_computed_at comment"
     },
     "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].event_risk": {
       "markers": [

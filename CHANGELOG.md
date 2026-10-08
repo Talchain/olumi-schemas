@@ -21,8 +21,11 @@ locate them without matching by label.
 - `boundary/ChangedSinceRunV1Schema` (+ `ChangedSinceRunLinkSchema`): `{ version: 1, since_run_id | null, node_ids,
   links[{from,to}], unattributed_changes, complete }`, `.strict()`. Served by CEE on the scenario graph read's
   conversation opt-in (CEE #2772). Absence of the block = not answered, never "nothing changed".
+  Optional `since_run_computed_at` (ISO datetime): the Run's `computed_at`, the same stamp
+  `analysis_state.run_state.computed_at` names it by on a `complete_stale` read (which serves no Run id), so a consumer
+  binds the set to the Run it is showing (DL seam ruling on #87). Present only with a `since_run_id`.
 
-**Census:** 4 rows, all `same`, each citing its schema comment. **Fixtures:** maximal + no-Run variants, plus the link.
+**Census:** 5 rows, all `same`, each citing its schema comment. **Fixtures:** maximal + no-Run variants, plus the link.
 
 ## [0.82.0] — a risk is an EVENT that may happen within a horizon (event_risk.v1, Science 393023 pilot §4)
 

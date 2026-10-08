@@ -14,6 +14,11 @@ describe('ChangedSinceRunV1Schema', () => {
     const { since_run_id: _drop, ...missing } = block;
     expect(ChangedSinceRunV1Schema.safeParse(missing).success).toBe(false);
   });
+  it('the Run\'s computed_at parses as the stamp run_state names it by; a non-ISO stamp does not', () => {
+    const stamped = { ...block, since_run_computed_at: '2026-10-07T21:00:00.000Z' };
+    expect(ChangedSinceRunV1Schema.parse(stamped)).toEqual(stamped);
+    expect(ChangedSinceRunV1Schema.safeParse({ ...block, since_run_computed_at: 'yesterday' }).success).toBe(false);
+  });
   it.each([
     ['an unknown key (strict)', { ...block, labels: ['Price'] }],
     ['a negative count', { ...block, unattributed_changes: -1 }],

@@ -26,6 +26,12 @@ export const ChangedSinceRunV1Schema = z.object({
   version: z.literal(1),
   /** The Run the set is relative to; `null` = no Run recorded yet (every applied change is since). */
   since_run_id: Id.nullable(),
+  /**
+   * The Run's `computed_at` (its stored result), the SAME stamp `analysis_state.run_state.computed_at` names it by on a
+   * `complete_stale` read, where no Run id is served. A consumer binds the set to the Run it is SHOWING with it there.
+   * Present only with a `since_run_id`; absent = the Run's stamp is unknown, and a consumer must not bind by it.
+   */
+  since_run_computed_at: z.string().datetime().optional(),
   /** Nodes added or changed since the Run. Removed elements are not listed (nothing left to mark). */
   node_ids: z.array(Id).max(200),
   /** Links added or changed since the Run, by their two ends (CEE links carry no id of their own). */

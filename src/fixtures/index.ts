@@ -1869,13 +1869,16 @@ export const maximalChangedSinceRunLink = deepFreeze({ from: 'fixture_factor_pri
 export const maximalChangedSinceRun = deepFreeze({
   version: 1,
   since_run_id: 'fixture_run_b',
+  since_run_computed_at: '2026-10-07T21:00:00.000Z',
   node_ids: ['fixture_factor_price'],
   links: [maximalChangedSinceRunLink],
   unattributed_changes: 1,
   complete: true,
 });
 /** No Run recorded yet: `since_run_id` null (every applied change is since). */
-export const maximalChangedSinceRunNoRun = deepFreeze({ ...maximalChangedSinceRun, since_run_id: null, complete: false });
+export const maximalChangedSinceRunNoRun = deepFreeze({
+  version: 1, since_run_id: null, node_ids: ['fixture_factor_price'], links: [maximalChangedSinceRunLink], unattributed_changes: 1, complete: false,
+});
 
 /**
  * 0.70.0 — the typed reason for EMPTY win shares (CANVAS 5936762171). It travels only beside an empty
