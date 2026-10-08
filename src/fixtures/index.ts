@@ -262,6 +262,9 @@ import {
   DecisionRecordAnalysisSummarySchema,
   DecisionRecordPredictionSchema,
   DecisionRecordOutcomeSchema,
+  // 0.83.0 (P48)
+  ChangedSinceRunV1Schema,
+  ChangedSinceRunLinkSchema,
 } from '../boundary/index.js';
 
 // ----------------------------------------------------------------------------
@@ -1859,6 +1862,22 @@ export const maximalRunDelta = deepFreeze({
     // 0.78.0 — a link's size moved inside its band: the user's own figure, per the same source change.
     maximalRunDeltaInputChangeEffect,
   ],
+});
+
+/** 0.83.0 (P48) — what changed since the last Run, by id (the scenario graph read's `changed_since_run`). */
+export const maximalChangedSinceRunLink = deepFreeze({ from: 'fixture_factor_price', to: 'fixture_outcome_revenue' });
+export const maximalChangedSinceRun = deepFreeze({
+  version: 1,
+  since_run_id: 'fixture_run_b',
+  since_run_computed_at: '2026-10-07T21:00:00.000Z',
+  node_ids: ['fixture_factor_price'],
+  links: [maximalChangedSinceRunLink],
+  unattributed_changes: 1,
+  complete: true,
+});
+/** No Run recorded yet: `since_run_id` null (every applied change is since). */
+export const maximalChangedSinceRunNoRun = deepFreeze({
+  version: 1, since_run_id: null, node_ids: ['fixture_factor_price'], links: [maximalChangedSinceRunLink], unattributed_changes: 1, complete: false,
 });
 
 /**
@@ -3575,6 +3594,9 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   { family: 'boundary/RunDeltaGoalChanceDeltaSchema', schema: RunDeltaGoalChanceDeltaSchema, fixture: maximalRunDeltaGoalChanceDelta },
   // --- 0.70.0 — the typed reason for empty win shares (needs an empty list, so not on the C1 delta) -----------------
   { family: 'boundary/RunDeltaSchema#prior_withheld', schema: RunDeltaSchema, fixture: maximalRunDeltaPriorWithheld },
+  { family: 'boundary/ChangedSinceRunV1Schema', schema: ChangedSinceRunV1Schema, fixture: maximalChangedSinceRun },
+  { family: 'boundary/ChangedSinceRunV1Schema#no_run', schema: ChangedSinceRunV1Schema, fixture: maximalChangedSinceRunNoRun },
+  { family: 'boundary/ChangedSinceRunLinkSchema', schema: ChangedSinceRunLinkSchema, fixture: maximalChangedSinceRunLink },
   // --- 0.68.0 — SC-24 endpoints + input changes ---------------------------------------
   { family: 'boundary/RunDeltaEndpointSchema', schema: RunDeltaEndpointSchema, fixture: maximalRunDeltaEndpoint },
   { family: 'boundary/RunDeltaEndpointsSchema', schema: RunDeltaEndpointsSchema, fixture: maximalRunDeltaEndpoints },

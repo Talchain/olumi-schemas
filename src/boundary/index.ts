@@ -200,6 +200,10 @@ export type {
   RunDeltaInputChange,
 } from './run-delta.js';
 
+// 0.83.0 (P48): what changed since the last Run, by id — the scenario graph read's `changed_since_run`.
+export { ChangedSinceRunV1Schema, ChangedSinceRunLinkSchema } from './changed-since-run.js';
+export type { ChangedSinceRunV1, ChangedSinceRunLink } from './changed-since-run.js';
+
 // Persisted model-version history and semantic diff. This is intentionally a
 // separate contract family from run_delta: it compares model snapshots, not
 // stochastic analysis executions.
