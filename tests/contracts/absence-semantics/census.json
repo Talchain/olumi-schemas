@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 141,
+    "distinct": 142,
     "same": 80,
     "unresolved": 428
   },
@@ -182,6 +182,14 @@
     "entries": {}
   },
   "fields": {
+    "orchestrator/RunAnalysisResultSchema.evaluated_scenario_revision": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = legacy/unknown (Runs recorded before 0.83.0), never revision zero or the current revision. A present value names the revision of the SAME persisted snapshot sent to analysis, frozen by the producer BEFORE dispatch. Never re-read at result persistence. ORCHESTRATOR_INTERNAL: never on the UI wire.",
+      "ref": "src/orchestrator/handler-results.ts - RunAnalysisResultSchema.evaluated_scenario_revision doc comment (0.83.0)"
+    },
     "boundary/ModelVersionMutationReceiptV1Schema.graph.nodes[].event_risk": {
       "markers": [
         "optional"

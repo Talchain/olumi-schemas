@@ -32,6 +32,24 @@
   },
   "fields": [
     {
+      "field": "run_analysis.evaluated_scenario_revision",
+      "declared_in": "schemas:src/orchestrator/handler-results.ts::RunAnalysisResultSchema.evaluated_scenario_revision (0.83.0)",
+      "producer": null,
+      "consumer": null,
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "af B2, DL 58e392 GO, 9 Oct. CEE producer must freeze the scenario revision of the SAME persisted snapshot whose graph was sent to analysis BEFORE dispatch. Never re-read at result persistence.",
+        "ABSENCE: legacy/unknown (Runs recorded before 0.83.0), never zero or the current revision. ORCHESTRATOR_INTERNAL: never on the UI wire.",
+        "DECLARED ONLY: release-0.83.0.test.ts proves contract transport, not producer emission or consumer use. Adoption remains unverified; producer and consumer tests stay null.",
+        "HIGH / READER FIRST: RunAnalysisResultSchema is strict; a parser on an older pin REJECTS a payload carrying the key. Publish -> re-pin every parser to 0.83.0 and serve every reader on the shared database (staging, prod and every other reading instance) -> only then may any producer stamp it.",
+        "ROLLBACK: after the first stamped Run is persisted, no reader of those rows may roll back below 0.83.0. Roll back the writer, never the reader."
+      ]
+    },
+    {
       "field": "event_risk",
       "declared_in": "schemas:src/graph.ts::NodeV3Schema.event_risk + EventRiskV1Schema / EventRiskOccurrenceV1Schema / EventRiskMitigationV1Schema (0.82.0)",
       "producer": "cee \u2014 Talchain/olumi-assistants-service#2752 declares event_risk on risk nodes",

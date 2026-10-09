@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.83.0] — the scenario revision of the snapshot actually analysed (af B2, DL 58e392 GO, 9 Oct)
+
+**Why.** A Run must name the revision of the SAME persisted snapshot whose graph was sent to analysis. The producer
+freezes it BEFORE dispatch; re-reading the scenario revision at result persistence could attribute a Run to a later edit.
+
+### Added (additive and optional; READER-FIRST, HIGH)
+- `RunAnalysisResultSchema.evaluated_scenario_revision?` = a nonnegative integer. `0` is a valid recorded revision.
+- Absent = legacy/unknown (Runs recorded before 0.83.0), never zero or today's revision. No default or backfill.
+- `ORCHESTRATOR_INTERNAL`: persisted handler-fact payload only, never on the UI wire. The existing fixture-coverage
+  exclusion remains; release fixtures cover absence and revisions `0` and `7` through the result and stored-fact union.
+- **Absence semantics:** census `distinct`; no present revision expresses legacy/unknown.
+- **Adoption:** one `declared` manifest row; producer emission and consumer use remain unverified.
+
+### Tests
+- `tests/contracts/release-0.83.0.test.ts`: absent parses; `0` and `7` round-trip; `-1`, `1.5`, `"7"` and `null` refuse;
+  an UNKNOWN sibling key still refuses. No other schema changes.
+
+**⛔ Persisted-fact order (HIGH):** `RunAnalysisResultSchema` is `.strict()`. A parser on an older pin REJECTS a payload
+carrying the new key. Publish → re-pin every parser to 0.83.0 and serve every READER on the shared database (staging,
+prod and every other reading instance) → only then let a producer stamp it. A staging-only re-pin is insufficient.
+
+**⛔ Rollback:** after the first stamped Run is persisted, no reader of those rows may roll back below 0.83.0.
+Roll back the writer, never the reader.
+
 ## [0.82.0] — a risk is an EVENT that may happen within a horizon (event_risk.v1, Science 393023 pilot §4)
 
 **Why.** Today a `risk` node is evaluated as a linear quantity: a parentless, valueless risk is inert (0), so "the

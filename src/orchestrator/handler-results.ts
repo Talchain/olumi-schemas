@@ -287,6 +287,11 @@ export const RunAnalysisResultSchema = z.object({
   /** Hash of the analysis-affecting graph fields at the moment run_analysis
    *  executed. CEE computes via computeAnalysisAffectingGraphHash. */
   graph_hash_at_run: z.string().optional(),
+  /** The scenario revision of the SAME persisted snapshot whose graph was sent to analysis,
+   *  frozen by the producer BEFORE dispatch. Never re-read at result persistence.
+   *  Absent = legacy/unknown (Runs recorded before 0.83.0).
+   *  ORCHESTRATOR_INTERNAL: never on the UI wire. */
+  evaluated_scenario_revision: z.number().int().nonnegative().optional(),
   /** ISO timestamp of the run_analysis execution (NOT the response-emit
    *  time). Read by the freshness derivation so analysis_ready.computed_at
    *  reflects when the analysis ran, not when this turn finalised. */

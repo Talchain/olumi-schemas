@@ -4396,6 +4396,8 @@ export const FIXTURE_COVERAGE_EXCLUSIONS: FixtureCoverageExclusions = Object.fre
   'orchestrator/SetFactorValueArgsSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/AddConstraintArgsSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/AdjustEdgeStrengthArgsSchema': ORCHESTRATOR_INTERNAL,
+  // 0.83.0 — evaluated_scenario_revision is persisted-only, never on the UI wire;
+  // the Run result keeps this exclusion. Release fixtures cover absent / 0 / 7.
   'orchestrator/RunAnalysisResultSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainResultResultSchema': ORCHESTRATOR_INTERNAL,
   'orchestrator/ExplainResultsResultSchema': ORCHESTRATOR_INTERNAL,
