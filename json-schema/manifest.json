@@ -122,6 +122,11 @@
       "definition": "#/definitions/EnrichmentOutcomeStatsSchema"
     },
     {
+      "export": "EnrichmentProbabilityPrecisionSchema",
+      "file": "EnrichmentProbabilityPrecisionSchema.json",
+      "definition": "#/definitions/EnrichmentProbabilityPrecisionSchema"
+    },
+    {
       "export": "EnrichmentRobustnessEdgeSchema",
       "file": "EnrichmentRobustnessEdgeSchema.json",
       "definition": "#/definitions/EnrichmentRobustnessEdgeSchema"

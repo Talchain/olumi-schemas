@@ -32,6 +32,36 @@
   },
   "fields": [
     {
+      "field": "prob_satisfied_precision",
+      "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentConstraintResultSchema (0.83.0)",
+      "producer": "isl \u2014 sampling precision forwarded by PLoT",
+      "consumer": "cee \u2014 goal-chance precision; DGAI renders licensed results",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "Batch C contract transport only; consumer adoption and producer emission are not verified in this schema-only change.",
+        "Absence means precision is unavailable, never zero sampling error. CEE, PLoT and DGAI must re-vendor 0.83.0."
+      ]
+    },
+    {
+      "field": "joint_probability_precision",
+      "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentOptionComparisonEntrySchema + DecisionRecordPredictionSchema (0.83.0)",
+      "producer": "isl \u2014 sampling precision forwarded by PLoT",
+      "consumer": "cee \u2014 goal-chance precision; DGAI renders licensed results",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "Batch C contract transport only; consumer adoption and producer emission are not verified in this schema-only change.",
+        "Absence means precision is unavailable, never zero sampling error. CEE, PLoT and DGAI must re-vendor 0.83.0."
+      ]
+    },
+    {
       "field": "event_risk",
       "declared_in": "schemas:src/graph.ts::NodeV3Schema.event_risk + EventRiskV1Schema / EventRiskOccurrenceV1Schema / EventRiskMitigationV1Schema (0.82.0)",
       "producer": "cee \u2014 Talchain/olumi-assistants-service#2752 declares event_risk on risk nodes",

@@ -218,6 +218,17 @@ export type EnrichmentConstraintMargin =
   z.infer<typeof EnrichmentConstraintMarginSchema>;
 
 /**
+ * 0.83.0 — Monte Carlo sampling precision from ISL, forwarded verbatim by PLoT.
+ * This measures simulation precision, not uncertainty in the model's assumptions.
+ * Absence means precision was not supplied; never infer zero error or a sample count.
+ */
+export const EnrichmentProbabilityPrecisionSchema = z.object({
+  n_informative: z.number().int().nonnegative(),
+  standard_error: z.number().finite().nonnegative(),
+}).strict();
+export type EnrichmentProbabilityPrecision = z.infer<typeof EnrichmentProbabilityPrecisionSchema>;
+
+/**
  * Per-option comparison entry. [F1][F2].
  *
  * `option_id` is the only field every evidenced emission carries. `id` /
@@ -241,6 +252,8 @@ export const EnrichmentOptionComparisonEntrySchema = z.object({
   probability_of_goal: z.number().optional(),
   win_probability: z.number().optional(),
   probability_of_joint_goal: z.number().optional(),
+  /** Absent = joint sampling precision was not supplied; never infer zero error. */
+  joint_probability_precision: EnrichmentProbabilityPrecisionSchema.optional(),
   constraint_probabilities: z.record(z.string(), z.number()).optional(),
   goal_fit_basis: EnrichmentGoalFitBasisSchema.optional(),
   /**
@@ -921,10 +934,12 @@ export type EnrichmentScaleProvenance =
 export const EnrichmentConstraintResultSchema = z.object({
   constraint_id: z.string().min(1),
   node_id: z.string(),
-  operator: z.string(), // '>=' | '<=' [F2]
+  operator: z.string(), // '>=' | '<=' | '>' | '<'; open for backward compatibility
   value: z.number(),
   /** Absent = ISL echoed the constraint without prob_satisfied (honest absence). */
   probability: z.number().optional(),
+  /** Absent = marginal sampling precision was not supplied; ISL's field name is preserved. */
+  prob_satisfied_precision: EnrichmentProbabilityPrecisionSchema.optional(),
   /**
    * F6 — normalisation-scale provenance for this constraint's threshold
    * (contract-ahead; see EnrichmentScaleProvenanceSchema).

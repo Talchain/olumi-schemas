@@ -307,8 +307,8 @@ describe('DraftGoalConstraintSchema', () => {
     expect(DraftGoalConstraintSchema.parse(c)).toEqual(c);
   });
 
-  it('rejects an operator outside the ASCII pair CEE emits', () => {
-    for (const operator of ['<', '>', 'lte', '≤', 'eq']) {
+  it('rejects an operator outside the four ASCII comparisons', () => {
+    for (const operator of ['=', 'lte', '≤', 'eq']) {
       expect(DraftGoalConstraintSchema.safeParse({ ...BUDGET_CONSTRAINT, operator }).success)
         .toBe(false);
     }

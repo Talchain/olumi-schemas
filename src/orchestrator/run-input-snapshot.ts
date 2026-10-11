@@ -117,7 +117,7 @@ export const RunInputConstraintSchema = z.object({
   constraint_id: Id,
   node_id: Id,
   label: Label.optional(),
-  operator: z.enum(['>=', '<=']),
+  operator: z.enum(['>=', '<=', '>', '<']),
   raw: z.number().finite(),
   unit: Unit.optional(),
   frame: z.string().min(1).max(32).optional(),

@@ -72,7 +72,7 @@ describe('0.68.0 · input_snapshot on the Run fact — what the Run was SENT', (
 
   it('the goal comparator and limit operator are closed sets (the node\'s held comparator, as sent)', () => {
     expect(RunInputSnapshotSchema.safeParse({ ...SNAPSHOT, goal: { ...SNAPSHOT.goal, operator: 'above' } }).success).toBe(false);
-    expect(RunInputSnapshotSchema.safeParse({ ...SNAPSHOT, constraints: [{ ...SNAPSHOT.constraints[0], operator: '>' }] }).success).toBe(false);
+    expect(RunInputSnapshotSchema.safeParse({ ...SNAPSHOT, constraints: [{ ...SNAPSHOT.constraints[0], operator: 'above' }] }).success).toBe(false);
   });
 
   it('a setting always records the number PLoT was sent; the authored figure is optional (an encoded-only option)', () => {

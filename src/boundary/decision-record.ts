@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EnrichmentProbabilityPrecisionSchema } from './enrichment.js';
 
 // ----------------------------------------------------------------------------
 // DecisionRecordSchema (0.15.0; 0.16.0 additive scoring/provenance fields) —
@@ -97,6 +98,8 @@ export const DecisionRecordPredictionSchema = z.object({
   confidence_source: DecisionRecordConfidenceSource.optional(),
   probability_of_goal: z.number().min(0).max(1).optional(),
   probability_of_joint_goal: z.number().min(0).max(1).optional(),
+  /** 0.83.0: verbatim joint sampling precision; absent = not recorded, never zero error. */
+  joint_probability_precision: EnrichmentProbabilityPrecisionSchema.optional(),
 }).strict();
 export type DecisionRecordPrediction = z.infer<typeof DecisionRecordPredictionSchema>;
 

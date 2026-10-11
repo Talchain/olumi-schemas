@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 141,
+    "distinct": 144,
     "same": 80,
     "unresolved": 428
   },
@@ -4600,6 +4600,30 @@
       ],
       "verdict": "same",
       "note": "0.76.0 structural challenge. A REQUIRED key, always serialised. null = no declared probability boundary, or not a constraint claim (C7); constraint_side_changed/same require a populated threshold/comparator (C5)."
+    },
+    "boundary/EnrichmentOptionComparisonEntrySchema.joint_probability_precision": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent means sampling precision was not supplied or recorded; never infer zero error or a sample count.",
+      "ref": "src/boundary/enrichment.ts EnrichmentProbabilityPrecisionSchema absence comment (0.83.0); src/boundary/decision-record.ts joint_probability_precision comment."
+    },
+    "boundary/EnrichmentConstraintResultSchema.prob_satisfied_precision": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent means sampling precision was not supplied or recorded; never infer zero error or a sample count.",
+      "ref": "src/boundary/enrichment.ts EnrichmentProbabilityPrecisionSchema absence comment (0.83.0); src/boundary/decision-record.ts joint_probability_precision comment."
+    },
+    "boundary/DecisionRecordPredictionSchema.joint_probability_precision": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent means sampling precision was not supplied or recorded; never infer zero error or a sample count.",
+      "ref": "src/boundary/enrichment.ts EnrichmentProbabilityPrecisionSchema absence comment (0.83.0); src/boundary/decision-record.ts joint_probability_precision comment."
     }
   }
 }

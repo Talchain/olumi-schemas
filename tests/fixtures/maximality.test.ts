@@ -134,6 +134,7 @@ describe('negative control 1 — a stripped fixture is caught', () => {
     'confidence_source',
     'probability_of_goal',
     'probability_of_joint_goal',
+    'joint_probability_precision',
   ];
 
   /**
@@ -164,7 +165,7 @@ describe('negative control 1 — a stripped fixture is caught', () => {
     expect(DecisionRecordPredictionSchema.parse(stripped)).toStrictEqual(stripped);
   });
 
-  it('the walker flags exactly the four stripped optional fields', () => {
+  it('the walker flags exactly the stripped optional fields', () => {
     const gaps = auditMaximality(strippedRegistry(), opts);
     expect(gaps.map((g) => g.key).sort()).toStrictEqual(
       STRIPPED_OPTIONALS.map((f) => `boundary/DecisionRecordPredictionSchema.${f}`).sort(),
@@ -186,7 +187,7 @@ describe('negative control 1 — a stripped fixture is caught', () => {
       { schemaNames },
     );
     // every field, required `statement` included, is unpopulated
-    expect(gaps.length).toBe(5);
+    expect(gaps.length).toBe(6);
     expect(gaps.map((g) => g.key)).toContain(
       'boundary/DecisionRecordPredictionSchema.statement',
     );
@@ -323,6 +324,7 @@ describe('negative control 4 — the exclusions escape hatch is honoured, not ig
           confidence_source: 'llm_self_report',
           probability_of_goal: 0.5,
           probability_of_joint_goal: 0.25,
+          joint_probability_precision: { n_informative: 1000, standard_error: 0.0137 },
         },
       } as MaximalFixtureEntry,
     ];

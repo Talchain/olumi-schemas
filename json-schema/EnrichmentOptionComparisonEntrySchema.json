@@ -86,6 +86,24 @@
         "probability_of_joint_goal": {
           "type": "number"
         },
+        "joint_probability_precision": {
+          "type": "object",
+          "properties": {
+            "n_informative": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "standard_error": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "n_informative",
+            "standard_error"
+          ],
+          "additionalProperties": false
+        },
         "constraint_probabilities": {
           "type": "object",
           "additionalProperties": {
