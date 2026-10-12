@@ -198,6 +198,7 @@ import {
   AnalysisEnrichmentSchema,
   EnrichmentOutcomeStatsSchema,
   EnrichmentGoalFitBasisSchema,
+  EnrichmentProbabilityPrecisionSchema,
   EnrichmentOptionComparisonEntrySchema,
   EnrichmentConfidenceProvenanceSchema,
   EnrichmentFactorSensitivityEntrySchema,
@@ -903,6 +904,11 @@ export const maximalEnrichmentConstraintMargin = deepFreeze({
   [PROBE]: true,
 });
 
+export const maximalEnrichmentProbabilityPrecision = deepFreeze({
+  n_informative: 1000,
+  standard_error: 0.0156,
+});
+
 export const maximalEnrichmentOptionComparisonEntry = deepFreeze({
   option_id: ID_OPTION_A,
   option_label: LABEL_OPTION_A,
@@ -918,7 +924,9 @@ export const maximalEnrichmentOptionComparisonEntry = deepFreeze({
   probability_of_goal: 0.71,
   win_probability: 0.62,
   probability_of_joint_goal: 0.58,
+  probability_of_joint_goal_precision: maximalEnrichmentProbabilityPrecision,
   constraint_probabilities: { [ID_CONSTRAINT]: 0.83 },
+  constraint_probabilities_precision: { [ID_CONSTRAINT]: maximalEnrichmentProbabilityPrecision },
   goal_fit_basis: maximalEnrichmentGoalFitBasis,
   // F6 — graded breach margins + fail-closed decision-grade marker.
   constraint_margins: [maximalEnrichmentConstraintMargin],
@@ -1233,6 +1241,7 @@ export const maximalEnrichmentConstraintResult = deepFreeze({
   operator: '>=',
   value: 100,
   probability: 0.83,
+  probability_precision: maximalEnrichmentProbabilityPrecision,
   // F6 — normalisation-scale provenance + fail-closed decision-grade marker.
   scale_provenance: maximalEnrichmentScaleProvenance,
   // 0.61.0 (R1) — ISL's verdict on the frame the limit was stated in.
@@ -3143,6 +3152,7 @@ export const maximalDecisionRecordPrediction = deepFreeze({
   confidence_source: 'user_stated',
   probability_of_goal: 0.71,
   probability_of_joint_goal: 0.58,
+  joint_probability_precision: maximalEnrichmentProbabilityPrecision,
 });
 
 export const maximalDecisionRecordOutcome = deepFreeze({
@@ -3857,6 +3867,11 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
     family: 'boundary/EnrichmentOutcomeStatsSchema',
     schema: EnrichmentOutcomeStatsSchema,
     fixture: maximalEnrichmentOutcomeStats,
+  },
+  {
+    family: 'boundary/EnrichmentProbabilityPrecisionSchema',
+    schema: EnrichmentProbabilityPrecisionSchema,
+    fixture: maximalEnrichmentProbabilityPrecision,
   },
   {
     family: 'boundary/EnrichmentGoalFitBasisSchema',

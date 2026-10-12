@@ -25,7 +25,8 @@ import { RunResult } from './enums.js';
 export const LegacyGoalConstraintStubSchema = z.object({
   id: z.string().min(1),
   label: z.string().min(1),
-  bound: z.enum(['lt', 'lte', 'gt', 'gte', 'eq']),
+  // 0.83.0: symbolic comparisons accepted additively; legacy tokens remain valid.
+  bound: z.enum(['lt', 'lte', 'gt', 'gte', 'eq', '>=', '<=', '>', '<']),
   value: z.number(),
 }).strict();
 export type LegacyGoalConstraintStub = z.infer<typeof LegacyGoalConstraintStubSchema>;

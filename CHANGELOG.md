@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.83.0] — strict comparisons and goal-chance sampling precision (Recovery Batch C)
+
+- Additive: `RunInputConstraintSchema.operator` and `DraftGoalConstraintSchema.operator` accept
+  `>` / `<` alongside `>=` / `<=`. Strict comparisons must survive transport unchanged.
+  `RunInputGoalSchema.operator` and structural-challenge probability boundaries already support all four.
+  The legacy `V2RunRequestSchema.constraints[].bound` also accepts all four symbols, retaining its five old tokens.
+  The result-side `EnrichmentConstraintResultSchema.operator` remains an open string for compatibility.
+- Optional sampling precision under PLoT's wire names (PLoT #448 is the producer; its names win):
+  - `option_comparison[].probability_of_joint_goal_precision`, beside a delivered `probability_of_joint_goal`;
+  - `option_comparison[].constraint_probabilities_precision`, a record keyed by the same `constraint_id`s as
+    `constraint_probabilities`;
+  - `constraint_results[].probability_precision`, beside `probability` (PLoT maps ISL's `prob_satisfied_precision` onto it);
+  - `DecisionRecordPredictionSchema.joint_probability_precision` on stored predictions (a record key, not a wire key).
+
+  All use strict `EnrichmentProbabilityPrecisionSchema`: `{ n_informative: positive integer, standard_error: finite, 0 to 0.5 }`,
+  matching PLoT's egress guard. These are simulation precision, not assumption uncertainty. Absent means not
+  supplied/recorded; no defaults or goal-chance licence are inferred. The pre-publication names
+  `joint_probability_precision` (option entry) and `prob_satisfied_precision` were never PLoT's and are not typed.
+- Existing declared 0.82.0 payloads remain valid. Regenerated JSON schemas, maximal fixtures, absence census,
+  and contract constants; adoption is declared only, with consumer use unverified.
+- CEE, PLoT and DGAI must re-vendor 0.83.0 and update their local mappings/readers before using the new fields.
+  Schema transport does not itself complete the marketing joint-goal journey or compute exact-tie probabilities.
+
 ## [0.82.0] — a risk is an EVENT that may happen within a horizon (event_risk.v1, Science 393023 pilot §4)
 
 **Why.** Today a `risk` node is evaluated as a linear quantity: a parentless, valueless risk is inert (0), so "the

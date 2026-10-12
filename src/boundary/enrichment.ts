@@ -218,6 +218,19 @@ export type EnrichmentConstraintMargin =
   z.infer<typeof EnrichmentConstraintMarginSchema>;
 
 /**
+ * 0.83.0 — Monte Carlo sampling precision from ISL, validated and forwarded by PLoT
+ * (PLoT `ConstraintProbabilityPrecision`, numeric-egress-guards.ts
+ * `buildConstraintProbabilityPrecision`: n_informative >= 1, 0 <= standard_error <= 0.5).
+ * This measures simulation precision, not uncertainty in the model's assumptions.
+ * Absence means precision was not supplied; never infer zero error or a sample count.
+ */
+export const EnrichmentProbabilityPrecisionSchema = z.object({
+  n_informative: z.number().int().positive(),
+  standard_error: z.number().finite().min(0).max(0.5),
+}).strict();
+export type EnrichmentProbabilityPrecision = z.infer<typeof EnrichmentProbabilityPrecisionSchema>;
+
+/**
  * Per-option comparison entry. [F1][F2].
  *
  * `option_id` is the only field every evidenced emission carries. `id` /
@@ -241,7 +254,18 @@ export const EnrichmentOptionComparisonEntrySchema = z.object({
   probability_of_goal: z.number().optional(),
   win_probability: z.number().optional(),
   probability_of_joint_goal: z.number().optional(),
+  /**
+   * 0.83.0 — PLoT's wire name (engine-v3.ts OptionComparisonV3). Sent only beside a
+   * delivered `probability_of_joint_goal`. Absent = not supplied; never infer zero error.
+   */
+  probability_of_joint_goal_precision: EnrichmentProbabilityPrecisionSchema.optional(),
   constraint_probabilities: z.record(z.string(), z.number()).optional(),
+  /**
+   * 0.83.0 — PLoT's wire name. Keyed by the same `constraint_id`s as
+   * `constraint_probabilities`, only for delivered probabilities. An absent record, or an
+   * absent id within it, = precision not supplied for that probability; never zero error.
+   */
+  constraint_probabilities_precision: z.record(z.string(), EnrichmentProbabilityPrecisionSchema).optional(),
   goal_fit_basis: EnrichmentGoalFitBasisSchema.optional(),
   /**
    * F6 — per-constraint graded breach margins for THIS option (additive).
@@ -921,10 +945,16 @@ export type EnrichmentScaleProvenance =
 export const EnrichmentConstraintResultSchema = z.object({
   constraint_id: z.string().min(1),
   node_id: z.string(),
-  operator: z.string(), // '>=' | '<=' [F2]
+  operator: z.string(), // '>=' | '<=' | '>' | '<'; open for backward compatibility
   value: z.number(),
   /** Absent = ISL echoed the constraint without prob_satisfied (honest absence). */
   probability: z.number().optional(),
+  /**
+   * 0.83.0 — PLoT's wire name (engine-v3.ts ConstraintResult; PLoT maps ISL's
+   * `prob_satisfied_precision` onto it). Sent only beside a valid `probability`.
+   * Absent = marginal sampling precision was not supplied; never infer zero error.
+   */
+  probability_precision: EnrichmentProbabilityPrecisionSchema.optional(),
   /**
    * F6 — normalisation-scale provenance for this constraint's threshold
    * (contract-ahead; see EnrichmentScaleProvenanceSchema).

@@ -134,11 +134,11 @@ export type FlipAnalysisBlock = z.infer<typeof FlipAnalysisBlockSchema>;
 //   ./run.ts LegacyGoalConstraintStubSchema — a never-exercised A0 stub
 //     (formerly misnamed `GoalConstraintSchema`, which mislabelled it as the
 //     compute-seam constraint; no service imports it). Identity `id`,
-//     five-way `bound` enum ('lt'|'lte'|'gt'|'gte'|'eq'), no node binding,
+//     legacy `bound` tokens plus ASCII comparisons, no node binding,
 //     no provenance. `.strict()`.
 //   THIS schema                             — the DRAFTING-time EXTRACTION
 //     (CEE -> UI). Identity `constraint_id`, node-bound via `node_id`,
-//     two-way ASCII `operator` ('>='|'<='), and carries extraction
+//     four-way ASCII `operator` ('>='|'<='|'>'|'<'), and carries extraction
 //     provenance the compute path has no concept of (source_quote /
 //     confidence / provenance).
 //
@@ -173,8 +173,8 @@ export const DraftGoalConstraintSchema = z.object({
    * guaranteed to resolve against the sibling `nodes` array.
    */
   node_id: z.string().min(1),
-  /** ASCII only — CEE normalises away '<', '>' and the Unicode forms. */
-  operator: z.enum(['>=', '<=']),
+  /** ASCII comparisons preserve strictness; above is not at least (0.83.0). */
+  operator: z.enum(['>=', '<=', '>', '<']),
   /** Threshold in the user's units; PLoT normalises downstream. */
   value: z.number(),
   /** Human-readable label, e.g. 'First-year budget cap'. */
