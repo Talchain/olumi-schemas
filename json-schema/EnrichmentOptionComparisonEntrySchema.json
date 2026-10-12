@@ -86,16 +86,17 @@
         "probability_of_joint_goal": {
           "type": "number"
         },
-        "joint_probability_precision": {
+        "probability_of_joint_goal_precision": {
           "type": "object",
           "properties": {
             "n_informative": {
               "type": "integer",
-              "minimum": 0
+              "exclusiveMinimum": 0
             },
             "standard_error": {
               "type": "number",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 0.5
             }
           },
           "required": [
@@ -108,6 +109,28 @@
           "type": "object",
           "additionalProperties": {
             "type": "number"
+          }
+        },
+        "constraint_probabilities_precision": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "n_informative": {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              "standard_error": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 0.5
+              }
+            },
+            "required": [
+              "n_informative",
+              "standard_error"
+            ],
+            "additionalProperties": false
           }
         },
         "goal_fit_basis": {

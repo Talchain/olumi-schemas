@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   AnalysisEnrichmentSchema,
@@ -66,41 +67,104 @@ describe('0.83.0 comparison transport', () => {
   });
 });
 
+// PLoT #448 is the producer and its names win (independent check C round 1):
+//   option_comparison[].probability_of_joint_goal_precision   (engine-v3.ts OptionComparisonV3)
+//   option_comparison[].constraint_probabilities_precision{id} (engine-v3.ts OptionComparisonV3)
+//   constraint_results[].probability_precision                 (engine-v3.ts ConstraintResult)
+// The stored decision prediction is not a PLoT wire key and keeps its own name.
 const carriers = [
-  { name: 'joint option result', schema: EnrichmentOptionComparisonEntrySchema, base: option, field: 'joint_probability_precision' },
-  { name: 'marginal result', schema: EnrichmentConstraintResultSchema, base: marginal, field: 'prob_satisfied_precision' },
-  { name: 'stored prediction', schema: DecisionRecordPredictionSchema, base: prediction, field: 'joint_probability_precision' },
+  {
+    name: 'joint option result', schema: EnrichmentOptionComparisonEntrySchema, base: option,
+    field: 'probability_of_joint_goal_precision', wrap: (v: unknown) => v,
+  },
+  {
+    name: 'per-option constraint results', schema: EnrichmentOptionComparisonEntrySchema, base: option,
+    field: 'constraint_probabilities_precision', wrap: (v: unknown) => ({ conversion: v }),
+  },
+  {
+    name: 'top-level constraint result', schema: EnrichmentConstraintResultSchema, base: marginal,
+    field: 'probability_precision', wrap: (v: unknown) => v,
+  },
+  {
+    name: 'stored prediction', schema: DecisionRecordPredictionSchema, base: prediction,
+    field: 'joint_probability_precision', wrap: (v: unknown) => v,
+  },
 ] as const;
 
-describe.each(carriers)('0.83.0 precision on $name', ({ schema, base, field }) => {
+describe.each(carriers)('0.83.0 precision on $name ($field)', ({ schema, base, field, wrap }) => {
   it('is optional and retains both members when present', () => {
     expect(schema.parse(base)).toStrictEqual(base);
-    const input = { ...base, [field]: precision };
+    const input = { ...base, [field]: wrap(precision) };
+    expect(schema.parse(input)).toStrictEqual(input);
+  });
+
+  it.each([
+    { n_informative: 1, standard_error: 0 }, // p = 0 or 1 gives a plug-in SE of 0
+    { n_informative: 4, standard_error: 0.5 }, // the largest SE a proportion can have
+  ])('accepts the producer bounds %j', (edge) => {
+    const input = { ...base, [field]: wrap(edge) };
     expect(schema.parse(input)).toStrictEqual(input);
   });
 
   it.each([
     null, {}, { n_informative: 1000 }, { standard_error: 0.01 },
-    { ...precision, n_informative: -1 }, { ...precision, n_informative: 1.5 },
-    { ...precision, n_informative: '1000' }, { ...precision, n_informative: Infinity },
-    { ...precision, standard_error: -0.01 }, { ...precision, standard_error: Infinity },
-    { ...precision, standard_error: NaN }, { ...precision, standard_error: '0.01' },
+    { ...precision, n_informative: 0 }, { ...precision, n_informative: -1 },
+    { ...precision, n_informative: 1.5 }, { ...precision, n_informative: '1000' },
+    { ...precision, n_informative: Infinity },
+    { ...precision, standard_error: -0.01 }, { ...precision, standard_error: 0.5000001 },
+    { ...precision, standard_error: Infinity }, { ...precision, standard_error: NaN },
+    { ...precision, standard_error: '0.01' },
     { ...precision, extra: true },
   ])('refuses malformed precision %j', (invalid) => {
-    expect(schema.safeParse({ ...base, [field]: precision }).success).toBe(true);
-    expect(schema.safeParse({ ...base, [field]: invalid }).success).toBe(false);
+    expect(schema.safeParse({ ...base, [field]: wrap(precision) }).success).toBe(true);
+    expect(schema.safeParse({ ...base, [field]: wrap(invalid) }).success).toBe(false);
   });
 });
 
-it('retains precision through the full enrichment parse', () => {
+describe('0.83.0 precision names match the producer', () => {
+  const typed = (schema: { shape: Record<string, unknown> }) => Object.keys(schema.shape);
+  const jsonProps = (name: string) => Object.keys((JSON.parse(
+    readFileSync(new URL(`../../json-schema/${name}.json`, import.meta.url), 'utf8'),
+  ) as { definitions: Record<string, { properties: Record<string, unknown> }> }).definitions[name].properties);
+
+  it('types PLoT\'s option-entry keys, in Zod and in the published JSON schema', () => {
+    for (const keys of [typed(EnrichmentOptionComparisonEntrySchema), jsonProps('EnrichmentOptionComparisonEntrySchema')]) {
+      expect(keys).toContain('probability_of_joint_goal_precision');
+      expect(keys).toContain('constraint_probabilities_precision');
+      expect(keys).not.toContain('joint_probability_precision');
+    }
+  });
+
+  it('types PLoT\'s constraint-result key, in Zod and in the published JSON schema', () => {
+    for (const keys of [typed(EnrichmentConstraintResultSchema), jsonProps('EnrichmentConstraintResultSchema')]) {
+      expect(keys).toContain('probability_precision');
+      expect(keys).not.toContain('prob_satisfied_precision');
+    }
+  });
+
+  it('leaves the old names untyped: passthrough keeps them unvalidated, so they carry no contract', () => {
+    const bad = { n_informative: -1 };
+    expect(EnrichmentOptionComparisonEntrySchema.parse({ ...option, joint_probability_precision: bad }))
+      .toStrictEqual({ ...option, joint_probability_precision: bad });
+    expect(EnrichmentConstraintResultSchema.parse({ ...marginal, prob_satisfied_precision: bad }))
+      .toStrictEqual({ ...marginal, prob_satisfied_precision: bad });
+  });
+});
+
+it('retains a PLoT #448-shaped enrichment with all three precision keys', () => {
   const input = {
-    option_comparison: [{ ...option, joint_probability_precision: precision }],
-    constraint_results: [{ ...marginal, prob_satisfied_precision: precision }],
+    option_comparison: [{
+      ...option,
+      probability_of_joint_goal_precision: precision,
+      constraint_probabilities_precision: { conversion: precision },
+    }],
+    constraint_results: [{ ...marginal, option_id: 'launch', probability_precision: precision }],
   };
   expect(AnalysisEnrichmentSchema.parse(input)).toStrictEqual(input);
 });
 
-it('allows zero-valued count and error without claiming a precision licence', () => {
-  const zero = { n_informative: 0, standard_error: 0 };
-  expect(EnrichmentProbabilityPrecisionSchema.parse(zero)).toStrictEqual(zero);
+it('refuses a zero informative count: PLoT never sends precision without an informative draw', () => {
+  expect(EnrichmentProbabilityPrecisionSchema.safeParse({ n_informative: 0, standard_error: 0 }).success).toBe(false);
+  expect(EnrichmentProbabilityPrecisionSchema.parse({ n_informative: 1, standard_error: 0 }))
+    .toStrictEqual({ n_informative: 1, standard_error: 0 });
 });

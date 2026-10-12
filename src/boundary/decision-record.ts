@@ -98,7 +98,11 @@ export const DecisionRecordPredictionSchema = z.object({
   confidence_source: DecisionRecordConfidenceSource.optional(),
   probability_of_goal: z.number().min(0).max(1).optional(),
   probability_of_joint_goal: z.number().min(0).max(1).optional(),
-  /** 0.83.0: verbatim joint sampling precision; absent = not recorded, never zero error. */
+  /**
+   * 0.83.0: verbatim joint sampling precision, recorded from the option entry's
+   * `probability_of_joint_goal_precision` (stored-record name kept). Absent = not recorded,
+   * never zero error.
+   */
   joint_probability_precision: EnrichmentProbabilityPrecisionSchema.optional(),
 }).strict();
 export type DecisionRecordPrediction = z.infer<typeof DecisionRecordPredictionSchema>;

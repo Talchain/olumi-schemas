@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 144,
+    "distinct": 145,
     "same": 80,
     "unresolved": 428
   },
@@ -4601,29 +4601,37 @@
       "verdict": "same",
       "note": "0.76.0 structural challenge. A REQUIRED key, always serialised. null = no declared probability boundary, or not a constraint claim (C7); constraint_side_changed/same require a populated threshold/comparator (C5)."
     },
-    "boundary/EnrichmentOptionComparisonEntrySchema.joint_probability_precision": {
+    "boundary/EnrichmentOptionComparisonEntrySchema.probability_of_joint_goal_precision": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absent means sampling precision was not supplied or recorded; never infer zero error or a sample count.",
-      "ref": "src/boundary/enrichment.ts EnrichmentProbabilityPrecisionSchema absence comment (0.83.0); src/boundary/decision-record.ts joint_probability_precision comment."
+      "note": "On PLoT's wire this key IS sent (PLoT #448). Absent = not supplied: ISL gave none, PLoT's egress guard refused it, or the probability it sits beside was not delivered. Never infer zero error or a sample count.",
+      "ref": "src/boundary/enrichment.ts EnrichmentOptionComparisonEntrySchema.probability_of_joint_goal_precision comment (0.83.0); PLoT engine-v3.ts OptionComparisonV3.probability_of_joint_goal_precision, run.ts sets it only beside a published joint."
     },
-    "boundary/EnrichmentConstraintResultSchema.prob_satisfied_precision": {
+    "boundary/EnrichmentOptionComparisonEntrySchema.constraint_probabilities_precision": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absent means sampling precision was not supplied or recorded; never infer zero error or a sample count.",
-      "ref": "src/boundary/enrichment.ts EnrichmentProbabilityPrecisionSchema absence comment (0.83.0); src/boundary/decision-record.ts joint_probability_precision comment."
+      "note": "On PLoT's wire this key IS sent (PLoT #448). Absent = not supplied: ISL gave none, PLoT's egress guard refused it, or the probability it sits beside was not delivered. Never infer zero error or a sample count. An id missing from a present record means the same for that one constraint.",
+      "ref": "src/boundary/enrichment.ts EnrichmentOptionComparisonEntrySchema.constraint_probabilities_precision comment (0.83.0); PLoT engine-v3.ts OptionComparisonV3.constraint_probabilities_precision, run.ts filters it to the delivered constraint_probabilities ids."
+    },
+    "boundary/EnrichmentConstraintResultSchema.probability_precision": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "On PLoT's wire this key IS sent (PLoT #448). Absent = not supplied: ISL gave none, PLoT's egress guard refused it, or the probability it sits beside was not delivered. Never infer zero error or a sample count.",
+      "ref": "src/boundary/enrichment.ts EnrichmentConstraintResultSchema.probability_precision comment (0.83.0); PLoT engine-v3.ts ConstraintResult.probability_precision, run.ts maps ISL prob_satisfied_precision onto it only beside a valid probability."
     },
     "boundary/DecisionRecordPredictionSchema.joint_probability_precision": {
       "markers": [
         "optional"
       ],
       "verdict": "distinct",
-      "note": "Absent means sampling precision was not supplied or recorded; never infer zero error or a sample count.",
-      "ref": "src/boundary/enrichment.ts EnrichmentProbabilityPrecisionSchema absence comment (0.83.0); src/boundary/decision-record.ts joint_probability_precision comment."
+      "note": "Stored-record key, not a PLoT wire key. Absent = precision was not recorded with the prediction; never infer zero error or a sample count.",
+      "ref": "src/boundary/decision-record.ts DecisionRecordPredictionSchema.joint_probability_precision comment (0.83.0)."
     }
   }
 }

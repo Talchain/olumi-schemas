@@ -32,9 +32,9 @@
   },
   "fields": [
     {
-      "field": "prob_satisfied_precision",
-      "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentConstraintResultSchema (0.83.0)",
-      "producer": "isl \u2014 sampling precision forwarded by PLoT",
+      "field": "probability_of_joint_goal_precision",
+      "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentOptionComparisonEntrySchema (0.83.0)",
+      "producer": "plot \u2014 forwards ISL sampling precision (PLoT #448, unmerged at 0.83.0)",
       "consumer": "cee \u2014 goal-chance precision; DGAI renders licensed results",
       "producer_test": null,
       "consumer_test": null,
@@ -42,23 +42,56 @@
       "state": "declared",
       "n_minus_1_removal_date": "2026-12-31",
       "notes": [
-        "Batch C contract transport only; consumer adoption and producer emission are not verified in this schema-only change.",
-        "Absence means precision is unavailable, never zero sampling error. CEE, PLoT and DGAI must re-vendor 0.83.0."
+        "PLoT's wire name: option_comparison[].probability_of_joint_goal_precision (engine-v3.ts OptionComparisonV3; run.ts sets it only beside a published joint).",
+        "Contract transport only; producer emission and consumer use are not verified by a merged named test.",
+        "Absence means precision was not supplied for a delivered probability, never zero sampling error. CEE, PLoT and DGAI must re-vendor 0.83.0."
+      ]
+    },
+    {
+      "field": "constraint_probabilities_precision",
+      "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentOptionComparisonEntrySchema (0.83.0)",
+      "producer": "plot \u2014 forwards ISL sampling precision (PLoT #448, unmerged at 0.83.0)",
+      "consumer": "cee \u2014 goal-chance precision; DGAI renders licensed results",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "PLoT's wire name: option_comparison[].constraint_probabilities_precision, a record keyed by constraint_id, filtered to the delivered constraint_probabilities ids.",
+        "Contract transport only; producer emission and consumer use are not verified by a merged named test.",
+        "Absence means precision was not supplied for a delivered probability, never zero sampling error. CEE, PLoT and DGAI must re-vendor 0.83.0."
+      ]
+    },
+    {
+      "field": "probability_precision",
+      "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentConstraintResultSchema (0.83.0)",
+      "producer": "plot \u2014 forwards ISL sampling precision (PLoT #448, unmerged at 0.83.0)",
+      "consumer": "cee \u2014 goal-chance precision; DGAI renders licensed results",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "PLoT's wire name: constraint_results[].probability_precision (engine-v3.ts ConstraintResult; PLoT maps ISL's prob_satisfied_precision onto it).",
+        "Contract transport only; producer emission and consumer use are not verified by a merged named test.",
+        "Absence means precision was not supplied for a delivered probability, never zero sampling error. CEE, PLoT and DGAI must re-vendor 0.83.0."
       ]
     },
     {
       "field": "joint_probability_precision",
-      "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentOptionComparisonEntrySchema + DecisionRecordPredictionSchema (0.83.0)",
-      "producer": "isl \u2014 sampling precision forwarded by PLoT",
-      "consumer": "cee \u2014 goal-chance precision; DGAI renders licensed results",
+      "declared_in": "schemas:src/boundary/decision-record.ts::DecisionRecordPredictionSchema (0.83.0)",
+      "producer": "cee \u2014 records the option entry's probability_of_joint_goal_precision on a stored prediction",
+      "consumer": "ui \u2014 decision-record display",
       "producer_test": null,
       "consumer_test": null,
       "deployment_flag": null,
       "state": "declared",
       "n_minus_1_removal_date": "2026-12-31",
       "notes": [
-        "Batch C contract transport only; consumer adoption and producer emission are not verified in this schema-only change.",
-        "Absence means precision is unavailable, never zero sampling error. CEE, PLoT and DGAI must re-vendor 0.83.0."
+        "Stored-record name kept; it is not a PLoT wire key. No producer is verified.",
+        "Absence means precision was not recorded, never zero sampling error."
       ]
     },
     {
