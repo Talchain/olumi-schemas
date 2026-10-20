@@ -97,6 +97,7 @@ import {
   // analysis
   OptionForAnalysisSchema,
   InterventionRangeSchema,
+  InterventionOutcomeLawSchema,
   AnalysisReadyV3Schema,
   AnalysisRequestIdChainSchema,
   DraftGraphTraceSchema,
@@ -632,12 +633,25 @@ export const maximalCausalClaimsArray = deepFreeze([
 // Analysis family (root)
 // ----------------------------------------------------------------------------
 
+export const maximalInterventionOutcomeLaw = deepFreeze({
+  family: 'uniform',
+  role: 'uncertain_outcome',
+  origin: 'olumi_illustrative',
+  basis: 'FIXTURE untested uniform assumption, independent of model inputs.',
+  quantity: 'FIXTURE downtime in days',
+  reference: 'FIXTURE migration',
+  period: 'FIXTURE migration window',
+  conditions: ['FIXTURE during migration'],
+  independent_of_model: true,
+});
+
 export const maximalInterventionRange = deepFreeze({
   low: 40,
   high: 75,
   meaning: 'likely_range',
   source: 'brief_extraction',
   source_quote: 'FIXTURE between 40 and 75, most likely',
+  law: maximalInterventionOutcomeLaw,
 });
 
 export const maximalOptionForAnalysis = deepFreeze({
@@ -3475,6 +3489,7 @@ export const MAXIMAL_FIXTURES: readonly MaximalFixtureEntry[] = Object.freeze([
   // --- analysis ---------------------------------------------------------------
   { family: 'root/OptionForAnalysisSchema', schema: OptionForAnalysisSchema, fixture: maximalOptionForAnalysis },
   { family: 'root/InterventionRangeSchema', schema: InterventionRangeSchema, fixture: maximalInterventionRange },
+  { family: 'root/InterventionOutcomeLawSchema', schema: InterventionOutcomeLawSchema, fixture: maximalInterventionOutcomeLaw },
   { family: 'root/AnalysisReadyV3Schema', schema: AnalysisReadyV3Schema, fixture: maximalAnalysisReadyV3 },
   {
     family: 'root/AnalysisRequestIdChainSchema',

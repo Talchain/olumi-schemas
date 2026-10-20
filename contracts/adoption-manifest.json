@@ -32,6 +32,22 @@
   },
   "fields": [
     {
+      "field": "intervention_ranges.law",
+      "declared_in": "schemas:src/analysis.ts::InterventionRangeSchema.law (0.84.0); RunInputSettingSchema.range reuses it",
+      "producer": "cee \u2014 approved explicit law on the existing intervention range and Run input snapshot",
+      "consumer": "plot \u2014 range reader/translator; isl \u2014 InterventionOutcomeLaw (#235)",
+      "producer_test": null,
+      "consumer_test": null,
+      "deployment_flag": null,
+      "state": "declared",
+      "n_minus_1_removal_date": "2026-12-31",
+      "notes": [
+        "One optional strict law, separate from raw range source/source_quote and adoption. No defaults, fitted law or inferred independence.",
+        "Schema transport rows: tests/contracts/release-0.84.0.test.ts. Not producer/consumer-use evidence; unavailable locally without dependencies.",
+        "CEE and PLoT must re-vendor 0.84.0; ISL must refresh its pinned schema artifact. End-to-end L3B transport remains unverified."
+      ]
+    },
+    {
       "field": "probability_of_joint_goal_precision",
       "declared_in": "schemas:src/boundary/enrichment.ts::EnrichmentOptionComparisonEntrySchema (0.83.0)",
       "producer": "plot \u2014 forwards ISL sampling precision (PLoT #448, unmerged at 0.83.0)",

@@ -14,6 +14,22 @@ export type ConfidenceLevelType = z.infer<typeof ConfidenceLevel>;
  */
 export const InterventionRangeMeaning = z.enum(['likely_range', 'min_max', 'at_most', 'at_least']);
 
+/** 0.84.0 — ISL #235's explicit outcome-law declaration, never inferred from range endpoints or meaning.
+ * Law origin/basis describe the law, not the raw range's source or its adoption. ISL owns support/refusal.
+ */
+export const InterventionOutcomeLawSchema = z.object({
+  family: z.string().min(1).max(64),
+  role: z.enum(['uncertain_outcome', 'setting']),
+  origin: z.enum(['declared', 'supported', 'olumi_illustrative']),
+  basis: z.string().min(1),
+  quantity: z.string().min(1),
+  reference: z.string().min(1),
+  period: z.string().min(1),
+  conditions: z.array(z.string()),
+  independent_of_model: z.boolean(),
+}).strict();
+export type InterventionOutcomeLaw = z.infer<typeof InterventionOutcomeLawSchema>;
+
 /**
  * 0.66.0 (TEMPORAL S1): an option's stated RANGE for a value it sets, in RAW units: the SAME unit as the value's
  * `raw_value`, never normalised (R3 5914230653 (1)). Positive support: a duration-like quantity.
@@ -33,6 +49,8 @@ export const InterventionRangeSchema = z
     meaning: InterventionRangeMeaning,
     source: z.string().min(1),
     source_quote: z.string().min(1).optional(),
+    /** Absent = no explicit law declared; a bare range never implies a law or independence. */
+    law: InterventionOutcomeLawSchema.optional(),
   })
   .strict()
   .refine((r) => r.high > r.low, { message: 'high must exceed low', path: ['high'] });
