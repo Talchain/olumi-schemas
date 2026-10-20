@@ -46,15 +46,15 @@ describe('0.84.0 explicit intervention law: shared admission and evaluated Run s
     },
   );
 
-  it.each([
+  it.each<[string, unknown]>([
     ['null law', null],
     ['unknown key', { ...law, approved_by: 'user' }],
     ['unknown origin', { ...law, origin: 'user' }],
     ['unknown role', { ...law, role: 'recommendation' }],
     ['empty family', { ...law, family: '' }],
     ['long family', { ...law, family: 'x'.repeat(65) }],
-    ...['basis', 'quantity', 'reference', 'period'].map((key) => [`empty ${key}`, { ...law, [key]: '' }]),
-    ...Object.keys(law).map((key) => [`missing ${key}`, Object.fromEntries(Object.entries(law).filter(([k]) => k !== key))]),
+    ...['basis', 'quantity', 'reference', 'period'].map((key): [string, unknown] => [`empty ${key}`, { ...law, [key]: '' }]),
+    ...Object.keys(law).map((key): [string, unknown] => [`missing ${key}`, Object.fromEntries(Object.entries(law).filter(([k]) => k !== key))]),
     ['non-string condition', { ...law, conditions: [42] }],
     ['non-boolean independence', { ...law, independent_of_model: 'true' }],
   ])('strictly rejects %s on both real contract routes', (_name, invalid) => {
