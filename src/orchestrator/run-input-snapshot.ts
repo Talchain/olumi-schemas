@@ -63,6 +63,7 @@ export const RunInputSettingSchema = z.object({
   /**
    * The option's stated RANGE for this factor, AS SENT (TEMPORAL 0.66.0 `intervention_ranges`), in the setting's own
    * raw unit and carrying its OWN author (`source`) — the same schema, never a mirror. Absent = no range was sent.
+   * An explicit `law`, if sent, is recorded here unchanged with its separate origin/basis; never reconstructed later.
    * Recorded so a Run pair that differs only in a range is never read as "complete, no change": the producer marks such
    * a pair `input_coverage: partial` and emits no row (PROMPT STRIKE #75 5918324383, AIQ 5918201688).
    */

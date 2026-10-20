@@ -63,7 +63,7 @@
     }
   },
   "counts": {
-    "distinct": 145,
+    "distinct": 146,
     "same": 80,
     "unresolved": 428
   },
@@ -4632,6 +4632,14 @@
       "verdict": "distinct",
       "note": "Stored-record key, not a PLoT wire key. Absent = precision was not recorded with the prediction; never infer zero error or a sample count.",
       "ref": "src/boundary/decision-record.ts DecisionRecordPredictionSchema.joint_probability_precision comment (0.83.0)."
+    },
+    "orchestrator/RunInputSettingSchema.range.law": {
+      "markers": [
+        "optional"
+      ],
+      "verdict": "distinct",
+      "note": "Absent = no explicit law declared. Present = the caller-declared law, with separate origin/basis and explicit independence; no default or law is inferred from a bare range.",
+      "ref": "src/analysis.ts - InterventionRangeSchema.law doc comment (0.84.0); RunInputSettingSchema.range reuses the same schema"
     }
   }
 }

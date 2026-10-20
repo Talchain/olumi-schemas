@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.84.0] — explicit intervention outcome law (S8/S10, L3S)
+
+- Additive, optional `InterventionRangeSchema.law`: one strict `InterventionOutcomeLawSchema`,
+  matching ISL #235's transport contract (`family`, `role`, `origin`, `basis`, `quantity`, `reference`,
+  `period`, `conditions`, `independent_of_model`). Export its inferred `InterventionOutcomeLaw` type.
+  Origin/basis concern the law; raw range `source`/`source_quote` retain their separate authorship.
+- The existing `RunInputSettingSchema.range` import carries the same law in the single evaluated
+  `RunInputSnapshotSchema`, as sent. No second snapshot, reconstruction, inference or defaults.
+- No-law/bare-range payloads retain their bytes and validation rules. Malformed/unknown law members
+  are rejected strictly; scientific support/refusal remains ISL's responsibility. No other fields change.
+- Minor release follows the 0.x release-line discipline. Older strict readers reject the new field:
+  re-vendor CEE/PLoT and refresh ISL's schema pin before enabling law transport. Adoption is declared,
+  not producer/consumer-use or served proof. See `recovery-notes/L3S-report.md` for DL release/pin steps.
+
 ## [0.83.0] — strict comparisons and goal-chance sampling precision (Recovery Batch C)
 
 - Additive: `RunInputConstraintSchema.operator` and `DraftGoalConstraintSchema.operator` accept

@@ -305,7 +305,8 @@ describe('completeness ratchet — every exported schema family has a maximal fi
     // 0.82.0 (+4): root/EventRiskOccurrenceV1Schema, EventRiskMitigationV1Schema, EventRiskV1Schema
     //   and root/NodeV3Schema#event_risk (the opt-in risk node). Registry: 240 entries.
     // 0.83.0 adds EnrichmentProbabilityPrecisionSchema. Registry: 241 entries.
-    expect(MAXIMAL_FIXTURES.length).toBe(241);
+    // 0.84.0 adds the canonical InterventionOutcomeLawSchema. Registry: 242 entries.
+    expect(MAXIMAL_FIXTURES.length).toBe(242);
   });
 
   it('family keys are unique', () => {
